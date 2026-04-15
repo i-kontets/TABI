@@ -5,9 +5,8 @@ function Home() {
     return (
     <>
         <div>
-            こんにちは
+            ホーム
         </div>
-        <a href="Newreg">新規登録</a>
     </>
   )
 }

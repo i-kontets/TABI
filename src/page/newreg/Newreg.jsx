@@ -7,6 +7,7 @@ function Newreg() {
         <div>
             新規登録
         </div>
+        <a href="Home">Homeへ</a>
     </>
   )
 }
