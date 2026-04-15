@@ -7,6 +7,7 @@ function Home() {
         <div>
             ホーム
         </div>
+        <a href="Itinerary">旅のしおり</a>
     </>
   )
 }
