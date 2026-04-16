@@ -1,3 +1,10 @@
+/* 背景画像（仮パス） */
+body {
+  background-image: url("/public/assets/login_back.jpg");
+  background-size: cover;
+  background-position: center;
+}
+
 .login-container {
   display: flex;
   align-items: center;
@@ -22,6 +29,9 @@
   text-align: center;
   margin-bottom: 20px;
   color: var(--sub-color);
+  text-shadow:
+    1px 1px 2px rgba(255,255,255,0.8),
+   -1px -1px 2px rgba(255,255,255,0.8);
 }
 
 .input {
@@ -30,6 +40,7 @@
   margin-bottom: 12px;
   border: none;
   border-radius: 8px;
+  box-sizing: border-box;
 }
 
 .input:focus {
@@ -37,6 +48,21 @@
   box-shadow: 0 0 0 2px var(--other-color);
 }
 
+/* パスワード用 */
+.password-wrapper {
+  position: relative;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 4%;
+  top: 40%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+}
+
+/* ボタン */
 .btn {
   width: 100%;
   padding: 10px;

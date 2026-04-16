@@ -1,18 +1,22 @@
 import { useState } from "react";
-import "./Login.css";
+import { useNavigate } from "react-router-dom";
+import styles from"./Login.module.css";
+
+import eyeIcon from "../../assets/icons/eye.svg";
+import eyeOffIcon from "../../assets/icons/eye_off.svg";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+    const navigate = useNavigate();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = (e) => {
+    const handleLogin = (e) => {
     e.preventDefault();
     console.log("ログイン:", { email, password });
   };
 
-  const handleRegister = () => {
-    console.log("新規登録へ");
-  };
+
 
   return (
     <div className="login-container">
@@ -28,20 +32,29 @@ export default function Login() {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <input
-            className="input"
-            type="password"
-            placeholder="パスワード"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div className="password-wrapper">
+            <input
+              className="input password-input"
+              type={showPassword ? "text" : "password"}
+              placeholder="パスワード"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+
+            <img
+              src={showPassword ? eyeIcon : eyeOffIcon}
+              alt="toggle password"
+              className="eye-icon"
+              onClick={() => setShowPassword(!showPassword)}
+            />
+          </div>
 
           <button className="btn login-btn" type="submit">
             ログイン
           </button>
         </form>
 
-        <button className="btn register-btn" onClick={handleRegister}>
+        <button className="btn register-btn" onClick={() => navigate("/Newreg")}>
           新規登録
         </button>
       </div>
