@@ -1,67 +1,69 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import PasswordInput from "../../components/Zxcvbn/Password";
 import styles from "./Newreg.module.css";
 
-import eyeIcon from "../../assets/icons/eye.svg";
-import eyeOffIcon from "../../assets/icons/eye_off.svg";
-
-export function Newreg() {
+export default function Newreg() {
     const navigate = useNavigate();
     const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
+    const [touched, setTouched] = useState(false);
+    const [passwordData, setPasswordData] = useState({
+        password: "",
+        confirm: "",
+        isValid: false
+    });
 
-    const handleLogin = (e) => {
-    e.preventDefault();
-    console.log("ログイン:", { email, password });
-  };
+    const isEmailValid = email.trim() !== "";
 
+    const handleRegister = (e) => {
+        e.preventDefault();
+        setTouched(true);
 
+        if (!isEmailValid || !passwordData.isValid) {
+        return;
+        }
+
+        console.log("登録成功:", {
+        email,
+        password: passwordData.password
+        });
+        navigate("/Home");
+    };
 
   return (
     <div className={styles.loginPage}>
-        <div className={styles.loginContainer}>
-        <div className={styles.loginCard}>
-            <h2 className={styles.title}>新規登録</h2>
+    <div className={styles.loginContainer}>
+      <div className={styles.loginCard}>
+        <h2 className={styles.title}>新規登録</h2>
 
-            <form onSubmit={handleLogin}>
-            <input
-                className={styles.input}
-                type="email"
-                placeholder="メールアドレス"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-            />
+        <form onSubmit={handleRegister}>
+          <input
+            className={styles.input}
+            type="email"
+            placeholder="メールアドレス"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onBlur={() => setTouched(true)}
+          />
 
-            <div className={styles.passwordWrapper}>
-                <input
-                className={`${styles.input} ${styles.passwordInput}`}
-                type={showPassword ? "text" : "password"}
-                placeholder="パスワード"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                />
+          {touched && !isEmailValid && (
+            <p className={styles.error}>
+              メールアドレスを入力してください
+            </p>
+          )}
 
-                <img
-                src={showPassword ? eyeIcon : eyeOffIcon}
-                alt="toggle password"
-                className={styles.eyeIcon}
-                onClick={() => setShowPassword(!showPassword)}
-                />
-            </div>
+          <PasswordInput onChange={setPasswordData} />
 
-            <button className={`${styles.btn} ${styles.loginBtn}`} onClick={() => navigate("/Home")}>
-                ログイン
-            </button>
-            </form>
-
-            <button className={`${styles.btn} ${styles.registerBtn}`} onClick={() => navigate("/Newreg")}>
-            新規登録
-            </button>
-        </div>
-        </div>
+          <button
+            className={styles.btn}
+            type="submit"
+            disabled={!isEmailValid || !passwordData.isValid}
+          >
+            登録
+          </button>
+        </form>
+      </div>
+    </div>
     </div>
   );
 }
-
-export default Newreg

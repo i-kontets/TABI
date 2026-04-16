@@ -1,4 +1,3 @@
-/* 背景画像（仮パス） */
 .loginPage {
   min-height: 100vh;
 
@@ -19,7 +18,6 @@
   padding: 30px;
   border-radius: 20px;
 
-  /* 半透明 + ぼかし */
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -51,7 +49,6 @@
 }
 
 
-/* パスワード用 */
 .passwordWrapper {
   position: relative;
 }
@@ -65,7 +62,6 @@
   font-size: 18px;
 }
 
-/* ボタン */
 .btn {
   width: 100%;
   padding: 10px;
