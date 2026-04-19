@@ -14,19 +14,16 @@ export default function Newreg() {
     });
 
     const isEmailValid = email.trim() !== "";
+    const isFormValid = isEmailValid && passwordData.isValid;
 
     const handleRegister = (e) => {
         e.preventDefault();
         setTouched(true);
 
-        if (!isEmailValid || !passwordData.isValid) {
+        if (!isFormValid) {
         return;
         }
-
-        console.log("登録成功:", {
-        email,
-        password: passwordData.password
-        });
+        console.log("登録成功:", {email,password: passwordData.password});
         navigate("/Home");
     };
 
@@ -52,15 +49,27 @@ export default function Newreg() {
             </p>
           )}
 
+          <p className={styles.passwordNotice}>
+            パスワードには大文字・小文字・数字を含めてください
+          </p>
+
           <PasswordInput onChange={setPasswordData} />
 
-          <button
-            className={styles.btn}
-            type="submit"
-            disabled={!isEmailValid || !passwordData.isValid}
-          >
-            登録
-          </button>
+          <div className={styles.btnWrap}>
+            <button
+              className={styles.btn}
+              type="submit"
+              disabled={!isFormValid}
+            >
+              登録
+            </button>
+
+            {!isFormValid && (
+              <p className={styles.disabledHint}>
+                入力内容に誤りがあります。各項目をご確認ください
+              </p>
+            )}
+          </div>
         </form>
       </div>
     </div>

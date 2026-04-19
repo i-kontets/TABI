@@ -53,6 +53,12 @@ export default function PasswordInput({ onChange }) {
           />
         </div>
       )}
+      
+      {password && !isStrongEnough && (
+        <p className={styles.error}>
+          パスワードが弱すぎます(黄色以上にしてください)
+        </p>
+      )}
 
       <div className={styles.passwordWrapper}>
         <input
@@ -62,7 +68,6 @@ export default function PasswordInput({ onChange }) {
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
         />
-
         <img
           src={showPassword ? eyeIcon : eyeOffIcon}
           alt="toggle password"
@@ -77,11 +82,6 @@ export default function PasswordInput({ onChange }) {
         </p>
       )}
 
-      {password && !isStrongEnough && (
-        <p className={styles.error}>
-          パスワードが弱すぎます（黄色以上にしてください）
-        </p>
-      )}
     </>
   );
 }
