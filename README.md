@@ -1,5 +1,5 @@
 2026年卒業制作
 
-npm run build
--reactの静的ファイル作成
+npm run build  
+-reactの静的ファイル作成  
 --作成されたフォルダの中身のみサーバーに移す
