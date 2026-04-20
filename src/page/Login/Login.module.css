@@ -1,85 +1,85 @@
 .loginPage {
-  min-height: 100vh;
+    min-height: 100vh;
 
-  background-image: url("/public/assets/login_back.jpg");
-  background-size: cover;
-  background-position: center;
+    background-image: url("/public/assets/login_back.jpg");
+    background-size: cover;
+    background-position: center;
 }
 
 .loginContainer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
 }
 
 .loginCard {
-  width: 300px;
-  padding: 30px;
-  border-radius: 20px;
+    width: 300px;
+    padding: 30px;
+    border-radius: 20px;
 
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .title {
-  text-align: center;
-  margin-bottom: 20px;
-  color: var(--sub-color);
-  text-shadow:
-    1px 1px 2px rgba(255,255,255,0.8),
-   -1px -1px 2px rgba(255,255,255,0.8);
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--sub-color);
+    text-shadow:
+        1px 1px 2px rgba(255, 255, 255, 0.8),
+        -1px -1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 12px;
-  border: none;
-  border-radius: 8px;
-  box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 12px;
+    border: none;
+    border-radius: 8px;
+    box-sizing: border-box;
 }
 
 .input:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--other-color);
+    outline: none;
+    box-shadow: 0 0 0 2px var(--other-color);
 }
 
 
 .passwordWrapper {
-  position: relative;
+    position: relative;
 }
 
 .eyeIcon {
-  position: absolute;
-  right: 4%;
-  top: 40%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  font-size: 18px;
+    position: absolute;
+    right: 4%;
+    top: 40%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-size: 18px;
 }
 
 .btn {
-  width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-top: 8px;
-  color: white;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 8px;
+    color: white;
 }
 
 .loginBtn {
-  background-color: var(--btn-color);
+    background-color: var(--btn-color);
 }
 
 .registerBtn {
-  background-color: var(--other-color);
+    background-color: var(--other-color);
 }
 
 .btn:hover {
-  opacity: 0.9;
+    opacity: 0.9;
 }

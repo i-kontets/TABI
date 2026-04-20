@@ -9,18 +9,18 @@ import Itinerary from './page/Itinerary/itinerary';
 
 function App() {
 
-return (
-    <>
-        <BrowserRouter basename={import.meta.env.BASE_URL}>
-            <Routes>
-                <Route path="/" element={<Login />} />
-                <Route path="/Newreg" element={<Newreg />} />
-                <Route path="/Home" element={<Home />} />
-                <Route path="/Itinerary" element={<Itinerary />} />
-            </Routes>
-        </BrowserRouter>
-    </>
-)
+    return (
+        <>
+            <BrowserRouter basename={import.meta.env.BASE_URL}>
+                <Routes>
+                    <Route path="/" element={<Login />} />
+                    <Route path="/Newreg" element={<Newreg />} />
+                    <Route path="/Home" element={<Home />} />
+                    <Route path="/Itinerary" element={<Itinerary />} />
+                </Routes>
+            </BrowserRouter>
+        </>
+    )
 }
 
 export default App
