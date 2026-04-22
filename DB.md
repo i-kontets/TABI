@@ -50,14 +50,15 @@ DBは最低でも次の領域に分けるべきです。
 
 画面単位でテーブルを作るのではなく、業務単位で分ける  
 たとえば「旅行計画画面」があるから `travel_plan_screen` みたいな考え方はしません。  
-代わりに、  
-1. 旅行そのもの
-2. グループ
-3. 参加者
-4. 候補日
-5. 投票
-6. 行程
-7. 行き先
+代わりに、
+
+* 旅行そのもの
+* グループ
+* 参加者
+* 候補日
+* 投票
+* 行程
+* 行き先
 
 のように分ける。  
 これをすると後で画面が増えてもDBが壊れにくい
@@ -66,27 +67,27 @@ DBは最低でも次の領域に分けるべきです。
 
 例えば「旅行」に関する情報でも、
 
-1. 旅行名
-2. 開始日/終了日
-3. 作成者
-4. グループ
-5. 公開/非公開
-6. 旅行の確定状態
+* 旅行名
+* 開始日/終了日
+* 作成者
+* グループ
+* 公開/非公開
+* 旅行の確定状態
 
 は `trips` に入れていい  
 でも、  
 
-1. 誰が参加しているか
-2. その人の役割
-3. 招待中か参加済みか
+* 誰が参加しているか
+* その人の役割
+* 招待中か参加済みか
 
 まで `trips` に入れるのはダメ！！  
 これは参加関係なので別テーブルになる  
 
 つまり、
 
-1.  `trips` = 旅行そのもの
-2.  `trips_members` = 旅行への参加関係
+*  `trips` = 旅行そのもの
+*  `trips_members` = 旅行への参加関係
 
 と分かれる
 
@@ -520,25 +521,25 @@ system_settings
 
 例:
 
-1. `user_id`
-2. `trip_id`
-3. `expense_id`
+* `user_id`
+* `trip_id`
+* `expense_id`
 
 UUIDでもAUTO_INCREMENTでもいいですが、統一が大事です。  
 分散システムやデータベースでデータを一意に識別するための128ビットの数値
 
 ### 実務での考え方
 
-1. 小規模開発なら BIGINT AUTO_INCREMENT でも十分
-2. 分散や外部連携を強く意識するなら UUID もあり
+* 小規模開発なら BIGINT AUTO_INCREMENT でも十分
+* 分散や外部連携を強く意識するなら UUID もあり
 
 ## 2. 外部キーを貼る
 
 例:
 
-1. `trips.group_id -> groups.group_id`
-2. `trip_members.trip_id -> trips.trip_id`
-3. `trip_members.user_id -> users.user_id`
+* `trips.group_id -> groups.group_id`
+* `trip_members.trip_id -> trips.trip_id`
+* `trip_members.user_id -> users.user_id`
 
 外部キーを貼らないと、存在しないユーザーや旅行へのデータが作れてしまいます。
 
@@ -552,9 +553,9 @@ UUIDでもAUTO_INCREMENTでもいいですが、統一が大事です。
 
 逆に、
 
-1. `description`
-2. `memo`
-3. `thumbnail_url`
+* `description`
+* `memo`
+* `thumbnail_url`
 
 みたいな任意項目は NULL 可でよいです。
 
