@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './App.css'
 
-import Newreg from './page/newreg/Newreg';
-import Login from './page/Login/Login';
-import Home from './page/Home/Home';
-import Itinerary from './page/Itinerary/itinerary';
+import Newreg from './pages/newreg/Newreg';
+import Login from './pages/Login/Login';
+import Home from './pages/Home/Home';
+import Itinerary from './pages/Itinerary/itinerary';
 
 function App() {
 
