@@ -577,3 +577,341 @@ UUIDでもAUTO_INCREMENTでもいいですが、統一が大事です。
 * completed
 * cancelled
 
+と意味を明記します。
+
+おすすめは、
+
+* 文字列コード
+* またはマスタテーブル
+
+です。
+
+例：
+*  `trip_status = 'draft'`
+*  `vote_type = yes`
+
+読みやすくなります。
+
+## 5. １カラムに複数値を入れない
+
+ダメな例：
+*  `member_ids = '1, 2, 3'`
+*  `photo_urls = 'a.jpg, b.jpeg, c.jpeg'`
+*  `candidate_dates ='2026-05-01, 2026-05-03'`
+
+これは検索・更新・集計が全部やりづらいです。なので、必ず別テーブルに分けます。
+
+## 6. 命名規則を統一する
+
+おすすめは英小文字スネークケース
+
+*  `users`
+*  `group_members`
+*  `created_at`
+
+カラム名もかぶらせない方がいい  
+例えば作者名なら全部
+
+*  `create_by`
+
+更新日時なら全部
+
+*  `updated_at`
+
+にそろえる。
+
+同じ意味なのに
+
+*  `created_user`
+*  `maker_id`
+*  `regist_user`
+*  `insert_user_id`
+
+みたいに混ざるのはかなり危険です。
+
+----
+### インデックス設計も大事
+
+高品質DBはテーブルを作って終わりではありません。  
+**検索のされ方**まで考える
+
+---
+### どこにインデックスを貼るか
+
+例えばこのアプリなら、
+
+**user**
+* unique index on `email`
+
+**group_members**
+* index on `group_id`
+* index on `user_id`
+* unique on `(group_id, user_id)`
+
+**trips**
+* index on `group_id`
+* index on `(start_date, end_date)`
+* index on `status`
+
+**expenses**
+* index on `trip_id`
+* index on `paid_by_user_id`
+* index on `expense_date`
+
+**photos**
+* ndex on `album_id`
+* index on `uploaded_by`
+
+**messages**
+* index on `chat_id, sent_at`
+
+これがあると画面表示が安定します。
+
+---
+### インデックスの注意
+
+貼りすぎるとINSERT/UPDATEが遅くなります。  
+なので、
+
+**よく検索される条件**  
+**JOINによく使う列**  
+**ユニーク制約が必要な列**  
+
+に絞るのがコツです。
+
+---
+
+## データベースNGな書き方
+
+### 悪い例１：なんでも１テーブルに詰め込む
+
+例えば `trips` に
+* 旅行名
+* 開始日
+* 終了日
+* 候補日1
+* 候補日2
+* 候補日3
+* メンバー1
+* メンバー2
+* メンバー3
+* 費用1
+* 費用2
+
+みたいに入れる設計
+
+これは変更に弱く、絶対に壊れやすい。
+
+---
+### 悪い例２：NULLだらけの巨大なテーブル
+
+例えば `activities` テーブル１つだけで
+* photo_url
+* amount
+* review_comment
+* checklist_item_name
+* route_distance
+
+全部持たせる設計
+
+機能ごとに意味が違いすぎるのでNG
+
+---
+### 悪い例３：マスタとトランザクションが混ざる
+
+例：
+* `places` にユーザーごとのお気に入り状態まで入れる
+
+これはダメ
+
+`place` は場所マスタ、`favorites` はユーザーごとの行動データ
+
+---
+
+## DB作成するためのポイント 
+
+### 1. 論理削除を考える
+
+例：
+* deleted_at
+
+ユーザー削除、メッセージ削除、写真削除などで使う  
+完全削除よりもトラブル対応や復元で便利
+
+---
+
+### 2. 監査カラムを揃える
+
+多くのテーブルに
+* `created_at`
+* `updated_at`
+* `created_by`
+* `updated_by`
+
+を入れる設計は強い  
+管理画面があるなら特に有効
+
+---
+
+### 3. 予約・外部 API 連携は境界を分ける
+
+外部サービスとつながる部分は別テーブルや別カラム群に寄せる
+
+例：
+* `external_reservation_id`
+* `provider_name`
+* `provider_status`
+* `synced_at`
+
+こうしておくと、外部使用変更に耐えやすい
+
+---
+
+### 4. 集計系は後からキャッシュテーブルを作る
+
+観光地ランキングなどは最初から複雑にしすぎなくても大丈夫  
+最初は `reviews` から算出し、重くなったら
+* `place_ranking_daily`
+
+を追加する流れが実務的
+
+---
+
+### 旅行アプリ向けのDB作成手順
+
+そのまま実践しやすい流れ ↓
+
+---
+
+### Step１. 画面一覧ではなく「業務一覧」を作る
+
+今回なら：
+
+* ユーザー登録する
+* グループを作る
+* グループに招待する
+* 旅行を作る
+* 候補日を出す
+* 投票する
+* 行き先を登録する
+* 支払いを登録する
+* 負担者を決める
+* 写真をアップロードする
+* しおりを作る
+* お気に入り登録する
+* レビューを書く
+
+この一覧を先に出す
+
+---
+
+### Step ２. 名詞を抜き出す
+
+業務一覧から名詞を抜き出します
+
+* ユーザー
+* グループ
+* 旅行
+* 候補日
+* 投票
+* 場所
+* 行程
+* 支払い
+* 負担者
+* 写真
+* アルバム
+* しおり
+* チェック項目
+* お気に入り
+* レビュー
+* メッセージ
+
+これがテーブル候補です
+
+---
+
+### Step ３. 主体・関係・履歴に分ける
+
+例えば、
+
+* 主体: `users`, `groups`, `trips`, `places`
+* 関係: `group_members`, `trip_members`, `favorites`
+* 履歴/明細: `trip_date_votes`, `expenses`, `messages`, `reviews`
+
+これでかなり整理されます
+
+---
+
+### Step ４. 正規化する
+
+「１セル１値」「１テーブル１意味」に直していきます
+
+---
+
+### Step ５. 制約を入れる
+
+例：
+* email は unique
+* rating は 1〜5
+* amount は 0以上
+* vote_type は yes/maybe/no
+* group_member は group_id + user_id で一意
+
+---
+
+### Step ６. インデックスを決める
+
+一覧画面・検索画面・ JOIN 条件から決める
+
+---
+
+### Step ７. サンプルデータで検証する
+
+例えば、
+
+* 4人グループ
+* 1旅行
+* 候補日3つ
+* 支払い5件
+* 写真20枚
+* チャット50件
+
+くらいのサンプルを入れて、本当に困らないかを確認する。
+
+これをすると設計ミスがかなり見つかる
+
+---
+
+### 優先して作るべきコアテーブル
+
+最初はこの範囲で十分
+
+* `users`
+* `groups`
+* `group_members`
+* `trips`
+* `trip_members`
+* `trip_date_candidates`
+* `trip_date_votes`
+* `places`
+* `trip_places`
+* `expenses`
+* `expense_participants`
+* `settlements`
+* `albums`
+* `photos`
+* `checklists`
+* `checklist_items`
+
+これだけでも完成度が高い！
+
+---
+
+### あとから追加で良いもの
+
+* `favorites`
+* `reviews`
+* `messages`
+* `audit_logs`
+* `route_snapshots`
+* `place_ranking_daily`
