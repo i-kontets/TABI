@@ -11,55 +11,49 @@ export default function PasswordInput({ onChange }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const result = zxcvbn(password);
-  const score = result.score;
+    const result = zxcvbn(password);
+    const score = result.score;
 
-  const isStrongEnough = score >= 2;
+    const isStrongEnough = score >= 2;
 
-  useEffect(() => {
-    onChange?.({
-      password,
-      confirm,
-      isValid:
-        password &&
-        confirm &&
-        password === confirm &&
-        isStrongEnough
-    });
-  }, [password, confirm, score]);
+    useEffect(() => {
+        onChange?.({
+            password,
+            confirm,
+            isValid:
+                password &&
+                confirm &&
+                password === confirm &&
+                isStrongEnough
+        });
+    }, [password, confirm, score]);
 
-  return (
-    <>
-      <div className={styles.passwordWrapper}>
-        <input
-          className={`${styles.input} ${styles.passwordInput}`}
-          type={showPassword ? "text" : "password"}
-          placeholder="パスワード"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+    return (
+        <>
+            <div className={styles.passwordWrapper}>
+                <input
+                    className={`${styles.input} ${styles.passwordInput}`}
+                    type={showPassword ? "text" : "password"}
+                    placeholder="パスワード"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
 
-        <img
-          src={showPassword ? eyeIcon : eyeOffIcon}
-          alt="toggle password"
-          className={styles.eyeIcon}
-          onClick={() => setShowPassword(!showPassword)}
-        />
-      </div>
+                <img
+                    src={showPassword ? eyeIcon : eyeOffIcon}
+                    alt="toggle password"
+                    className={styles.eyeIcon}
+                    onClick={() => setShowPassword(!showPassword)}
+                />
+            </div>
 
-      {password && (
-        <div className={styles.strengthBar}>
-          <div
-            className={`${styles.strengthFill} ${styles["level" + score]}`}
-          />
-        </div>
-      )}
-      
-      {password && !isStrongEnough && (
-        <p className={styles.error}>
-          パスワードが弱すぎます(黄色以上にしてください)
-        </p>
-      )}
+            {password && (
+                <div className={styles.strengthBar}>
+                    <div
+                        className={`${styles.strengthFill} ${styles["level" + score]}`}
+                    />
+                </div>
+            )}
 
       <div className={styles.passwordWrapper}>
         <input
@@ -77,11 +71,21 @@ export default function PasswordInput({ onChange }) {
         />
       </div>
 
-      {confirm && password !== confirm && (
-        <p className={styles.error}>
-          パスワードが一致しません
-        </p>
-      )}
+            <div className={styles.passwordWrapper}>
+                <input
+                    className={`${styles.input} ${styles.passwordInput}`}
+                    type={showPassword ? "text" : "password"}
+                    placeholder="パスワード（再入力）"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                />
+                <img
+                    src={showPassword ? eyeIcon : eyeOffIcon}
+                    alt="toggle password"
+                    className={styles.eyeIcon}
+                    onClick={() => setShowPassword(!showPassword)}
+                />
+            </div>
 
     </>
   );
