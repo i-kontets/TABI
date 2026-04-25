@@ -9,6 +9,7 @@ export default function PasswordInput({ onChange }) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const result = zxcvbn(password);
   const score = result.score;
@@ -63,16 +64,16 @@ export default function PasswordInput({ onChange }) {
       <div className={styles.passwordWrapper}>
         <input
           className={`${styles.input} ${styles.passwordInput}`}
-          type={showPassword ? "text" : "password"}
+          type={showConfirmPassword ? "text" : "password"}
           placeholder="パスワード（再入力）"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
         />
         <img
-          src={showPassword ? eyeIcon : eyeOffIcon}
+          src={showConfirmPassword ? eyeIcon : eyeOffIcon}
           alt="toggle password"
           className={styles.eyeIcon}
-          onClick={() => setShowPassword(!showPassword)}
+          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
         />
       </div>
 

@@ -1,0 +1,52 @@
+.container {
+  padding: 20px;
+  background: var(--sub-color);
+  min-height: 100vh;
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: bold;
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+}
+
+/* セクションタイトル */
+.sectionTitle {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 24px 0 12px;
+  color: var(--other-color);
+}
+
+/* カード */
+.card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  backdrop-filter: blur(8px);
+}
+
+.cardTitle {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.reason {
+  font-size: 14px;
+  color: #ddd;
+}
+
+.note {
+  font-size: 13px;
+  margin-top: 6px;
+  color: var(--other-color);
+}
