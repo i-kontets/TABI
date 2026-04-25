@@ -71,22 +71,6 @@ export default function PasswordInput({ onChange }) {
         />
       </div>
 
-            <div className={styles.passwordWrapper}>
-                <input
-                    className={`${styles.input} ${styles.passwordInput}`}
-                    type={showPassword ? "text" : "password"}
-                    placeholder="パスワード（再入力）"
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                />
-                <img
-                    src={showPassword ? eyeIcon : eyeOffIcon}
-                    alt="toggle password"
-                    className={styles.eyeIcon}
-                    onClick={() => setShowPassword(!showPassword)}
-                />
-            </div>
-
     </>
   );
 }
