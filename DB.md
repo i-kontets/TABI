@@ -179,7 +179,7 @@ create table user_roles (
 ## B. グループ機能
 
 ```
-create table groups (
+create table user_groups (
   group_id BIGINT PRIMARY KEY COMMENT 'グループID',
 
   group_name VARCHAR(100) NOT NULL COMMENT 'グループ名',
