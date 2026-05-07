@@ -1,57 +1,77 @@
+import { useState } from "react";
 import styles from "./chchch.module.css";
 
-export default function Chchch() {
-  const ngData = [
-    { type: "section", title: "行動系NG" },
-    {
-      type: "item",
-      title: "遅刻する",
-      reason: "スケジュールが崩れる",
-      note: "集合時間は守る"
-    },
-    {
-      type: "item",
-      title: "勝手行動",
-      reason: "トラブルの原因になる"
-    },
+const DEFAULT_CHOICE_ID = "neutral";
+const CHOICE_LOG_CODES = {
+  agree: "a",
+  disagree: "b",
+  neutral: "c"
+};
 
-    { type: "section", title: "持ち物系NG" },
-    {
-      type: "item",
-      title: "充電器を持ってこない",
-      reason: "詰む"
-    }
-  ];
+const valueAlignmentQuestions = [
+  {
+    id: "sleep-early",
+    title: "夜は早く寝たい"
+  },
+  {
+    id: "test",
+    title: "test"
+  }
+];
+
+export default function Chchch() {
+  //ゴミデータ削除
+  const questions = valueAlignmentQuestions.filter(
+    (question) => question.id && question.title
+  );
+
+  //質問の個数分answersを作成する
+  const [answers, setAnswers] = useState(() =>
+    questions.reduce((acc, question) => {
+      acc[question.id] = DEFAULT_CHOICE_ID;
+      return acc;
+    }, {})
+  );
+
+  const handleSelect = (questionId, choiceId) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: choiceId
+    }));
+    console.log(`${questionId}:${CHOICE_LOG_CODES[choiceId]}`);
+  };
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.pageTitle}>旅行NGリスト</h1>
+      <h1 className={styles.pageTitle}>旅行前の価値観すり合わせ</h1>
 
       <div className={styles.content}>
-        {ngData.map((item, index) => {
-          // セクションタイトル
-          if (item.type === "section") {
-            return (
-              <h2 key={index} className={styles.sectionTitle}>
-                {item.title}
-              </h2>
-            );
-          }
-        
-
-          // カード
-          return (
-            <div key={index} className={styles.card}>
-              <h3 className={styles.cardTitle}>{item.title}</h3>
-              <p className={styles.reason}>{item.reason}</p>
-              {item.note && (
-                <p className={styles.note}>{item.note}</p>
-              )}
+        {questions.map((question) => (
+          <section key={question.id} className={styles.card}>
+            <h2 className={styles.questionTitle}>{question.title}</h2>
+            <div className={styles.choiceGroup}>
+              {[
+                { id: "agree", label: "そう思う" },
+                { id: "disagree", label: "違う" },
+                { id: "neutral", label: "どちらとも言えない" }
+              ].map((choice) => {
+                const isSelected =
+                  (answers[question.id] ?? DEFAULT_CHOICE_ID) === choice.id;
+                return (
+                  <button
+                    key={choice.id}
+                    type="button"
+                    className={`${styles.choiceButton} ${isSelected ? styles.selected : ""}`}
+                    onClick={() => handleSelect(question.id, choice.id)}
+                  >
+                  {choice.label}
+                  </button>
+                );
+              })}
             </div>
-          );
-        })}
+          </section>
+        ))}
       </div>
     </div>
   );
 }
-
