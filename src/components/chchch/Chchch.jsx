@@ -1,77 +1,86 @@
-import { useState } from "react";
-import styles from "./chchch.module.css";
+import { useState } from 'react';
+import styles from './chchch.module.css';
 
-const DEFAULT_CHOICE_ID = "neutral";
-const CHOICE_LOG_CODES = {
-  agree: "a",
-  disagree: "b",
-  neutral: "c"
-};
-
-const valueAlignmentQuestions = [
+const questions = [
   {
-    id: "sleep-early",
-    title: "夜は早く寝たい"
+    id: 1,
+    question: 'このアプリケーションは使いやすいと思いますか？'
   },
   {
-    id: "test",
-    title: "test"
+    id: 2,
+    question: 'デザインは魅力的だと思いますか？'
+  },
+  {
+    id: 3,
+    question: '機能は充実していると感じますか？'
+  },
+  {
+    id: 4,
+    question: '読み込み速度は十分だと思いますか？'
+  },
+  {
+    id: 5,
+    question: 'また使用したいと思いますか？'
   }
 ];
 
 export default function Chchch() {
-  //ゴミデータ削除
-  const questions = valueAlignmentQuestions.filter(
-    (question) => question.id && question.title
-  );
+  const [answers, setAnswers] = useState({});
 
-  //質問の個数分answersを作成する
-  const [answers, setAnswers] = useState(() =>
-    questions.reduce((acc, question) => {
-      acc[question.id] = DEFAULT_CHOICE_ID;
-      return acc;
-    }, {})
-  );
-
-  const handleSelect = (questionId, choiceId) => {
+  const handleAnswer = (questionId, answer) => {
     setAnswers((prev) => ({
       ...prev,
-      [questionId]: choiceId
+      [questionId]: answer,
     }));
-    console.log(`${questionId}:${CHOICE_LOG_CODES[choiceId]}`);
+  };
+
+  const handleSubmit = () => {
+    const result = questions.map((q) => ({
+      id: q.id,
+      answer: answers[q.id] || 'なし',
+    }));
+    console.log(result);
   };
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.pageTitle}>旅行前の価値観すり合わせ</h1>
-
-      <div className={styles.content}>
+    <div className={styles.questionBoxContainer}>
+      <h2 className={styles.title}>質問箱</h2>
+      <div className={styles.questionsWrapper}>
         {questions.map((question) => (
-          <section key={question.id} className={styles.card}>
-            <h2 className={styles.questionTitle}>{question.title}</h2>
-            <div className={styles.choiceGroup}>
-              {[
-                { id: "agree", label: "そう思う" },
-                { id: "disagree", label: "違う" },
-                { id: "neutral", label: "どちらとも言えない" }
-              ].map((choice) => {
-                const isSelected =
-                  (answers[question.id] ?? DEFAULT_CHOICE_ID) === choice.id;
-                return (
-                  <button
-                    key={choice.id}
-                    type="button"
-                    className={`${styles.choiceButton} ${isSelected ? styles.selected : ""}`}
-                    onClick={() => handleSelect(question.id, choice.id)}
-                  >
-                  {choice.label}
-                  </button>
-                );
-              })}
+          <div key={question.id} className={styles.questionItem}>
+            <p className={styles.questionText}>{question.question}</p>
+            <div className={styles.buttonGroup}>
+              <button
+                className={`${styles.button} ${
+                  answers[question.id] === 'そう思う' ? styles.selected : ''
+                }`}
+                onClick={() => handleAnswer(question.id, 'そう思う')}
+              >
+                そう思う
+              </button>
+              <button
+                className={`${styles.button} ${
+                  answers[question.id] === 'どちらでもない' ? styles.selected : ''
+                }`}
+                onClick={() => handleAnswer(question.id, 'どちらでもない')}
+              >
+                どちらでもない
+              </button>
+              <button
+                className={`${styles.button} ${
+                  answers[question.id] === 'そうは思わない' ? styles.selected : ''
+                }`}
+                onClick={() => handleAnswer(question.id, 'そうは思わない')}
+              >
+                そうは思わない
+              </button>
             </div>
-          </section>
+          </div>
         ))}
       </div>
+      <button className={styles.submitButton} onClick={handleSubmit}>
+        完了
+      </button>
     </div>
   );
 }
