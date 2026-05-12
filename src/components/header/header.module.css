@@ -25,7 +25,7 @@
     padding-right: 10px;
 }
 
-.backButton:hover,
+/* .backButton:hover,
 .chatButton:hover {
     background-color: rgba(45, 73, 81, 0.1);
 }
@@ -33,7 +33,7 @@
 .backButton:active,
 .chatButton:active {
     background-color: rgba(45, 73, 81, 0.2);
-}
+} */
 
 .icon {
     width: 24px;
