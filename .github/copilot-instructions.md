@@ -34,6 +34,7 @@
 ## このコードベース固有の主要ルール
 
 - ページ／コンポーネントのスタイルは CSS Modules（`*.module.css`）を使い、`styles` として import する。
+- インデントのタブは半角スペース4つ分として扱う。
 - 共通カラーは `src/index.css` の CSS 変数（`--main-color`, `--sub-color`, `--btn-color`, `--other-color`）を利用する。新規スタイルでも可能な限りこのトークンを再利用する。
 - `PasswordInput` の親子連携はコールバックのオブジェクト形を前提にしている。
   - `{ password, confirm, isValid }`
