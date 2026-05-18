@@ -9,6 +9,7 @@ import Itinerary from './pages/Itinerary/itinerary';
 import Tripmap from './pages/Tripmap/Tripmap';
 import Schedule  from './pages/Schedule/Schedule';
 import Chat from './pages/Chat/Chat';
+import Album from './pages/Album/album.jsx';
 
 function App() {
 
@@ -23,6 +24,7 @@ function App() {
                     <Route path="/Tripmap" element={<Tripmap />} />
                     <Route path="/schedule" element={<Schedule />} />
                     <Route path="/chat" element={<Chat />} />
+                    <Route path="/album" element={<Album />} />
                 </Routes>
             </BrowserRouter>
         </>
