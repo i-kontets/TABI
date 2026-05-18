@@ -1,0 +1,61 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--main-color);
+    border-bottom: 1px solid var(--sub-color);
+    height: 60px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.titleWrapper {
+    flex: 1;
+    text-align: center;
+}
+
+.backButton,
+.chatButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.chatButton{
+    padding-right: 10px;
+}
+
+/* .backButton:hover,
+.chatButton:hover {
+    background-color: rgba(45, 73, 81, 0.1);
+}
+
+.backButton:active,
+.chatButton:active {
+    background-color: rgba(45, 73, 81, 0.2);
+} */
+
+.icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--btn-color);
+    margin: 0;
+}
+
+.subtitle {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--btn-color);
+    opacity: 0.85;
+}

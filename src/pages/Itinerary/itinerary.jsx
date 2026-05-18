@@ -1,22 +1,21 @@
-import { useState, useEffect } from 'react'
+import BtmNav from '../../components/bottomNav/BottomNav';
+import Header from '../../components/header/Header';
 
 function itinerary() {
+    const tripSchedule = '2026/05/14 - 2026/05/16';
+
     return (
         <>
+            <Header subtitle={tripSchedule} />
             <div>
-                しおり
+                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', margin:'10px', borderRadius:'10px'}}>
+                    しおり内容
+                </div>
+                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', margin:'10px', borderRadius:'10px'}}>
+                    しおり内容
+                </div>
             </div>
-            <div style={{ display: "flex" }}>
-                <a href="#">しおり詳細</a>
-                <div>/</div>
-                <a href="#">割り勘</a>
-                <div>/</div>
-                <a href="#">計画立案</a>
-                <div>/</div>
-                <a href="#">アルバム</a>
-                <div>/</div>
-                <a href="#">移動関連</a>
-            </div>
+           <BtmNav /> 
         </>
     )
 }

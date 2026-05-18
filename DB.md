@@ -100,7 +100,7 @@ DBは最低でも次の領域に分けるべきです。
 ## A. ユーザー・認証まわり
 
 ```
-users (
+create table users (
   user_id BIGINT PRIMARY KEY COMMENT 'ユーザーを一意に識別するID',
 
   name VARCHAR(100) NOT NULL COMMENT 'ユーザーの表示名（アプリ内で表示される名前）',
@@ -124,7 +124,7 @@ users (
 ```
 
 ```
-user_profiles (
+create table user_profiles (
   user_id BIGINT PRIMARY KEY COMMENT 'usersテーブルとの1対1紐付け',
 
   nickname VARCHAR(100) COMMENT 'ニックネーム（表示用・任意）',
@@ -142,7 +142,7 @@ user_profiles (
 ```
 
 ```
-user_devices (
+create table user_devices (
   device_id BIGINT PRIMARY KEY COMMENT 'デバイス識別ID',
 
   user_id BIGINT NOT NULL COMMENT '所有ユーザーID',
@@ -156,7 +156,7 @@ user_devices (
 ```
 
 ```
-roles (
+create table roles (
   role_id BIGINT PRIMARY KEY COMMENT 'ロールID（権限の種類を識別）',
 
   role_name VARCHAR(50) NOT NULL COMMENT 'ロール名（例: admin / user / moderator）'
@@ -164,7 +164,7 @@ roles (
 ```
 
 ```
-user_roles (
+create table user_roles (
   user_id BIGINT NOT NULL COMMENT 'ユーザーID（rolesとの中間テーブル）',
 
   role_id BIGINT NOT NULL COMMENT '付与されるロールID',
@@ -179,7 +179,7 @@ user_roles (
 ## B. グループ機能
 
 ```
-groups (
+create table user_groups (
   group_id BIGINT PRIMARY KEY COMMENT 'グループID',
 
   group_name VARCHAR(100) NOT NULL COMMENT 'グループ名',
@@ -197,7 +197,7 @@ groups (
 ```
 
 ```
-group_members (
+create table group_members (
   group_member_id BIGINT PRIMARY KEY COMMENT 'グループ所属レコードID',
 
   group_id BIGINT NOT NULL COMMENT '所属グループID',
@@ -213,7 +213,7 @@ group_members (
 ```
 
 ```
-group_invitations (
+create table group_invitations (
   invitation_id BIGINT PRIMARY KEY COMMENT '招待ID',
 
   group_id BIGINT NOT NULL COMMENT '招待対象のグループID',
@@ -239,7 +239,7 @@ group_invitations (
 ## C. 旅行計画
 
 ```
-trips (
+create table trips (
   trip_id BIGINT PRIMARY KEY COMMENT '旅行ID',
 
   group_id BIGINT NOT NULL COMMENT '紐づくグループID',
@@ -265,7 +265,7 @@ trips (
 ```
 
 ```
-trip_members (
+create table trip_members (
   trip_member_id BIGINT PRIMARY KEY COMMENT '旅行参加レコードID',
 
   trip_id BIGINT NOT NULL COMMENT '旅行ID',
@@ -285,7 +285,7 @@ trip_members (
 ## D. 日程調整アンケート
 
 ```
-trip_date_candidates (
+create table trip_date_candidates (
   candidate_id BIGINT PRIMARY KEY COMMENT '候補日ID',
 
   trip_id BIGINT NOT NULL COMMENT '旅行ID',
@@ -301,7 +301,7 @@ trip_date_candidates (
 ```
 
 ```
-trip_date_votes (
+create table trip_date_votes (
   vote_id BIGINT PRIMARY KEY COMMENT '投票ID',
 
   candidate_id BIGINT NOT NULL COMMENT '対象候補日ID',
@@ -320,7 +320,7 @@ trip_date_votes (
 ## E. 目的地・スポット・旅程
 
 ```
-places (
+create table places (
   place_id BIGINT PRIMARY KEY COMMENT '観光地ID',
 
   place_name VARCHAR(200) COMMENT '名称',
@@ -338,7 +338,7 @@ places (
 ```
 
 ```
-trip_places (
+create table trip_places (
   trip_place_id BIGINT PRIMARY KEY COMMENT '旅行内訪問予定ID',
 
   trip_id BIGINT COMMENT '旅行ID',
@@ -358,7 +358,7 @@ trip_places (
 ```
 
 ```
-itineraries (
+create table itineraries (
   itinerary_id BIGINT PRIMARY KEY COMMENT '旅程ID（1日単位の行程）',
 
   trip_id BIGINT NOT NULL COMMENT '対象旅行ID',
@@ -372,7 +372,7 @@ itineraries (
 ```
 
 ```
-itinerary_items (
+create table itinerary_items (
   itinerary_item_id BIGINT PRIMARY KEY COMMENT '行程項目ID',
 
   itinerary_id BIGINT NOT NULL COMMENT '所属旅程ID',
@@ -397,7 +397,7 @@ itinerary_items (
 ## F. Map連携
 
 ```
-routes (
+create table routes (
   route_id BIGINT PRIMARY KEY COMMENT 'ルートID',
 
   trip_id BIGINT COMMENT '旅行ID',
@@ -415,7 +415,7 @@ routes (
 ```
 
 ```
-route_snapshots (
+create table route_snapshots (
   snapshot_id BIGINT PRIMARY KEY COMMENT 'スナップショットID',
 
   route_id BIGINT NOT NULL COMMENT '対象ルートID',
@@ -432,7 +432,7 @@ route_snapshots (
 ## G. 割り勘・精算
 
 ```
-expenses (
+create table expenses (
   expense_id BIGINT PRIMARY KEY COMMENT '支払いID',
 
   trip_id BIGINT COMMENT '旅行ID',
@@ -452,7 +452,7 @@ expenses (
 ```
 
 ```
-expense_participants (
+create table expense_participants (
   expense_participant_id BIGINT PRIMARY KEY COMMENT '負担者ID',
 
   expense_id BIGINT COMMENT '支払いID',
@@ -468,7 +468,7 @@ expense_participants (
 ```
 
 ```
-settlements (
+create table settlements (
   settlement_id BIGINT PRIMARY KEY COMMENT '精算ID',
 
   trip_id BIGINT NOT NULL COMMENT '対象旅行ID',
@@ -499,7 +499,7 @@ settlements (
 ## H. アルバム
 
 ```
-albums (
+create table albums (
   album_id BIGINT PRIMARY KEY COMMENT 'アルバムID',
 
   trip_id BIGINT COMMENT '旅行ID',
@@ -513,7 +513,7 @@ albums (
 ```
 
 ```
-photos (
+create table photos (
   photo_id BIGINT PRIMARY KEY COMMENT '写真ID',
 
   album_id BIGINT COMMENT '所属アルバム',
@@ -529,7 +529,7 @@ photos (
 ```
 
 ```
-photo_tags (
+create table photo_tags (
   photo_tag_id BIGINT PRIMARY KEY COMMENT 'タグID',
 
   photo_id BIGINT NOT NULL COMMENT '対象写真ID',
@@ -544,7 +544,7 @@ photo_tags (
 ## I. しおり・持ち物・買い物
 
 ```
-checklists (
+create table checklists (
   checklist_id BIGINT PRIMARY KEY COMMENT 'チェックリストID',
 
   trip_id BIGINT COMMENT '旅行ID',
@@ -558,7 +558,7 @@ checklists (
 ```
 
 ```
-checklist_items (
+create table checklist_items (
   checklist_item_id BIGINT PRIMARY KEY COMMENT '項目ID',
 
   checklist_id BIGINT COMMENT 'チェックリストID',
@@ -579,7 +579,7 @@ checklist_items (
 ## J. 観光地ランキング・お気に入り・レビュー
 
 ```
-favorites (
+create table favorites (
   favorite_id BIGINT PRIMARY KEY COMMENT 'お気に入りID',
 
   user_id BIGINT COMMENT 'ユーザーID',
@@ -591,7 +591,7 @@ favorites (
 ```
 
 ```
-reviews (
+create table reviews (
   review_id BIGINT PRIMARY KEY COMMENT 'レビューID',
 
   user_id BIGINT COMMENT '投稿者',
@@ -607,7 +607,7 @@ reviews (
 ```
 
 ```
-review_eligibilities (
+create table review_eligibilities (
   eligibility_id BIGINT PRIMARY KEY COMMENT 'レビュー権限ID',
 
   user_id BIGINT NOT NULL COMMENT 'ユーザーID',
@@ -630,7 +630,7 @@ review_eligibilities (
 必要ならキャッシュテーブルを追加します。
 
 ```
-place_ranking_daily (
+create table place_ranking_daily (
   ranking_date DATE NOT NULL COMMENT 'ランキング日付',
 
   place_id BIGINT NOT NULL COMMENT '観光地ID',
@@ -650,7 +650,7 @@ place_ranking_daily (
 ## K. 宿泊先chat
 
 ```
-chats (
+create table chats (
   chat_id BIGINT PRIMARY KEY COMMENT 'チャットID',
 
   trip_id BIGINT COMMENT '紐づく旅行ID',
@@ -666,7 +666,7 @@ chats (
 ```
 
 ```
-chat_members (
+create table chat_members (
   chat_member_id BIGINT PRIMARY KEY COMMENT 'チャット参加ID',
 
   chat_id BIGINT NOT NULL COMMENT 'チャットID',
@@ -678,7 +678,7 @@ chat_members (
 ```
 
 ```
-messages (
+create table messages (
   message_id BIGINT PRIMARY KEY COMMENT 'メッセージID',
 
   chat_id BIGINT COMMENT 'チャットID',
@@ -692,7 +692,7 @@ messages (
 ```
 
 ```
-message_reads (
+create table message_reads (
   message_read_id BIGINT PRIMARY KEY COMMENT '既読管理ID',
 
   message_id BIGINT NOT NULL COMMENT '対象メッセージID',
@@ -708,7 +708,7 @@ message_reads (
 ## L. 管理画面
 
 ```
-admin_users (
+create table admin_users (
   admin_user_id BIGINT PRIMARY KEY COMMENT '管理者ID',
 
   user_id BIGINT NOT NULL COMMENT 'ユーザーID（usersと紐付け）',
@@ -720,7 +720,7 @@ admin_users (
 ```
 
 ```
-audit_logs (
+create table audit_logs (
   audit_log_id BIGINT PRIMARY KEY COMMENT '監査ログID',
 
   actor_user_id BIGINT COMMENT '操作ユーザー',
@@ -736,7 +736,7 @@ audit_logs (
 ```
 
 ```
-system_settings (
+create table system_settings (
   setting_key VARCHAR(100) PRIMARY KEY COMMENT '設定キー（例: max_upload_size）',
 
   setting_value TEXT COMMENT '設定値（文字列で柔軟に管理）',
@@ -1178,15 +1178,15 @@ UUIDでもAUTO_INCREMENTでもいいですが、統一が大事です。
 
 画像の要件だけを見ると、初心者だと  
 「旅行テーブルに何でも入れてしまう」  
-方向に行きやすいです。  
+方向に行きやすいです。
 
 でも現場で評価されるのは逆で、「**分けるべきものをきちんと分ける**」ことです。
 
 特にこのアプリでは次の3つが品質の分かれ目です。
 
-* グループ と 旅行 を分ける
-* 支払い と 負担者 を分ける
-* 場所マスタ と 旅行中の訪問予定 を分ける
+- グループ と 旅行 を分ける
+- 支払い と 負担者 を分ける
+- 場所マスタ と 旅行中の訪問予定 を分ける
 
 この3つができると、かなり良いDBになります。
 

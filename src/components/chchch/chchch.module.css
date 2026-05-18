@@ -1,52 +1,60 @@
 .container {
   padding: 20px;
-  background: var(--sub-color);
+  background: var(--main-color);
   min-height: 100vh;
 }
 
 .pageTitle {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: bold;
-  color: #fff;
+  color: var(--sub-color);
   margin-bottom: 20px;
 }
 
 .content {
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
 
-/* セクションタイトル */
-.sectionTitle {
-  font-size: 18px;
-  font-weight: bold;
-  margin: 24px 0 12px;
-  color: var(--other-color);
-}
-
-/* カード */
 .card {
-  background: rgba(255, 255, 255, 0.1);
+  background: #fff;
   padding: 16px;
   border-radius: 12px;
-  margin-bottom: 12px;
-  backdrop-filter: blur(8px);
+  border: 1px solid rgba(27, 104, 92, 0.2);
+  box-shadow: 0 4px 12px rgba(27, 104, 92, 0.08);
 }
 
-.cardTitle {
+.questionTitle {
   font-size: 16px;
   font-weight: bold;
-  margin-bottom: 8px;
-  color: #fff;
+  margin: 0 0 12px;
+  color: var(--sub-color);
 }
 
-.reason {
+.choiceGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.choiceButton {
+  border: 1px solid var(--btn-color);
+  background: #fff;
+  color: var(--btn-color);
+  border-radius: 999px;
+  padding: 8px 14px;
   font-size: 14px;
-  color: #ddd;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.note {
-  font-size: 13px;
-  margin-top: 6px;
-  color: var(--other-color);
+.choiceButton:hover {
+  background: rgba(45, 73, 81, 0.08);
+}
+
+.selected {
+  background: var(--btn-color);
+  color: #fff;
 }
