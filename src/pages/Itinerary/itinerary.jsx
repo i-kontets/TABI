@@ -8,10 +8,10 @@ function itinerary() {
         <>
             <Header subtitle={tripSchedule} />
             <div>
-                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#827171', textAlign: 'center', margin:'10px', borderRadius:'10px'}}>
+                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', margin:'10px', borderRadius:'10px'}}>
                     しおり内容
                 </div>
-                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#827171', textAlign: 'center', margin:'10px', borderRadius:'10px'}}>
+                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', margin:'10px', borderRadius:'10px'}}>
                     しおり内容
                 </div>
             </div>
