@@ -11,7 +11,7 @@ function BottomNav() {
 
     const menuItems = [
         { id: 'bookmark', label: 'しおり', path: '#', icon: Tbook},
-        { id: 'time', label: 'スケジュール', path: '#', icon: timeIcon },
+        { id: 'schedule', label: 'スケジュール', path: '#', icon: timeIcon },
         { id: 'album', label: 'アルバム', path: '#', icon: photoIcon },
         // { id: 'planning', label: '計画立案', path: '#', icon: planIcon },
         { id: 'split', label: '割り勘', path: '#', icon: splitIcon },
