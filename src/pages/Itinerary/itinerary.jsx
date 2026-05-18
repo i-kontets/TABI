@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
 import BtmNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 
 function itinerary() {
+    const tripSchedule = '2026/05/14 - 2026/05/16';
+
     return (
         <>
-            <Header />
+            <Header subtitle={tripSchedule} />
             <div>
                 しおり
             </div>
