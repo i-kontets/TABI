@@ -3,7 +3,7 @@ import styles from './header.module.css';
 import arrowBack from '../../assets/icons/arrow_back.svg';
 import chatIcon from '../../assets/icons/chat.svg';
 
-function Header() {
+function Header({place}) {
     const navigate = useNavigate();
     const subtitle = '2026/05/14 - 2026/05/160';
 
@@ -22,7 +22,7 @@ function Header() {
             </button>
 
             <div className={styles.titleWrapper}>
-                <h1 className={styles.title}>旅行</h1>
+                <h1 className={styles.title}>{place}</h1>
                 <p className={styles.subtitle}>{subtitle}</p>
             </div>
 
