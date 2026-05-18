@@ -7,6 +7,7 @@ import Login from './pages/Login/Login';
 import Home from './pages/Home/Home';
 import Itinerary from './pages/Itinerary/itinerary';
 import Tripmap from './pages/Tripmap/Tripmap';
+import Schedule  from './pages/Schedule/Schedule';
 
 function App() {
 
@@ -19,6 +20,7 @@ function App() {
                     <Route path="/Home" element={<Home />} />
                     <Route path="/Itinerary" element={<Itinerary />} />
                     <Route path="/Tripmap" element={<Tripmap />} />
+                    <Route path="/schedule" element={<Schedule />} />
                 </Routes>
             </BrowserRouter>
         </>
