@@ -2,11 +2,9 @@ import BtmNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 
 function itinerary() {
-    const tripSchedule = '2026/05/14 - 2026/05/16';
-
     return (
         <>
-            <Header subtitle={tripSchedule} />
+            <Header />
             <div>
                 <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', margin:'10px', borderRadius:'10px'}}>
                     しおり内容
