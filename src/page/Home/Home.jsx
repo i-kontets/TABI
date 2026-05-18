@@ -8,7 +8,11 @@ function Home() {
         </div>
         <a href="Itinerary">旅のしおり</a>
     </>
-  )
+
+    )
 }
+
+
+
 
 export default Home
