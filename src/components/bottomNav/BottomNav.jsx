@@ -12,7 +12,7 @@ function BottomNav() {
     const menuItems = [
         { id: 'bookmark', label: 'しおり', path:'/Itinerary', icon: Tbook},
         { id: 'time', label: 'スケジュール', path: '/Schedule', icon: timeIcon },
-        { id: 'album', label: 'アルバム', path: '#', icon: photoIcon },
+        { id: 'album', label: 'アルバム', path: '/album', icon: photoIcon },
         // { id: 'planning', label: '計画立案', path: '#', icon: planIcon },
         { id: 'split', label: '割り勘', path: '#', icon: splitIcon },
     ];
