@@ -5,9 +5,21 @@ function Album() {
     return (
         <>
             <Header />
-            <div>
-                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', margin:'10px', borderRadius:'10px'}}>
-                    画像
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '10px', padding: '10px' }}>
+                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', borderRadius:'10px', height:'200px'}}>
+                    画像group
+                </div>
+                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', borderRadius:'10px', height:'200px'}}>
+                    画像group
+                </div>
+                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', borderRadius:'10px', height:'200px'}}>
+                    画像group
+                </div>
+                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', borderRadius:'10px', height:'200px'}}>
+                    画像group
+                </div>
+                <div style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', borderRadius:'10px', height:'200px'}}>
+                    画像group
                 </div>
             </div>
            <BtmNav /> 
