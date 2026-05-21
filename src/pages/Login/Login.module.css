@@ -77,7 +77,7 @@
 }
 
 .registerBtn {
-    background-color: var(--other-color);
+    background-color: var(--btn-color);
 }
 
 .btn:hover {

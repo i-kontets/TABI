@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import zxcvbn from "zxcvbn";
 import styles from "./PasswordInput.module.css";
 
 import eyeIcon from "../../assets/icons/eye.svg";
@@ -11,10 +10,16 @@ export default function PasswordInput({ onChange }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    const result = zxcvbn(password);
-    const score = result.score;
+    const validatePassword = (pwd) => {
+        const hasUpperCase = /[A-Z]/.test(pwd);
+        const hasLowerCase = /[a-z]/.test(pwd);
+        const hasNumber = /[0-9]/.test(pwd);
+        const isLongEnough = pwd.length >= 6;
+        
+        return hasUpperCase && hasLowerCase && hasNumber && isLongEnough;
+    };
 
-    const isStrongEnough = score >= 2;
+    const isStrongEnough = validatePassword(password);
 
     useEffect(() => {
         onChange?.({
@@ -26,7 +31,7 @@ export default function PasswordInput({ onChange }) {
                 password === confirm &&
                 isStrongEnough
         });
-    }, [password, confirm, score]);
+    }, [password, confirm, isStrongEnough]);
 
     return (
         <>
@@ -46,14 +51,6 @@ export default function PasswordInput({ onChange }) {
                     onClick={() => setShowPassword(!showPassword)}
                 />
             </div>
-
-            {password && (
-                <div className={styles.strengthBar}>
-                    <div
-                        className={`${styles.strengthFill} ${styles["level" + score]}`}
-                    />
-                </div>
-            )}
 
       <div className={styles.passwordWrapper}>
         <input
