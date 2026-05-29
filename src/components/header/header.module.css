@@ -49,13 +49,13 @@
 .title {
     font-size: 18px;
     font-weight: 600;
-    color: var(--btn-color);
+    color: var(--sub-color);
     margin: 0;
 }
 
 .subtitle {
     margin: 4px 0 0;
     font-size: 12px;
-    color: var(--btn-color);
+    color: var(--sub-color);
     opacity: 0.85;
 }
