@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import styles from './header.module.css';
-import arrowBack from '../../assets/icons/arrow_back.svg';
+import { ReactComponent as ArrowBack } from '../../assets/icons/arrow_back.svg';
 import chatIcon from '../../assets/icons/chat.svg';
 
 function Header({place}) {
@@ -18,7 +18,7 @@ function Header({place}) {
                 onClick={handleBackClick}
                 aria-label="戻る"
             >
-                <img src={arrowBack} alt="戻る" className={styles.icon} />
+                <ArrowBack className={styles.icon} aria-hidden="true" focusable="false" />
             </button>
 
             <div className={styles.titleWrapper}>

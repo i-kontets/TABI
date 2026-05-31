@@ -44,6 +44,7 @@
     width: 24px;
     height: 24px;
     object-fit: contain;
+    fill: #fff;
 }
 
 .title {
