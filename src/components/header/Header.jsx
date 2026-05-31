@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import styles from './header.module.css';
-import { ReactComponent as ArrowBack } from '../../assets/icons/arrow_back.svg';
+import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import chatIcon from '../../assets/icons/chat.svg';
 
 function Header({place}) {
@@ -18,7 +18,8 @@ function Header({place}) {
                 onClick={handleBackClick}
                 aria-label="戻る"
             >
-                <ArrowBack className={styles.icon} aria-hidden="true" focusable="false" />
+                {/* aria-hidden="true"は画面上で読み上げ機能を使用した際にsvgを範囲に含めないための命令です。 */}
+                <ArrowBack className={styles.icon} aria-hidden="true"/>
             </button>
 
             <div className={styles.titleWrapper}>
