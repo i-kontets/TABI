@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import styles from './header.module.css';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
-import chatIcon from '../../assets/icons/chat.svg';
+import ChatIcon from '../../assets/icons/chat.svg?react';
 
 function Header({place}) {
     const navigate = useNavigate();
@@ -28,7 +28,7 @@ function Header({place}) {
             </div>
 
             <button className={styles.chatButton} aria-label="チャット">
-                <img src={chatIcon} alt="チャット" className={styles.icon} />
+                <ChatIcon className={styles.icon}  aria-hidden="true" />
             </button>
         </header>
     );
