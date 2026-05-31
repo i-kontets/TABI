@@ -5,7 +5,7 @@ import chatIcon from '../../assets/icons/chat.svg';
 
 function Header({place}) {
     const navigate = useNavigate();
-    const subtitle = '2026/05/14 - 2026/05/160';
+    const subtitle = '2026年05月14日 - 2026年05月160日';
 
     const handleBackClick = () => {
         navigate('/Home');
