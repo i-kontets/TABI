@@ -1,0 +1,109 @@
+.page {
+    max-width: 430px;
+    min-height: calc(100vh - 120px);
+    margin: 0 auto;
+    padding: 18px 24px 96px;
+    box-sizing: border-box;
+}
+
+.titleArea {
+    height: 42px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    background-color: var(--main-color);
+}
+
+.titleArea h2 {
+    flex: 1;
+    margin: 0;
+    text-align: center;
+    font-size: 20px;
+}
+
+.menuButton {
+    width: 28px;
+    height: 26px;
+    border: none;
+    background-color: #111;
+}
+
+.tabs {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.tabs button {
+    height: 34px;
+    border: none;
+    border-radius: 18px;
+    background-color: #dddddd;
+    color: #333;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.tabs .activeTab {
+    background-color: var(--sub-color);
+    color: #fff;
+    font-weight: bold;
+}
+
+.list {
+    margin-top: 12px;
+}
+
+.listItem {
+    min-height: 62px;
+    margin-bottom: 10px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #d9d9d9;
+    box-sizing: border-box;
+}
+
+.name {
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.status {
+    margin: 4px 0 0;
+    color: #555;
+    font-size: 13px;
+}
+
+.rightArea {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.amount {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.check {
+    font-size: 20px;
+}
+
+.addButton {
+    position: fixed;
+    right: 24px;
+    bottom: 86px;
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--sub-color);
+    color: #fff;
+    font-size: 32px;
+    line-height: 1;
+    cursor: pointer;
+}
