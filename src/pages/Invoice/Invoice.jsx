@@ -223,6 +223,13 @@ export default function Invoice() {
     // 入力フォームの値が変わったときに呼ぶ関数。どの入力が変わったかでフォーム状態を更新します。
 
     const handleMemberSelect = (memberId) => {
+        // 参加メンバーのチェックボックスを切り替える処理
+        // 目的: チェックが入っているメンバーIDを `form.selectedMemberIds` に保持する
+        // 手順:
+        // 1) 現在のフォーム状態を取り出す（関数形式で取得して競合を防ぐ）
+        // 2) そのメンバーが既に選ばれているかを調べる（includes）
+        // 3) 選ばれていれば配列から外す（filter）、選ばれていなければ配列に追加する
+        // 4) 元のフォームオブジェクトを壊さずに、selectedMemberIds だけ置き換えて返す
         setForm((currentForm) => {
             const isSelected = currentForm.selectedMemberIds.includes(memberId);
 
@@ -239,11 +246,17 @@ export default function Invoice() {
     // 選択されていれば外し、されていなければ追加します。
 
     const handleOpenForm = () => {
+        // フォームを開く処理
+        // - 新しい請求を追加するために、入力欄を初期状態に戻す
+        // - モーダル（フォーム）を表示するフラグを true にする
         setForm(emptyForm);
         setIsFormOpen(true);
     };
 
     const handleCloseForm = () => {
+        // フォームを閉じる処理
+        // - モーダルを閉じる（フラグを false にする）
+        // - 入力内容は破棄して初期状態に戻す（キャンセル時の動作）
         setIsFormOpen(false);
         setForm(emptyForm);
     };
@@ -251,33 +264,51 @@ export default function Invoice() {
     // フォームを開く / 閉じる ときの処理
 
     const handleSubmit = async (event) => {
+        // フォームの送信処理（新しい請求を追加する）
+        // やっていることを簡単にまとめると:
+        // 1) ページの再読み込み（デフォルトの submit 動作）を止める
+        // 2) 参加メンバーが1人以上いるかチェックする（いなければ警告して中止）
+        // 3) 入力された総額を数値に直し、参加人数で割って1人あたりの金額を計算する
+        //    （端数は切り上げるために Math.ceil を使う）
+        // 4) 新しい請求オブジェクトを作って、既存の請求一覧に追加する形の nextData を作る
+        // 5) saveInvoiceData を呼んでサーバーに保存（画面は即時に更新される）
+        // 6) 保存が成功したらフォームを閉じ、失敗したらユーザーに知らせる
         event.preventDefault();
 
+        // 参加メンバーが選ばれているか確認する（最低1人必要）
         if (form.selectedMemberIds.length === 0) {
             alert("参加メンバーを1人以上選択してください。");
             return;
         }
 
+        // 入力値を取り出して数値に変換する
         const totalAmount = Number(form.totalAmount);
         const participantCount = form.selectedMemberIds.length;
+
+        // 新しい請求データを作る
         const newInvoice = {
-            id: Date.now(),
+            id: Date.now(), // 一意のID（簡易的に現在時刻を使用）
             storeName: form.storeName,
             totalAmount,
             participantIds: form.selectedMemberIds,
             participantCount,
+            // 1人あたりの金額は端数切り上げ
             perPersonAmount: Math.ceil(totalAmount / participantCount),
         };
 
+        // 既存の invoiceData に新しい請求を追加した次の状態を作る
         const nextData = {
             ...invoiceData,
             pay: [...invoiceData.pay, newInvoice],
         };
 
         try {
+            // 保存処理（画面は先に更新される設計になっている）
             await saveInvoiceData(nextData);
+            // 保存成功 → フォームを閉じる
             handleCloseForm();
         } catch {
+            // 保存失敗 → ユーザーに知らせる（画面には追加済みのまま）
             alert("画面には追加しましたが、Invoice.jsonへの保存に失敗しました。");
         }
     };
@@ -288,19 +319,29 @@ export default function Invoice() {
     // - 保存に失敗したらユーザーに伝える
 
     const handleCompletePayment = async (memberId, payId) => {
+        // 支払いを「完了」にする処理
+        // 1) ユーザーに確認ダイアログを出す（取り消し可能）
+        // 2) 確認されたら、該当メンバーの paidPayIds に該当支払いID を追加する
+        //    - すでにその支払いID が入っている場合は何もしない
+        // 3) 変更したデータを saveInvoiceData で保存する（画面は即時更新）
+        // 4) 保存に失敗したらユーザーに知らせる
         const isConfirmed = confirm("支払い完了にしますか？\n完了後は編集できません。");
 
+        // キャンセルされたら何もしない
         if (!isConfirmed) {
             return;
         }
 
+        // members 配列を更新して、該当メンバーの paidPayIds に payId を追加する
         const nextData = {
             ...invoiceData,
             members: invoiceData.members.map((member) => {
+                // 対象メンバーでない、または既に支払済みならそのまま返す
                 if (member.id !== memberId || member.paidPayIds.includes(payId)) {
                     return member;
                 }
 
+                // まだ支払っていなければ、その支払いID を追加した新しいオブジェクトを返す
                 return {
                     ...member,
                     paidPayIds: [...member.paidPayIds, payId],
@@ -309,8 +350,10 @@ export default function Invoice() {
         };
 
         try {
+            // 保存処理（画面は先に更新される設計）
             await saveInvoiceData(nextData);
         } catch {
+            // 保存失敗 → ユーザーに通知
             alert("支払い完了の保存に失敗しました。");
         }
     };
@@ -319,16 +362,22 @@ export default function Invoice() {
     // 確認ダイアログでユーザーに二重確認を行い、保存を行います。
 
     const { tripName } = useContext(TripContext);
+    // JSX: 画面の見た目（レンダリング部分）
+    // 以下は UI の各ブロックについて、初心者向けにやさしく説明しています。
     return (
         <>
+            {/* ヘッダー: 旅行名を表示する部分 */}
             <Header tripName={tripName} />
 
+            {/* メイン領域: ページ全体のレイアウト */}
             <main className={styles.page}>
+                {/* タイトルエリア: 画面の見出しとメニューボタン */}
                 <section className={styles.titleArea}>
                     <h2>{title}</h2>
                     <button className={styles.menuButton} aria-label="メニュー"></button>
                 </section>
 
+                {/* タブ: 「支払い」か「徴収分」かを切り替える */}
                 <div className={styles.tabs}>
                     <button
                         type="button"
@@ -346,8 +395,14 @@ export default function Invoice() {
                     </button>
                 </div>
 
+                {/*
+                    リスト表示部分:
+                    - activeTab が "pay" のときは invoiceData.pay を表示（支払い一覧）
+                    - それ以外（"collect"）のときは collectMembers を表示（各メンバーの徴収情報）
+                */}
                 <div className={styles.list}>
                     {activeTab === "pay" ? (
+                        // 支払いタブ: 支払いが無ければメッセージ、あれば1件ずつ表示
                         invoiceData.pay.length === 0 ? (
                             <p className={styles.emptyText}>まだ支払いがありません</p>
                         ) : (
@@ -367,8 +422,10 @@ export default function Invoice() {
                             ))
                         )
                     ) : collectMembers.length === 0 ? (
+                        // 徴収タブ: 表示するメンバーがいなければメッセージ
                         <p className={styles.emptyText}>表示するメンバーがいません</p>
                     ) : (
+                        // 徴収タブ: 各メンバーごとに詳細を折りたたみで表示
                         collectMembers.map((member) => (
                             <details className={styles.collectItem} key={member.id}>
                                 <summary className={styles.collectSummary}>
@@ -382,15 +439,17 @@ export default function Invoice() {
                                     {member.details.length === 0 ? (
                                         <p className={styles.emptyDetail}>支払い詳細がありません</p>
                                     ) : (
+                                        // 明細ごとに、店名・金額・チェック（支払済みのフラグ）を表示
+                                        // チェックを入れると handleCompletePayment が呼ばれて「支払済み」にする
                                         member.details.map((detail) => (
                                             <label
-                                                className={`${styles.detailRow} ${detail.isPaid ? styles.paidDetail : ""
-                                                    }`}
+                                                className={`${styles.detailRow} ${detail.isPaid ? styles.paidDetail : ""}`}
                                                 key={detail.id}
                                             >
                                                 <input
                                                     type="checkbox"
                                                     checked={detail.isPaid}
+                                                    // 支払済みは編集不可にする
                                                     disabled={detail.isPaid}
                                                     onChange={() =>
                                                         handleCompletePayment(member.id, detail.id)
@@ -411,6 +470,7 @@ export default function Invoice() {
                     )}
                 </div>
 
+                {/* 支払いタブのときだけ表示する「+」ボタン：新しい請求フォームを開く */}
                 {activeTab === "pay" ? (
                     <button
                         className={styles.addButton}
@@ -422,6 +482,11 @@ export default function Invoice() {
                     </button>
                 ) : null}
 
+                {/*
+                    モーダルフォーム（isFormOpen が true のとき表示）
+                    - 店名、総支払金額、参加メンバーの選択を行う
+                    - 追加ボタンで handleSubmit が呼ばれ、新しい請求が作られる
+                */}
                 {isFormOpen ? (
                     <div className={styles.modalBack}>
                         <form className={styles.form} onSubmit={handleSubmit}>
@@ -476,6 +541,7 @@ export default function Invoice() {
                 ) : null}
             </main>
 
+            {/* 下部ナビゲーション */}
             <BtmNav />
         </>
     );
