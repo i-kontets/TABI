@@ -3,7 +3,7 @@
     justify-content: space-between;
     align-items: center;
     background-color: var(--sub-color);
-    border-bottom: 10px solid var(--other-color);
+    border-bottom: 1px solid var(--other-color);
 
     /* background-color: var(--sub-color);
     border-bottom: 1px solid var(--sub-color); */
