@@ -2,7 +2,7 @@
 .loginPage {
     min-height: 100vh;
 
-    background-image: url("/public/assets/login_back.jpg");
+    background-image: url("/public/assets/login_umi.jpg");
     background-size: cover;
     background-position: center;
 }
@@ -78,11 +78,11 @@
     cursor: pointer;
     margin-top: 8px;
     color: rgb(255, 255, 255);
-    background-color: var(--btn-color);
+    background-color: var(--sub-color);
 }
 
 .loginBtn {
-    background-color: var(--btn-color);
+    background-color: var(--sub-color);
 }
 
 .registerBtn {

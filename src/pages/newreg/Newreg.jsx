@@ -51,6 +51,7 @@ export default function Newreg() {
 
                         <p className={styles.passwordNotice}>
                             パスワードには大文字・小文字・数字を含めてください
+                            <br />パスワードは6文字以上にしてください。
                         </p>
 
                         <PasswordInput onChange={setPasswordData} />
