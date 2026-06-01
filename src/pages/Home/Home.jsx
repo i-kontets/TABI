@@ -1,18 +1,19 @@
 import { useState, useEffect } from 'react'
+import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { TripContext } from "../../App";
 import styles from './Home.module.css';
 
 
 
 function Home() {
     const navigate = useNavigate();
+    const { setTripName } = useContext(TripContext);
 
     const handleClick = (place) => {
-        navigate("/Itinerary", {
-            state: {
-                place: place
-            }
-        });
+        setTripName(place);
+        console.log("保存する値:", place);
+        navigate("/Itinerary");
     };
 
     const handleBackClick = () => {
@@ -53,7 +54,7 @@ function Home() {
         </div>
 
     </>
-  )
+  );
 }
 
 export default Home

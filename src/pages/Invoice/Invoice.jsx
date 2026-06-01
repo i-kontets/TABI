@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useContext } from 'react';
+import { TripContext } from '../../App';
 import styles from "./Invoice.module.css";
 import Header from "../../components/header/Header";
 import BtmNav from "../../components/bottomNav/BottomNav";
@@ -316,9 +318,10 @@ export default function Invoice() {
     // 各メンバーの支払いを「完了」にする処理
     // 確認ダイアログでユーザーに二重確認を行い、保存を行います。
 
+    const { tripName } = useContext(TripContext);
     return (
         <>
-            <Header subtitle="割り勘" />
+            <Header tripName={tripName} />
 
             <main className={styles.page}>
                 <section className={styles.titleArea}>

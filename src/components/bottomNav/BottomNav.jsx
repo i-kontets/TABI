@@ -8,10 +8,10 @@ import Tbook from '../../assets/icons/Tbook.svg';
 
 function BottomNav() {
     const navigate = useNavigate();
-
+    
     const menuItems = [
         { id: 'bookmark', label: 'しおり', path:'/Itinerary', icon: Tbook},
-        { id: 'time', label: 'スケジュール', path: '/Schedule', icon: timeIcon },
+        { id: 'time', label: 'スケジュール', path: '/schedule', icon: timeIcon },
         { id: 'album', label: 'アルバム', path: '/album', icon: photoIcon },
         // { id: 'planning', label: '計画立案', path: '#', icon: planIcon },
         { id: 'split', label: '割り勘', path: '/Invoice', icon: splitIcon },

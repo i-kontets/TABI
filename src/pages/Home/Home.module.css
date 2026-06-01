@@ -2,8 +2,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: var(--main-color);
-    border-bottom: 1px solid var(--main-color);
+    background-color: var(--sub-color);
+    border-bottom: 1px solid var(--other-color);
     height: 60px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     position: relative;
@@ -21,6 +21,6 @@
 .title {
     font-size: 18px;
     font-weight: 600;
-    color: var(--sub-color);
+    color: var(--main-color);
     margin: 4px 0 0;
 }
