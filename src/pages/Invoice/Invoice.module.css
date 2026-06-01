@@ -55,6 +55,13 @@
     margin-top: 12px;
 }
 
+.emptyText {
+    margin: 28px 0;
+    color: #777;
+    text-align: center;
+    font-size: 14px;
+}
+
 .listItem {
     min-height: 62px;
     margin-bottom: 10px;
@@ -64,6 +71,151 @@
     justify-content: space-between;
     background-color: #d9d9d9;
     box-sizing: border-box;
+}
+
+.payItem {
+    min-height: 94px;
+    margin-bottom: 10px;
+    padding: 22px 22px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 16px;
+    border: 1px solid #e1e1e1;
+    border-radius: 8px;
+    background-color: #fff;
+    box-sizing: border-box;
+}
+
+.storeName,
+.perPersonAmount,
+.participantCount,
+.totalAmount {
+    margin: 0;
+    color: #222;
+}
+
+.storeName {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.perPersonAmount {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.participantCount {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: end;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.totalAmount {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.collectItem {
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background-color: #d9d9d9;
+    overflow: hidden;
+}
+
+.collectSummary {
+    min-height: 58px;
+    padding: 0 16px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    list-style: none;
+    box-sizing: border-box;
+}
+
+.collectSummary::-webkit-details-marker {
+    display: none;
+}
+
+.collectSummary::after {
+    content: "▼";
+    margin-left: 6px;
+    color: #555;
+    font-size: 12px;
+}
+
+.collectItem[open] .collectSummary::after {
+    content: "▲";
+}
+
+.memberName {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.memberTotal {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.detailList {
+    padding: 0 14px 12px;
+    display: grid;
+    gap: 8px;
+}
+
+.emptyDetail {
+    margin: 0;
+    padding: 10px;
+    color: #666;
+    background-color: #f7f7f7;
+    font-size: 14px;
+}
+
+.detailRow {
+    min-height: 42px;
+    padding: 8px 10px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 10px;
+    background-color: #fff;
+    box-sizing: border-box;
+    font-size: 15px;
+}
+
+.detailRow input {
+    width: 18px;
+    height: 18px;
+}
+
+.detailStore,
+.detailAmount {
+    font-weight: bold;
+}
+
+.paidDetail .detailStore,
+.paidDetail .detailAmount {
+    color: #777;
+    text-decoration-line: line-through;
+    text-decoration-color: #d50000;
+    text-decoration-thickness: 2px;
+}
+
+.paidDetail input {
+    cursor: not-allowed;
 }
 
 .name {
@@ -106,4 +258,107 @@
     font-size: 32px;
     line-height: 1;
     cursor: pointer;
+}
+
+.modalBack {
+    position: fixed;
+    inset: 0;
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(0 0 0 / 35%);
+    box-sizing: border-box;
+    z-index: 10;
+}
+
+.form {
+    width: 100%;
+    max-width: 360px;
+    padding: 20px;
+    display: grid;
+    gap: 14px;
+    border-radius: 8px;
+    background-color: #fff;
+    box-sizing: border-box;
+}
+
+.form h3 {
+    margin: 0;
+    text-align: center;
+    font-size: 18px;
+}
+
+.form_label {
+    display: grid;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.form input,
+.form select {
+    height: 40px;
+    padding: 0 10px;
+    border: 1px solid #cfcfcf;
+    border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.memberSelect {
+    margin: 0;
+    padding: 12px;
+    display: grid;
+    gap: 8px;
+    border: 1px solid #cfcfcf;
+    border-radius: 6px;
+}
+
+.memberSelect legend {
+    padding: 0 4px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.memberOption {
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: normal;
+}
+
+.memberOption input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    flex: 0 0 18px;
+}
+
+.formButtons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.formButtons button {
+    height: 40px;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.formButtons button:first-child {
+    background-color: #e8e8e8;
+    color: #333;
+}
+
+.formButtons button:last-child {
+    background-color: var(--sub-color);
+    color: #fff;
 }
