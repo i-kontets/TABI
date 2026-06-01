@@ -14,7 +14,7 @@ function BottomNav() {
         { id: 'time', label: 'スケジュール', path: '/Schedule', icon: timeIcon },
         { id: 'album', label: 'アルバム', path: '/album', icon: photoIcon },
         // { id: 'planning', label: '計画立案', path: '#', icon: planIcon },
-        { id: 'split', label: '割り勘', path: '#', icon: splitIcon },
+        { id: 'split', label: '割り勘', path: '/Invoice', icon: splitIcon },
     ];
 
     const handleNavigation = (path) => {
