@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
 import styles from './header.module.css';
-import arrowBack from '../../assets/icons/arrow_back.svg';
-import chatIcon from '../../assets/icons/chat.svg';
+import ArrowBack from '../../assets/icons/arrow_back.svg?react';
+import ChatIcon from '../../assets/icons/chat.svg?react';
 
 function Header({place}) {
     const navigate = useNavigate();
-    const subtitle = '2026/05/14 - 2026/05/160';
+    const subtitle = '2026年05月14日 - 2026年05月160日';
 
     const handleBackClick = () => {
         navigate('/Home');
@@ -18,7 +18,8 @@ function Header({place}) {
                 onClick={handleBackClick}
                 aria-label="戻る"
             >
-                <img src={arrowBack} alt="戻る" className={styles.icon} />
+                {/* aria-hidden="true"は画面上で読み上げ機能を使用した際にsvgを範囲に含めないための命令です。 */}
+                <ArrowBack className={styles.icon} aria-hidden="true"/>
             </button>
 
             <div className={styles.titleWrapper}>
@@ -27,7 +28,7 @@ function Header({place}) {
             </div>
 
             <button className={styles.chatButton} aria-label="チャット">
-                <img src={chatIcon} alt="チャット" className={styles.icon} />
+                <ChatIcon className={styles.icon}  aria-hidden="true" />
             </button>
         </header>
     );
