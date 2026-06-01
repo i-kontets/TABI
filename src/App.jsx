@@ -9,6 +9,7 @@ import Itinerary from './pages/Itinerary/itinerary';
 import Tripmap from './pages/Tripmap/Tripmap';
 import Schedule  from './pages/Schedule/Schedule';
 import Album from './pages/Album/album.jsx';
+import Invoice from './pages/Invoice/Invoice';
 
 function App() {
 
@@ -23,6 +24,7 @@ function App() {
                     <Route path="/Tripmap" element={<Tripmap />} />
                     <Route path="/schedule" element={<Schedule />} />
                     <Route path="/album" element={<Album />} />
+                    <Route path="/Invoice" element={<Invoice />} />
                 </Routes>
             </BrowserRouter>
         </>
