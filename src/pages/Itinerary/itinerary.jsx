@@ -1,7 +1,10 @@
 import { useLocation } from "react-router-dom";
+import { useContext } from "react";
+import { TripContext } from "../../App";
 import BtmNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 import styles from './itinerary.module.css';
+
 
 function itinerary() {
     const location = useLocation();
@@ -12,10 +15,12 @@ function itinerary() {
         { title: '旅行期間', content: '2026年4月15日(水) - 2026年4月23日(木)' },
         { title: 'メンバー', content: 'n人' },
     ];
+    const { tripName } = useContext(TripContext);
+    console.log("Itinerary:", tripName);
 
     return (
         <>
-            <Header place = {place} />
+            <Header tripName={tripName} />
             <div className={styles.container}>
                 {boxes.map((box, index) => (
                     <div key={index} className={styles.box}>
@@ -23,7 +28,7 @@ function itinerary() {
                         <p className={styles.content}>{box.content}</p>
                     </div>
                 ))}
-            </div>
+                </div>
            <BtmNav /> 
         </>
     )

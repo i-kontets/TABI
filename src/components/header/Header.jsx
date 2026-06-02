@@ -3,7 +3,7 @@ import styles from './header.module.css';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import ChatIcon from '../../assets/icons/chat.svg?react';
 
-function Header({place}) {
+function Header({tripName}) {
     const navigate = useNavigate();
     const subtitle = '2026年05月14日 - 2026年05月160日';
 
@@ -23,7 +23,7 @@ function Header({place}) {
             </button>
 
             <div className={styles.titleWrapper}>
-                <h1 className={styles.title}>{place}</h1>
+                <h1 className={styles.title}>{tripName}</h1>
                 <p className={styles.subtitle}>{subtitle}</p>
             </div>
 
