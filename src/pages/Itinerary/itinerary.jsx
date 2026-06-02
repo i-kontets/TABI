@@ -4,6 +4,10 @@ import { TripContext } from "../../App";
 import BtmNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 import styles from './itinerary.module.css';
+import Edit from '../../assets/icons/edit.svg?react';
+import Group from '../../assets/icons/group.svg?react';
+
+
 
 
 function itinerary() {
@@ -28,7 +32,50 @@ function itinerary() {
                         <p className={styles.content}>{box.content}</p>
                     </div>
                 ))}
-                </div>
+            </div>
+            <div style={{
+                position: 'fixed',
+                bottom: '80px',
+                right: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                zIndex: '100',
+                backgroundColor:'var(--main-color)'
+            }}>
+                <button style={{
+                    padding: '12px 16px',
+                    border: '2px solid #44558D',
+                    backgroundColor: 'var(--sub-color)',
+                    color: 'var(--main-color)',
+                    borderRadius: '15px',
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease'
+                }}>
+                    <Edit  style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
+                    編集
+                </button>
+                <button style={{
+                    padding: '12px 16px',
+                    border: '2px solid #44558D',
+                    backgroundColor: 'var(--sub-color)',
+                    color: 'var(--main-color)',
+                    borderRadius: '15px',
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s ease'
+                }}>
+                    <Group style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
+                    招待
+                </button>
+            </div>
            <BtmNav /> 
         </>
     )
