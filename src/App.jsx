@@ -7,7 +7,7 @@ import Login from './pages/Login/Login';
 import Home from './pages/Home/Home';
 import Itinerary from './pages/Itinerary/itinerary';
 import Tripmap from './pages/Tripmap/Tripmap';
-import Schedule  from './pages/Schedule/Schedule';
+import Schedule  from './pages/Schedule/schedule';
 import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
 
