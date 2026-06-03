@@ -7,7 +7,7 @@
 .pageTitle {
   font-size: 24px;
   font-weight: bold;
-  color: var(--sub-color);
+  color: var(--main-color);
   margin-bottom: 20px;
 }
 
@@ -29,7 +29,7 @@
   font-size: 16px;
   font-weight: bold;
   margin: 0 0 12px;
-  color: var(--sub-color);
+  color: var(--main-color);
 }
 
 .choiceGroup {
@@ -39,9 +39,9 @@
 }
 
 .choiceButton {
-  border: 1px solid var(--btn-color);
+  border: 1px solid var(--sub-color);
   background: #fff;
-  color: var(--btn-color);
+  color: var(--sub-color);
   border-radius: 999px;
   padding: 8px 14px;
   font-size: 14px;
@@ -55,6 +55,6 @@
 }
 
 .selected {
-  background: var(--btn-color);
+  background: var(--sub-color);
   color: #fff;
 }

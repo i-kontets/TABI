@@ -1,11 +1,16 @@
+/* :root {
+  --main-color: #F0F7FF;
+  --sub-color: #0066CC;
+  --other-color: #87D4FF;
+} */
+
 :root {
-    --main-color: #C9D0C7;
-    --sub-color: #1B685C;
-    --btn-color: #2D4951;
-    --other-color: #7BAD26;
+  --main-color: #F8F8FB;
+  --sub-color: #44558D;
+  --other-color: #CDD4E3;
 }
 
 body {
     margin: 0px;
-    background-color: #f6f6f6;
+    background-color: var(--main-color);
 }

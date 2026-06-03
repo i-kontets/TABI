@@ -1,39 +1,38 @@
 import { useLocation,useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { TripContext } from "../../App";
-import BtmNav from '../../components/bottomNav/BottomNav';
-import Header from '../../components/header/Header';
-import styles from './itinerary.module.css';
-import Edit from '../../assets/icons/edit.svg?react';
-import Group from '../../assets/icons/group.svg?react';
+import styles from './itineraryEdit.module.css';
+import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 
 
-
-
-
-function Itinerary() {
+function itinerary_edit() {
     const navigate = useNavigate();
     const location = useLocation();
+    const place = location.state?.place;
     const { tripName } = useContext(TripContext);
-    // URL の groupId と、画面遷移時に渡された state から現在の旅行情報を決める
-    const params = new URLSearchParams(location.search);
-    const groupId = params.get("groupId") || location.state?.groupId;
-    const currentTripName = location.state?.tripName || tripName;
 
-    // 画面に表示する項目を、カードとして並べやすい形にまとめる
     const boxes = [
-        { title: 'しおりタイトル', content: currentTripName || '未選択' },
-        { title: '旅行期間', content: '2026年05月14日 - 2026年05月16日' },
+        { title: 'しおりタイトル', content: '三重' },
+        { title: '旅行期間', content: '2026年4月15日(水) - 2026年4月23日(木)' },
         { title: 'メンバー', content: 'n人' },
     ];
 
-    const editClick = () => {
-        navigate('/ItineraryEdit');
+    const BackClick = () => {
+        navigate('/Itinerary');
     };
 
     return (
         <>
-            <Header tripName={currentTripName} />
+            <header className={styles.header}>
+                <button
+                    className={styles.backButton}
+                    onClick={BackClick}
+                    aria-label="戻る"
+                >
+                    <ArrowBack className={styles.icon} aria-hidden="true"/>
+                </button>
+                <div className={styles.Htitle} style={{margin:'auto'}}>編集画面</div>
+            </header>
             <div className={styles.container}>
                 {boxes.map((box, index) => (
                     <div key={index} className={styles.box}>
@@ -42,7 +41,7 @@ function Itinerary() {
                     </div>
                 ))}
             </div>
-            <div style={{
+            {/* <div style={{
                 position: 'fixed',
                 bottom: '80px',
                 right: '20px',
@@ -64,9 +63,7 @@ function Itinerary() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.3s ease'
-                }}
-                onClick={editClick}
-                >
+                }}>
                     <Edit  style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
                     編集
                 </button>
@@ -86,11 +83,9 @@ function Itinerary() {
                     <Group style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
                     招待
                 </button>
-            </div>
-           <BtmNav /> 
-            <BtmNav />
+            </div> */}
         </>
     )
 }
 
-export default Itinerary
+export default itinerary_edit

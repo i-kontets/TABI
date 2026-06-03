@@ -1,3 +1,27 @@
+.container {
+    padding: 20px 10px;
+}
+
+.box {
+    padding: 10px;
+    border: 1px solid #eee;
+    background-color: #fff;
+    margin: 10px 0px;
+    border-radius: 10px;
+}
+
+.title {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #999;
+}
+
+.content {
+    margin: 0;
+    text-align: left;
+}
+
 .header {
     display: flex;
     justify-content: space-between;
@@ -27,11 +51,11 @@
     padding: 8px;
     border-radius: 4px;
     transition: background-color 0.2s ease;
+    position: fixed;
 }
 
 .chatButton{
     padding-right: 10px;
-    text-decoration: none;
 }
 
 /* .backButton:hover,
@@ -51,7 +75,7 @@
     fill: #fff;
 }
 
-.title {
+.Htitle {
     font-size: 18px;
     font-weight: 600;
     color: var(--main-color);
