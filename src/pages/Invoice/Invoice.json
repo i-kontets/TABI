@@ -1,45 +1,173 @@
 {
-  "pay": [
-    {
-      "id": 1780296326253,
-      "storeName": "コーナン",
-      "totalAmount": 8000,
-      "participantIds": [
-        2,
-        4
+  "groups": {
+    "mie": {
+      "pay": [
+        {
+          "id": 1780296326253,
+          "storeName": "コーナン",
+          "totalAmount": 8000,
+          "participantIds": [
+            2,
+            4
+          ],
+          "participantCount": 2,
+          "perPersonAmount": 4000
+        }
       ],
-      "participantCount": 2,
-      "perPersonAmount": 4000
-    }
-  ],
-  "collect": [],
-  "members": [
-    {
-      "id": 1,
-      "name": "志田",
-      "paidPayIds": []
-    },
-    {
-      "id": 2,
-      "name": "石垣",
-      "paidPayIds": [
-        1780296326253
+      "collect": [],
+      "members": [
+        {
+          "id": 1,
+          "name": "志田",
+          "paidPayIds": []
+        },
+        {
+          "id": 2,
+          "name": "石垣",
+          "paidPayIds": [
+            1780296326253
+          ]
+        },
+        {
+          "id": 3,
+          "name": "田中",
+          "paidPayIds": []
+        },
+        {
+          "id": 4,
+          "name": "寺川",
+          "paidPayIds": []
+        },
+        {
+          "id": 5,
+          "name": "岩井",
+          "paidPayIds": []
+        }
       ]
     },
-    {
-      "id": 3,
-      "name": "田中",
-      "paidPayIds": []
+    "hok": {
+      "pay": [],
+      "collect": [],
+      "members": [
+        {
+          "id": 1,
+          "name": "志田",
+          "paidPayIds": []
+        },
+        {
+          "id": 2,
+          "name": "石垣",
+          "paidPayIds": []
+        },
+        {
+          "id": 3,
+          "name": "田中",
+          "paidPayIds": []
+        },
+        {
+          "id": 4,
+          "name": "寺川",
+          "paidPayIds": []
+        },
+        {
+          "id": 5,
+          "name": "岩井",
+          "paidPayIds": []
+        }
+      ]
     },
-    {
-      "id": 4,
-      "name": "寺川",
-      "paidPayIds": []
+    "wak": {
+      "pay": [],
+      "collect": [],
+      "members": [
+        {
+          "id": 1,
+          "name": "志田",
+          "paidPayIds": []
+        },
+        {
+          "id": 2,
+          "name": "石垣",
+          "paidPayIds": []
+        },
+        {
+          "id": 3,
+          "name": "田中",
+          "paidPayIds": []
+        },
+        {
+          "id": 4,
+          "name": "寺川",
+          "paidPayIds": []
+        },
+        {
+          "id": 5,
+          "name": "岩井",
+          "paidPayIds": []
+        }
+      ]
     },
-    {
-      "id": 5,
-      "name": "岩井",
-      "paidPayIds": []
+    "nara": {
+      "pay": [],
+      "collect": [],
+      "members": [
+        {
+          "id": 1,
+          "name": "志田",
+          "paidPayIds": []
+        },
+        {
+          "id": 2,
+          "name": "石垣",
+          "paidPayIds": []
+        },
+        {
+          "id": 3,
+          "name": "田中",
+          "paidPayIds": []
+        },
+        {
+          "id": 4,
+          "name": "寺川",
+          "paidPayIds": []
+        },
+        {
+          "id": 5,
+          "name": "岩井",
+          "paidPayIds": []
+        }
+      ]
+    },
+    "aom": {
+      "pay": [],
+      "collect": [],
+      "members": [
+        {
+          "id": 1,
+          "name": "志田",
+          "paidPayIds": []
+        },
+        {
+          "id": 2,
+          "name": "石垣",
+          "paidPayIds": []
+        },
+        {
+          "id": 3,
+          "name": "田中",
+          "paidPayIds": []
+        },
+        {
+          "id": 4,
+          "name": "寺川",
+          "paidPayIds": []
+        },
+        {
+          "id": 5,
+          "name": "岩井",
+          "paidPayIds": []
+        }
+      ]
     }
-  ]
+  }
 }
