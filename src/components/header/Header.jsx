@@ -3,6 +3,8 @@ import styles from './header.module.css';
 import arrowBack from '../../assets/icons/arrow_back.svg';
 import chatIcon from '../../assets/icons/chat.svg';
 
+import { Link } from 'react-router-dom';
+
 function Header() {
     const navigate = useNavigate();
     const subtitle = '2026/05/14 - 2026/05/160';
@@ -26,9 +28,9 @@ function Header() {
                 <p className={styles.subtitle}>{subtitle}</p>
             </div>
 
-            <button className={styles.chatButton} aria-label="チャット">
+            <Link to="/chat" className={styles.chatButton} aria-label="チャット">
                 <img src={chatIcon} alt="チャット" className={styles.icon} />
-            </button>
+            </Link>
         </header>
     );
 }
