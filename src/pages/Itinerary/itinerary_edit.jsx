@@ -1,35 +1,38 @@
 import { useLocation,useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { TripContext } from "../../App";
-import BtmNav from '../../components/bottomNav/BottomNav';
-import Header from '../../components/header/Header';
-import styles from './itinerary.module.css';
-import Edit from '../../assets/icons/edit.svg?react';
-import Group from '../../assets/icons/group.svg?react';
+import styles from './itineraryEdit.module.css';
+import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 
 
-
-
-function itinerary() {
+function itinerary_edit() {
     const navigate = useNavigate();
     const location = useLocation();
     const place = location.state?.place;
+    const { tripName } = useContext(TripContext);
 
     const boxes = [
         { title: 'しおりタイトル', content: '三重' },
         { title: '旅行期間', content: '2026年4月15日(水) - 2026年4月23日(木)' },
         { title: 'メンバー', content: 'n人' },
     ];
-    const { tripName } = useContext(TripContext);
-    console.log("Itinerary:", tripName);
 
-    const editClick = () => {
-        navigate('/ItineraryEdit');
+    const BackClick = () => {
+        navigate('/Itinerary');
     };
 
     return (
         <>
-            <Header tripName={tripName} />
+            <header className={styles.header}>
+                <button
+                    className={styles.backButton}
+                    onClick={BackClick}
+                    aria-label="戻る"
+                >
+                    <ArrowBack className={styles.icon} aria-hidden="true"/>
+                </button>
+                <div className={styles.Htitle} style={{margin:'auto'}}>編集画面</div>
+            </header>
             <div className={styles.container}>
                 {boxes.map((box, index) => (
                     <div key={index} className={styles.box}>
@@ -38,7 +41,7 @@ function itinerary() {
                     </div>
                 ))}
             </div>
-            <div style={{
+            {/* <div style={{
                 position: 'fixed',
                 bottom: '80px',
                 right: '20px',
@@ -60,9 +63,7 @@ function itinerary() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.3s ease'
-                }}
-                onClick={editClick}
-                >
+                }}>
                     <Edit  style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
                     編集
                 </button>
@@ -82,10 +83,9 @@ function itinerary() {
                     <Group style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
                     招待
                 </button>
-            </div>
-           <BtmNav /> 
+            </div> */}
         </>
     )
 }
 
-export default itinerary
+export default itinerary_edit
