@@ -1,26 +1,55 @@
-import { useLocation,useNavigate } from "react-router-dom";
-import { useContext } from "react";
-import { TripContext } from "../../App";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { DayPicker } from 'react-day-picker';
+import { ja } from 'react-day-picker/locale';
+import 'react-day-picker/style.css';
 import styles from './itineraryEdit.module.css';
 import BtmNav from '../../components/bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import Check from '../../assets/icons/check.svg?react';
 import Close from '../../assets/icons/close.svg?react';
 
+const formatJapaneseDate = (date) =>
+    date.toLocaleDateString('ja-JP', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'short',
+    });
 
 function itinerary_edit() {
     const navigate = useNavigate();
-    const location = useLocation();
-    const place = location.state?.place;
-    const { tripName } = useContext(TripContext);
-
-    const boxes = [
-        { title: 'しおりタイトル', content: '三重' },
-        { title: '旅行期間', content: '2026年4月15日(水) - 2026年4月23日(木)' },
-        { title: 'メンバー', content: 'n人' },
-    ];
+    const [selectedRange, setSelectedRange] = useState({
+        from: new Date(2026, 3, 15),
+        to: new Date(2026, 3, 23),
+    });
+    const [formValues, setFormValues] = useState({
+        title: '三重',
+        members: '3',
+    });
 
     const BackClick = () => {
+        navigate('/Itinerary');
+    };
+
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+        setFormValues((current) => ({
+            ...current,
+            [name]: value,
+        }));
+    };
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+        const period = selectedRange?.from
+            ? `${formatJapaneseDate(selectedRange.from)} - ${formatJapaneseDate(selectedRange.to ?? selectedRange.from)}`
+            : '';
+        console.log('編集後の内容:', {
+            ...formValues,
+            period,
+            members: formValues.members === '' ? '' : Number(formValues.members),
+        });
         navigate('/Itinerary');
     };
 
@@ -36,57 +65,96 @@ function itinerary_edit() {
                 </button>
                 <div className={styles.Htitle} style={{margin:'auto'}}>編集画面</div>
             </header>
-            <div className={styles.container}>
-                {boxes.map((box, index) => (
-                    <div key={index} className={styles.box}>
-                        <h3 className={styles.title}>{box.title}</h3>
-                        <p className={styles.content}>{box.content}</p>
+            <form onSubmit={handleSubmit}>
+                <div className={styles.container}>
+                    <div className={styles.box}>
+                        <h3 className={styles.title}>しおりタイトル</h3>
+                        <input
+                            className={styles.input}
+                            type="text"
+                            name="title"
+                            value={formValues.title}
+                            onChange={handleChange}
+                        />
                     </div>
-                ))}
-            </div>
-            <div style={{
-                position: 'fixed',
-                bottom: '80px',
-                right: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                zIndex: '100',
-                backgroundColor:'var(--main-color)'
-            }}>
-                <button style={{
-                    padding: '12px 16px',
-                    border: '2px solid #44558D',
-                    backgroundColor: 'var(--sub-color)',
-                    color: 'var(--main-color)',
-                    borderRadius: '15px',
-                    cursor: 'pointer',
-                    fontWeight: '500',
+                    <div className={styles.box}>
+                        <h3 className={styles.title}>旅行期間</h3>
+                        <div className={styles.calendar}>
+                            <DayPicker
+                                mode="range"
+                                selected={selectedRange}
+                                onSelect={setSelectedRange}
+                                defaultMonth={selectedRange?.from}
+                                resetOnSelect
+                                locale={ja}
+                                weekStartsOn={0}
+                            />
+                        </div>
+                    </div>
+                    <div className={styles.box}>
+                        <h3 className={styles.title}>メンバー</h3>
+                        <input
+                            className={styles.input}
+                            type="number"
+                            name="members"
+                            value={formValues.members}
+                            min="1"
+                            step="1"
+                            onChange={handleChange}
+                        />
+                    </div>
+                </div>
+                <div style={{
+                    position: 'fixed',
+                    bottom: '80px',
+                    right: '20px',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.3s ease'
+                    flexDirection: 'column',
+                    gap: '12px',
+                    zIndex: '100',
+                    backgroundColor:'var(--main-color)'
                 }}>
-                    <Check style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
-                    変更
-                </button>
-                <button style={{
-                    padding: '12px 16px',
-                    border: '2px solid #44558D',
-                    backgroundColor: 'var(--sub-color)',
-                    color: 'var(--main-color)',
-                    borderRadius: '15px',
-                    cursor: 'pointer',
-                    fontWeight: '500',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'all 0.3s ease'
-                }}>
-                    <Close style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
-                    変更
-                </button>
-            </div>
+                    <button
+                        type="submit"
+                        style={{
+                            padding: '12px 16px',
+                            border: '2px solid #44558D',
+                            backgroundColor: 'var(--sub-color)',
+                            color: 'var(--main-color)',
+                            borderRadius: '15px',
+                            cursor: 'pointer',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        <Check style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
+                        変更
+                    </button>
+                    <button
+                        type="button"
+                        onClick={BackClick}
+                        style={{
+                            padding: '12px 16px',
+                            border: '2px solid #44558D',
+                            backgroundColor: 'var(--sub-color)',
+                            color: 'var(--main-color)',
+                            borderRadius: '15px',
+                            cursor: 'pointer',
+                            fontWeight: '500',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        <Close style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
+                        キャンセル
+                    </button>
+                </div>
+            </form>
             <BtmNav /> 
         </>
     )

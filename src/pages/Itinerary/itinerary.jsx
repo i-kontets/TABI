@@ -19,22 +19,6 @@ function itinerary() {
         { title: 'しおりタイトル', content: '三重' },
         { title: '旅行期間', content: '2026年4月15日(水) - 2026年4月23日(木)' },
         { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
-        { title: 'メンバー', content: 'n人' },
     ];
     const { tripName } = useContext(TripContext);
     console.log("Itinerary:", tripName);
