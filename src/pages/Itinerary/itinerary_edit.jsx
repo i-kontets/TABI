@@ -2,7 +2,10 @@ import { useLocation,useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { TripContext } from "../../App";
 import styles from './itineraryEdit.module.css';
+import BtmNav from '../../components/bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
+import Check from '../../assets/icons/check.svg?react';
+import Close from '../../assets/icons/close.svg?react';
 
 
 function itinerary_edit() {
@@ -41,7 +44,7 @@ function itinerary_edit() {
                     </div>
                 ))}
             </div>
-            {/* <div style={{
+            <div style={{
                 position: 'fixed',
                 bottom: '80px',
                 right: '20px',
@@ -64,8 +67,8 @@ function itinerary_edit() {
                     justifyContent: 'center',
                     transition: 'all 0.3s ease'
                 }}>
-                    <Edit  style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
-                    編集
+                    <Check style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
+                    変更
                 </button>
                 <button style={{
                     padding: '12px 16px',
@@ -80,10 +83,11 @@ function itinerary_edit() {
                     justifyContent: 'center',
                     transition: 'all 0.3s ease'
                 }}>
-                    <Group style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
-                    招待
+                    <Close style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
+                    変更
                 </button>
-            </div> */}
+            </div>
+            <BtmNav /> 
         </>
     )
 }
