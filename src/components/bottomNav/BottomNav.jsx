@@ -1,24 +1,23 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './bottomNav.module.css';
 import timeIcon from '../../assets/icons/time.svg';
-import planIcon from '../../assets/icons/plan.svg';
 import photoIcon from '../../assets/icons/photo.svg';
 import splitIcon from '../../assets/icons/split.svg';
 import Tbook from '../../assets/icons/Tbook.svg';
 
 function BottomNav() {
     const navigate = useNavigate();
-    
+    const location = useLocation();
+
     const menuItems = [
-        { id: 'bookmark', label: 'しおり', path:'/Itinerary', icon: Tbook},
+        { id: 'bookmark', label: 'しおり', path: '/Itinerary', icon: Tbook },
         { id: 'time', label: 'スケジュール', path: '/schedule', icon: timeIcon },
         { id: 'album', label: 'アルバム', path: '/album', icon: photoIcon },
-        // { id: 'planning', label: '計画立案', path: '#', icon: planIcon },
         { id: 'split', label: '割り勘', path: '/Invoice', icon: splitIcon },
     ];
 
     const handleNavigation = (path) => {
-        navigate(path);
+        navigate(`${path}${location.search}`);
     };
 
     return (
