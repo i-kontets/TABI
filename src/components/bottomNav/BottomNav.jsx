@@ -5,12 +5,14 @@ import planIcon from '../../assets/icons/plan.svg';
 import photoIcon from '../../assets/icons/photo.svg';
 import splitIcon from '../../assets/icons/split.svg';
 import Tbook from '../../assets/icons/Tbook.svg';
+import Meet from '../../assets/icons/speaker_notes.svg';
 
 function BottomNav() {
     const navigate = useNavigate();
     
     const menuItems = [
         { id: 'bookmark', label: 'しおり', path:'/Itinerary', icon: Tbook},
+        { id: 'meeting', label: '話し合い' , path:'#', icon: Meet},
         { id: 'time', label: 'スケジュール', path: '/schedule', icon: timeIcon },
         { id: 'album', label: 'アルバム', path: '/album', icon: photoIcon },
         // { id: 'planning', label: '計画立案', path: '#', icon: planIcon },

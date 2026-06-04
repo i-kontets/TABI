@@ -27,6 +27,10 @@ function itinerary() {
         navigate('/ItineraryEdit');
     };
 
+    const invitationClick = () =>{
+        alert('バックエンド始動後のほうが楽なのであとで作ります');
+    };
+
     return (
         <>
             <Header tripName={tripName} />
@@ -78,7 +82,9 @@ function itinerary() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.3s ease'
-                }}>
+                }}
+                onClick={invitationClick}
+                >
                     <Group style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
                     招待
                 </button>

@@ -17,7 +17,7 @@ const formatJapaneseDate = (date) =>
         weekday: 'short',
     });
 
-function itinerary_edit() {
+function itineraryEdit() {
     const navigate = useNavigate();
     const [selectedRange, setSelectedRange] = useState({
         from: new Date(2026, 3, 15),
@@ -32,11 +32,13 @@ function itinerary_edit() {
         navigate('/Itinerary');
     };
 
+    const sanitizeMembers = (value) => value.replace(/[^0-9]/g, '');
+
     const handleChange = (event) => {
         const { name, value } = event.target;
         setFormValues((current) => ({
             ...current,
-            [name]: value,
+            [name]: name === 'members' ? sanitizeMembers(value) : value,
         }));
     };
 
@@ -95,11 +97,11 @@ function itinerary_edit() {
                         <h3 className={styles.title}>メンバー</h3>
                         <input
                             className={styles.input}
-                            type="number"
+                            type="text"
                             name="members"
                             value={formValues.members}
-                            min="1"
-                            step="1"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             onChange={handleChange}
                         />
                     </div>
@@ -160,4 +162,4 @@ function itinerary_edit() {
     )
 }
 
-export default itinerary_edit
+export default itineraryEdit
