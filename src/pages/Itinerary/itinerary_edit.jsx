@@ -24,7 +24,8 @@ function itineraryEdit() {
         to: new Date(2026, 3, 23),
     });
     const [formValues, setFormValues] = useState({
-        title: '三重',
+        title: '三重旅行',
+        destination: '志摩市',
         members: '3',
     });
 
@@ -76,6 +77,16 @@ function itineraryEdit() {
                             type="text"
                             name="title"
                             value={formValues.title}
+                            onChange={handleChange}
+                        />
+                    </div>
+                    <div className={styles.box}>
+                        <h3 className={styles.title}>目的地</h3>
+                        <input
+                            className={styles.input}
+                            type="text"
+                            name="destination"
+                            value={formValues.destination}
                             onChange={handleChange}
                         />
                     </div>
