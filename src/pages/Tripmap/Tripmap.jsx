@@ -1,18 +1,14 @@
+import Tripmap from './Tripmap.module.css'
+
 import { useState, useEffect } from 'react'
 
-function Home() {
+function map() {
     return (
     <>
-        <div>
-            ホーム
-        </div>
         <a href="Itinerary">旅のしおり</a>
     </>
 
     )
 }
 
-
-
-
-export default Home
+export default map

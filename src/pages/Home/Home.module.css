@@ -1,0 +1,26 @@
+.header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--sub-color);
+    border-bottom: 1px solid var(--other-color);
+    height: 60px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.titleWrapper {
+    text-align: center;
+}
+
+.header button {
+    position: absolute;
+    left: 10px;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--main-color);
+    margin: 4px 0 0;
+}
