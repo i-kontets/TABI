@@ -16,12 +16,13 @@ function itinerary() {
     const place = location.state?.place;
 
     const boxes = [
-        { title: 'しおりタイトル', content: '三重' },
+        { title: 'しおりタイトル', content: '三重旅行' },
+        { title: '目的地', content: '志摩市'},
         { title: '旅行期間', content: '2026年4月15日(水) - 2026年4月23日(木)' },
         { title: 'メンバー', content: 'n人' },
     ];
     const { tripName } = useContext(TripContext);
-    console.log("Itinerary:", tripName);
+    // console.log("Itinerary:", tripName);
 
     const editClick = () => {
         navigate('/ItineraryEdit');
