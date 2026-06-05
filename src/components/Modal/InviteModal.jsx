@@ -1,68 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
+import QRCode from "react-qr-code";
 import styles from "./InviteModal.module.css";
 
-export function InviteHeader({ title, onClose }) {
+const QRCodeComponent = QRCode?.default ?? QRCode?.QRCode ?? QRCode;
+
+export function InviteHeader({ title }) {
     return (
         <header className={styles.header}>
             <h2 className={styles.title}>{title}</h2>
-            <button className={styles.closeButton} onClick={onClose} aria-label="閉じる">×</button>
         </header>
-    );
-}
-
-export function InviteForm({ onInvite }) {
-    const [email, setEmail] = useState("");
-
-    const submit = (e) => {
-        e.preventDefault();
-        if (!email) return;
-        onInvite(email);
-        setEmail("");
-    };
-
-    return (
-        <form className={styles.form} onSubmit={submit}>
-            <input
-                className={styles.input}
-                type="email"
-                placeholder="招待するメールアドレスを入力"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-            />
-            <button className={styles.inviteButton} type="submit">招待する</button>
-        </form>
-    );
-}
-
-export function InviteList({ invites = [] }) {
-    if (!invites.length) {
-        return <p className={styles.empty}>まだ招待はありません</p>;
-    }
-
-    return (
-        <ul className={styles.list}>
-            {invites.map((item, idx) => (
-                <li key={idx} className={styles.listItem}>
-                    <span>{item.email}</span>
-                    <span className={styles.status}>{item.status}</span>
-                </li>
-            ))}
-        </ul>
     );
 }
 
 export function InviteActions({ onCancel }) {
     return (
         <div className={styles.actions}>
-            <button className={styles.cancel} onClick={onCancel}>キャンセル</button>
+            <button className={styles.cancel} type="button" onClick={onCancel}>
+                閉じる
+            </button>
         </div>
     );
 }
 
 // コンポジション用の Invite コンテンツ。Modal の子として使う想定
 export default function InviteModalContent({ onClose }) {
-    const [invites, setInvites] = useState([]);
     const [copyStatus, setCopyStatus] = useState("");
     const location = useLocation();
 
@@ -72,11 +34,6 @@ export default function InviteModalContent({ onClose }) {
         const currentPath = `${location.pathname}${location.search}${location.hash}`;
         return `${window.location.origin}${normalizedBasePath}${currentPath}++test`;
     }, [location.hash, location.pathname, location.search]);
-
-    const handleInvite = (email) => {
-        // 仮処理: 即時反映するだけ（実際はAPI呼び出しなど）
-        setInvites((prev) => [{ email, status: "招待済み" }, ...prev]);
-    };
 
     const handleCopy = async () => {
         await navigator.clipboard.writeText(inviteLink);
@@ -94,7 +51,7 @@ export default function InviteModalContent({ onClose }) {
 
     return (
         <div className={styles.container}>
-            <InviteHeader title="招待する" onClose={onClose} />
+            <InviteHeader title="招待する" />
             <div className={styles.body}>
                 <div className={styles.linkSection}>
                     <label className={styles.linkLabel} htmlFor="invite-link">
@@ -115,8 +72,9 @@ export default function InviteModalContent({ onClose }) {
                     </div>
                     {copyStatus ? <p className={styles.copyStatus}>{copyStatus}</p> : null}
                 </div>
-                <InviteForm onInvite={handleInvite} />
-                <InviteList invites={invites} />
+                <div className={styles.qrSection}>
+                    <QRCodeComponent value={inviteLink} size={160} className={styles.qrCode} />
+                </div>
             </div>
             <InviteActions onCancel={onClose} />
         </div>
