@@ -36,7 +36,7 @@ function Header({tripName}) {
             <button 
                 className={styles.chatButton} 
                 onClick={chatClick}
-                aria-label="チャット"
+                aria-label="チャットゥ"
                 // onClick={() => {
                 //     console.log("chat clicked")
                 //     navigate("/chat")
