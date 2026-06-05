@@ -4,7 +4,7 @@ import { TripContext } from "../../App";
 import BtmNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 import Modal from '../../components/Modal/Modal';
-import InviteModal from '../../components/Modal/InviteModal';
+// import ItineraryModal from "../../components/Modal/InviteModal";
 import styles from './itinerary.module.css';
 import Edit from '../../assets/icons/edit.svg?react';
 import Group from '../../assets/icons/group.svg?react';
@@ -101,7 +101,6 @@ function Itinerary() {
                 </button>
             </div>
             <Modal isOpen={isInviteModalOpen} onClose={closeInviteModal}>
-                <InviteModal onClose={closeInviteModal} />
             </Modal>
             <BtmNav /> 
         </>

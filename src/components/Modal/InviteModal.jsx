@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Modal from "./Modal";
 import styles from "./InviteModal.module.css";
 
 function InviteHeader({ title, onClose }) {
@@ -59,8 +60,8 @@ function InviteActions({ onCancel }) {
     );
 }
 
-// コンポジション用の Invite コンテンツ。Modal の子として使う想定
-export default function InviteModalContent({ onClose }) {
+// 仮のコンポジション用InviteModal（親からは isOpen / onClose を渡す想定）
+export default function InviteModal({ isOpen, onClose }) {
     const [invites, setInvites] = useState([]);
 
     const handleInvite = (email) => {
@@ -69,13 +70,15 @@ export default function InviteModalContent({ onClose }) {
     };
 
     return (
-        <div className={styles.container}>
-            <InviteHeader title="招待する" onClose={onClose} />
-            <div className={styles.body}>
-                <InviteForm onInvite={handleInvite} />
-                <InviteList invites={invites} />
+        <Modal isOpen={isOpen} onClose={onClose}>
+            <div className={styles.container}>
+                <InviteHeader title="招待する" onClose={onClose} />
+                <div className={styles.body}>
+                    <InviteForm onInvite={handleInvite} />
+                    <InviteList invites={invites} />
+                </div>
+                <InviteActions onCancel={onClose} />
             </div>
-            <InviteActions onCancel={onClose} />
-        </div>
+        </Modal>
     );
 }
