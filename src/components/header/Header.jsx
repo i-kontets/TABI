@@ -11,6 +11,12 @@ function Header({tripName}) {
         navigate('/Home');
     };
 
+    const chatClick = () =>{
+        console.log("test内容");
+        
+        navigate('/Chat')
+    };
+
     return (
         <header className={styles.header}>
             <button
@@ -27,8 +33,16 @@ function Header({tripName}) {
                 <p className={styles.subtitle}>{subtitle}</p>
             </div>
 
-            <button className={styles.chatButton} aria-label="チャット">
-                <ChatIcon className={styles.icon}  aria-hidden="true" />
+            <button 
+                className={styles.chatButton} 
+                onClick={chatClick}
+                aria-label="チャット"
+                // onClick={() => {
+                //     console.log("chat clicked")
+                //     navigate("/chat")
+                >
+                    
+                    <ChatIcon className={styles.icon}  aria-hidden="true" />
             </button>
         </header>
     );
