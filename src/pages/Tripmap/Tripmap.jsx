@@ -7,7 +7,8 @@ function map() {
     <>
         <a href="Itinerary">旅のしおり</a>
     </>
-  )
+
+    )
 }
 
 export default map
