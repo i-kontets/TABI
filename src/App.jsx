@@ -9,7 +9,8 @@ import Home from './pages/Home/Home';
 import Itinerary from './pages/Itinerary/itinerary';
 import ItineraryEdit from './pages/Itinerary/itinerary_edit';
 import Tripmap from './pages/Tripmap/Tripmap';
-import Schedule  from './pages/Schedule/schedule';
+import Schedule  from './pages/Schedule/Schedule';
+import Chat from './pages/Chat/Chat';
 import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
 
@@ -29,6 +30,7 @@ function App() {
                     <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
                     <Route path="/Tripmap" element={<Tripmap />} />
                     <Route path="/schedule" element={<Schedule />} />
+                    <Route path="/Chat" element={<Chat />} />
                     <Route path="/album" element={<Album />} />
                     <Route path="/Invoice" element={<Invoice />} />
                 </Routes>
