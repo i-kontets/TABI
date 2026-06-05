@@ -116,17 +116,6 @@ function itineraryEdit() {
                             onChange={handleChange}
                         />
                     </div>
-                </div>
-                <div style={{
-                    position: 'fixed',
-                    bottom: '80px',
-                    right: '20px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                    zIndex: '100',
-                    backgroundColor:'var(--main-color)'
-                }}>
                     <button
                         type="submit"
                         style={{
@@ -140,31 +129,12 @@ function itineraryEdit() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            transition: 'all 0.3s ease'
+                            transition: 'all 0.3s ease',
+                            width:'100%'
                         }}
                     >
                         <Check style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
                         変更
-                    </button>
-                    <button
-                        type="button"
-                        onClick={BackClick}
-                        style={{
-                            padding: '12px 16px',
-                            border: '2px solid #44558D',
-                            backgroundColor: 'var(--sub-color)',
-                            color: 'var(--main-color)',
-                            borderRadius: '15px',
-                            cursor: 'pointer',
-                            fontWeight: '500',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.3s ease'
-                        }}
-                    >
-                        <Close style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
-                        キャンセル
                     </button>
                 </div>
             </form>
