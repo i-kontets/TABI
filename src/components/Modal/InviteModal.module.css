@@ -1,0 +1,61 @@
+.modalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 200;
+}
+
+.modal {
+    width: min(100%, 360px);
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modalTitle {
+    margin: 0 0 12px;
+    font-size: 18px;
+}
+
+.modalText {
+    margin: 0 0 12px;
+    line-height: 1.6;
+}
+
+.modalCloseButton {
+    width: 100%;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: 12px;
+    background: var(--sub-color);
+    color: var(--main-color);
+    font-weight: 600;
+}
+/* 仮スタイル: InviteModal の構成要素用 */
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.title { font-size: 18px; margin: 0; }
+.closeButton { background: transparent; border: none; font-size: 20px; cursor: pointer; }
+.body { display: flex; flex-direction: column; gap: 12px; }
+.form { display: flex; gap: 8px; }
+.input { flex: 1; padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; }
+.inviteButton { padding: 8px 12px; border-radius: 8px; border: none; background: var(--sub-color); color: #fff; cursor: pointer; }
+.list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.listItem { display: flex; justify-content: space-between; padding: 8px; border-radius: 8px; background: #f9f9f9; }
+.status { color: #666; font-size: 12px; }
+.empty { color: #888; font-size: 14px; }
+.actions { display: flex; justify-content: flex-end; }
+.cancel { background: transparent; border: none; color: #333; cursor: pointer; }
