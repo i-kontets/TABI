@@ -1,8 +1,10 @@
-import { useLocation,useNavigate } from "react-router-dom";
-import { useContext } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useContext, useState } from "react";
 import { TripContext } from "../../App";
 import BtmNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
+import Modal from '../../components/Modal/Modal';
+// import ItineraryModal from "../../components/Modal/InviteModal";
 import styles from './itinerary.module.css';
 import Edit from '../../assets/icons/edit.svg?react';
 import Group from '../../assets/icons/group.svg?react';
@@ -15,6 +17,7 @@ function Itinerary() {
     const navigate = useNavigate();
     const location = useLocation();
     const { tripName } = useContext(TripContext);
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     // URL の groupId と、画面遷移時に渡された state から現在の旅行情報を決める
     const params = new URLSearchParams(location.search);
     const groupId = params.get("groupId") || location.state?.groupId;
@@ -31,8 +34,12 @@ function Itinerary() {
         navigate('/ItineraryEdit');
     };
 
-    const invitationClick = () =>{
-        alert('バックエンド始動後のほうが楽なのであとで作ります');
+    const invitationClick = () => {
+        setIsInviteModalOpen(true);
+    };
+
+    const closeInviteModal = () => {
+        setIsInviteModalOpen(false);
     };
 
     return (
@@ -93,8 +100,9 @@ function Itinerary() {
                     招待
                 </button>
             </div>
-           <BtmNav /> 
-            <BtmNav />
+            <Modal isOpen={isInviteModalOpen} onClose={closeInviteModal}>
+            </Modal>
+            <BtmNav /> 
         </>
     )
 }
