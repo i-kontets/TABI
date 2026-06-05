@@ -3,9 +3,7 @@ import styles from './header.module.css';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import ChatIcon from '../../assets/icons/chat.svg?react';
 
-import { Link } from 'react-router-dom';
-
-function Header() {
+function Header({tripName}) {
     const navigate = useNavigate();
     const subtitle = '2026年05月14日 - 2026年05月160日';
 
@@ -29,9 +27,9 @@ function Header() {
                 <p className={styles.subtitle}>{subtitle}</p>
             </div>
 
-            <Link to="/chat" className={styles.chatButton} aria-label="チャット">
-                <img src={chatIcon} alt="チャット" className={styles.icon} />
-            </Link>
+            <button className={styles.chatButton} aria-label="チャット">
+                <ChatIcon className={styles.icon}  aria-hidden="true" />
+            </button>
         </header>
     );
 }
