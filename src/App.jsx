@@ -30,7 +30,7 @@ function App() {
                     <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
                     <Route path="/Tripmap" element={<Tripmap />} />
                     <Route path="/schedule" element={<Schedule />} />
-                    <Route path="/chat" element={<Chat />} />
+                    <Route path="/Chat" element={<Chat />} />
                     <Route path="/album" element={<Album />} />
                     <Route path="/Invoice" element={<Invoice />} />
                 </Routes>

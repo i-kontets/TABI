@@ -37,7 +37,12 @@ function invoiceJsonApi() {
           req.on('end', async () => {
             try {
               const data = JSON.parse(body)
-              await writeFile(invoiceJsonPath, `${JSON.stringify(data, null, 2)}\n`)
+
+              await writeFile(
+                invoiceJsonPath,
+                `${JSON.stringify(data, null, 2)}\n`
+              )
+
               res.statusCode = 200
               res.setHeader('Content-Type', 'application/json')
               res.end(JSON.stringify({ ok: true }))
@@ -46,6 +51,7 @@ function invoiceJsonApi() {
               res.end(JSON.stringify({ ok: false }))
             }
           })
+
           return
         }
 
@@ -56,8 +62,19 @@ function invoiceJsonApi() {
   }
 }
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), svgr(), invoiceJsonApi()],
-  base: '/TABI/'
+  plugins: [
+    react(),
+    svgr(),
+    invoiceJsonApi(),
+  ],
+
+  server: {
+    host: true,
+    watch: {
+      usePolling: true,
+    },
+  },
+
+  base: '/TABI/',
 })
