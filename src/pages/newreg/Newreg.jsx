@@ -1,7 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import PasswordInput from "../../components/Zxcvbn/Password";
 import styles from "./Newreg.module.css";
+
+// public/assets/login_newreg_bg/ 直下にあるすべてのjpg,jpeg,png,webp画像を自動で読み込む
+const imageModules = import.meta.glob("/public/assets/login_newreg_bg/*.{jpg,jpeg,png,webp}", { eager: true });
+const BACKGROUND_IMAGES = Object.values(imageModules).map((mod) => mod.default);
 
 export default function Newreg() {
     const navigate = useNavigate();
@@ -12,6 +16,17 @@ export default function Newreg() {
         confirm: "",
         isValid: false
     });
+
+    // 💡 背景画像用のステート（初期値は見つかった画像の1枚目）
+    const [bgImage, setBgImage] = useState(BACKGROUND_IMAGES[0] || "");
+
+    // 💡 画面が表示された時にランダムで1枚選ぶ処理を追加
+    useEffect(() => {
+        if (BACKGROUND_IMAGES.length > 0) {
+            const randomIndex = Math.floor(Math.random() * BACKGROUND_IMAGES.length);
+            setBgImage(BACKGROUND_IMAGES[randomIndex]);
+        }
+    }, []);
 
     const isEmailValid = email.trim() !== "";
     const isFormValid = isEmailValid && passwordData.isValid;
@@ -28,7 +43,10 @@ export default function Newreg() {
     };
 
     return (
-        <div className={styles.loginPage}>
+        <div 
+            className={styles.loginPage} 
+            style={{ backgroundImage: bgImage ? `url(${bgImage})` : "none" }} 
+            >
             <div className={styles.loginContainer}>
                 <div className={styles.loginCard}>
                     <h2 className={styles.title}>新規登録</h2>
