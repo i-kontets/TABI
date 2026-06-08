@@ -1,20 +1,19 @@
-import { useLocation,useNavigate } from "react-router-dom";
-import { useContext } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useContext, useState } from "react";
 import { TripContext } from "../../App";
 import BtmNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
+import Modal from '../../components/Modal/Modal';
+import InviteModal from '../../components/Modal/InviteModal';
 import styles from './itinerary.module.css';
 import Edit from '../../assets/icons/edit.svg?react';
 import Group from '../../assets/icons/group.svg?react';
-
-
-
-
 
 function Itinerary() {
     const navigate = useNavigate();
     const location = useLocation();
     const { tripName } = useContext(TripContext);
+    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
     // URL の groupId と、画面遷移時に渡された state から現在の旅行情報を決める
     const params = new URLSearchParams(location.search);
     const groupId = params.get("groupId") || location.state?.groupId;
@@ -22,13 +21,21 @@ function Itinerary() {
 
     // 画面に表示する項目を、カードとして並べやすい形にまとめる
     const boxes = [
-        { title: 'しおりタイトル', content: currentTripName || '未選択' },
-        { title: '旅行期間', content: '2026年05月14日 - 2026年05月16日' },
+        { title: 'しおりタイトル', content: '三重旅行' },
+        { title: '目的地', content: '志摩市'},
+        { title: '旅行期間', content: '2026年4月15日(水) - 2026年4月23日(木)' },
         { title: 'メンバー', content: 'n人' },
     ];
-
     const editClick = () => {
         navigate('/ItineraryEdit');
+    };
+
+    const invitationClick = () => {
+        setIsInviteModalOpen(true);
+    };
+
+    const closeInviteModal = () => {
+        setIsInviteModalOpen(false);
     };
 
     return (
@@ -82,13 +89,17 @@ function Itinerary() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'all 0.3s ease'
-                }}>
+                }}
+                onClick={invitationClick}
+                >
                     <Group style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
                     招待
                 </button>
             </div>
-           <BtmNav /> 
-            <BtmNav />
+            <Modal isOpen={isInviteModalOpen} onClose={closeInviteModal}>
+                <InviteModal onClose={closeInviteModal} />
+            </Modal>
+            <BtmNav /> 
         </>
     )
 }
