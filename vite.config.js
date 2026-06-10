@@ -76,5 +76,7 @@ export default defineConfig({
     },
   },
 
-  base: '/TABI/',
+  base: process.env.NODE_ENV === 'production'
+    ? '/TABI/'
+    : '/',
 })
