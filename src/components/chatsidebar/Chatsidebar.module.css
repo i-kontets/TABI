@@ -37,7 +37,7 @@
   background-color: var(--sub-color);
 }
 .activeItem {
-  background-color: #FFF0F1; /* アクセントカラーの非常に薄い色 */
+  background-color: #FFF0F1;
   border-left: 4px solid var(--accent-color);
 }
 .avatarWrapper {
@@ -49,16 +49,6 @@
   height: 48px;
   border-radius: 50%;
   object-fit: cover;
-}
-.onlineDot {
-  position: absolute;
-  bottom: 2px;
-  right: 0;
-  width: 12px;
-  height: 12px;
-  background-color: #4CAF50; /* オンライン状態は緑を維持 */
-  border: 2px solid #FFFFFF;
-  border-radius: 50%;
 }
 .info {
   flex: 1;
@@ -73,10 +63,18 @@
 .name {
   font-weight: bold;
   font-size: 14px;
-  color: var(--main-color);
+  color: #333333;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.memberCount {
+  color: var(--main-color);
+  font-size: 13px;
+  font-weight: 500;
 }
 .time {
   font-size: 12px;

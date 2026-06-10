@@ -21,11 +21,17 @@ const ChatSidebar = ({ contacts, activeId, onSelect }) => {
           >
             <div className={styles.avatarWrapper}>
               <img src={contact.avatar} alt={contact.name} className={styles.avatar} />
-              {contact.online && <div className={styles.onlineDot}></div>}
+              {/* オンラインの緑ドットは削除しました */}
             </div>
             <div className={styles.info}>
               <div className={styles.headerRow}>
-                <span className={styles.name}>{contact.name}</span>
+                <span className={styles.name}>
+                  {contact.name}
+                  {/* グループの場合は横に人数を表示 */}
+                  {contact.category === 'group' && contact.memberCount && (
+                    <span className={styles.memberCount}>({contact.memberCount})</span>
+                  )}
+                </span>
                 <span className={styles.time}>{contact.time}</span>
               </div>
               <div className={styles.messageRow}>

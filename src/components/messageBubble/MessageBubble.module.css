@@ -1,48 +1,101 @@
 .row {
   display: flex;
   width: 100%;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  gap: 10px;
 }
+/* 相手：アバターが左、テキストが右 */
 .rowOwner {
-  justify-content: flex-start;
+  flex-direction: row;
 }
+/* 自分：アバターが右、テキストが左 */
 .rowUser {
-  justify-content: flex-end;
+  flex-direction: row-reverse;
 }
-.bubbleContainer {
-  max-width: 75%;
+
+/* メッセージの横に並ぶユーザーアイコン */
+.msgAvatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bubbleContent {
   display: flex;
   flex-direction: column;
+  max-width: 70%;
 }
+.rowOwner .bubbleContent {
+  align-items: flex-start;
+}
+.rowUser .bubbleContent {
+  align-items: flex-end;
+}
+
+/* ユーザーアイコン上の名前表示 */
+.senderName {
+  font-size: 11px;
+  color: #777777;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+/* バブル本体と既読・時間の並び */
+.bubbleAndMeta {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+.rowOwner .bubbleAndMeta {
+  flex-direction: row;
+}
+.rowUser .bubbleAndMeta {
+  flex-direction: row-reverse; /* 自分の時はバブルの左側に既読と時間を配置 */
+}
+
+/* バブル自体の装飾 */
 .bubble {
-  padding: 12px 16px;
+  padding: 10px 14px;
   font-size: 14px;
   line-height: 1.5;
-  border-radius: 18px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  word-break: break-all;
 }
-/* 左: オーナー (白背景・メインカラー文字) */
 .bubbleOwner {
   background-color: var(--sub-color);
-  color: var(--main-color);
-  border-bottom-left-radius: 4px;
+  color: #333333;
+  border-top-left-radius: 4px;
 }
-/* 右: ユーザー (メインカラー背景・白文字) */
 .bubbleUser {
   background-color: var(--main-color);
   color: #FFFFFF;
-  border-bottom-right-radius: 4px;
+  border-top-right-radius: 4px;
 }
+
+/* メタ情報（時間・既読）の縦並び */
+.metaInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+}
+.rowOwner .metaInfo {
+  align-items: flex-start;
+}
+
 .time {
-  font-size: 11px;
-  color: #999;
-  margin-top: 6px;
+  font-size: 10px;
+  color: #999999;
 }
-.rowOwner .time {
-  text-align: left;
-  margin-left: 4px;
-}
-.rowUser .time {
-  text-align: right;
-  margin-right: 4px;
+
+/* 既読テキストの装飾 */
+.readStatus {
+  font-size: 10px;
+  color: var(--accent-color); /* 淡い系統の青色を適用 */
+  font-weight: bold;
 }
