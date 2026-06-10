@@ -52,7 +52,7 @@ const GlobalNav = ({ activeCategory, onSelectCategory, onBack }) => {
 
   return (
     <div className={styles.globalNav}>
-      <button className={styles.backButton} onClick={() => { alert("clicked"); navigate(-1)}} title="前のページに戻る">
+      <button className={styles.backButton} onClick={() => {navigate(-1)}} title="前のページに戻る">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
