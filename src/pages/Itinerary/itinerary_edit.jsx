@@ -17,14 +17,15 @@ const formatJapaneseDate = (date) =>
         weekday: 'short',
     });
 
-function itinerary_edit() {
+function itineraryEdit() {
     const navigate = useNavigate();
     const [selectedRange, setSelectedRange] = useState({
         from: new Date(2026, 3, 15),
         to: new Date(2026, 3, 23),
     });
     const [formValues, setFormValues] = useState({
-        title: '三重',
+        title: '三重旅行',
+        destination: '志摩市',
         members: '3',
     });
 
@@ -32,11 +33,13 @@ function itinerary_edit() {
         navigate('/Itinerary');
     };
 
+    const sanitizeMembers = (value) => value.replace(/[^0-9]/g, '');
+
     const handleChange = (event) => {
         const { name, value } = event.target;
         setFormValues((current) => ({
             ...current,
-            [name]: value,
+            [name]: name === 'members' ? sanitizeMembers(value) : value,
         }));
     };
 
@@ -78,6 +81,16 @@ function itinerary_edit() {
                         />
                     </div>
                     <div className={styles.box}>
+                        <h3 className={styles.title}>目的地</h3>
+                        <input
+                            className={styles.input}
+                            type="text"
+                            name="destination"
+                            value={formValues.destination}
+                            onChange={handleChange}
+                        />
+                    </div>
+                    <div className={styles.box}>
                         <h3 className={styles.title}>旅行期間</h3>
                         <div className={styles.calendar}>
                             <DayPicker
@@ -95,25 +108,14 @@ function itinerary_edit() {
                         <h3 className={styles.title}>メンバー</h3>
                         <input
                             className={styles.input}
-                            type="number"
+                            type="text"
                             name="members"
                             value={formValues.members}
-                            min="1"
-                            step="1"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
                             onChange={handleChange}
                         />
                     </div>
-                </div>
-                <div style={{
-                    position: 'fixed',
-                    bottom: '80px',
-                    right: '20px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '12px',
-                    zIndex: '100',
-                    backgroundColor:'var(--main-color)'
-                }}>
                     <button
                         type="submit"
                         style={{
@@ -127,31 +129,12 @@ function itinerary_edit() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            transition: 'all 0.3s ease'
+                            transition: 'all 0.3s ease',
+                            width:'100%'
                         }}
                     >
                         <Check style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
                         変更
-                    </button>
-                    <button
-                        type="button"
-                        onClick={BackClick}
-                        style={{
-                            padding: '12px 16px',
-                            border: '2px solid #44558D',
-                            backgroundColor: 'var(--sub-color)',
-                            color: 'var(--main-color)',
-                            borderRadius: '15px',
-                            cursor: 'pointer',
-                            fontWeight: '500',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.3s ease'
-                        }}
-                    >
-                        <Close style={{fill:'var(--main-color)',paddingRight:'5px'}}/>
-                        キャンセル
                     </button>
                 </div>
             </form>
@@ -160,4 +143,4 @@ function itinerary_edit() {
     )
 }
 
-export default itinerary_edit
+export default itineraryEdit
