@@ -81,38 +81,7 @@ export default function Itinerary() {
       <div className={styles.mainLayout}>
         
         {/* 【左サイドバー】 */}
-        <aside className={styles.leftSidebar}>
-          <div className={styles.logoSection}>
-            <span className={styles.logoText}>TABI</span>
-            <button className={styles.newGroupBtn}>+ 新しい旅行グループ</button>
-          </div>
-          
-          <nav className={styles.sidebarNav}>
-            <div className={styles.navItemActive}>ホーム</div>
-            <div className={styles.navItem}>お気に入り</div>
-            <div className={styles.navItem}>
-              <span>お知らせ</span>
-              <span className={styles.badge}>3</span>
-            </div>
-          </nav>
-
-          <div className={styles.travelListSection}>
-            <h3 className={styles.sidebarSectionTitle}>参加中の旅行グループ</h3>
-            <div className={styles.travelList}>
-              {travelGroups.map((group) => (
-                <div key={group.id} className={group.active ? styles.travelCardActive : styles.travelCard}>
-                  <div className={styles.travelImgWrapper}>
-                    <img src={group.image} alt={group.name} className={styles.travelImg} />
-                  </div>
-                  <div className={styles.travelInfo}>
-                    <div className={styles.travelName}>{group.name}</div>
-                    <div className={styles.travelDate}>{group.date}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </aside>
+        
 
         {/* 【中央メインコンテンツ】 */}
         <div className={styles.centerContent}>
@@ -313,72 +282,6 @@ export default function Itinerary() {
             </div>
           </div>
         </div>
-
-        {/* 【右サイドバー】 */}
-        <aside className={styles.rightSidebar}>
-          <div className={styles.rightSection}>
-            <h3 className={styles.rightSectionTitle}>旅の情報</h3>
-            <div className={styles.infoBox}>
-              <div className={styles.infoRow}><span className={styles.infoLabel}>目的地</span><span className={styles.infoValue}>三重県 (伊勢・鳥羽エリア)</span></div>
-              <div className={styles.infoRow}><span className={styles.infoLabel}>旅行期間</span><span className={styles.infoValue}>2026/05/14 (木) - 05/16 (土)<br/><small>2泊3日</small></span></div>
-            </div>
-          </div>
-
-          <div className={styles.rightSection}>
-            <div className={styles.cardHeaderRow}>
-              <h3 className={styles.rightSectionTitle}>ファイル・アルバム</h3>
-              <span className={styles.moreLink}>すべて見る</span>
-            </div>
-            <div className={styles.albumGrid}>
-              {albumImages.map((src, index) => (
-                <div key={index} className={styles.albumItem}>
-                  <img src={src} alt={`アルバム画像 ${index + 1}`} className={styles.albumImg} />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className={styles.rightSection}>
-            <div className={styles.cardHeaderRow}>
-              <h3 className={styles.rightSectionTitle}>天気予報 (伊勢市)</h3>
-              <span className={styles.moreLink}>詳細を見る</span>
-            </div>
-            <div className={styles.weatherGrid}>
-              <div className={styles.weatherCard}>
-                <div className={styles.weatherDay}>5/14 (木)</div>
-                <div className={styles.weatherIconSunny}>☀️</div>
-                <div className={styles.weatherTemp}>22℃</div>
-                <div className={styles.weatherPop}>12℃ / 10%</div>
-              </div>
-              <div className={styles.weatherCard}>
-                <div className={styles.weatherDay}>5/15 (金)</div>
-                <div className={styles.weatherIconCloudy}>☁️</div>
-                <div className={styles.weatherTemp}>21℃</div>
-                <div className={styles.weatherPop}>13℃ / 20%</div>
-              </div>
-              <div className={styles.weatherCard}>
-                <div className={styles.weatherDay}>5/16 (土)</div>
-                <div className={styles.weatherIconRainy}>☔</div>
-                <div className={styles.weatherTemp}>19℃</div>
-                <div className={styles.weatherPop}>14℃ / 40%</div>
-              </div>
-            </div>
-          </div>
-
-          {/* カンプ画像下部に存在する「地図」エリアを追加 */}
-          <div className={styles.rightSection}>
-            <div className={styles.cardHeaderRow}>
-              <h3 className={styles.rightSectionTitle}>周辺の地図</h3>
-              <span className={styles.moreLink}>拡大する</span>
-            </div>
-            <div className={styles.mapContainer}>
-              <img src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=300&q=80" alt="地図プレースホルダー" className={styles.mapImg} />
-              <div className={styles.mapOverlay}>
-                <span>マップを表示中</span>
-              </div>
-            </div>
-          </div>
-        </aside>
       </div>
 
       {/* 固定ボトムナビ */}
