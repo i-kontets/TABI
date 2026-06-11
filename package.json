@@ -11,6 +11,7 @@
     "build:capacitor": "vite build --mode capacitor"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.0",
     "@capacitor/cli": "^8.4.0",
     "@capacitor/core": "^8.4.0",
     "@capacitor/ios": "^8.4.0",
