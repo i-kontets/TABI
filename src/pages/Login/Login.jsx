@@ -5,8 +5,8 @@ import styles from "./Login.module.css";
 import eyeIcon from "../../assets/icons/eye.svg";
 import eyeOffIcon from "../../assets/icons/eye_off.svg";
 
-// public/assets/login_newreg_bg/ 直下にあるすべてのjpg,jpeg,png,webp画像を自動で読み込む
-const imageModules = import.meta.glob("/public/assets/login_newreg_bg/*.{jpg,jpeg,png,webp}", { eager: true });
+// public/assets/login/ 直下にあるすべてのjpg,jpeg,png,webp画像を自動で読み込む
+const imageModules = import.meta.glob("/public/assets/login/*.{jpg,jpeg,png,webp}", { eager: true });
 const BACKGROUND_IMAGES = Object.values(imageModules).map((mod) => mod.default);
 
 export default function Login() {
