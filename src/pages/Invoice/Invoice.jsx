@@ -14,6 +14,8 @@ const groupNames = {
     aom: "青森",
 };
 
+// データがまだ無いグループのための、デフォルトのメンバー一覧
+// メンバー追加機能ができ次第、ここも変える必要あり！
 const defaultMembers = [
     { id: 1, name: "志田", paidPayIds: [] },
     { id: 2, name: "石垣", paidPayIds: [] },
