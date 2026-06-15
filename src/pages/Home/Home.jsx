@@ -4,11 +4,11 @@ import { TripContext } from "../../App";
 import styles from './Home.module.css';
 
 const trips = [
-    { id: "mie", name: "三重" },
-    { id: "hok", name: "北海道" },
-    { id: "wak", name: "和歌山" },
-    { id: "nara", name: "奈良" },
-    { id: "aom", name: "青森" },
+    { id: "1", name: "三重" },
+    { id: "2", name: "北海道" },
+    { id: "3", name: "和歌山" },
+    { id: "4", name: "奈良" },
+    { id: "5", name: "青森" },
 ];
 
 function Home() {
