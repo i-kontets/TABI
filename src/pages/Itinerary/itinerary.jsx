@@ -80,8 +80,6 @@ export default function Itinerary() {
       {/* 3カラム構成（左・中央・右） */}
       <div className={styles.mainLayout}>
         
-        {/* 【左サイドバー】 */}
-        
 
         {/* 【中央メインコンテンツ】 */}
         <div className={styles.centerContent}>
@@ -114,7 +112,7 @@ export default function Itinerary() {
               </div>
             </div>
             {/* 旅行編集画面 itineraryEdit.jsx への遷移 */}
-            <button className={styles.editBtn} onClick={() => navigate('/itinerary/edit')}>
+            <button className={styles.editBtn} onClick={() => navigate('/itineraryEdit')}>
               旅行情報を編集
             </button>
           </div>
