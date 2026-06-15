@@ -1,10 +1,12 @@
 <?php
 header("Content-Type: application/json; charset=UTF-8");
 
-$host = "mysql327.phy.lolipop.lan";
-$dbname = "LAA1658851-web";
-$user = "LAA1658851";
-$password = "2024gakusei";
+$config = require __DIR__ . '/env.php';
+
+$host = $config['DB_HOST'];
+$dbname = $config['DB_NAME'];
+$user = $config['DB_USER'];
+$password = $config['DB_PASSWORD'];
 
 try {
 
