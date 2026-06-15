@@ -22,14 +22,33 @@ function Home() {
         });
     };
 
-    const handleBackClick = () => {
-        navigate('/');
+    // ログアウト処理
+    // - サーバーにログアウトをリクエストしてセッションを破棄
+    // - 成功したらクライアント側のログイン情報を削除してルートへ遷移
+    const handleLogout = async () => {
+        // サーバー側のログアウトAPIにPOST（セッション破棄のためCookieを含める）
+        const response = await fetch(
+            "/TABI/api/auth/logout.php",
+            {
+                method: "POST",
+                credentials: "include"
+            }
+        );
+
+        // レスポンスをJSONとして取得
+        const data = await response.json();
+
+        // ログアウトに成功したらクライアント側のキャッシュを削除してトップ画面へ戻す
+        if (data.success) {
+            localStorage.removeItem("loginUser");
+            navigate("/");
+        }
     };
 
     return (
         <>
             <div className={styles.header}>
-                <button onClick={handleBackClick}>ログアウト</button>
+                <button onClick={handleLogout}>ログアウト</button>
 
                 <div className={styles.titleWrapper}>
                     <p className={styles.title}>TABI</p>
