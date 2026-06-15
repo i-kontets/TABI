@@ -14,8 +14,9 @@ export default function Login() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    
-    // 初期値として、見つかった画像の1枚目をセットしておく
+    const [errorMessage, setErrorMessage] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
     const [bgImage, setBgImage] = useState(BACKGROUND_IMAGES[0] || "");
 
     useEffect(() => {
@@ -25,13 +26,65 @@ export default function Login() {
         }
     }, []);
 
-    const handleLogin = (e) => {
-        e.preventDefault();
-        console.log("ログイン:", { email, password });
+    // ログインフォーム送信ハンドラ
+    const handleLogin = async (event) => {
+        // フォームのデフォルト送信動作をキャンセル
+        event.preventDefault();
+
+        // 前回のエラーメッセージをクリア
+        setErrorMessage("");
+
+        // メールアドレスとパスワードの空チェック
+        if (!email || !password) {
+            setErrorMessage("メールアドレスとパスワードを入力してください");
+            return;
+        }
+
+        try {
+            // ローディング状態を有効化
+            setIsLoading(true);
+
+            // バックエンドのログインAPIにPOSTリクエストを送信
+            const response = await fetch("/TABI/api/auth/login.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                // Cookie送信を有効化（セッション管理用）
+                credentials: "include",
+                body: JSON.stringify({
+                    email: email,
+                    password: password,
+                }),
+            });
+
+            // レスポンスをJSON形式でパース
+            const data = await response.json();
+
+            // レスポンスステータスまたはsuccess フラグをチェック
+            if (!response.ok || !data.success) {
+                setErrorMessage(data.message || "ログインに失敗しました");
+                return;
+            }
+
+            // ログイン成功：ユーザー情報をローカルストレージに保存（クライアント側のキャッシュ）
+            localStorage.setItem("loginUser", JSON.stringify(data.user));
+
+            // ホームページにリダイレクト
+            navigate("/Home");
+
+        } catch (error) {
+            // 通信エラーやパース エラーをキャッチ
+            console.error(error);
+            setErrorMessage("通信エラーが発生しました");
+        } finally {
+            // エラーの有無に関わらず、ローディング状態を無効化
+            setIsLoading(false);
+        }
     };
 
     return (
-        <div 
+        <div
             className={styles.loginPage}
             style={{ backgroundImage: bgImage ? `url(${bgImage})` : "none" }}
         >
@@ -65,12 +118,26 @@ export default function Login() {
                             />
                         </div>
 
-                        <button className={`${styles.btn} ${styles.loginBtn}`} onClick={() => navigate("/Home")}>
-                            ログイン
+                        {errorMessage && (
+                            <p className={styles.errorMessage}>
+                                {errorMessage}
+                            </p>
+                        )}
+
+                        <button
+                            type="submit"
+                            className={`${styles.btn} ${styles.loginBtn}`}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? "ログイン中..." : "ログイン"}
                         </button>
                     </form>
 
-                    <button className={`${styles.btn} ${styles.registerBtn}`} onClick={() => navigate("/Newreg")}>
+                    <button
+                        type="button"
+                        className={`${styles.btn} ${styles.registerBtn}`}
+                        onClick={() => navigate("/Newreg")}
+                    >
                         新規登録
                     </button>
                 </div>
