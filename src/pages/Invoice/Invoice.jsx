@@ -6,12 +6,21 @@ import Header from "../../components/header/Header";
 import BtmNav from "../../components/bottomNav/BottomNav";
 import invoiceJson from "./Invoice.json";
 
+
+const legacyGroupIds = {
+    mie: 1,
+    hok: 2,
+    wak: 3,
+    nara: 4,
+    aom: 5,
+};
+
 const groupNames = {
-    mie: "三重",
-    hok: "北海道",
-    wak: "和歌山",
-    nara: "奈良",
-    aom: "青森",
+    1: "三重",
+    2: "北海道",
+    3: "和歌山",
+    4: "奈良",
+    5: "青森",
 };
 
 // データがまだ無いグループのための、デフォルトのメンバー一覧
@@ -77,6 +86,23 @@ function createEmptyGroupData() {
     });
 }
 
+function normalizeGroupId(groupId) {
+    // groupId が未指定なら、既存データとの互換のため 1(三重) を既定値にする
+    if (groupId == null || groupId === "") {
+        return 1;
+    }
+
+    // URL クエリは文字列で来るため、まず数値として解釈できるか確認する
+    const numericGroupId = Number(groupId);
+    // 正の整数ならそのまま採用する（例: "2" -> 2）
+    if (Number.isInteger(numericGroupId) && numericGroupId > 0) {
+        return numericGroupId;
+    }
+
+    // 旧形式の文字列ID（mie/hok...）を数値IDへ変換し、未知の値は 1 にフォールバック
+    return legacyGroupIds[groupId] || 1;
+}
+
 function normalizeInvoiceFile(data) {
     // 読み込んだ請求ファイルを、画面側で同じ形に扱えるよう整える
     if (data?.groups) {
@@ -84,7 +110,7 @@ function normalizeInvoiceFile(data) {
         return {
             groups: Object.fromEntries(
                 Object.entries(data.groups).map(([groupId, groupData]) => [
-                    groupId,
+                    normalizeGroupId(groupId),
                     normalizeGroupData(groupData),
                 ])
             ),
@@ -94,7 +120,7 @@ function normalizeInvoiceFile(data) {
     // 古い単一グループ形式なら、mie グループとして包み直す
     return {
         groups: {
-            mie: normalizeGroupData(data),
+            1: normalizeGroupData(data),
         },
     };
 }
@@ -102,7 +128,7 @@ function normalizeInvoiceFile(data) {
 export default function Invoice() {
     const location = useLocation();
     const params = new URLSearchParams(location.search);
-    const groupId = params.get("groupId") || "mie";
+    const groupId = normalizeGroupId(params.get("groupId"));
     const { tripName } = useContext(TripContext);
 
     const [activeTab, setActiveTab] = useState("collect");
