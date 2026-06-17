@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import BtmNav from '../../components/bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
@@ -12,10 +12,18 @@ function Confirmation() {
     const [boarding, setBoarding] = useState(stops.boarding?.[0] || '');
     const [alighting, setAlighting] = useState(stops.alighting?.[0] || '');
     const [selectedTime, setSelectedTime] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const timeoutRef = useRef(null);
 
     useEffect(() => {
         if (item?.times && item.times.length > 0) setSelectedTime(item.times[0]);
     }, [item]);
+
+    React.useEffect(() => {
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, []);
 
     // simple fare map (per person)
     const fareMap = {
@@ -30,9 +38,14 @@ function Confirmation() {
     const BackClick = () => navigate(-1);
 
     const confirm = () => {
-        // navigate to payment page with booking info
-        navigate('/Payment', { state: { booking: { item, people: people || 1, date, time: selectedTime, boarding, alighting, pricePerPerson, totalPrice } } });
-    }
+                if (isLoading) return;
+                const booking = { item, people: people || 1, date, time: selectedTime, boarding, alighting, pricePerPerson, totalPrice };
+                const bookingNumber = 'R' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 9000 + 1000);
+                setIsLoading(true);
+                timeoutRef.current = setTimeout(() => {
+                    navigate('/decision', { state: { booking, bookingNumber } });
+                }, 3000);
+            }
 
     return (
         <>
@@ -94,7 +107,7 @@ function Confirmation() {
                 </label>
 
                 <div className={styles.actions}>
-                    <button className={styles.buttonPrimary} onClick={confirm}>支払いに進む</button>
+                                    <button className={styles.buttonPrimary} onClick={confirm} disabled={isLoading}>{isLoading ? '読み込み中...' : '支払いに進む'}</button>
                 </div>
             </div>
             <BtmNav />

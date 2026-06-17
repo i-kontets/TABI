@@ -36,12 +36,33 @@ function Itinerary() {
             <Header tripName={currentTripName} />
             <div className={styles.container}>
                 {boxes.map((box, index) => (
-                    <div key={index} className={styles.box}>
+                    <div key={index}
+                    className={styles.box}
+                    onClick={()=>{
+                        if(box.path){
+                            navigate(box.path);
+                        }
+                    }}
+                    >
                         <h3 className={styles.title}>{box.title}</h3>
                         <p className={styles.content}>{box.content}</p>
                     </div>
                 ))}
+                <div
+                    className={styles.box}
+                    onClick={() => { navigate('/appointment', { state: { groupId, tripName: currentTripName } }); }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => { if (e.key === 'Enter') navigate('/appointment', { state: { groupId, tripName: currentTripName } }); }}
+                >
+                    <h3 className={styles.title}>移動手段</h3>
+                    <p className={styles.content}>コンテンツは登録されていません</p>
+                </div>
             </div>
+
+
+
+
             <div style={{
                 position: 'fixed',
                 bottom: '80px',
