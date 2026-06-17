@@ -158,6 +158,14 @@ export default function Newreg() {
                             )}
                         </div>
                     </form>
+
+                    <button
+                        type="button"
+                        className={styles.btn}
+                        onClick={() => navigate("/")}
+                    >
+                        戻る
+                    </button>
                 </div>
             </div>
         </div>
