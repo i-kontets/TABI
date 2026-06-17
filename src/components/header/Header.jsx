@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import styles from './header.module.css';
-import ArrowBack from '../../assets/icons/arrow_back.svg?react';
+import Home from '../../assets/icons/home.svg?react';
 import ChatIcon from '../../assets/icons/chat.svg?react';
 
 function Header({tripName}) {
@@ -25,7 +25,7 @@ function Header({tripName}) {
                 aria-label="戻る"
             >
                 {/* aria-hidden="true"は画面上で読み上げ機能を使用した際にsvgを範囲に含めないための命令です。 */}
-                <ArrowBack className={styles.icon} aria-hidden="true"/>
+                <Home className={styles.icon} aria-hidden="true"/>
             </button>
 
             <div className={styles.titleWrapper}>

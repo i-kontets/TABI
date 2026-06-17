@@ -12,9 +12,11 @@ import Group from '../../assets/icons/group.svg?react';
 
 export default function Itinerary() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const tripName = location.state?.tripName;
   // 招待モーダルの管理状態
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-
+  
   // 参加中の旅行データ
   const travelGroups = [
     { id: 1, name: '三重旅行', date: '2026/05/14 - 05/16', active: true, image: 'https://images.unsplash.com/photo-1549693578-d683be217e58?auto=format&fit=crop&w=150&q=80' },
@@ -91,7 +93,7 @@ export default function Itinerary() {
             <div className={styles.coverOverlay}></div>
             <div className={styles.coverMainInfo}>
               <div className={styles.titleRow}>
-                <h1 className={styles.mainTitle}>三重旅行</h1>
+                <h1 className={styles.mainTitle}>{tripName}</h1>
                 <span className={styles.daysBadge}>あと 24 日</span>
               </div>
               <p className={styles.subDate}>2026/05/14 (木) - 05/16 (土)</p>
