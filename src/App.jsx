@@ -13,6 +13,7 @@ import Schedule  from './pages/Schedule/Schedule';
 import Chat from './pages/Chat/Chat';
 import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
+import Discussion from './pages/Discussion/Discussion';
 
 export const TripContext = createContext();
 
@@ -31,6 +32,8 @@ function App() {
                     <Route path="/Tripmap" element={<Tripmap />} />
                     <Route path="/schedule" element={<Schedule />} />
                     <Route path="/Chat" element={<Chat />} />
+                    <Route path="/Discussion" element={<Discussion />} />
+                    <Route path="/group/:groupId/talk" element={<Discussion />} />
                     <Route path="/album" element={<Album />} />
                     <Route path="/Invoice" element={<Invoice />} />
                 </Routes>
