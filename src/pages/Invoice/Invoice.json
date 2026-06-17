@@ -12,6 +12,16 @@
           ],
           "participantCount": 2,
           "perPersonAmount": 4000
+        },
+        {
+          "id": 1781492038924,
+          "storeName": "[",
+          "totalAmount": 1,
+          "participantIds": [
+            1
+          ],
+          "participantCount": 1,
+          "perPersonAmount": 1
         }
       ],
       "collect": [],
