@@ -62,18 +62,8 @@ export default function Itinerary() {
     { title: 'レンタカー代', meta: '5/14 ゆうき', amount: '¥4,800' },
   ];
 
-  // アルバム画像URL
-  const albumImages = [
-    'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=100&q=80',
-    'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=100&q=80',
-    'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=100&q=80',
-    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=100&q=80',
-    'https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?auto=format&fit=crop&w=100&q=80',
-    'https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=100&q=80',
-  ];
-
   return (
-    <div className={styles.initiraryShell}>
+    <div>
         <Header />
       {/* 3カラム構成（左・中央・右） */}
       <div>
