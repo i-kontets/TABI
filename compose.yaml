@@ -23,3 +23,47 @@ services:
 
     volumes:
       - .:/var/www/html/TABI
+
+    environment:
+      DB_HOST: db
+      DB_NAME: tabi
+      DB_USER: tabi_user
+      DB_PASSWORD: tabi_password
+      DB_CHARSET: utf8mb4
+
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.4
+
+    ports:
+      - "3306:3306"
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: tabi
+      MYSQL_USER: tabi_user
+      MYSQL_PASSWORD: tabi_password
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+
+  phpmyadmin:
+    image: phpmyadmin:5
+
+    ports:
+      - "8081:80"
+
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: tabi_user
+      PMA_PASSWORD: tabi_password
+
+    depends_on:
+      - db
+
+volumes:
+  mysql_data:
