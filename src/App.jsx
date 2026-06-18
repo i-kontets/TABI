@@ -14,8 +14,6 @@ import Chat from './pages/Chat/Chat';
 import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
 import Appointment from './pages/appointment/appointment.jsx';
-import Confirmation from './pages/Appointment/Confirmation.jsx';
-import Decision from './pages/Appointment/Decision.jsx';
 
 export const TripContext = createContext();
 
@@ -37,8 +35,6 @@ function App() {
                     <Route path="/album" element={<Album />} />
                     <Route path="/Invoice" element={<Invoice />} />
                     <Route path="/appointment" element={<Appointment />}/>
-                    <Route path="/confirmation" element={<Confirmation />}/>
-                                        <Route path="/decision" element={<Decision />}/>
                 </Routes>
             </BrowserRouter>
         </TripContext.Provider>
