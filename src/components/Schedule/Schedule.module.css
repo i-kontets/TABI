@@ -1,0 +1,67 @@
+.card {
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.time {
+  font-size: 12px;
+  color: #666;
+}
+
+.members {
+  margin-top: 8px;
+  font-size: 13px;
+}
+.wrapper {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 12px;
+  position: sticky;
+  top: 0;
+  background: white;
+}
+
+.chip {
+  border: none;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #eee;
+}
+
+.active {
+  background: #007aff;
+  color: white;
+}
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.3);
+}
+
+.sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+
+  background: white;
+
+  border-radius: 24px 24px 0 0;
+
+  padding: 24px;
+
+  min-height: 320px;
+}
+
+.handle {
+  width: 40px;
+  height: 4px;
+
+  background: #ddd;
+
+  margin: auto;
+  border-radius: 999px;
+}

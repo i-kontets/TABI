@@ -1,12 +1,12 @@
-import { useContext,useState } from 'react';
+import { useContext, useState } from 'react';
 import { TripContext } from '../../App';
 import BtmNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
-import styles from "./SchedulePage.module.css";
+import styles from "./Schedulepage.module.css";
 
-import TimelineCard from "./TimelineCard";
-import MemberFilter from "./MemberFilter";
-import ScheduleDetailSheet from "./ScheduleDetailSheet";
+import TimelineCard from "../../components/Schedule/TimelineCard";
+import MemberFilter from "../../components/Schedule/MemberFilter";
+import ScheduleDetailSheet from "../../components/Schedule/ScheduleDetailSheet";
 
 const schedules = [
   {
@@ -37,6 +37,7 @@ const schedules = [
 ];
 
 export default function SchedulePage() {
+  const { tripName } = useContext(TripContext);
   const [selectedMember, setSelectedMember] = useState("全員");
   const [selectedSchedule, setSelectedSchedule] = useState(null);
 
@@ -49,25 +50,31 @@ export default function SchedulePage() {
 
   return (
     <div className={styles.container}>
-      <MemberFilter
-        selected={selectedMember}
-        onChange={setSelectedMember}
-      />
+      <Header tripName={tripName} />
 
-      <div className={styles.timeline}>
-        {filteredSchedules.map((schedule) => (
-          <TimelineCard
-            key={schedule.id}
-            schedule={schedule}
-            onClick={() => setSelectedSchedule(schedule)}
-          />
-        ))}
-      </div>
+      <main className={styles.content}>
+        <MemberFilter
+          selected={selectedMember}
+          onChange={setSelectedMember}
+        />
+
+        <div className={styles.timeline}>
+          {filteredSchedules.map((schedule) => (
+            <TimelineCard
+              key={schedule.id}
+              schedule={schedule}
+              onClick={() => setSelectedSchedule(schedule)}
+            />
+          ))}
+        </div>
+      </main>
 
       <ScheduleDetailSheet
         schedule={selectedSchedule}
         onClose={() => setSelectedSchedule(null)}
       />
+
+      <BtmNav />
     </div>
   );
 }
