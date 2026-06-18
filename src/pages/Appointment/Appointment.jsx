@@ -13,16 +13,23 @@ function ProgressTracker({ step, setStep }) {
             {['検索', '確認', '完了'].map((label, i) => (
                 <button
                     key={label}
+                    aria-pressed={step === i}
                     onClick={() => setStep(i)}
                     style={{
-                        padding: '6px 10px',
+                        width: 44,
+                        height: 44,
+                        padding: 0,
                         border: 'none',
                         background: step === i ? 'var(--other-color, #ffeedd)' : 'transparent',
                         cursor: 'pointer',
-                        borderBottom: step === i ? '3px solid var(--main-color, #007bff)' : '3px solid transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 12,
                         fontWeight: step === i ? 700 : 500,
                         color: '#000',
-                        borderRadius: 6
+                        borderRadius: '50%',
+                        boxShadow: step === i ? '0 1px 3px rgba(0,0,0,0.08) inset' : 'none'
                     }}
                 >
                     {label}
