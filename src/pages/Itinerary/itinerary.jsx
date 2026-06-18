@@ -73,18 +73,10 @@ export default function Itinerary() {
   ];
 
   return (
-    <div className={styles.appContainer}>
-      {/* 共通Header */}
-      <div className={styles.headerWrapper}>
+    <div className={styles.initiraryShell}>
         <Header />
-      </div>
-
       {/* 3カラム構成（左・中央・右） */}
-      <div className={styles.mainLayout}>
-        
-        {/* 【左サイドバー】 */}
-        
-
+      <div>
         {/* 【中央メインコンテンツ】 */}
         <div className={styles.centerContent}>
           
@@ -121,168 +113,8 @@ export default function Itinerary() {
             </button>
           </div>
 
-          {/* 補助情報エリア（進捗・予定） */}
-          <div className={styles.subInfoGrid}>
-            <div className={styles.cardSmall}>
-              <h4 className={styles.sectionSubTitle}>旅行の進捗</h4>
-              <div className={styles.progressHeader}>
-                <span className={styles.progressText}>みんなで計画を進めて、最高の旅行にしよう！</span>
-                <span className={styles.progressPercent}>60%</span>
-              </div>
-              <div className={styles.progressBarBg}>
-                <div className={styles.progressBarFill} style={{ width: '60%' }}></div>
-              </div>
-              <div className={styles.progressStats}>
-                <div className={styles.statBox}><span className={styles.statLabel}>決定済み</span><span className={styles.statValGreen}>6/10</span></div>
-                <div className={styles.statBox}><span className={styles.statLabel}>未決定</span><span className={styles.statValPurple}>4/10</span></div>
-                <div className={styles.statBox}><span className={styles.statLabel}>参加メンバー</span><span className={styles.statValBlue}>5人</span></div>
-              </div>
-            </div>
 
-            <div className={styles.cardSmall}>
-              <div className={styles.nextScheduleHeader}>
-                <h4 className={styles.sectionSubTitle}>次の予定</h4>
-                <span className={styles.scheduleDay}>1日目 5/14 (木)</span>
-              </div>
-              <div className={styles.scheduleList}>
-                {nextSchedules.map((schedule, idx) => (
-                  <div key={idx} className={styles.timelineItem}>
-                    <span className={styles.timelineTime}>{schedule.time}</span>
-                    <span className={styles.timelineContent}>{schedule.content}</span>
-                    <span className={styles.timelineTag}>{schedule.tag}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* リアルタイム広場（話し合い・やること・精算を3カラム構成で均等配置） */}
-          <div className={styles.midContentGrid}>
-            
-            {/* 最近の話し合い */}
-            <div className={styles.cardMedium}>
-              <div className={styles.cardHeaderRow}>
-                <h3 className={styles.cardTitle}>最近の話し合い</h3>
-                <span className={styles.moreLink}>すべて見る</span>
-              </div>
-              <div className={styles.chatList}>
-                {chats.map((chat, idx) => (
-                  <div key={idx} className={styles.chatItem}>
-                    <span className={styles.chatAvatar} style={{ backgroundColor: chat.color }}>
-                      {chat.initial}
-                    </span>
-                    <div className={styles.chatContentWrapper}>
-                      <div className={styles.chatMeta}>
-                        <span className={styles.chatUser}>{chat.user}</span>
-                        <span className={styles.chatTime}>{chat.time}</span>
-                      </div>
-                      <p className={styles.chatText}>{chat.text}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className={styles.chatInputWrapper}>
-                <input type="text" placeholder="メッセージを入力..." className={styles.chatInput} />
-              </div>
-            </div>
-
-            {/* やることリスト */}
-            <div className={styles.cardMedium}>
-              <div className={styles.cardHeaderRow}>
-                <h3 className={styles.cardTitle}>やることリスト</h3>
-                <span className={styles.moreLink}>すべて見る</span>
-              </div>
-              <div className={styles.todoList}>
-                {todos.map((todo) => (
-                  <label key={todo.id} className={styles.todoItem}>
-                    <input type="checkbox" defaultChecked={todo.checked} className={styles.todoCheckbox} />
-                    <div className={styles.todoTextWrapper}>
-                      <span className={todo.checked ? styles.todoTextChecked : styles.todoText}>
-                        {todo.text}
-                      </span>
-                      <span className={styles.todoMeta}>{todo.meta}</span>
-                    </div>
-                  </label>
-                ))}
-              </div>
-              <button className={styles.addTodoBtn}>+ タスクを追加</button>
-            </div>
-
-            {/* 精算の状況 */}
-            <div className={styles.cardMedium}>
-              <div className={styles.cardHeaderRow}>
-                <h3 className={styles.cardTitle}>精算の状況</h3>
-                <span className={styles.moreLink}>詳細を見る</span>
-              </div>
-              <div className={styles.settlementSummary}>
-                <div>
-                  <span className={styles.summaryLabel}>未精算の合計</span>
-                  <div className={styles.summaryAmount}>¥12,450</div>
-                </div>
-                <div className={styles.summaryRight}>
-                  <span className={styles.summaryLabel}>1人あたりの未精算額</span>
-                  <div className={styles.summarySubAmount}>¥2,490</div>
-                </div>
-              </div>
-              <div className={styles.expenseList}>
-                {expenses.map((expense, idx) => (
-                  <div key={idx} className={styles.expenseItem}>
-                    <div className={styles.expenseLeft}>
-                      <span className={styles.expenseAvatar}></span>
-                      <div>
-                        <div className={styles.expenseName}>{expense.title}</div>
-                        <div className={styles.expenseMeta}>{expense.meta}</div>
-                      </div>
-                    </div>
-                    <span className={styles.expenseAmount}>{expense.amount}</span>
-                  </div>
-                ))}
-              </div>
-              <button className={styles.addExpenseBtn}>+ 支出を追加</button>
-            </div>
-          </div>
-
-          {/* しおり・スポットの候補 */}
-          <div className={styles.cardLarge}>
-            <div className={styles.cardHeaderRow}>
-              <h3 className={styles.cardTitleLarge}>しおり・スポットの候補</h3>
-              <span className={styles.moreLinkBlue}>すべて見る</span>
-            </div>
-            <div className={styles.spotGrid}>
-              <div className={styles.spotCard}>
-                <div className={styles.spotImgWrapper}>
-                  <img src="https://images.unsplash.com/photo-1627575191507-6a4a0619a909?auto=format&fit=crop&w=400&q=80" alt="伊勢神宮" className={styles.spotImg} />
-                  <span className={styles.spotTag}>観光</span>
-                </div>
-                <h4 className={styles.spotName}>伊勢神宮 (内宮)</h4>
-                <p className={styles.spotDesc}>日本を代表する神社の内宮。荘厳な雰囲...</p>
-              </div>
-              <div className={styles.spotCard}>
-                <div className={styles.spotImgWrapper}>
-                  <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=400&q=80" alt="鳥羽水族館" className={styles.spotImg} />
-                  <span className={styles.spotTag}>観光</span>
-                </div>
-                <h4 className={styles.spotName}>鳥羽水族館</h4>
-                <p className={styles.spotDesc}>ジュゴンやラッコで有名な水族館。見どこ...</p>
-              </div>
-              <div className={styles.spotCard}>
-                <div className={styles.spotImgWrapper}>
-                  <img src="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=400&q=80" alt="おかげ横丁" className={styles.spotImg} />
-                  <span className={styles.spotTag}>グルメ・観光</span>
-                </div>
-                <h4 className={styles.spotName}>おかげ横丁</h4>
-                <p className={styles.spotDesc}>伊勢の名物グルメやお土産が揃うレトロな...</p>
-              </div>
-              <div className={styles.spotCard}>
-                <div className={styles.spotImgWrapper}>
-                  <img src="https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=400&q=80" alt="松阪牛 まるよし" className={styles.spotImg} />
-                  <span className={styles.spotTag}>グルメ</span>
-                </div>
-                <h4 className={styles.spotName}>松阪牛 まるよし</h4>
-                <p className={styles.spotDesc}>松阪牛の老舗。極上の松阪牛を味わえる！</p>
-              </div>
-            </div>
-          </div>
+          
         </div>
       </div>
 

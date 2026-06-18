@@ -13,7 +13,6 @@ function Header({tripName}) {
 
     const chatClick = () =>{
         console.log("test内容");
-        
         navigate('/Chat')
     };
 
