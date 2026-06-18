@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import Header from "../../components/header/Header";
+import BottomNav from "../../components/bottomNav/BottomNav";
 import "./Discussion.css";
 
 const trip = {
@@ -9,12 +10,12 @@ const trip = {
 };
 
 const tabs = [
-    { id: "chat", label: "チャット" },
+    { id: "chat", label: "話し合い" },
     { id: "candidate", label: "候補" },
     { id: "poll", label: "投票" },
 ];
 
-const messages = [
+const initialMessages = [
     {
         id: 1,
         date: "2026年5月10日 日曜日",
@@ -158,16 +159,25 @@ function Icon({ name }) {
 }
 
 function Discussion() {
-    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("chat");
     const [draft, setDraft] = useState("");
+    const [messages, setMessages] = useState(initialMessages);
+    const messageListRef = useRef(null);
+
+    useLayoutEffect(() => {
+        const messageList = messageListRef.current;
+
+        if (activeTab === "chat" && messageList) {
+            messageList.scrollTo({
+                top: messageList.scrollHeight,
+                behavior: "auto",
+            });
+        }
+    }, [activeTab, messages.length]);
 
     const chatContent = useMemo(() => {
-        let lastDate = "";
-
-        return messages.map((message) => {
-            const showDate = message.date !== lastDate;
-            lastDate = message.date;
+        return messages.map((message, index) => {
+            const showDate = index === 0 || message.date !== messages[index - 1].date;
 
             return (
                 <div className="chatBlock" key={message.id}>
@@ -196,38 +206,49 @@ function Discussion() {
                 </div>
             );
         });
-    }, []);
+    }, [messages]);
 
     const sendMessage = (event) => {
         event.preventDefault();
+        const text = draft.trim();
+
+        if (!text) {
+            return;
+        }
+
+        const now = new Date();
+        const dateFormatter = new Intl.DateTimeFormat("ja-JP", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            weekday: "long",
+        });
+        const timeFormatter = new Intl.DateTimeFormat("ja-JP", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        });
+
+        setMessages((currentMessages) => [
+            ...currentMessages,
+            {
+                id: Date.now(),
+                date: dateFormatter.format(now),
+                sender: "自分",
+                avatar: "自",
+                text,
+                time: timeFormatter.format(now),
+                readCount: 0,
+                isMine: true,
+            },
+        ]);
         setDraft("");
     };
 
     return (
         <main className="discussionShell">
             <section className="phoneFrame" aria-label="旅行グループの話し合い">
-                <header className="topBar">
-                    <button className="iconButton" type="button" onClick={() => navigate(-1)} aria-label="戻る">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M15 18 9 12l6-6" />
-                        </svg>
-                    </button>
-                    <div className="titleWrap">
-                        <h1>{trip.title}</h1>
-                        <p>{trip.dates}</p>
-                    </div>
-                    <button className="iconButton warm" type="button" aria-label="編集">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="m4 16 1 4 4-1L19 9l-5-5L4 14v2Z" />
-                            <path d="m13 5 5 5" />
-                        </svg>
-                    </button>
-                    <button className="iconButton" type="button" aria-label="その他">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M5 12h.01M12 12h.01M19 12h.01" />
-                        </svg>
-                    </button>
-                </header>
+                <Header tripName={trip.title} />
 
                 <nav className="tabBar" aria-label="話し合いメニュー">
                     {tabs.map((tab) => (
@@ -253,7 +274,9 @@ function Discussion() {
                                     ))}
                                 </div>
                             </div>
-                            <div className="messageList">{chatContent}</div>
+                            <div className="messageList" ref={messageListRef}>
+                                {chatContent}
+                            </div>
                             <form className="composer" onSubmit={sendMessage}>
                                 <button type="button" aria-label="画像を追加">
                                     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -360,26 +383,7 @@ function Discussion() {
                     )}
                 </div>
 
-                <nav className="bottomBar" aria-label="旅行メニュー">
-                    {[
-                        ["chat", "話し合い"],
-                        ["book", "しおり"],
-                        ["calendar", "予定"],
-                        ["photo", "アルバム"],
-                        ["card", "割り勘"],
-                    ].map(([icon, label], index) => (
-                        <button className={index === 0 ? "active" : ""} type="button" key={label}>
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                {icon === "chat" && <path d="M5 6h14v10H8l-3 3V6Z" />}
-                                {icon === "book" && <path d="M6 4h11a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2V4Z" />}
-                                {icon === "calendar" && <path d="M5 5h14v15H5zM8 3v4M16 3v4M5 10h14" />}
-                                {icon === "photo" && <path d="M4 5h16v14H4zM8 14l3-3 3 3 2-2 4 5M8 9h.01" />}
-                                {icon === "card" && <path d="M4 7h16v10H4zM4 10h16M8 14h4" />}
-                            </svg>
-                            <span>{label}</span>
-                        </button>
-                    ))}
-                </nav>
+                <BottomNav />
             </section>
         </main>
     );
