@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './bottomNav.module.css';
 import timeIcon from '../../assets/icons/time.svg';
 import photoIcon from '../../assets/icons/photo.svg';
-import splitIcon from '../../assets/icons/split.svg';
+import AppsIcon from '../../assets/icons/apps.svg';
 import Tbook from '../../assets/icons/Tbook.svg';
 import Meet from '../../assets/icons/speaker_notes.svg';
 
@@ -17,7 +17,7 @@ function BottomNav() {
         { id: 'meeting', label: '話し合い' , path:`/group/${groupId}/talk`, icon: Meet},
         { id: 'time', label: 'スケジュール', path: '/schedule', icon: timeIcon },
         { id: 'album', label: 'アルバム', path: '/album', icon: photoIcon },
-        { id: 'split', label: '割り勘', path: '/Invoice', icon: splitIcon },
+        { id: 'other', label: 'その他機能', path: '#', icon: AppsIcon },
     ];
 
     const handleNavigation = (path) => {
