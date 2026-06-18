@@ -394,33 +394,31 @@ export default function AppointmentPage() {
         setStep(2);
     };
 
+    // handle tracker jumps; ensure last step has a bookingDraft
+    const handleJump = (i) => {
+        if (i === 2 && !bookingDraft) {
+            // build a minimal booking from sample data
+            const t0 = transportData.transports?.[0] || {};
+            const c0 = t0.carriers?.[0] || {};
+            const r0 = c0.routes?.[0] || {};
+            const item = { type: t0.type || '', carrier: c0.name || '', from: r0.from || '', to: r0.to || '', times: r0.times || [] };
+            const d = new Date().toISOString().slice(0,10);
+            const peopleDefault = 1;
+            const fareMap = { 'バス': 1500, '新幹線': 8000, 'レンタカー': 10000 };
+            const pricePerPerson = item.type ? (fareMap[item.type] || 0) : 0;
+            const totalPrice = pricePerPerson * peopleDefault;
+            const bookingWithNum = { item, date: d, people: peopleDefault, pricePerPerson, totalPrice, number: 'R' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 9000 + 1000) };
+            setBookingDraft(bookingWithNum);
+        }
+        setStep(i);
+    };
+
     return (
         <div>
-            {/* Progress tracker */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, padding: '12px 8px', background: '#fff', borderBottom: '1px solid #eee' }}>
-                {['検索', '確認', '完了'].map((label, i) => (
-                    <button
-                        key={label}
-                        onClick={() => setStep(i)}
-                        style={{
-                            padding: '8px 12px',
-                            border: 'none',
-                            background: 'transparent',
-                            cursor: 'pointer',
-                            borderBottom: step === i ? '3px solid var(--main-color, #007bff)' : '3px solid transparent',
-                            fontWeight: step === i ? 700 : 500,
-                            color: step === i ? 'var(--main-color, #007bff)' : '#333'
-                        }}
-                    >
-                        {label}
-                    </button>
-                ))}
-            </div>
-
             <div style={{ paddingBottom: 24 }}>
-                {step === 0 && <AppointmentStep onProceed={handleProceedFromSearch} onBack={() => window.history.back()} step={step} setStep={setStep} />}
-                {step === 1 && <ConfirmationStep item={bookingDraft?.item} date={bookingDraft?.date} people={bookingDraft?.people} onBack={() => setStep(0)} onConfirm={handleConfirm} step={step} setStep={setStep} />}
-                {step === 2 && <DecisionStep booking={bookingDraft} onBack={() => setStep(1)} step={step} setStep={setStep} />}
+                {step === 0 && <AppointmentStep onProceed={handleProceedFromSearch} onBack={() => window.history.back()} step={step} setStep={handleJump} />}
+                {step === 1 && <ConfirmationStep item={bookingDraft?.item} date={bookingDraft?.date} people={bookingDraft?.people} onBack={() => setStep(0)} onConfirm={handleConfirm} step={step} setStep={handleJump} />}
+                {step === 2 && <DecisionStep booking={bookingDraft} onBack={() => setStep(1)} step={step} setStep={handleJump} />}
             </div>
         </div>
     );
