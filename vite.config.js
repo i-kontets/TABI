@@ -71,6 +71,12 @@ export default defineConfig({
 
   server: {
     host: true,
+    proxy: {
+      '/TABI/api': {
+        target: 'http://apache',
+        changeOrigin: true,
+      },
+    },
     watch: {
       usePolling: true,
     },

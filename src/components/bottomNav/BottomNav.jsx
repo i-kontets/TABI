@@ -9,16 +9,22 @@ import Meet from '../../assets/icons/speaker_notes.svg';
 function BottomNav() {
     const navigate = useNavigate();
     const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    const groupId = params.get('groupId') || '1';
 
     const menuItems = [
         { id: 'bookmark', label: 'しおり', path:'/Itinerary', icon: Tbook},
-        { id: 'meeting', label: '話し合い' , path:'#', icon: Meet},
+        { id: 'meeting', label: '話し合い' , path:`/group/${groupId}/talk`, icon: Meet},
         { id: 'time', label: 'スケジュール', path: '/schedule', icon: timeIcon },
         { id: 'album', label: 'アルバム', path: '/album', icon: photoIcon },
         { id: 'split', label: '割り勘', path: '/Invoice', icon: splitIcon },
     ];
 
     const handleNavigation = (path) => {
+        if (path.startsWith('/group/')) {
+            navigate(path);
+            return;
+        }
         navigate(`${path}${location.search}`);
     };
 

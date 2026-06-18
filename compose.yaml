@@ -9,3 +9,17 @@ services:
     volumes:
       - .:/usr/src/app
       - /usr/src/app/node_modules
+
+    depends_on:
+      - apache
+
+  apache:
+    build:
+      context: .
+      dockerfile: Dockerfile.apache
+
+    ports:
+      - "8080:80"
+
+    volumes:
+      - .:/var/www/html/TABI
