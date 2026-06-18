@@ -17,11 +17,12 @@ function ProgressTracker({ step, setStep }) {
                     style={{
                         padding: '6px 10px',
                         border: 'none',
-                        background: 'transparent',
+                        background: step === i ? 'var(--other-color, #ffeedd)' : 'transparent',
                         cursor: 'pointer',
                         borderBottom: step === i ? '3px solid var(--main-color, #007bff)' : '3px solid transparent',
                         fontWeight: step === i ? 700 : 500,
-                        color: step === i ? 'var(--main-color, #007bff)' : '#333'
+                        color: step === i ? 'var(--main-color, #007bff)' : '#333',
+                        borderRadius: 6
                     }}
                 >
                     {label}
