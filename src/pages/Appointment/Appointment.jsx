@@ -11,16 +11,14 @@ function ProgressTracker({ step, setStep }) {
     return (
         <div className={styles.progressTracker}>
             {['検索', '確認', '完了'].map((label, i) => (
-                <React.Fragment key={label}>
-                    {i > 0 && <div className={styles.sep} aria-hidden="true" />}
-                    <button
-                        aria-pressed={step === i}
-                        onClick={() => setStep(i)}
-                        className={step === i ? `${styles.progressButton} ${styles.active}` : styles.progressButton}
-                    >
-                        {label}
-                    </button>
-                </React.Fragment>
+                <button
+                    key={label}
+                    aria-pressed={step === i}
+                    onClick={() => setStep(i)}
+                    className={step === i ? `${styles.progressButton} ${styles.active}` : styles.progressButton}
+                >
+                    {label}
+                </button>
             ))}
         </div>
     );
@@ -225,23 +223,6 @@ function AppointmentStep({ onProceed, onBack, step, setStep }) {
                 )}
 
             </div>
-
-            {/* Footer for search step */}
-            <div className={styles.fixedFooter}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <button className={styles.footerButton} onClick={() => (onBack ? onBack() : window.history.back())}>戻る</button>
-                    <button className={styles.footerPrimary} onClick={() => {
-                        handleSearch();
-                        if (results && results.items && results.items.length > 0) {
-                            // proceed with first match for convenience
-                            proceedBooking(results.items[0]);
-                        } else {
-                            setFormError('検索結果がありません。条件を変更してください。');
-                        }
-                    }}>次へ</button>
-                </div>
-            </div>
-
         </div>
     );
 }
@@ -337,15 +318,7 @@ function ConfirmationStep({ item, date, people, onConfirm, onBack, step, setStep
                 <div className={styles.actions}>
                     <button className={styles.buttonPrimary} onClick={confirm} disabled={isLoading}>{isLoading ? '読み込み中...' : '支払いに進む'}</button>
                 </div>
-
-            {/* Footer for confirmation step */}
-            <div className={styles.fixedFooter}>
-                <div style={{ display: 'flex', gap: 8 }}>
-                    <button className={styles.footerButton} onClick={() => (onBack ? onBack() : window.history.back())}>戻る</button>
-                    <button className={styles.footerPrimary} onClick={confirm} disabled={isLoading}>{isLoading ? '読み込み中...' : '次へ'}</button>
-                </div>
             </div>
-
         </div>
     );
 }
