@@ -364,14 +364,32 @@ export default function AppointmentPage() {
     };
 
     return (
-        <div style={{ paddingBottom: 68 }}>
-            {step === 0 && <AppointmentStep onProceed={handleProceedFromSearch} onBack={() => window.history.back()} />}
-            {step === 1 && <ConfirmationStep item={bookingDraft?.item} date={bookingDraft?.date} people={bookingDraft?.people} onBack={() => setStep(0)} onConfirm={handleConfirm} />}
-            {step === 2 && <DecisionStep booking={bookingDraft} onBack={() => setStep(1)} />}
+        <div>
+            {/* Progress tracker */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 12, padding: '12px 8px', background: '#fff', borderBottom: '1px solid #eee' }}>
+                {['検索', '確認', '完了'].map((label, i) => (
+                    <button
+                        key={label}
+                        onClick={() => setStep(i)}
+                        style={{
+                            padding: '8px 12px',
+                            border: 'none',
+                            background: 'transparent',
+                            cursor: 'pointer',
+                            borderBottom: step === i ? '3px solid var(--main-color, #007bff)' : '3px solid transparent',
+                            fontWeight: step === i ? 700 : 500,
+                            color: step === i ? 'var(--main-color, #007bff)' : '#333'
+                        }}
+                    >
+                        {label}
+                    </button>
+                ))}
+            </div>
 
-            {/* 固定フッターの次へボタン */}
-            <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, padding: 8, background: 'rgba(255,255,255,0.95)', borderTop: '1px solid #eee', display: 'flex', justifyContent: 'center' }}>
-                <button className={styles.button} onClick={() => setStep(s => (s + 1) % 3)}>次へ</button>
+            <div style={{ paddingBottom: 24 }}>
+                {step === 0 && <AppointmentStep onProceed={handleProceedFromSearch} onBack={() => window.history.back()} />}
+                {step === 1 && <ConfirmationStep item={bookingDraft?.item} date={bookingDraft?.date} people={bookingDraft?.people} onBack={() => setStep(0)} onConfirm={handleConfirm} />}
+                {step === 2 && <DecisionStep booking={bookingDraft} onBack={() => setStep(1)} />}
             </div>
         </div>
     );
