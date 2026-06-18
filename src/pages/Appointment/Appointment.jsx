@@ -69,21 +69,25 @@ function AppointmentStep({ onProceed, onBack, step, setStep }) {
     const fromOptions = useMemo(() => Array.from(new Set(routePool.map(r => r.from))), [routePool]);
     const toOptions = useMemo(() => Array.from(new Set(routePool.filter(r => (from ? r.from === from : true)).map(r => r.to))), [routePool, from]);
 
-    useEffect(() => {
-        // set default carrier for selected type when available
-        const firstCarrier = transportsOfType?.carriers?.[0]?.name || '';
-        setCarrier(prev => prev || firstCarrier);
-    }, [transportsOfType]);
+    // Prefer synchronous updates on user interactions to avoid mobile picker race conditions
+    function handleTypeChange(value) {
+        setType(value);
+        const t = transportData.transports.find(tt => tt.type === value) || { carriers: [] };
+        const firstCarrierName = t.carriers?.[0]?.name || '';
+        setCarrier(firstCarrierName);
+        const firstRoute = t.carriers?.[0]?.routes?.[0] || {};
+        setFrom(firstRoute.from || '');
+        setTo(firstRoute.to || '');
+    }
 
-    useEffect(() => {
-        const firstFrom = fromOptions?.[0] || '';
-        setFrom(prev => prev || firstFrom);
-    }, [fromOptions]);
-
-    useEffect(() => {
-        const firstTo = toOptions?.[0] || '';
-        setTo(prev => prev || firstTo);
-    }, [toOptions]);
+    function handleCarrierChange(value) {
+        setCarrier(value);
+        const t = transportData.transports.find(tt => tt.type === type) || { carriers: [] };
+        const c = (t.carriers || []).find(cc => cc.name === value) || { routes: [] };
+        const firstRoute = c.routes?.[0] || {};
+        setFrom(firstRoute.from || '');
+        setTo(firstRoute.to || '');
+    }
 
     useEffect(() => {
         // ensure date has a sensible default when type changes if not set
@@ -137,7 +141,7 @@ function AppointmentStep({ onProceed, onBack, step, setStep }) {
                 <form className={styles.form} onSubmit={handleSearch}>
                     <label className={styles.label}>
                         事業者
-                        <select value={carrier} onChange={e => setCarrier(e.target.value)} className={styles.select}>
+                        <select value={carrier} onChange={e => handleCarrierChange(e.target.value)} className={styles.select}>
                             <option value="">すべて</option>
                             {carriers.map(c => (
                                 <option key={c.name} value={c.name}>{c.name}</option>
@@ -147,7 +151,7 @@ function AppointmentStep({ onProceed, onBack, step, setStep }) {
 
                     <label className={styles.label}>
                         種類
-                        <select value={type} onChange={e => setType(e.target.value)} className={styles.select} required>
+                        <select value={type} onChange={e => handleTypeChange(e.target.value)} className={styles.select} required>
                             <option value="">選択してください</option>
                             {Array.from(new Set(transportData.transports.map(t => t.type))).map(tt => (
                                 <option key={tt} value={tt}>{tt}</option>
