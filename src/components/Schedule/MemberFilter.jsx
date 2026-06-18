@@ -1,32 +1,31 @@
-import styles from "./Schedule.module.css";
+import styles from './Schedule.module.css';
 
-const members = [
-  "全員",
-  "太郎",
-  "花子",
-  "次郎",
-  "美咲",
-];
-
-export default function MemberFilter({
-  selected,
-  onChange,
-}) {
+export default function MemberFilter({ members, selectedMember, onChange }) {
   return (
-    <div className={styles.wrapper}>
-      {members.map((member) => (
-        <button
-          key={member}
-          className={`${styles.chip} ${
-            selected === member
-              ? styles.active
-              : ""
-          }`}
-          onClick={() => onChange(member)}
-        >
-          {member}
-        </button>
-      ))}
-    </div>
+    <section className={styles.memberFilter} aria-label="メンバーで絞り込み">
+      <div className={styles.filterHeader}>
+        <h3>メンバー</h3>
+        <p>別行動も含めて確認できます</p>
+      </div>
+
+      <div className={styles.memberChips}>
+        {members.map((member) => (
+          <button
+            key={member.id}
+            className={`${styles.memberChip} ${selectedMember === member.id ? styles.selectedChip : ''}`}
+            type="button"
+            onClick={() => onChange(member.id)}
+          >
+            <span
+              className={styles.memberAvatar}
+              style={{ backgroundColor: member.color }}
+            >
+              {member.shortName}
+            </span>
+            {member.name}
+          </button>
+        ))}
+      </div>
+    </section>
   );
 }

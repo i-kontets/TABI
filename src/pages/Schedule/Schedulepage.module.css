@@ -1,12 +1,259 @@
 .container {
   min-height: 100vh;
-  background: #fafafa;
+  background:
+    linear-gradient(180deg, #eef2f8 0, #f7f8fb 220px),
+    #f7f8fb;
 }
 
 .content {
-  padding-bottom: 82px;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 16px 12px 92px;
+}
+
+.dayPanel {
+  position: relative;
+  padding: 8px 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.panelLabel {
+  margin: 0 0 4px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.dayStepper {
+  padding: 2px 0 0;
+}
+
+.dayStepper > div {
+  padding: 0;
+}
+
+.stepperClickLayer {
+  position: absolute;
+  inset: 8px 8px 10px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  z-index: 2;
+}
+
+.stepperClickTarget {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.stepperClickTarget:focus-visible {
+  outline: 2px solid var(--sub-color);
+  outline-offset: -4px;
+  border-radius: 8px;
+}
+
+.dayStepper {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.stepperClickTarget {
+  cursor: pointer;
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.summaryGrid div {
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.04);
+}
+
+.summaryGrid span {
+  display: block;
+  color: var(--sub-color);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.summaryGrid p {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .timeline {
-  padding: 12px;
+  margin-top: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.timelineHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px;
+  border-bottom: 1px solid #edf2f7;
+  background: #ffffff;
+}
+
+.timelineHeader h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 18px;
+}
+
+.timelineHeader button {
+  flex: 0 0 auto;
+  min-width: 82px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: var(--sub-color);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.timeBlock {
+  position: relative;
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px 14px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.timeBlock::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 84px;
+  width: 1px;
+  background: #e2e8f0;
+}
+
+.timeBlock::after {
+  content: "";
+  position: absolute;
+  top: 22px;
+  left: 79px;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: var(--sub-color);
+  box-shadow: 0 0 0 2px #dbe2ea;
+}
+
+.timeBlock:last-child {
+  border-bottom: none;
+}
+
+.timeColumn {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  position: relative;
+  z-index: 1;
+  color: #111827;
+  font-weight: 800;
+}
+
+.timeColumn small {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.timeColumn em {
+  display: inline-flex;
+  width: max-content;
+  margin-top: 6px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: var(--sub-color);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.eventColumn {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+}
+
+.splitTimeBlock {
+  background: linear-gradient(90deg, rgba(68, 85, 141, 0.045), transparent 52%);
+}
+
+.splitTimeBlock::after {
+  background: #f59e0b;
+  box-shadow: 0 0 0 2px #fde68a;
+}
+
+.splitEventColumn {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.splitLabel {
+  grid-column: 1 / -1;
+  margin: 0 0 2px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.emptyMessage {
+  margin: 0;
+  padding: 24px;
+  color: #64748b;
+  text-align: center;
+}
+
+@media (max-width: 520px) {
+  .content {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .timeBlock {
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .splitEventColumn {
+    grid-template-columns: 1fr;
+  }
+
+  .timeBlock::before {
+    left: 66px;
+  }
+
+  .timeBlock::after {
+    left: 61px;
+  }
 }
