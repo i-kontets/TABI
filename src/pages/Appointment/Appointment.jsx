@@ -6,8 +6,33 @@ import styles from './appointment.module.css';
 import transportData from './appointment.json';
 import stops from './confirmation_options.json';
 
+// Progress tracker (placed inside page content, not above headers)
+function ProgressTracker({ step, setStep }) {
+    return (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, padding: '12px 8px', background: '#fff' }}>
+            {['検索', '確認', '完了'].map((label, i) => (
+                <button
+                    key={label}
+                    onClick={() => setStep(i)}
+                    style={{
+                        padding: '6px 10px',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        borderBottom: step === i ? '3px solid var(--main-color, #007bff)' : '3px solid transparent',
+                        fontWeight: step === i ? 700 : 500,
+                        color: step === i ? 'var(--main-color, #007bff)' : '#333'
+                    }}
+                >
+                    {label}
+                </button>
+            ))}
+        </div>
+    );
+}
+
 // Step 0: Search / list
-function AppointmentStep({ onProceed, onBack }) {
+function AppointmentStep({ onProceed, onBack, step, setStep }) {
     const [type, setType] = useState(() => transportData.transports?.[0]?.type || '');
     const [carrier, setCarrier] = useState('');
     const [from, setFrom] = useState('');
@@ -113,6 +138,8 @@ function AppointmentStep({ onProceed, onBack }) {
                 <div className={styles.Htitle} style={{margin:'auto'}}>予約画面</div>
             </header>
 
+            <ProgressTracker step={step} setStep={setStep} />
+
             <div className={styles.container}>
                 <form className={styles.form} onSubmit={handleSearch}>
                     <label className={styles.label}>
@@ -204,7 +231,7 @@ function AppointmentStep({ onProceed, onBack }) {
 }
 
 // Step 1: Confirmation
-function ConfirmationStep({ item, date, people, onConfirm, onBack }) {
+function ConfirmationStep({ item, date, people, onConfirm, onBack, step, setStep }) {
     const [boarding, setBoarding] = useState(stops.boarding?.[0] || '');
     const [alighting, setAlighting] = useState(stops.alighting?.[0] || '');
     const [selectedTime, setSelectedTime] = useState('');
@@ -242,6 +269,8 @@ function ConfirmationStep({ item, date, people, onConfirm, onBack }) {
                 </button>
                 <div className={styles.Htitle} style={{margin:'auto'}}>乗降地を選択</div>
             </header>
+
+            <ProgressTracker step={step} setStep={setStep} />
 
             <div className={styles.container}>
                 {item && (
@@ -298,7 +327,7 @@ function ConfirmationStep({ item, date, people, onConfirm, onBack }) {
 }
 
 // Step 2: Decision / summary
-function DecisionStep({ booking, onBack }) {
+function DecisionStep({ booking, onBack, step, setStep }) {
     const bookingNumber = booking?.number || ('R' + Date.now().toString(36).toUpperCase());
     const navigate = useNavigate();
 
@@ -310,6 +339,8 @@ function DecisionStep({ booking, onBack }) {
                 </button>
                 <div className={styles.Htitle} style={{ margin: 'auto' }}>予約内容の確認</div>
             </header>
+
+            <ProgressTracker step={step} setStep={setStep} />
 
             <div className={styles.container}>
                 <div className={styles.card}>
@@ -387,9 +418,9 @@ export default function AppointmentPage() {
             </div>
 
             <div style={{ paddingBottom: 24 }}>
-                {step === 0 && <AppointmentStep onProceed={handleProceedFromSearch} onBack={() => window.history.back()} />}
-                {step === 1 && <ConfirmationStep item={bookingDraft?.item} date={bookingDraft?.date} people={bookingDraft?.people} onBack={() => setStep(0)} onConfirm={handleConfirm} />}
-                {step === 2 && <DecisionStep booking={bookingDraft} onBack={() => setStep(1)} />}
+                {step === 0 && <AppointmentStep onProceed={handleProceedFromSearch} onBack={() => window.history.back()} step={step} setStep={setStep} />}
+                {step === 1 && <ConfirmationStep item={bookingDraft?.item} date={bookingDraft?.date} people={bookingDraft?.people} onBack={() => setStep(0)} onConfirm={handleConfirm} step={step} setStep={setStep} />}
+                {step === 2 && <DecisionStep booking={bookingDraft} onBack={() => setStep(1)} step={step} setStep={setStep} />}
             </div>
         </div>
     );
