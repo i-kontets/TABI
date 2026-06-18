@@ -8,11 +8,14 @@ import stops from './confirmation_options.json';
 
 // Step 0: Search / list
 function AppointmentStep({ onProceed, onBack }) {
-    const [type, setType] = useState('');
+    const [type, setType] = useState(() => transportData.transports?.[0]?.type || '');
     const [carrier, setCarrier] = useState('');
     const [from, setFrom] = useState('');
     const [to, setTo] = useState('');
-    const [date, setDate] = useState('');
+    const [date, setDate] = useState(() => {
+        const d = new Date();
+        return d.toISOString().slice(0,10);
+    });
     const [people, setPeople] = useState(1);
     const [formError, setFormError] = useState('');
     const [results, setResults] = useState(null);
@@ -48,10 +51,29 @@ function AppointmentStep({ onProceed, onBack }) {
     const fromOptions = useMemo(() => Array.from(new Set(routePool.map(r => r.from))), [routePool]);
     const toOptions = useMemo(() => Array.from(new Set(routePool.filter(r => (from ? r.from === from : true)).map(r => r.to))), [routePool, from]);
 
-    useEffect(() => setCarrier(''), [type]);
-    useEffect(() => setFrom(''), [carrier, type]);
-    useEffect(() => setTo(''), [from, carrier, type]);
-    useEffect(() => setDate(''), [type]);
+    useEffect(() => {
+        // set default carrier for selected type when available
+        const firstCarrier = transportsOfType?.carriers?.[0]?.name || '';
+        setCarrier(prev => prev || firstCarrier);
+    }, [transportsOfType]);
+
+    useEffect(() => {
+        const firstFrom = fromOptions?.[0] || '';
+        setFrom(prev => prev || firstFrom);
+    }, [fromOptions]);
+
+    useEffect(() => {
+        const firstTo = toOptions?.[0] || '';
+        setTo(prev => prev || firstTo);
+    }, [toOptions]);
+
+    useEffect(() => {
+        // ensure date has a sensible default when type changes if not set
+        if (!date) {
+            const d = new Date();
+            setDate(d.toISOString().slice(0,10));
+        }
+    }, [type]);
 
     function handleSearch(e) {
         e && e.preventDefault && e.preventDefault();
