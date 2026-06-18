@@ -9,7 +9,7 @@ import Home from './pages/Home/Home';
 import Itinerary from './pages/Itinerary/itinerary';
 import ItineraryEdit from './pages/Itinerary/itinerary_edit';
 import Tripmap from './pages/Tripmap/Tripmap';
-import Schedule  from './pages/Schedule/Schedule';
+import Schedule from './pages/Schedule/schedule';
 import Chat from './pages/Chat/Chat';
 import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
