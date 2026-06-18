@@ -9,28 +9,13 @@ import stops from './confirmation_options.json';
 // Progress tracker (placed inside page content, not above headers)
 function ProgressTracker({ step, setStep }) {
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, padding: '12px 8px', background: '#fff' }}>
+        <div className={styles.progressTracker}>
             {['検索', '確認', '完了'].map((label, i) => (
                 <button
                     key={label}
                     aria-pressed={step === i}
                     onClick={() => setStep(i)}
-                    style={{
-                        width: 44,
-                        height: 44,
-                        padding: 0,
-                        border: 'none',
-                        background: step === i ? 'var(--other-color, #ffeedd)' : 'transparent',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 12,
-                        fontWeight: step === i ? 700 : 500,
-                        color: '#000',
-                        borderRadius: '50%',
-                        boxShadow: step === i ? '0 1px 3px rgba(0,0,0,0.08) inset' : 'none'
-                    }}
+                    className={step === i ? `${styles.progressButton} ${styles.active}` : styles.progressButton}
                 >
                     {label}
                 </button>
