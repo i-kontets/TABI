@@ -12,6 +12,18 @@
           ],
           "participantCount": 2,
           "perPersonAmount": 4000
+        },
+        {
+          "id": 1781751984142,
+          "storeName": "コンビニ",
+          "totalAmount": 6000,
+          "participantIds": [
+            1,
+            3,
+            4
+          ],
+          "participantCount": 3,
+          "perPersonAmount": 2000
         }
       ],
       "collect": [],
@@ -19,7 +31,9 @@
         {
           "id": 1,
           "name": "志田",
-          "paidPayIds": []
+          "paidPayIds": [
+            1781751984142
+          ]
         },
         {
           "id": 2,

@@ -1,0 +1,9 @@
+.container {
+  height: 100vh;
+  background: #fafafa;
+  overflow-y: auto;
+}
+
+.timeline {
+  padding: 12px;
+}
