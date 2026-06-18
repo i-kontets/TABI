@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import BtmNav from '../../components/bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import styles from './appointment.module.css';
@@ -277,6 +278,7 @@ function ConfirmationStep({ item, date, people, onConfirm, onBack }) {
 // Step 2: Decision / summary
 function DecisionStep({ booking, onBack }) {
     const bookingNumber = booking?.number || ('R' + Date.now().toString(36).toUpperCase());
+    const navigate = useNavigate();
 
     return (
         <>
@@ -314,7 +316,7 @@ function DecisionStep({ booking, onBack }) {
                 </div>
 
                 <div className={styles.actions} style={{ marginTop: 12 }}>
-                    <button className={styles.button} onClick={() => window.alert('しおりに戻る (デモ)')}>しおりに戻る</button>
+                    <button className={styles.button} onClick={() => navigate('/Itinerary')}>しおりに戻る</button>
                 </div>
             </div>
 
