@@ -1,0 +1,431 @@
+.container {
+    min-height: calc(100vh - 80px);
+    padding: 10px;
+    padding-bottom: 80px;
+    background-color: #f6f6f6;
+}
+
+.photoGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+}
+
+.photoCard {
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 4px;
+    background-color: #e0e0e0;
+    cursor: pointer;
+}
+
+.photoCard img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.addButton {
+    position: fixed;
+    right: 20px;
+    bottom: 80px;
+    z-index: 100;
+    width: 56px;
+    height: 56px;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--sub-color);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.28);
+    font-size: 32px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.detailOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    overflow: hidden;
+    background-color: #000;
+}
+
+.fullscreenImage {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.imageTapLayer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    border: none;
+    background: transparent;
+    cursor: default;
+}
+
+.detailHeader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: max(12px, env(safe-area-inset-top)) 15px 30px;
+    color: white;
+    background: linear-gradient(180deg, rgba(0,0,0,0.72), rgba(0,0,0,0));
+}
+
+.headerCenter {
+    min-width: 0;
+    text-align: center;
+}
+
+.albumTitle {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.uploaderName {
+    margin: 3px 0 0;
+    font-size: 12px;
+    opacity: 0.82;
+}
+
+.closeButton,
+.menuButton {
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0.28);
+    color: white;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.menuArea {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    min-width: 38px;
+}
+
+.menuPanel {
+    position: absolute;
+    top: 46px;
+    right: 0;
+    z-index: 5;
+    width: 170px;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.34);
+}
+
+.menuItem,
+.deleteMenuItem {
+    width: 100%;
+    border: none;
+    background: white;
+    padding: 13px 14px;
+    color: #222;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.menuItem {
+    border-bottom: 1px solid #eee;
+}
+
+.deleteMenuItem {
+    color: #d93025;
+}
+
+.menuItem:hover,
+.deleteMenuItem:hover {
+    background-color: #f5f5f5;
+}
+
+.infoPanel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 72px;
+    z-index: 4;
+    max-height: 52vh;
+    padding: 18px 20px 22px;
+    overflow-y: auto;
+    border-radius: 8px 8px 0 0;
+    background-color: white;
+    color: #222;
+    box-shadow: 0 -10px 28px rgba(0,0,0,0.32);
+}
+
+.infoHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.infoHeader h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.infoCloseButton {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background-color: #f0f0f0;
+    color: #222;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.infoList {
+    margin: 0;
+}
+
+.infoList div {
+    display: grid;
+    grid-template-columns: 86px 1fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-top: 1px solid #eee;
+}
+
+.infoList dt {
+    color: #666;
+    font-size: 13px;
+}
+
+.infoList dd {
+    margin: 0;
+    color: #222;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.detailFooter {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 26px 20px max(18px, env(safe-area-inset-bottom));
+    background: linear-gradient(0deg, rgba(0,0,0,0.72), rgba(0,0,0,0));
+}
+
+.reactionButton,
+.downloadButton {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0.28);
+    color: white;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.addView {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    box-sizing: border-box;
+    padding: 0 16px 24px;
+    background-color: #f7f7f7;
+    overflow-y: auto;
+}
+
+.addHeader {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 56px 1fr 112px;
+    align-items: center;
+    gap: 8px;
+    margin: 0 -16px 18px;
+    padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+    background-color: rgba(247,247,247,0.96);
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.addTitleGroup {
+    min-width: 0;
+    text-align: center;
+}
+
+.addTitleGroup p {
+    margin: 0 0 2px;
+    color: #666;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.addTitleGroup h1 {
+    margin: 0;
+    color: #222;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.addCancelButton {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background-color: #e9e9e9;
+    color: #222;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.addActionGroup {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+}
+
+.addCount {
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--sub-color);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.addSubmitButton {
+    border: none;
+    border-radius: 8px;
+    background-color: var(--sub-color);
+    color: white;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.addSubmitButton:disabled {
+    background-color: #d1d1d1;
+    color: #777;
+    cursor: default;
+}
+
+.hiddenFileInput {
+    display: none;
+}
+
+.addPhotoGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.addPhotoTile,
+.pendingPhotoCard {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: white;
+}
+
+.addPhotoTile {
+    border: 2px dashed #cfcfcf;
+    color: #777;
+    font-size: 34px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.pendingPhotoPreviewButton {
+    width: 100%;
+    height: 100%;
+    border: none;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.pendingPhotoPreviewButton img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.removePendingButton {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0.62);
+    color: white;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.pendingPreviewOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background-color: #000;
+}
+
+.pendingPreviewImage {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.pendingPreviewCloseButton {
+    position: absolute;
+    top: max(14px, env(safe-area-inset-top));
+    left: 14px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0.45);
+    color: white;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+}
