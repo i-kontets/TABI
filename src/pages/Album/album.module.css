@@ -12,6 +12,7 @@
 }
 
 .photoCard {
+    position: relative;
     aspect-ratio: 1 / 1;
     overflow: hidden;
     border-radius: 4px;
@@ -24,6 +25,20 @@
     height: 100%;
     display: block;
     object-fit: cover;
+}
+
+.favoriteBadge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0.58);
+    color: #ffd447;
+    font-size: 15px;
+    line-height: 24px;
+    text-align: center;
 }
 
 .addButton {
@@ -245,6 +260,10 @@
     cursor: pointer;
 }
 
+.favoriteActive {
+    color: #ffd447;
+}
+
 .addView {
     position: fixed;
     inset: 0;
@@ -404,15 +423,21 @@
     position: fixed;
     inset: 0;
     z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(72px, env(safe-area-inset-top)) 18px max(36px, env(safe-area-inset-bottom));
+    box-sizing: border-box;
     background-color: #000;
 }
 
 .pendingPreviewImage {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    max-width: min(100%, 560px);
+    max-height: 78vh;
+    width: auto;
+    height: auto;
     object-fit: contain;
+    border-radius: 8px;
 }
 
 .pendingPreviewCloseButton {
