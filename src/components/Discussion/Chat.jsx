@@ -63,6 +63,7 @@ function Chat({ active }) {
     const [draft, setDraft] = useState("");
     const [messages, setMessages] = useState(initialMessages);
     const messageListRef = useRef(null);
+    const textareaRef = useRef(null);
 
     useLayoutEffect(() => {
         const messageList = messageListRef.current;
@@ -152,6 +153,10 @@ function Chat({ active }) {
             },
         ]);
         setDraft("");
+
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "40px";
+            }
     };
 
     return (
@@ -161,6 +166,7 @@ function Chat({ active }) {
             </div>
             <form className="composer" onSubmit={sendMessage}>
                 <textarea
+                ref={textareaRef}
                 value={draft}
                 onChange={(event) => {
                     setDraft(event.target.value);
