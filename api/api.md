@@ -1,3 +1,248 @@
+# 2026 / 06 / 22 更新
+
+## APIフォルダ構成
+
+```text
+api/
+│
+├─ auth/                     # ログイン・ユーザー認証に関する処理
+│  ├─ login.php              # メールアドレスとパスワードでログイン
+│  ├─ logout.php             # セッションを削除してログアウト
+│  ├─ register.php           # 新しいユーザーをDBへ登録
+│  └─ whoami.php             # 現在ログインしているユーザーを取得
+│
+├─ chats/                    # チャット機能に関する処理
+│  ├─ messages.php           # チャットのメッセージ一覧をDBから取得
+│  ├─ send.php               # 入力されたメッセージをDBへ登録
+│  └─ reads.php              # メッセージの既読状態を登録・取得
+│
+├─ trips/                    # 旅行全体に関する処理
+│  ├─ candidates.php         # 旅行候補の取得・追加
+│  ├─ candidate-votes.php    # 候補への投票・投票先の変更
+│  └─ members.php            # 旅行に参加するメンバーを取得・管理
+│
+├─ favorites/                # ユーザーのお気に入りに関する処理
+│  ├─ index.php              # お気に入り一覧をDBから取得
+│  ├─ add.php                # スポットや宿泊先をお気に入りへ追加
+│  └─ delete.php             # お気に入りから削除
+│
+├─ places/                   # スポットや宿泊施設の情報
+│  ├─ spots.php              # 観光スポット一覧・詳細を取得
+│  └─ accommodations.php     # ホテルやコテージ一覧・詳細を取得
+│
+├─ config/                   # API全体で使用する設定
+│  └─ db.php                 # MySQLへの接続処理
+│
+└─ middleware/               # 複数のAPIで共通使用する処理
+   └─ require_auth.php       # ログイン済みか確認する処理
+```
+
+## 各ファイルに書く内容
+
+### `api/config/db.php`
+
+データベースへの接続処理を書きます。
+
+```php
+<?php
+
+// 環境変数からDB接続情報を取得する
+$host = getenv('DB_HOST');
+$dbname = getenv('DB_NAME');
+$user = getenv('DB_USER');
+$password = getenv('DB_PASSWORD');
+
+try {
+    // MySQLへ接続する
+    $pdo = new PDO(
+        "mysql:host={$host};dbname={$dbname};charset=utf8mb4",
+        $user,
+        $password
+    );
+
+    // SQLエラーが発生した場合に例外を出す
+    $pdo->setAttribute(
+        PDO::ATTR_ERRMODE,
+        PDO::ERRMODE_EXCEPTION
+    );
+} catch (PDOException $error) {
+    // DB接続に失敗した場合
+    http_response_code(500);
+
+    echo json_encode([
+        "success" => false,
+        "message" => "データベース接続に失敗しました"
+    ]);
+
+    exit;
+}
+```
+
+### `api/middleware/require_auth.php`
+
+ログイン確認を共通化します。
+
+```php
+<?php
+
+// セッションが開始されていない場合だけ開始する
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// セッションにユーザーIDがなければ未ログイン
+if (!isset($_SESSION["user_id"])) {
+    http_response_code(401);
+
+    echo json_encode([
+        "success" => false,
+        "message" => "ログインが必要です"
+    ]);
+
+    exit;
+}
+
+// 各APIで使用できるようにユーザーIDを変数へ入れる
+$userId = (int) $_SESSION["user_id"];
+```
+
+### `api/trips/candidates.php`
+
+旅行候補の一覧取得と追加を書きます。
+
+```php
+<?php
+
+header("Content-Type: application/json; charset=UTF-8");
+
+// DB接続を読み込む
+require_once __DIR__ . "/../config/db.php";
+
+// GETの場合は候補一覧を取得する
+if ($_SERVER["REQUEST_METHOD"] === "GET") {
+    // trip_candidatesから候補を取得する
+}
+
+// POSTの場合は新しい候補を追加する
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    // ログイン確認を読み込む
+    require_once __DIR__ . "/../middleware/require_auth.php";
+
+    // JSONで送信された旅行先を取得する
+    // trip_candidatesへINSERTする
+}
+```
+
+### `api/trips/candidate-votes.php`
+
+候補への投票処理を書きます。
+
+```php
+<?php
+
+header("Content-Type: application/json; charset=UTF-8");
+
+require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../middleware/require_auth.php";
+
+// 投票対象の候補IDを取得する
+// 同じユーザーが同じカテゴリへ行った過去の投票を削除する
+// 新しい投票をtrip_candidate_votesへ登録する
+//
+// これにより、旅行先・スポット・宿泊先ごとに
+// 1人1票だけ投票できるようにする
+```
+
+### `api/favorites/index.php`
+
+ログインユーザーのお気に入り一覧を取得します。
+
+```php
+<?php
+
+header("Content-Type: application/json; charset=UTF-8");
+
+require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../middleware/require_auth.php";
+
+// ログインユーザーのお気に入りをDBから取得する
+// 種類を指定して、スポットまたは宿泊先だけ取得できるようにする
+//
+// 例:
+// GET /api/favorites/index.php?type=spot
+// GET /api/favorites/index.php?type=hotel
+```
+
+### `api/favorites/add.php`
+
+お気に入りへの追加処理を書きます。
+
+```php
+<?php
+
+header("Content-Type: application/json; charset=UTF-8");
+
+require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../middleware/require_auth.php";
+
+// 送信されたスポットIDまたは宿泊先IDを取得する
+// ログインユーザーのお気に入りとしてDBへ登録する
+// 同じ項目が重複登録されないように確認する
+```
+
+### `api/favorites/delete.php`
+
+お気に入りからの削除処理を書きます。
+
+```php
+<?php
+
+header("Content-Type: application/json; charset=UTF-8");
+
+require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../middleware/require_auth.php";
+
+// 削除対象のお気に入りIDを取得する
+// ログインユーザー自身のお気に入りだけ削除する
+```
+
+## フロント側の対応場所
+
+```text
+src/
+└─ components/
+   └─ Discussion/
+      ├─ TravelOptions.jsx   # APIを呼び出して候補一覧を表示する
+      └─ TravelOptions.css   # 候補画面のデザインを書く
+```
+
+### `TravelOptions.jsx` に書く内容
+
+```jsx
+// candidates.php
+// → 候補一覧の取得・旅行先の追加
+
+// candidate-votes.php
+// → 候補への投票
+
+// favorites/index.php
+// → お気に入りのスポット・宿泊先を取得
+
+// お気に入りから選択した項目を
+// candidates.phpへ送信して旅行候補へ追加する
+```
+
+## 補足
+
+現在のDBには、お気に入り専用テーブルがありません。
+
+そのため、次の情報を保存できるテーブルの追加が必要です。
+
+- お気に入りに登録したユーザーID
+- 対象の種類（スポット・宿泊先）
+- 対象となるスポットまたは宿泊先のID
+- 登録日時
+
 # APIフォルダー構成について
 
 この `api` フォルダーは、React側から送られてきたリクエストを受け取り、PHPでデータベース操作を行うためのバックエンド部分です。
