@@ -85,16 +85,16 @@ function Chat({ active }) {
                     {showDate && <div className="dateChip">{message.date}</div>}
                     <article className={`messageRow ${message.isMine ? "mine" : ""}`}>
                         <div className="messageStack">
-    {!message.isMine && (
-        <div className="userHeader">
-            <div className="avatar">
-                {message.avatar}
-            </div>
-            <span className="senderName">
-                {message.sender}
-            </span>
-        </div>
-    )}
+                            {!message.isMine && (
+                                <div className="userHeader">
+                                    <div className="avatar">
+                                        {message.avatar}
+                                    </div>
+                                    <span className="senderName">
+                                        {message.sender}
+                                    </span>
+                                </div>
+                            )}
                             <div className="bubbleLine">
                                 {message.isMine && (
                                     <div className="messageMeta mineMeta">
@@ -156,7 +156,7 @@ function Chat({ active }) {
 
         if (textareaRef.current) {
             textareaRef.current.style.height = "40px";
-            }
+        }
     };
 
     return (
@@ -166,19 +166,19 @@ function Chat({ active }) {
             </div>
             <form className="composer" onSubmit={sendMessage}>
                 <textarea
-                ref={textareaRef}
-                value={draft}
-                onChange={(event) => {
-                    setDraft(event.target.value);
+                    ref={textareaRef}
+                    value={draft}
+                    onChange={(event) => {
+                        setDraft(event.target.value);
 
-                    event.target.style.height = "auto";
-                    event.target.style.height =
-                        `${event.target.scrollHeight}px`;
-                }}
-                placeholder="メッセージを入力..."
-                aria-label="メッセージ"
-                rows={1}
-            />
+                        event.target.style.height = "auto";
+                        event.target.style.height =
+                            `${event.target.scrollHeight}px`;
+                    }}
+                    placeholder="メッセージを入力..."
+                    aria-label="メッセージ"
+                    rows={1}
+                />
                 <button className="sendButton" type="submit" aria-label="送信">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="m22 2-7 20-4-9-9-4 20-7Z" />

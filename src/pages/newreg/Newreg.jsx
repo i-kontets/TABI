@@ -53,7 +53,7 @@ export default function Newreg() {
 
         try{
             // バックエンドの登録APIにPOSTリクエストを送信
-            const response = await fetch("/TABI/api/auth/register.php", {
+            const response = await fetch("/TABI/api/Auth/register.php", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
