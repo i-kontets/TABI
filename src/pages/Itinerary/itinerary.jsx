@@ -11,6 +11,7 @@ import Edit from '../../assets/icons/edit.svg?react';
 import Group from '../../assets/icons/group.svg?react';
 
 export default function Itinerary() {
+  const navigate = useNavigate();
   const location = useLocation();
   const {trip} = useContext(TripContext);
   // 招待モーダルの管理状態
@@ -69,64 +70,86 @@ export default function Itinerary() {
         setIsInviteModalOpen(false);
     };
 
-  return (
-    <div>
-        <Header />
-      {/* 3カラム構成（左・中央・右） */}
-      <div>
-        {/* 【中央メインコンテンツ】 */}
-        <div className={styles.centerContent}>
-          
-          {/* カバー画像ヘッダー */}
-          <div className={styles.coverHeader}>
-            <div className={styles.coverOverlay}></div>
-            <div className={styles.coverMainInfo}>
-              <div className={styles.titleRow}>
-                <h1 className={styles.mainTitle}>{trip.name}</h1>
-                <span className={styles.daysBadge}>あと 24 日</span>
-              </div>
-              <p className={styles.subDate}>2026/05/14 (木) - 05/16 (土)</p>
-              
-              <div className={styles.memberRow}>
-                <div className={styles.avatarGroup}>
-                  {members.map((member, index) => (
-                    <span 
-                      key={index} 
-                      className={styles.avatar} 
-                      style={{ backgroundColor: member.color }}
-                      title={member.name}
-                    >
-                      {member.initial}
-                    </span>
-                  ))}
-                  {/* 招待モーダルトリガー */}
-                  <button className={styles.inviteBtn} onClick={() => setIsInviteModalOpen(true)}>+</button>
-                </div>
-              </div>
-            </div>
-            {/* 旅行編集画面 itineraryEdit.jsx への遷移 */}
-            <button className={styles.editBtn} onClick={() => navigate('/ItineraryEdit')}>
-              旅行情報を編集
+return (
+  <div>
+    <Header />
+
+    {/* カバー画像ヘッダー */}
+    <div className={styles.coverHeader}>
+
+      <div className={styles.coverOverlay}></div>
+
+      <div className={styles.coverMainInfo}>
+
+        <div className={styles.titleRow}>
+
+          <h1 className={styles.mainTitle}>
+            {trip.name}
+          </h1>
+
+          <span className={styles.daysBadge}>
+            あと 24 日
+          </span>
+
+        </div>
+
+        <p className={styles.subDate}>
+          2026/05/14 (木) - 05/16 (土)
+        </p>
+
+        <div className={styles.memberRow}>
+
+          <div className={styles.avatarGroup}>
+
+            {members.map((member,index)=>(
+              <span
+                key={index}
+                className={styles.avatar}
+                style={{backgroundColor:member.color}}
+                title={member.name}
+              >
+                {member.initial}
+              </span>
+            ))}
+
+
+            <button
+              className={styles.inviteBtn}
+              onClick={() => setIsInviteModalOpen(true)}
+            >
+              +
             </button>
           </div>
-
-
-          
         </div>
       </div>
 
-      {/* 固定ボトムナビ */}
-      <div className={styles.btmNavWrapper}>
-        <BtmNav />
-      </div>
-
-      {/* 招待モーダルを連携 */}
-      {/* {isInviteModalOpen && (
-        <InviteModal isOpen={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} />
-      )} */}
-      <Modal isOpen={isInviteModalOpen} onClose={closeInviteModal}>
-        <InviteModal onClose={closeInviteModal} />
-      </Modal>
+      {/* 編集ボタン */}
+      <button
+        className={styles.editBtn}
+        onClick={() => navigate("/ItineraryEdit")}
+      >
+        旅行情報を編集
+      </button>
     </div>
-  );
+
+
+
+    {/* 固定ボトムナビ */}
+    <div className={styles.btmNavWrapper}>
+      <BtmNav />
+    </div>
+
+    {/* 招待モーダル */}
+    <Modal 
+      isOpen={isInviteModalOpen}
+      onClose={closeInviteModal}
+    >
+
+      <InviteModal onClose={closeInviteModal}/>
+
+    </Modal>
+
+
+  </div>
+);
 }
