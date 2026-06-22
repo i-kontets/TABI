@@ -1,60 +1,63 @@
 .appContainer {
-  --main-color: #5B7B93;
-  --sub-color: #F0F4F8;
-  --accent-color: #729CBF;
-  --nav-bg: #3E5A73;
-  --other-color: #D1DCE5;
+    --main-color: #5B7B93;
+    --sub-color: #F0F4F8;
+    --accent-color: #729CBF;
+    --nav-bg: #3E5A73;
+    --other-color: #D1DCE5;
 
-  display: flex;
-  height: 100vh;
-  width: 100vw;
-  background-color: var(--sub-color);
-  font-family: 'Helvetica Neue', Arial, sans-serif;
-  color: #333333;
-  overflow: hidden;
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    background-color: var(--sub-color);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    color: #333333;
+    overflow: hidden;
 }
 
 /* ----------------------------------
    スマートフォン（767px以下）のレイアウト
 ----------------------------------- */
 @media (max-width: 767px) {
-  .sidebarWrapper {
-    display: flex;
-    flex: 1;
-    height: 100%;
-  }
-  .mainArea {
-    display: none;
-    flex: 1;
-    flex-direction: column;
-    height: 100%;
-    background-color: #FFFFFF;
-  }
+    .sidebarWrapper {
+        display: flex;
+        flex: 1;
+        height: 100%;
+    }
 
-  /* ユーザー選択後（チャット画面表示） */
-  .mobileChatActive .sidebarWrapper {
-    display: none !important;
-  }
-  .mobileChatActive .mainArea {
-    display: flex !important;
-  }
+    .mainArea {
+        display: none;
+        flex: 1;
+        flex-direction: column;
+        height: 100%;
+        background-color: #FFFFFF;
+    }
+
+    /* ユーザー選択後（チャット画面表示） */
+    .mobileChatActive .sidebarWrapper {
+        display: none !important;
+    }
+
+    .mobileChatActive .mainArea {
+        display: flex !important;
+    }
 }
 
 /* ----------------------------------
    PC・タブレット（768px以上）のレイアウト
 ----------------------------------- */
 @media (min-width: 768px) {
-  .sidebarWrapper {
-    display: flex;
-    flex: none;
-    width: 390px;
-    height: 100%;
-  }
-  .mainArea {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    height: 100%;
-    background-color: #FFFFFF;
-  }
+    .sidebarWrapper {
+        display: flex;
+        flex: none;
+        width: 390px;
+        height: 100%;
+    }
+
+    .mainArea {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        height: 100%;
+        background-color: #FFFFFF;
+    }
 }
