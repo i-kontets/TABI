@@ -281,6 +281,7 @@ CREATE TABLE `trip_surveys` (
   `survey_id` bigint NOT NULL COMMENT 'アンケートID',
   `trip_id` bigint NOT NULL COMMENT '対象旅行ID',
   `title` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'アンケートタイトル',
+  `candidate_type` enum('destination','spot','hotel') COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '投票対象の候補カテゴリ',
   `created_by` bigint NOT NULL COMMENT '作成者ユーザーID',
   `deadline_at` datetime DEFAULT NULL COMMENT '回答締切日時',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '作成日時'
@@ -290,6 +291,7 @@ CREATE TABLE `trip_survey_options` (
   `option_id` bigint NOT NULL COMMENT '選択肢ID',
   `survey_id` bigint NOT NULL COMMENT '対象アンケートID',
   `option_text` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '選択肢内容',
+  `candidate_id` bigint DEFAULT NULL COMMENT '選択肢に紐づく旅行候補ID',
   `sort_order` int DEFAULT '0' COMMENT '表示順'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='アンケート選択肢';
 
@@ -525,7 +527,8 @@ ALTER TABLE `trip_surveys`
 -- テーブルのインデックス `trip_survey_options`
 --
 ALTER TABLE `trip_survey_options`
-  ADD PRIMARY KEY (`option_id`);
+  ADD PRIMARY KEY (`option_id`),
+  ADD KEY `idx_trip_survey_options_candidate_id` (`candidate_id`);
 
 --
 -- テーブルのインデックス `trip_survey_votes`
@@ -763,32 +766,7 @@ VALUES
   (1, 'schedule', '旅行日程を決定', '2026年8月20日から8月22日までの2泊3日です。', '2026-06-20 18:10:00'),
   (1, 'budget', '予算上限を決定', '交通費と宿泊費を含めて1人5万円を目安にします。', '2026-06-20 18:20:00');
 
-INSERT INTO `trip_surveys`
-  (`trip_id`, `title`, `created_by`, `deadline_at`, `created_at`)
-VALUES
-  (1, '旅行の日程はどれがいい？', 1, '2026-06-20 20:00:00', '2026-06-18 13:30:00'),
-  (1, '予算はどのくらいが理想？', 2, '2026-06-21 20:00:00', '2026-06-18 13:40:00'),
-  (2, '京都で一番行きたい場所は？', 2, '2026-06-25 20:00:00', '2026-06-19 16:30:00');
-
-INSERT INTO `trip_survey_options` (`survey_id`, `option_text`, `sort_order`) VALUES
-  (1, '8月20日〜8月22日', 1),
-  (1, '8月27日〜8月29日', 2),
-  (2, '3万円以内', 1),
-  (2, '4万円以内', 2),
-  (2, '5万円以内', 3),
-  (3, '清水寺', 1),
-  (3, '伏見稲荷大社', 2),
-  (3, '嵐山', 3);
-
-INSERT INTO `trip_survey_votes` (`survey_id`, `option_id`, `user_id`, `voted_at`) VALUES
-  (1, 1, 1, '2026-06-18 15:00:00'),
-  (1, 1, 2, '2026-06-18 15:05:00'),
-  (1, 2, 3, '2026-06-18 15:10:00'),
-  (2, 5, 1, '2026-06-18 15:15:00'),
-  (2, 4, 2, '2026-06-18 15:20:00'),
-  (2, 5, 3, '2026-06-18 15:25:00'),
-  (3, 6, 1, '2026-06-19 17:00:00'),
-  (3, 7, 2, '2026-06-19 17:05:00');
+-- アンケートは投票タブの「作成」ボタンから登録します。
 
 INSERT INTO `chats`
   (`trip_id`, `chat_type`, `related_entity_type`, `related_entity_id`, `created_at`)

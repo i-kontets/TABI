@@ -11,15 +11,6 @@
     padding: 0 14px 18px;
 }
 
-.pollRule {
-    padding: 6px 9px;
-    border-radius: 999px;
-    background: #e9f5ff;
-    color: var(--discussion-blue-dark);
-    font-size: 10px;
-    font-weight: 800;
-}
-
 .pollNotice {
     margin: 0 0 10px;
     padding: 8px 10px;
@@ -39,6 +30,10 @@
     border-radius: 8px;
     background: #fff;
     box-shadow: 0 4px 14px rgba(27, 44, 64, 0.08);
+}
+
+.pollCard.expired {
+    opacity: 0.72;
 }
 
 .pollCardHeader {
@@ -93,6 +88,10 @@
     outline-offset: 2px;
 }
 
+.pollOptions button:disabled {
+    cursor: not-allowed;
+}
+
 .pollOptions button.selected {
     border-color: var(--discussion-blue);
     background: #e9f5ff;
@@ -111,6 +110,130 @@
     z-index: 1;
     font-size: 13px;
     font-weight: 700;
+}
+
+.surveyForm {
+    display: grid;
+    gap: 14px;
+}
+
+.surveyFormHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.surveyFormHeader span {
+    color: var(--discussion-blue);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.surveyFormHeader h3 {
+    margin: 2px 0 0;
+    font-size: 19px;
+}
+
+.surveyFormHeader button {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: #f0f3f7;
+    color: #586579;
+    font-size: 20px;
+}
+
+.surveyForm > label {
+    display: grid;
+    gap: 6px;
+}
+
+.surveyForm > label > span,
+.surveyCandidates legend {
+    color: #566174;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.surveyForm input,
+.surveyForm select {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #d5e0eb;
+    border-radius: 10px;
+    background: #f9fbfd;
+    padding: 9px 11px;
+    color: var(--discussion-text);
+    font: inherit;
+    font-size: 13px;
+}
+
+.surveyForm label small {
+    color: var(--discussion-muted);
+    font-size: 10px;
+}
+
+.surveyCandidates {
+    max-height: 210px;
+    overflow-y: auto;
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 10px;
+    border: 1px solid #dbe4ee;
+    border-radius: 10px;
+}
+
+.surveyCandidates label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px;
+    border-radius: 8px;
+    background: #f7f9fc;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.surveyCandidates input {
+    width: 17px;
+    min-height: 17px;
+}
+
+.surveyCandidates p {
+    margin: 8px;
+    color: var(--discussion-muted);
+    font-size: 11px;
+    text-align: center;
+}
+
+.surveyFormActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+}
+
+.surveyFormActions button {
+    min-height: 42px;
+    border: 1px solid #d5e0eb;
+    border-radius: 10px;
+    background: #fff;
+    color: #566174;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.surveyFormActions button[type="submit"] {
+    border-color: var(--discussion-blue);
+    background: var(--discussion-blue);
+    color: #fff;
+}
+
+.surveyFormActions button:disabled {
+    border-color: #d8e0e9;
+    background: #d8e0e9;
+    color: #8d98a7;
 }
 
 .pollEmpty {

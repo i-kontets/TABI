@@ -1,231 +1,267 @@
-// React Hooks と React Router のインポート
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+import Modal from "../Modal/Modal";
 import "./Vote.css";
 
-// 候補カテゴリーの日本語ラベルマッピング
-// 「旅行先」「スポット」「宿泊先」の3つのカテゴリーを定義
+// カテゴリーごとの表示名を日本語で揃える
 const categoryLabels = {
     destination: "旅行先",
     spot: "スポット",
     hotel: "宿泊先",
 };
 
-/**
- * バックエンドAPIから候補一覧を取得する非同期関数
- * 
- * @param {string} groupId グループID
- * @returns {Promise<Array>} 候補情報の配列
- * 
- * 処理：
- * 1. GetCandidates.php へGETリクエストを送信
- * 2. レスポンスをJSON形式でパース
- * 3. エラー時は詳細なエラーメッセージをthrow
- * 4. 成功時は候補配列を返す
- */
-async function requestCandidates(groupId) {
-    // GetCandidates.php への HTTP GETリクエストを送信
-    // credentials: "include" により、クッキー（セッション情報）を自動的に含める
-    const response = await fetch(
-        `${import.meta.env.BASE_URL}api/Trips/GetCandidates.php?group_id=${encodeURIComponent(groupId)}`,
-        { credentials: "include" },
-    );
-    
-    // レスポンス本体をJSON形式にパース
-    const data = await response.json();
-
-    // HTTPステータスコードが200未満または200-299の範囲外、または success フラグが false の場合
-    if (!response.ok || !data.success) {
-        // エラーメッセージを付けて例外をthrow（呼び出し元の catch で処理される）
-        throw new Error(data.message || "候補を取得できませんでした");
-    }
-
-    // 取得した候補配列を返す
-    return data.candidates;
+// 日時入力欄の初期値として、現在から1週間後の値を返す
+function oneWeekLaterValue() {
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+    return date.toISOString().slice(0, 16);
 }
 
-function Vote({ active }) {
-    // URL パラメータから groupId を取得（デフォルト値は "1"）
-    const { groupId = "1" } = useParams();
-    
-    // 状態管理
-    // candidates: 取得した候補データの配列
-    const [candidates, setCandidates] = useState([]);
-    
-    // loading: API通信中かどうかを示すフラグ（true = 読み込み中）
-    const [loading, setLoading] = useState(true);
-    
-    // notice: ユーザーへの通知メッセージ（投票完了、エラーなど）
-    const [notice, setNotice] = useState("");
-    
-    // API から候補を再取得して、画面を更新する関数
-    const refreshCandidates = async () => {
-        // ローディング状態を有効に
-        setLoading(true);
+// API呼び出しで共通化したJSON取得関数
+async function requestJson(url, options) {
+    const response = await fetch(url, {
+        credentials: "include",
+        ...options,
+    });
+    const data = await response.json();
 
-        try {
-            // 新しい候補データを取得して状態を更新
-            setCandidates(await requestCandidates(groupId));
-        } catch {
-            setCandidates([]);
-            setNotice("投票候補を取得できませんでした");
-        } finally {
-            // エラー / 成功の両方の場合、ローディングを終了
-            setLoading(false);
-        }
+    if (!response.ok || !data.success) {
+        throw new Error(data.message || "処理に失敗しました");
+    }
+
+    return data;
+}
+
+// DBの日時文字列を日本語表示向けに整形する
+function formatDeadline(value) {
+    if (!value) {
+        return "期限なし";
+    }
+
+    return new Intl.DateTimeFormat("ja-JP", {
+        month: "numeric",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    }).format(new Date(value.replace(" ", "T")));
+}
+
+// アンケート一覧と作成フォームをまとめた投票画面コンポーネント
+function Vote({ active }) {
+    // URLパラメータの groupId を読む。未指定なら1を使う
+    const { groupId = "1" } = useParams();
+    // 候補一覧
+    const [candidates, setCandidates] = useState([]);
+    // 表示するアンケート一覧
+    const [surveys, setSurveys] = useState([]);
+    // 読み込み中フラグ
+    const [loading, setLoading] = useState(true);
+    // ユーザー向け通知文
+    const [notice, setNotice] = useState("");
+    // 作成モーダルの表示状態
+    const [createOpen, setCreateOpen] = useState(false);
+    // 新規アンケートのタイトル
+    const [title, setTitle] = useState("");
+    // 新規アンケートの対象カテゴリ
+    const [category, setCategory] = useState("destination");
+    // 作成時に選択した候補IDの集合
+    const [selectedIds, setSelectedIds] = useState([]);
+    // 作成時の締切日時
+    const [deadline, setDeadline] = useState(oneWeekLaterValue);
+    // 作成送信中フラグ
+    const [submitting, setSubmitting] = useState(false);
+
+    // 候補一覧とアンケート一覧をまとめて取得する
+    const loadData = async () => {
+        const query = `group_id=${encodeURIComponent(groupId)}`;
+        const [candidateData, surveyData] = await Promise.all([
+            requestJson(`${import.meta.env.BASE_URL}api/Trips/GetCandidates.php?${query}`),
+            requestJson(`${import.meta.env.BASE_URL}api/Trips/GetSurveys.php?${query}`),
+        ]);
+        setCandidates(candidateData.candidates);
+        setSurveys(surveyData.surveys);
     };
 
-    // コンポーネント マウント時に候補データを初期取得する処理
+    // 初回表示時と groupId 変更時にデータを取得する
     useEffect(() => {
-        // cleanup 関数用の cancelled フラグ：非同期処理が完了した後に状態を更新しないようにするため
-        // （コンポーネント がアンマウントされた場合、古い状態更新を防ぐ）
+        // アンマウント後の state 更新を防ぐためのフラグ
         let cancelled = false;
 
-        // GetCandidates.php から候補データを非同期に取得
-        requestCandidates(groupId)
-            // 取得成功時
-            .then((data) => {
-                // キャンセルされていない場合のみ状態を更新
+        const query = `group_id=${encodeURIComponent(groupId)}`;
+        Promise.all([
+            requestJson(`${import.meta.env.BASE_URL}api/Trips/GetCandidates.php?${query}`),
+            requestJson(`${import.meta.env.BASE_URL}api/Trips/GetSurveys.php?${query}`),
+        ])
+            .then(([candidateData, surveyData]) => {
                 if (!cancelled) {
-                    setCandidates(data);
+                    setCandidates(candidateData.candidates);
+                    setSurveys(surveyData.surveys);
                 }
             })
-            // 取得失敗時
-            .catch(() => {
+            .catch((error) => {
                 if (!cancelled) {
                     setCandidates([]);
-                    setNotice("投票候補を取得できませんでした");
+                    setSurveys([]);
+                    setNotice(error.message);
                 }
             })
-            // 成功・失敗の両方で実行
             .finally(() => {
                 if (!cancelled) {
-                    // ローディング状態を終了
                     setLoading(false);
                 }
             });
 
-        // cleanup 関数：コンポーネント のアンマウント時に古い非同期処理の状態更新を防ぐ
         return () => {
             cancelled = true;
         };
-    }, [groupId]); // groupId が変更されたときに再実行
+    }, [groupId]);
 
-    // 候補データをカテゴリー別にグループ化してポーリングデータを生成する
-    // candidates が変更されたときのみ再計算される
-    const polls = useMemo(
-        () => Object.entries(categoryLabels)
-            // カテゴリーの[キー, 値]の配列をイテレートして、各カテゴリーのオブジェクトにマッピング
-            .map(([category, label]) => ({
-                category,
-                label,
-                // candidates を絞り込んで、現在のカテゴリーに属する候補のみを options に格納
-                options: candidates.filter((candidate) => candidate.candidate_type === category),
-            }))
-            // options が空（候補がない）のカテゴリーはフィルタで除外
-            .filter((poll) => poll.options.length > 0),
-        [candidates],
+    // 現在のカテゴリに合う候補だけを絞り込む
+    const selectableCandidates = useMemo(
+        () => candidates.filter((candidate) => candidate.candidate_type === category),
+        [candidates, category],
     );
 
-    // 投票処理を実行する関数
-    // candidateId: 投票先の候補ID
-    const vote = async (candidateId) => {
+    // 作成モーダルを開く前に状態を初期化する
+    const openCreate = () => {
+        setTitle("");
+        setCategory("destination");
+        setSelectedIds([]);
+        setDeadline(oneWeekLaterValue());
+        setNotice("");
+        setCreateOpen(true);
+    };
+
+    // カテゴリ変更時は、対象候補も切り替わるので選択済みIDをクリアする
+    const changeCategory = (event) => {
+        setCategory(event.target.value);
+        setSelectedIds([]);
+    };
+
+    // チェックボックスのON/OFFを切り替える
+    const toggleCandidate = (candidateId) => {
+        setSelectedIds((current) => current.includes(candidateId)
+            ? current.filter((id) => id !== candidateId)
+            : [...current, candidateId]);
+    };
+
+    // 新規アンケートを作成してAPIへ送信する
+    const createSurvey = async (event) => {
+        event.preventDefault();
+
+        // 候補が2件未満ならアンケートとして成立しない
+        if (selectedIds.length < 2) {
+            setNotice("候補を2件以上選択してください");
+            return;
+        }
+
+        setSubmitting(true);
         try {
-            // バックエンド VoteCandidate.php へPOSTリクエストを送信
-            const response = await fetch(`${import.meta.env.BASE_URL}api/Trips/VoteCandidate.php`, {
+            // 作成APIへ送信する。タイトル未入力時は自動で質問文を補う
+            await requestJson(`${import.meta.env.BASE_URL}api/Trips/CreateSurvey.php`, {
                 method: "POST",
-                // クッキー（セッション情報）を自動的に含める
-                credentials: "include",
                 headers: { "Content-Type": "application/json" },
-                // リクエストボディに group_id と candidate_id を含める
                 body: JSON.stringify({
                     group_id: Number(groupId),
-                    candidate_id: Number(candidateId),
+                    title: title.trim() || `${categoryLabels[category]}はどれがいい？`,
+                    candidate_type: category,
+                    candidate_ids: selectedIds,
+                    deadline_at: deadline,
                 }),
             });
-            const data = await response.json();
-
-            // HTTPステータスコードが200未満または success フラグが false の場合
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || "投票できませんでした");
-            }
-
-            // 投票成功のメッセージを表示
-            setNotice("投票しました");
-            // 最新の投票状況をAPIから再取得して、画面を更新
-            await refreshCandidates();
+            setCreateOpen(false);
+            setNotice("アンケートを作成しました");
+            await loadData();
         } catch (error) {
-            // エラーメッセージをユーザーに表示
+            setNotice(error.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    // 既存アンケートに投票する
+    const vote = async (surveyId, optionId) => {
+        try {
+            // 投票APIへ送信する
+            await requestJson(`${import.meta.env.BASE_URL}api/Trips/VoteSurvey.php`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    group_id: Number(groupId),
+                    survey_id: surveyId,
+                    option_id: optionId,
+                }),
+            });
+            setNotice("回答しました");
+            await loadData();
+        } catch (error) {
             setNotice(error.message);
         }
     };
 
     return (
-        // メインコンテナ：投票パネル
-        // hidden={!active} により、active が false の場合は非表示になる
+        // 画面全体の投票パネル。active が false の場合は非表示にする
         <section className="pollPanel" aria-label="投票" hidden={!active}>
-            {/* ヘッダーセクション：タイトル・説明・投票ルール */}
             <div className="sectionHeader">
                 <div>
+                    {/* この画面が候補選択用であることを示す */}
                     <span className="sectionKicker">候補から選ぶ</span>
                     <h2>アンケート</h2>
                 </div>
-                {/* 投票ルールの説明：各カテゴリー1票のみ可能 */}
-                <span className="pollRule">各カテゴリ1票</span>
+                {/* 新規アンケート作成を開く */}
+                <button type="button" onClick={openCreate}>＋ 作成</button>
             </div>
 
-            {/* ポーリング（投票）一覧の表示エリア */}
             <div className="pollList">
-                {/* 通知メッセージ表示（投票完了、エラーメッセージなど） */}
+                {/* 通知メッセージを表示する */}
                 {notice && <p className="pollNotice" role="status">{notice}</p>}
-                {/* ローディング状態・候補がない場合・候補がある場合の3つの表示をコンディショナルレンダリング */}
+
+                {/* 読み込み中は一覧を出さずに待機表示する */}
                 {loading ? (
-                    // ローディング中の表示
-                    <div className="pollEmpty">投票候補を読み込んでいます…</div>
-                ) : polls.length === 0 ? (
-                    // 投票できる候補がない場合のメッセージ
+                    <div className="pollEmpty">アンケートを読み込んでいます…</div>
+                ) : surveys.length === 0 ? (
+                    // アンケートが1件もない場合の案内
                     <div className="pollEmpty">
-                        <strong>投票できる候補がありません</strong>
-                        <p>候補タブから案を追加してください。</p>
+                        <strong>アンケートはまだありません</strong>
+                        <p>「作成」から候補を選んで作成してください。</p>
                     </div>
                 ) : (
-                    // 投票用のカテゴリーごとのポーリングカードを表示
-                    polls.map((poll) => (
-                        <article className="pollCard" key={poll.category}>
-                            {/* ポーリングカードのヘッダー：カテゴリー名・質問・候補数 */}
+                    // アンケートごとにカード表示する
+                    surveys.map((survey) => (
+                        <article className={`pollCard ${survey.is_expired ? "expired" : ""}`} key={survey.survey_id}>
                             <div className="pollCardHeader">
                                 <div>
-                                    <span>{poll.label}</span>
-                                    <h3>{poll.label}はどれがいい？</h3>
+                                    {/* カテゴリ名とタイトルを表示 */}
+                                    <span>{categoryLabels[survey.candidate_type] || "アンケート"}</span>
+                                    <h3>{survey.title}</h3>
                                 </div>
-                                <small>{poll.options.length}候補</small>
+                                {/* 期限切れかどうか、または締切日時を表示 */}
+                                <small>{survey.is_expired ? "回答終了" : `期限 ${formatDeadline(survey.deadline_at)}`}</small>
                             </div>
-                            {/* ポーリングのオプション（選択肢）を表示 */}
                             <div className="pollOptions">
-                                {poll.options.map((option) => {
-                                    // このカテゴリーの最大投票数を計算（グラフバーの幅計算用）
-                                    const max = Math.max(...poll.options.map((item) => item.vote_count), 1);
-                                    // このオプションの投票数をパーセンテージに変換（グラフバー用）
+                                {survey.options.map((option) => {
+                                    // 進捗バーの幅計算用に、このアンケート内の最大票数を求める
+                                    const max = Math.max(...survey.options.map((item) => item.vote_count), 1);
+                                    // 自分の候補の票数を割合に変換する
                                     const width = `${(option.vote_count / max) * 100}%`;
 
                                     return (
                                         <button
-                                            // 投票済みの場合は selected クラスを追加（スタイル適用）
+                                            // 自分が投票済みなら見た目を変える
                                             className={option.has_voted ? "selected" : ""}
                                             type="button"
-                                            key={option.candidate_id}
-                                            // aria-pressed 属性で投票済み状態をアクセシビリティに伝える
+                                            key={option.option_id}
+                                            // 期限切れなら投票できない
+                                            disabled={survey.is_expired}
                                             aria-pressed={option.has_voted}
-                                            // ボタンクリック時に投票処理を実行
-                                            onClick={() => vote(option.candidate_id)}
+                                            // クリックでその選択肢に投票する
+                                            onClick={() => vote(survey.survey_id, option.option_id)}
                                         >
-                                            {/* 投票数を視覚的に表現するグラフバー */}
+                                            {/* 投票数をバーで可視化する */}
                                             <span className="pollFill" style={{ width }} />
-                                            {/* 候補名 */}
-                                            <span className="pollLabel">{option.candidate_name}</span>
-                                            {/* 投票数の表示 */}
+                                            <span className="pollLabel">{option.option_text}</span>
                                             <span className="pollCount">{option.vote_count}票</span>
-                                            {/* このユーザーが投票済みの場合、チェックマークを表示 */}
                                             {option.has_voted && <span className="checkMark">✓</span>}
                                         </button>
                                     );
@@ -235,6 +271,68 @@ function Vote({ active }) {
                     ))
                 )}
             </div>
+
+            {/* 新しいアンケートを作成するためのモーダル */}
+            <Modal isOpen={createOpen} onClose={() => setCreateOpen(false)}>
+                <form className="surveyForm" onSubmit={createSurvey}>
+                    <div className="surveyFormHeader">
+                        <div>
+                            <span>新しい投票</span>
+                            <h3>アンケートを作成</h3>
+                        </div>
+                        <button type="button" aria-label="閉じる" onClick={() => setCreateOpen(false)}>×</button>
+                    </div>
+
+                    {/* アンケートタイトルの入力欄 */}
+                    <label>
+                        <span>タイトル</span>
+                        <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="例：旅行先はどれがいい？" />
+                    </label>
+
+                    {/* 対象カテゴリの切り替え */}
+                    <label>
+                        <span>候補カテゴリ</span>
+                        <select value={category} onChange={changeCategory}>
+                            {Object.entries(categoryLabels).map(([value, label]) => (
+                                <option value={value} key={value}>{label}</option>
+                            ))}
+                        </select>
+                    </label>
+
+                    {/* アンケートに含める候補を複数選択する */}
+                    <fieldset className="surveyCandidates">
+                        <legend>投票に含める候補（2件以上）</legend>
+                        {selectableCandidates.length === 0 ? (
+                            // このカテゴリに候補がない場合のメッセージ
+                            <p>このカテゴリには候補がありません。</p>
+                        ) : selectableCandidates.map((candidate) => (
+                            <label key={candidate.candidate_id}>
+                                <input
+                                    type="checkbox"
+                                    checked={selectedIds.includes(candidate.candidate_id)}
+                                    onChange={() => toggleCandidate(candidate.candidate_id)}
+                                />
+                                <span>{candidate.candidate_name}</span>
+                            </label>
+                        ))}
+                    </fieldset>
+
+                    {/* 回答期限の入力欄 */}
+                    <label>
+                        <span>回答期限</span>
+                        <input type="datetime-local" value={deadline} onChange={(event) => setDeadline(event.target.value)} required />
+                        <small>初期値は作成日から1週間後です。</small>
+                    </label>
+
+                    {/* キャンセルと送信ボタン */}
+                    <div className="surveyFormActions">
+                        <button type="button" onClick={() => setCreateOpen(false)}>キャンセル</button>
+                        <button type="submit" disabled={submitting || selectedIds.length < 2}>
+                            {submitting ? "作成中…" : "作成する"}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </section>
     );
 }
