@@ -21,3 +21,59 @@
     margin: 0;
     text-align: left;
 }
+
+.emptyTransportButton {
+    display: block;
+    width: 100%;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.accordionButton {
+    display: flex;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.accordionButton .title,
+.accordionButton .content,
+.emptyTransportButton .title,
+.emptyTransportButton .content {
+    display: block;
+}
+
+.accordionIcon {
+    margin-left: 16px;
+    color: var(--sub-color);
+    transition: transform 0.2s ease;
+}
+
+.accordionIconOpen {
+    transform: rotate(180deg);
+}
+
+.transportDetails {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
+}
+
+.transportDetails p {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 8px 0;
+}
+
+.transportDetails p span {
+    color: #777;
+    flex-shrink: 0;
+}

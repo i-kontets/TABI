@@ -188,7 +188,6 @@ function AppointmentComponent() {
                         )}
                     </div>
                 )}
-
             </div>
             <BtmNav />
         </>

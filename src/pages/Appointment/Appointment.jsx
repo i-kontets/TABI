@@ -1,35 +1,85 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Step, Stepper } from 'react-form-stepper';
 import BtmNav from '../../components/bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import styles from './appointment.module.css';
 import transportData from './appointment.json';
 import stops from './confirmation_options.json';
 
-// Progress tracker (placed inside page content, not above headers)
+const appointmentSteps = ['検索', '確認', '完了'];
+
+const stepStyleConfig = {
+    activeBgColor: '#CDD4E3',
+    activeTextColor: '#000',
+    completedBgColor: '#CDD4E3',
+    completedTextColor: '#000',
+    inactiveBgColor: '#f2f2f2',
+    inactiveTextColor: '#000',
+    size: '44px',
+    circleFontSize: '14px',
+    labelFontSize: '12px',
+    borderRadius: '50%',
+    fontWeight: 600,
+};
+
+const connectorStyleConfig = {
+    activeColor: '#CDD4E3',
+    completedColor: '#CDD4E3',
+    disabledColor: '#e6e6e6',
+    size: 2,
+    stepSize: '44px',
+    style: 'solid',
+};
+
+const initialRoute = transportData.transports?.[0]?.carriers?.[0]?.routes?.[0] || {};
+const latestBookingStorageKey = 'tabiLatestBooking';
+
 function ProgressTracker({ step, setStep }) {
     return (
         <div className={styles.progressTracker}>
-            {['検索', '確認', '完了'].map((label, i) => (
-                <button
-                    key={label}
-                    aria-pressed={step === i}
-                    onClick={() => setStep(i)}
-                    className={step === i ? `${styles.progressButton} ${styles.active}` : styles.progressButton}
-                >
-                    {label}
-                </button>
-            ))}
+            <Stepper
+                activeStep={step}
+                className={styles.stepper}
+                connectorStateColors
+                styleConfig={stepStyleConfig}
+                connectorStyleConfig={connectorStyleConfig}
+            >
+                {appointmentSteps.map((label, index) => (
+                    <Step
+                        key={label}
+                        label={label}
+                        onClick={() => {
+                            if (index <= step) setStep(index);
+                        }}
+                        aria-current={step === index ? 'step' : undefined}
+                        aria-label={`${label}ステップへ移動`}
+                    >
+                        {index + 1}
+                    </Step>
+                ))}
+            </Stepper>
         </div>
     );
 }
 
+function AppointmentHeader({ title, onBack }) {
+    return (
+        <header className={styles.header}>
+            <button className={styles.backButton} onClick={onBack} aria-label="戻る">
+                <ArrowBack className={styles.icon} aria-hidden="true" />
+            </button>
+            <div className={styles.Htitle} style={{ margin: 'auto' }}>{title}</div>
+        </header>
+    );
+}
+
 // Step 0: Search / list
-function AppointmentStep({ onProceed, onBack, step, setStep }) {
+function AppointmentStep({ onProceed }) {
     const [type, setType] = useState(() => transportData.transports?.[0]?.type || '');
     const [carrier, setCarrier] = useState('');
-    const [from, setFrom] = useState('');
-    const [to, setTo] = useState('');
+    const [from, setFrom] = useState(() => initialRoute.from || '');
+    const [to, setTo] = useState(() => initialRoute.to || '');
     const [date, setDate] = useState(() => {
         const d = new Date();
         return d.toISOString().slice(0,10);
@@ -128,15 +178,6 @@ function AppointmentStep({ onProceed, onBack, step, setStep }) {
 
     return (
         <div>
-            <header className={styles.header}>
-                <button className={styles.backButton} onClick={() => (onBack ? onBack() : window.history.back())} aria-label="戻る">
-                    <ArrowBack className={styles.icon} aria-hidden="true" />
-                </button>
-                <div className={styles.Htitle} style={{margin:'auto'}}>予約画面</div>
-            </header>
-
-            <ProgressTracker step={step} setStep={setStep} />
-
             <div className={styles.container}>
                 <form className={styles.form} onSubmit={handleSearch}>
                     <label className={styles.label}>
@@ -223,12 +264,15 @@ function AppointmentStep({ onProceed, onBack, step, setStep }) {
                 )}
 
             </div>
+
+            <BtmNav />
+
         </div>
     );
 }
 
 // Step 1: Confirmation
-function ConfirmationStep({ item, date, people, onConfirm, onBack, step, setStep }) {
+function ConfirmationStep({ item, date, people, onConfirm }) {
     const [boarding, setBoarding] = useState(stops.boarding?.[0] || '');
     const [alighting, setAlighting] = useState(stops.alighting?.[0] || '');
     const [selectedTime, setSelectedTime] = useState('');
@@ -260,15 +304,6 @@ function ConfirmationStep({ item, date, people, onConfirm, onBack, step, setStep
 
     return (
         <div>
-            <header className={styles.header}>
-                <button className={styles.backButton} onClick={() => (onBack ? onBack() : window.history.back())} aria-label="戻る">
-                    <ArrowBack className={styles.icon} aria-hidden="true" />
-                </button>
-                <div className={styles.Htitle} style={{margin:'auto'}}>乗降地を選択</div>
-            </header>
-
-            <ProgressTracker step={step} setStep={setStep} />
-
             <div className={styles.container}>
                 {item && (
                     <>
@@ -324,21 +359,17 @@ function ConfirmationStep({ item, date, people, onConfirm, onBack, step, setStep
 }
 
 // Step 2: Decision / summary
-function DecisionStep({ booking, onBack, step, setStep }) {
+function DecisionStep({ booking }) {
     const bookingNumber = booking?.number || ('R' + Date.now().toString(36).toUpperCase());
     const navigate = useNavigate();
 
+    const completeBooking = () => {
+        localStorage.setItem(latestBookingStorageKey, JSON.stringify(booking));
+        navigate('/Itinerary', { state: { booking } });
+    };
+
     return (
         <>
-            <header className={styles.header}>
-                <button className={styles.backButton} onClick={() => (onBack ? onBack() : window.history.back())} aria-label="戻る">
-                    <ArrowBack className={styles.icon} aria-hidden="true" />
-                </button>
-                <div className={styles.Htitle} style={{ margin: 'auto' }}>予約内容の確認</div>
-            </header>
-
-            <ProgressTracker step={step} setStep={setStep} />
-
             <div className={styles.container}>
                 <div className={styles.card}>
                     <div style={{ fontWeight: 700 }}>予約番号</div>
@@ -366,7 +397,12 @@ function DecisionStep({ booking, onBack, step, setStep }) {
                 </div>
 
                 <div className={styles.actions} style={{ marginTop: 12 }}>
-                    <button className={styles.button} onClick={() => navigate('/Itinerary')}>しおりに戻る</button>
+                    <button
+                        className={styles.button}
+                        onClick={completeBooking}
+                    >
+                        しおりに戻る
+                    </button>
                 </div>
             </div>
 
@@ -391,31 +427,29 @@ export default function AppointmentPage() {
         setStep(2);
     };
 
-    // handle tracker jumps; ensure last step has a bookingDraft
     const handleJump = (i) => {
-        if (i === 2 && !bookingDraft) {
-            // build a minimal booking from sample data
-            const t0 = transportData.transports?.[0] || {};
-            const c0 = t0.carriers?.[0] || {};
-            const r0 = c0.routes?.[0] || {};
-            const item = { type: t0.type || '', carrier: c0.name || '', from: r0.from || '', to: r0.to || '', times: r0.times || [] };
-            const d = new Date().toISOString().slice(0,10);
-            const peopleDefault = 1;
-            const fareMap = { 'バス': 1500, '新幹線': 8000, 'レンタカー': 10000 };
-            const pricePerPerson = item.type ? (fareMap[item.type] || 0) : 0;
-            const totalPrice = pricePerPerson * peopleDefault;
-            const bookingWithNum = { item, date: d, people: peopleDefault, pricePerPerson, totalPrice, number: 'R' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 9000 + 1000) };
-            setBookingDraft(bookingWithNum);
+        if (i <= step) setStep(i);
+    };
+
+    const stepTitles = ['予約画面', '乗降地を選択', '予約内容の確認'];
+
+    const handleBack = () => {
+        if (step === 0) {
+            window.history.back();
+            return;
         }
-        setStep(i);
+        setStep(step - 1);
     };
 
     return (
         <div>
+            <AppointmentHeader title={stepTitles[step]} onBack={handleBack} />
+            <ProgressTracker step={step} setStep={handleJump} />
+
             <div style={{ paddingBottom: 24 }}>
-                {step === 0 && <AppointmentStep onProceed={handleProceedFromSearch} onBack={() => window.history.back()} step={step} setStep={handleJump} />}
-                {step === 1 && <ConfirmationStep item={bookingDraft?.item} date={bookingDraft?.date} people={bookingDraft?.people} onBack={() => setStep(0)} onConfirm={handleConfirm} step={step} setStep={handleJump} />}
-                {step === 2 && <DecisionStep booking={bookingDraft} onBack={() => setStep(1)} step={step} setStep={handleJump} />}
+                {step === 0 && <AppointmentStep onProceed={handleProceedFromSearch} />}
+                {step === 1 && <ConfirmationStep item={bookingDraft?.item} date={bookingDraft?.date} people={bookingDraft?.people} onConfirm={handleConfirm} />}
+                {step === 2 && <DecisionStep booking={bookingDraft} />}
             </div>
         </div>
     );
