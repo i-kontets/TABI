@@ -41,7 +41,7 @@ function App() {
                     <Route path="/group/:groupId/talk" element={<Discussion />} />
                     <Route path="/album" element={<Album />} />
                     <Route path="/Invoice" element={<Invoice />} />
-                    <Route path="/appointment" element={<Appointment />}/>
+                    <Route path="/Appointment" element={<Appointment />}/>
                 </Routes>
             </BrowserRouter>
         </TripContext.Provider>
