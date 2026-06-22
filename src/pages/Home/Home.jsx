@@ -13,13 +13,15 @@ const trips = [
 
 function Home() {
     const navigate = useNavigate();
-    const { setTripName } = useContext(TripContext);
+    const { setTrip } = useContext(TripContext);
 
     const handleClick = (trip) => {
-        setTripName(trip.name);
-        navigate(`/Itinerary?groupId=${trip.id}`, {
-            state: { groupId: trip.id, tripName: trip.name },
+        setTrip({
+            id: trip.id,
+            name: trip.name
         });
+
+        navigate(`/Itinerary?groupId=${trip.id}`);
     };
 
     // ログアウト処理
@@ -62,7 +64,9 @@ function Home() {
                         id={trip.id}
                         style={{ padding: '20px', border: '1px solid #eee', backgroundColor: '#fff', textAlign: 'center', borderRadius: '10px', height: '200px' }}
                     >
-                        <button onClick={() => handleClick(trip)}>{trip.name}</button>
+                        <button onClick={() => handleClick(trip)}>
+                            {trip.name}
+                        </button>
                     </div>
                 ))}
             </div>
