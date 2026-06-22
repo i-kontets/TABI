@@ -13,37 +13,6 @@ const categoryLabels = {
     hotel: "宿泊先",
 };
 
-const fallbackCandidates = [
-    {
-        candidate_id: 1,
-        candidate_type: "destination",
-        candidate_name: "三重県（伊勢・鳥羽エリア）",
-        description: "伊勢神宮や鳥羽水族館、海の幸も楽しめる旅行先",
-        img_url: "",
-    },
-    {
-        candidate_id: 2,
-        candidate_type: "destination",
-        candidate_name: "京都府",
-        description: "歴史ある街並みとグルメを楽しめる旅行先",
-        img_url: "",
-    },
-    {
-        candidate_id: 3,
-        candidate_type: "spot",
-        candidate_name: "伊勢神宮",
-        description: "お気に入りから追加されたスポット",
-        img_url: "",
-    },
-    {
-        candidate_id: 4,
-        candidate_type: "hotel",
-        candidate_name: "鳥羽シーサイドコテージ",
-        description: "お気に入りから追加された宿泊先",
-        img_url: "",
-    },
-];
-
 /**
  * 候補に紐づいた画像またはアイコンを表示するコンポーネント
  * 
@@ -104,7 +73,7 @@ async function requestCandidates(groupId) {
  * - 複数のカテゴリー（旅行先、スポット、宿泊先）の候補を表示
  * - タブで候補のカテゴリーを切り替え
  * - 候補をクリックしてモーダルで詳細情報を表示
- * - API から候補データを取得（失敗時はサンプルデータを表示）
+ * - API から候補データを取得
  */
 function TravelOptions({ active }) {
     // URL パラメータから groupId を取得（デフォルト値は "1"）
@@ -129,10 +98,6 @@ function TravelOptions({ active }) {
     // notice: ユーザーへの通知メッセージ
     const [notice, setNotice] = useState("");
     
-    // usingFallback: サンプルデータを使用しているかを示すフラグ
-    // （開発環境でAPI失敗時に true になり、プレビューモード となる）
-    const [usingFallback, setUsingFallback] = useState(false);
-
     // コンポーネント マウント時に候補・旅行データを初期取得する処理
     useEffect(() => {
         // cleanup 関数用の cancelled フラグ：非同期処理完了後に状態を更新しないようにするため
@@ -150,7 +115,6 @@ function TravelOptions({ active }) {
                 // API から取得したデータで状態を更新
                 setCandidates(data.candidates);
                 setTripTitle(data.trip?.title || "");
-                setUsingFallback(false);
             })
             // 取得失敗時
             .catch(() => {
@@ -158,15 +122,8 @@ function TravelOptions({ active }) {
                     return;
                 }
 
-                if (import.meta.env.DEV) {
-                    // 開発環境：サンプルデータを表示
-                    setCandidates(fallbackCandidates);
-                    setUsingFallback(true);
-                } else {
-                    // 本番環境：エラー状態に
-                    setCandidates([]);
-                    setNotice("候補データを取得できませんでした");
-                }
+                setCandidates([]);
+                setNotice("候補データを取得できませんでした");
             })
             // 成功・失敗の両方で実行
             .finally(() => {
@@ -237,11 +194,6 @@ function TravelOptions({ active }) {
             <div className="candidateBody">
                 {/* 通知メッセージ表示（投票完了、エラーメッセージなど） */}
                 {notice && <p className="candidateNotice" role="status">{notice}</p>}
-                {/* サンプルデータ使用中の注意メッセージ */}
-                {usingFallback && (
-                    <p className="previewNotice">APIに接続できないため、サンプルデータを表示しています。</p>
-                )}
-
                 {/* 候補一覧のヘッダー：カテゴリー名と候補件数を表示 */}
                 <div className="candidateListHeader">
                     <div>

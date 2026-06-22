@@ -11,16 +11,6 @@ const categoryLabels = {
     hotel: "宿泊先",
 };
 
-// API接続失敗時のフォールバック用サンプルデータ
-// 開発環境でAPIが利用できない場合、このデータで候補を表示する
-const fallbackCandidates = [
-    { candidate_id: 1, candidate_type: "destination", candidate_name: "三重県（伊勢・鳥羽エリア）", vote_count: 0, has_voted: false },
-    { candidate_id: 2, candidate_type: "destination", candidate_name: "三重県（志摩エリア）", vote_count: 0, has_voted: false },
-    { candidate_id: 3, candidate_type: "spot", candidate_name: "伊勢神宮", vote_count: 0, has_voted: false },
-    { candidate_id: 4, candidate_type: "spot", candidate_name: "鳥羽水族館", vote_count: 0, has_voted: false },
-    { candidate_id: 5, candidate_type: "hotel", candidate_name: "鳥羽シーサイドホテル", vote_count: 0, has_voted: false },
-];
-
 /**
  * バックエンドAPIから候補一覧を取得する非同期関数
  * 
@@ -68,10 +58,6 @@ function Vote({ active }) {
     // notice: ユーザーへの通知メッセージ（投票完了、エラーなど）
     const [notice, setNotice] = useState("");
     
-    // usingFallback: サンプルデータを使用しているかを示すフラグ
-    // （開発環境でAPI失敗時に true になり、プレビューモード となる）
-    const [usingFallback, setUsingFallback] = useState(false);
-
     // API から候補を再取得して、画面を更新する関数
     const refreshCandidates = async () => {
         // ローディング状態を有効に
@@ -80,19 +66,9 @@ function Vote({ active }) {
         try {
             // 新しい候補データを取得して状態を更新
             setCandidates(await requestCandidates(groupId));
-            // サンプルデータの使用フラグを解除
-            setUsingFallback(false);
         } catch {
-            // エラー発生時の分岐処理
-            if (import.meta.env.DEV) {
-                // 開発環境（DEV）の場合：サンプルデータを表示
-                setCandidates(fallbackCandidates);
-                setUsingFallback(true);
-            } else {
-                // 本番環境の場合：候補表示を空にしてエラーメッセージを表示
-                setCandidates([]);
-                setNotice("投票候補を取得できませんでした");
-            }
+            setCandidates([]);
+            setNotice("投票候補を取得できませんでした");
         } finally {
             // エラー / 成功の両方の場合、ローディングを終了
             setLoading(false);
@@ -112,21 +88,13 @@ function Vote({ active }) {
                 // キャンセルされていない場合のみ状態を更新
                 if (!cancelled) {
                     setCandidates(data);
-                    setUsingFallback(false);
                 }
             })
             // 取得失敗時
             .catch(() => {
                 if (!cancelled) {
-                    if (import.meta.env.DEV) {
-                        // 開発環境：サンプルデータを表示
-                        setCandidates(fallbackCandidates);
-                        setUsingFallback(true);
-                    } else {
-                        // 本番環境：エラー状態に
-                        setCandidates([]);
-                        setNotice("投票候補を取得できませんでした");
-                    }
+                    setCandidates([]);
+                    setNotice("投票候補を取得できませんでした");
                 }
             })
             // 成功・失敗の両方で実行
@@ -160,23 +128,8 @@ function Vote({ active }) {
     );
 
     // 投票処理を実行する関数
-    // candidateId: 投票先の候補ID、category: 投票先の候補のカテゴリー（destination, spot, hotel など）
-    const vote = async (candidateId, category) => {
-        // サンプルデータ（フォールバック）を使用している場合
-        if (usingFallback) {
-            // ローカルに投票状態を変更（APIに送信しない）
-            setCandidates((current) => current.map((candidate) => ({
-                ...candidate,
-                // 同じカテゴリーの場合：投票先の candidate_id に対してのみ has_voted を true に、他は false に
-                // 異なるカテゴリーの場合：has_voted を変更しない
-                has_voted: candidate.candidate_type === category
-                    ? candidate.candidate_id === candidateId
-                    : candidate.has_voted,
-            })));
-            setNotice("投票先を変更しました（プレビュー）");
-            return; // 早期リターン
-        }
-
+    // candidateId: 投票先の候補ID
+    const vote = async (candidateId) => {
         try {
             // バックエンド VoteCandidate.php へPOSTリクエストを送信
             const response = await fetch(`${import.meta.env.BASE_URL}api/Trips/VoteCandidate.php`, {
@@ -225,9 +178,6 @@ function Vote({ active }) {
             <div className="pollList">
                 {/* 通知メッセージ表示（投票完了、エラーメッセージなど） */}
                 {notice && <p className="pollNotice" role="status">{notice}</p>}
-                {/* サンプルデータ使用中の注意メッセージ */}
-                {usingFallback && <p className="pollPreview">サンプルデータを表示しています。</p>}
-
                 {/* ローディング状態・候補がない場合・候補がある場合の3つの表示をコンディショナルレンダリング */}
                 {loading ? (
                     // ローディング中の表示
@@ -267,7 +217,7 @@ function Vote({ active }) {
                                             // aria-pressed 属性で投票済み状態をアクセシビリティに伝える
                                             aria-pressed={option.has_voted}
                                             // ボタンクリック時に投票処理を実行
-                                            onClick={() => vote(option.candidate_id, poll.category)}
+                                            onClick={() => vote(option.candidate_id)}
                                         >
                                             {/* 投票数を視覚的に表現するグラフバー */}
                                             <span className="pollFill" style={{ width }} />
