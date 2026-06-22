@@ -11,8 +11,8 @@ const BACKGROUND_IMAGES = Object.values(imageModules).map((mod) => mod.default);
 
 export default function Login() {
     const navigate = useNavigate();
-    const [email, setEmail] = useState("test@gmail.com");
-    const [password, setPassword] = useState("2024Test");
+    const [email, setEmail] = useState("2410041@i-seifu.jp");
+    const [password, setPassword] = useState("2024Gakusei");
     const [showPassword, setShowPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [isLoading, setIsLoading] = useState(false);
