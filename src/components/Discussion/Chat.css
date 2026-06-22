@@ -5,38 +5,7 @@
     min-height: 0;
 }
 
-.memberPill {
-    margin: 10px 14px 0;
-    padding: 8px 10px;
-    border: 1px solid #d7e3ef;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.82);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    color: var(--discussion-muted);
-    font-size: 12px;
-    flex-shrink: 0;
-}
 
-.miniAvatars {
-    display: flex;
-    padding-left: 8px;
-}
-
-.miniAvatars span {
-    width: 24px;
-    height: 24px;
-    margin-left: -6px;
-    display: grid;
-    place-items: center;
-    border: 2px solid #fff;
-    border-radius: 50%;
-    background: var(--discussion-sky);
-    color: var(--discussion-blue-dark);
-    font-size: 11px;
-    font-weight: 800;
-}
 
 .messageList {
     min-height: 0;
@@ -98,8 +67,6 @@
 }
 
 .senderName {
-    display: block;
-    margin: 0 0 4px 4px;
     color: var(--discussion-muted);
     font-size: 11px;
     font-weight: 700;
@@ -125,6 +92,7 @@
     font-size: 14px;
     line-height: 1.55;
     overflow-wrap: anywhere;
+    white-space: pre-wrap;
 }
 
 .messageRow.mine .bubble {
@@ -152,7 +120,7 @@
 .composer {
     padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
     display: grid;
-    grid-template-columns: 40px minmax(0, 1fr) 42px;
+    grid-template-columns: minmax(0, 1fr) 42px;
     gap: 8px;
     background: rgba(255, 255, 255, 0.96);
     border-top: 1px solid var(--discussion-line);
@@ -180,18 +148,29 @@
     stroke-linejoin: round;
 }
 
-.composer input {
+
+.composer textarea {
     min-width: 0;
-    height: 40px;
+    min-height: 40px;
+    max-height: 120px;
+
     border: 1px solid #d5dee8;
-    border-radius: 999px;
+    border-radius: 20px;
+
     background: #f8fafc;
-    padding: 0 14px;
+
+    padding: 10px 14px;
+
     font-size: 14px;
+
+    resize: none;
+    overflow-y: auto;
+
     outline: none;
+    line-height: 1.4;
 }
 
-.composer input:focus {
+.composer textarea:focus {
     border-color: var(--discussion-blue);
     background: #fff;
 }
@@ -199,6 +178,19 @@
 .composer .sendButton {
     background: var(--discussion-blue);
     color: #fff;
+}
+
+.userHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.userHeader .avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 10px;
 }
 
 @media (max-width: 360px) {
@@ -214,10 +206,6 @@
 }
 
 @media (max-height: 700px) {
-    .memberPill {
-        margin-top: 6px;
-    }
-
     .dateChip {
         margin: 9px auto;
     }
