@@ -59,10 +59,11 @@ const initialMessages = [
     },
 ];
 
-function Chat({ members, active }) {
+function Chat({ active }) {
     const [draft, setDraft] = useState("");
     const [messages, setMessages] = useState(initialMessages);
     const messageListRef = useRef(null);
+    const textareaRef = useRef(null);
 
     useLayoutEffect(() => {
         const messageList = messageListRef.current;
@@ -83,20 +84,29 @@ function Chat({ members, active }) {
                 <div className="chatBlock" key={message.id}>
                     {showDate && <div className="dateChip">{message.date}</div>}
                     <article className={`messageRow ${message.isMine ? "mine" : ""}`}>
-                        {!message.isMine && <div className="avatar">{message.avatar}</div>}
                         <div className="messageStack">
-                            {!message.isMine && <span className="senderName">{message.sender}</span>}
+    {!message.isMine && (
+        <div className="userHeader">
+            <div className="avatar">
+                {message.avatar}
+            </div>
+            <span className="senderName">
+                {message.sender}
+            </span>
+        </div>
+    )}
                             <div className="bubbleLine">
                                 {message.isMine && (
                                     <div className="messageMeta mineMeta">
-                                        <span>既読 {message.readCount}</span>
+                                        {message.readCount > 0 && (
+                                            <span>既読 {message.readCount}</span>
+                                        )}
                                         <time>{message.time}</time>
                                     </div>
                                 )}
                                 <div className="bubble">{message.text}</div>
                                 {!message.isMine && (
                                     <div className="messageMeta">
-                                        <span>既読 {message.readCount}</span>
                                         <time>{message.time}</time>
                                     </div>
                                 )}
@@ -143,35 +153,32 @@ function Chat({ members, active }) {
             },
         ]);
         setDraft("");
+
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "40px";
+            }
     };
 
     return (
         <section className="chatPanel" aria-label="チャット" hidden={!active}>
-            <div className="memberPill">
-                <span>{members.length}人が参加中</span>
-                <div className="miniAvatars" aria-hidden="true">
-                    {members.map((member) => (
-                        <span key={member}>{member.slice(0, 1)}</span>
-                    ))}
-                </div>
-            </div>
             <div className="messageList" ref={messageListRef}>
                 {chatContent}
             </div>
             <form className="composer" onSubmit={sendMessage}>
-                <button type="button" aria-label="画像を追加">
-                    <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <rect x="4" y="5" width="16" height="14" rx="3" />
-                        <path d="m8 15 3-3 3 3 2-2 3 4" />
-                        <path d="M8.5 9.5h.01" />
-                    </svg>
-                </button>
-                <input
-                    value={draft}
-                    onChange={(event) => setDraft(event.target.value)}
-                    placeholder="メッセージを入力..."
-                    aria-label="メッセージ"
-                />
+                <textarea
+                ref={textareaRef}
+                value={draft}
+                onChange={(event) => {
+                    setDraft(event.target.value);
+
+                    event.target.style.height = "auto";
+                    event.target.style.height =
+                        `${event.target.scrollHeight}px`;
+                }}
+                placeholder="メッセージを入力..."
+                aria-label="メッセージ"
+                rows={1}
+            />
                 <button className="sendButton" type="submit" aria-label="送信">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="m22 2-7 20-4-9-9-4 20-7Z" />
