@@ -1,0 +1,216 @@
+.chatPanel {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+
+
+.messageList {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 8px 12px 14px;
+    scrollbar-width: thin;
+}
+
+.chatBlock {
+    display: contents;
+}
+
+.dateChip {
+    width: fit-content;
+    max-width: 86%;
+    margin: 14px auto;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #e8eef5;
+    color: #6a7484;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.messageRow {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.messageRow.mine {
+    justify-content: flex-end;
+}
+
+.avatar {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fff, var(--discussion-sky));
+    color: var(--discussion-blue);
+    border: 1px solid #d7e9f7;
+    font-size: 12px;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.messageStack {
+    max-width: min(76%, 310px);
+}
+
+.messageRow.mine .messageStack {
+    max-width: min(82%, 330px);
+}
+
+.senderName {
+    color: var(--discussion-muted);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.bubbleLine {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.messageRow.mine .bubbleLine {
+    justify-content: flex-end;
+}
+
+.bubble {
+    padding: 10px 13px;
+    border-radius: 17px;
+    border-bottom-left-radius: 5px;
+    background: var(--discussion-card);
+    color: var(--discussion-text);
+    box-shadow: 0 2px 8px rgba(35, 48, 70, 0.08);
+    font-size: 14px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+.messageRow.mine .bubble {
+    border-bottom-left-radius: 17px;
+    border-bottom-right-radius: 5px;
+    background: var(--discussion-blue);
+    color: #fff;
+}
+
+.messageMeta {
+    min-width: 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    color: #7d8795;
+    font-size: 10px;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.mineMeta {
+    align-items: flex-end;
+}
+
+.composer {
+    padding: 8px 10px calc(10px + env(safe-area-inset-bottom, 0px));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.96);
+    border-top: 1px solid var(--discussion-line);
+    flex-shrink: 0;
+}
+
+.composer button {
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #edf2f7;
+    color: #6d7788;
+}
+
+.composer svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+
+.composer textarea {
+    min-width: 0;
+    min-height: 40px;
+    max-height: 120px;
+
+    border: 1px solid #d5dee8;
+    border-radius: 20px;
+
+    background: #f8fafc;
+
+    padding: 10px 14px;
+
+    font-size: 14px;
+
+    resize: none;
+    overflow-y: auto;
+
+    outline: none;
+    line-height: 1.4;
+}
+
+.composer textarea:focus {
+    border-color: var(--discussion-blue);
+    background: #fff;
+}
+
+.composer .sendButton {
+    background: var(--discussion-blue);
+    color: #fff;
+}
+
+.userHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.userHeader .avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 10px;
+}
+
+@media (max-width: 360px) {
+    .messageStack,
+    .messageRow.mine .messageStack {
+        max-width: 86%;
+    }
+
+    .bubble {
+        font-size: 13px;
+        padding: 9px 11px;
+    }
+}
+
+@media (max-height: 700px) {
+    .dateChip {
+        margin: 9px auto;
+    }
+
+    .messageRow {
+        margin: 7px 0;
+    }
+}
