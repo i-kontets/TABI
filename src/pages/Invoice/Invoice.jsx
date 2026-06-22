@@ -5,6 +5,7 @@ import styles from "./Invoice.module.css";
 import Header from "../../components/header/Header";
 import BtmNav from "../../components/bottomNav/BottomNav";
 import invoiceJson from "./Invoice.json";
+import QRCode from 'react-qr-code';
 
 
 const legacyGroupIds = {
