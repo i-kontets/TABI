@@ -2,6 +2,9 @@
 
 docker compose up --build
 
+docker compose down --rmi all --volumes --remove-orphans
+docker system prune -a --volumes -f
+
 npm run build
 -react の静的ファイル作成  
 --作成されたフォルダの中身のみサーバーに移す
