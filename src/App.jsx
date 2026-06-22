@@ -6,8 +6,8 @@ import './App.css'
 import Newreg from './pages/newreg/Newreg';
 import Login from './pages/Login/Login';
 import Home from './pages/Home/Home';
-import Itinerary from './pages/Itinerary/itinerary';
-import ItineraryEdit from './pages/Itinerary/itinerary_edit';
+import Itinerary from './pages/Itinerary/Itinerary.jsx';
+import ItineraryEdit from './pages/Itinerary/ItineraryEdit.jsx';
 import Tripmap from './pages/Tripmap/Tripmap';
 import Schedule from './pages/Schedule/schedule';
 import Chat from './pages/Chat/Chat';
@@ -18,10 +18,13 @@ import Discussion from './pages/Discussion/Discussion';
 export const TripContext = createContext();
 
 function App() {
-    const [tripName, setTripName] = useState("");
+    const [trip, setTrip] = useState({
+        id: null,
+        name: ""
+    });
 
     return (
-        <TripContext.Provider value={{ tripName, setTripName }}>
+        <TripContext.Provider value={{ trip, setTrip }}>
             <BrowserRouter basename={import.meta.env.BASE_URL}>
                 <Routes>
                     <Route path="/" element={<Login />} />
