@@ -9,11 +9,13 @@ import Home from './pages/Home/Home';
 import Itinerary from './pages/Itinerary/itinerary';
 import ItineraryEdit from './pages/Itinerary/itinerary_edit';
 import Tripmap from './pages/Tripmap/Tripmap';
-import Schedule  from './pages/Schedule/Schedule';
+import Schedule from './pages/Schedule/schedule';
 import Chat from './pages/Chat/Chat';
 import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
 import Appointment from './pages/appointment/appointment.jsx';
+import Discussion from './pages/Discussion/Discussion';
+
 
 export const TripContext = createContext();
 
@@ -31,7 +33,9 @@ function App() {
                     <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
                     <Route path="/Tripmap" element={<Tripmap />} />
                     <Route path="/schedule" element={<Schedule />} />
-                    <Route path="/chat" element={<Chat />} />
+                    <Route path="/Chat" element={<Chat />} />
+                    <Route path="/Discussion" element={<Discussion />} />
+                    <Route path="/group/:groupId/talk" element={<Discussion />} />
                     <Route path="/album" element={<Album />} />
                     <Route path="/Invoice" element={<Invoice />} />
                     <Route path="/appointment" element={<Appointment />}/>

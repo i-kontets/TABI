@@ -1,6 +1,13 @@
+.errorMessage {
+    color: #ff4d4f;
+    font-size: 14px;
+    margin: 8px 0 12px;
+    text-align: center;
+}
+
 .loginPage {
     min-height: 100vh;
-    background-image: url("/public/assets/login_umi.jpg");
+    /* background-image: url("/public/assets/login_umi.jpg"); */
     background-size: cover;
     background-position: center;
     /* background-color: rgba(68, 85, 141, 0.2); 

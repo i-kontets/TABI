@@ -1,10 +1,10 @@
-/* 背景画像（仮パス） */
 .loginPage {
     min-height: 100vh;
-
-    background-image: url("/public/assets/login_umi.jpg");
+    /* background-image: url("/public/assets/login_umi.jpg"); */
     background-size: cover;
     background-position: center;
+    /* background-color: rgba(68, 85, 141, 0.2); 
+    background-blend-mode: overlay;  */
 }
 
 .loginContainer {

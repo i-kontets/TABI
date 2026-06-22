@@ -1,0 +1,143 @@
+:root {
+    --discussion-blue: #1769c2;
+    --discussion-blue-dark: #0f57a7;
+    --discussion-sky: #dff1ff;
+    --discussion-bg: #f4f7fb;
+    --discussion-line: #e1e7ef;
+    --discussion-text: #172033;
+    --discussion-muted: #6d7788;
+    --discussion-card: #ffffff;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
+.discussionShell {
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    background: #dceff4;
+    color: var(--discussion-text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.phoneFrame {
+    width: min(100vw, 430px);
+    height: 100dvh;
+    max-height: 932px;
+    background: var(--discussion-bg);
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) 70px;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(21, 42, 67, 0.16);
+}
+
+.phoneFrame > nav:last-child {
+    width: min(100vw, 430px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+}
+
+.tabBar {
+    height: 48px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: var(--discussion-card);
+    border-bottom: 1px solid var(--discussion-line);
+}
+
+.tabBar button {
+    position: relative;
+    border: 0;
+    background: transparent;
+    color: #4f5d70;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.tabBar button.active {
+    color: var(--discussion-blue);
+}
+
+.tabBar button.active::after {
+    content: "";
+    position: absolute;
+    left: 20%;
+    right: 20%;
+    bottom: 0;
+    height: 3px;
+    border-radius: 999px 999px 0 0;
+    background: var(--discussion-blue);
+}
+
+.contentArea {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.contentArea > [hidden] {
+    display: none;
+}
+
+.sectionHeader {
+    padding: 14px 14px 8px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.sectionKicker {
+    color: var(--discussion-blue);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.sectionHeader h2 {
+    margin: 2px 0 0;
+    font-size: 17px;
+}
+
+.sectionHeader button {
+    border: 0;
+    border-radius: 999px;
+    background: var(--discussion-blue);
+    color: #fff;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+button {
+    cursor: pointer;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 431px) {
+    .phoneFrame {
+        height: min(100dvh, 932px);
+        border-left: 1px solid #c9d5e1;
+        border-right: 1px solid #c9d5e1;
+    }
+}
+
+@media (max-width: 360px) {
+    .phoneFrame {
+        width: 100vw;
+    }
+}
+
+@media (max-height: 700px) {
+    .tabBar {
+        height: 42px;
+    }
+}

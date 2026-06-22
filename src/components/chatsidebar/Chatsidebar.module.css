@@ -1,0 +1,103 @@
+.sidebarContainer {
+  display: flex;
+  flex-direction: column;
+  width: 320px;
+  flex: 1;
+  background-color: #FFFFFF;
+  border-right: 1px solid var(--other-color);
+}
+.searchContainer {
+  padding: 20px 16px;
+  border-bottom: 1px solid var(--other-color);
+}
+.searchInput {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: var(--sub-color);
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+.contactList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+.contactItem {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-left: 4px solid transparent;
+}
+.contactItem:hover {
+  background-color: var(--sub-color);
+}
+.activeItem {
+  background-color: #FFF0F1;
+  border-left: 4px solid var(--accent-color);
+}
+.avatarWrapper {
+  position: relative;
+  margin-right: 12px;
+}
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.info {
+  flex: 1;
+  min-width: 0;
+}
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.name {
+  font-weight: bold;
+  font-size: 14px;
+  color: #333333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.memberCount {
+  color: var(--main-color);
+  font-size: 13px;
+  font-weight: 500;
+}
+.time {
+  font-size: 12px;
+  color: #999;
+}
+.messageRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.lastMessage {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.unreadBadge {
+  background-color: var(--accent-color);
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-left: 8px;
+}
