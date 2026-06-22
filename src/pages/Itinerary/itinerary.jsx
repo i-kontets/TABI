@@ -132,6 +132,10 @@ return (
       </button>
     </div>
 
+    <div className={styles.appointmentWidget}>
+      <p>大阪～三重</p>
+      
+    </div>
 
 
     {/* 固定ボトムナビ */}
