@@ -11,9 +11,8 @@ import Edit from '../../assets/icons/edit.svg?react';
 import Group from '../../assets/icons/group.svg?react';
 
 export default function Itinerary() {
-  const navigate = useNavigate();
   const location = useLocation();
-  const tripName = location.state?.tripName;
+  const {trip} = useContext(TripContext);
   // 招待モーダルの管理状態
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   
@@ -62,6 +61,14 @@ export default function Itinerary() {
     { title: 'レンタカー代', meta: '5/14 ゆうき', amount: '¥4,800' },
   ];
 
+  const invitationClick = () => {
+        setIsInviteModalOpen(true);
+    };
+
+    const closeInviteModal = () => {
+        setIsInviteModalOpen(false);
+    };
+
   return (
     <div>
         <Header />
@@ -75,7 +82,7 @@ export default function Itinerary() {
             <div className={styles.coverOverlay}></div>
             <div className={styles.coverMainInfo}>
               <div className={styles.titleRow}>
-                <h1 className={styles.mainTitle}>{tripName}</h1>
+                <h1 className={styles.mainTitle}>{trip.name}</h1>
                 <span className={styles.daysBadge}>あと 24 日</span>
               </div>
               <p className={styles.subDate}>2026/05/14 (木) - 05/16 (土)</p>
@@ -98,7 +105,7 @@ export default function Itinerary() {
               </div>
             </div>
             {/* 旅行編集画面 itineraryEdit.jsx への遷移 */}
-            <button className={styles.editBtn} onClick={() => navigate('/itinerary/edit')}>
+            <button className={styles.editBtn} onClick={() => navigate('/ItineraryEdit')}>
               旅行情報を編集
             </button>
           </div>
@@ -114,9 +121,12 @@ export default function Itinerary() {
       </div>
 
       {/* 招待モーダルを連携 */}
-      {isInviteModalOpen && (
+      {/* {isInviteModalOpen && (
         <InviteModal isOpen={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} />
-      )}
+      )} */}
+      <Modal isOpen={isInviteModalOpen} onClose={closeInviteModal}>
+        <InviteModal onClose={closeInviteModal} />
+      </Modal>
     </div>
   );
 }
