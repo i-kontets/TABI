@@ -1119,6 +1119,12 @@ ALTER TABLE `trip_candidate_votes`
   MODIFY `vote_id` bigint NOT NULL AUTO_INCREMENT COMMENT '候補投票ID';
 
 --
+-- テーブルの AUTO_INCREMENT `trip_candidates`
+--
+ALTER TABLE `trip_candidates`
+  MODIFY `candidate_id` bigint NOT NULL AUTO_INCREMENT COMMENT '候補ID';
+
+--
 -- テーブルの AUTO_INCREMENT `trip_decisions`
 --
 ALTER TABLE `trip_decisions`

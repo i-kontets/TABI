@@ -1,12 +1,13 @@
 <?php
 header("Content-Type: application/json; charset=UTF-8");
 
-$config = require __DIR__ . '/env.php';
+$configPath = __DIR__ . '/env.php';
+$config = file_exists($configPath) ? require $configPath : [];
 
-$host = $config['DB_HOST'];
-$dbname = $config['DB_NAME'];
-$user = $config['DB_USER'];
-$password = $config['DB_PASSWORD'];
+$host = $config['DB_HOST'] ?? getenv('DB_HOST') ?: 'db';
+$dbname = $config['DB_NAME'] ?? getenv('DB_NAME') ?: 'tabi';
+$user = $config['DB_USER'] ?? getenv('DB_USER') ?: 'tabi_user';
+$password = $config['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: 'tabi_password';
 
 try {
 
