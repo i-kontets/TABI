@@ -26,15 +26,20 @@
     font-size: 11px;
 }
 
-.singleVoteBadge {
+.addCandidateButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 7px 10px;
-    border: 1px solid #badcff;
+    border: 0;
     border-radius: 999px;
-    background: #eaf5ff;
-    color: var(--discussion-blue-dark);
+    background: var(--discussion-blue);
+    color: #fff;
     font-size: 11px;
     font-weight: 800;
     white-space: nowrap;
+    cursor: pointer;
+    text-decoration: none;
 }
 
 .candidateTypes {
@@ -77,114 +82,6 @@
     flex: 1;
     overflow-y: auto;
     padding: 0 14px 22px;
-}
-
-.destinationForm,
-.favoriteSource {
-    padding: 14px;
-    border: 1px solid #dce5ef;
-    border-radius: 14px;
-    background: #fff;
-    box-shadow: 0 5px 18px rgba(31, 52, 76, 0.07);
-}
-
-.sourceTitle {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.sourceTitle strong {
-    display: block;
-    font-size: 14px;
-}
-
-.sourceTitle p {
-    margin: 3px 0 0;
-    color: var(--discussion-muted);
-    font-size: 11px;
-    line-height: 1.4;
-}
-
-.favoriteMark {
-    width: 38px;
-    height: 38px;
-    display: grid;
-    place-items: center;
-    border-radius: 12px;
-    background: #fff0f2;
-    color: #e7536c;
-    font-size: 18px;
-}
-
-.destinationForm label {
-    display: grid;
-    gap: 5px;
-    margin-top: 11px;
-}
-
-.destinationForm label span {
-    color: #566174;
-    font-size: 11px;
-    font-weight: 800;
-}
-
-.destinationForm input {
-    width: 100%;
-    height: 40px;
-    border: 1px solid #d5e0eb;
-    border-radius: 10px;
-    background: #f9fbfd;
-    padding: 0 11px;
-    color: var(--discussion-text);
-    font-size: 13px;
-    outline: none;
-}
-
-.destinationForm input:focus {
-    border-color: var(--discussion-blue);
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(23, 105, 194, 0.1);
-}
-
-.destinationForm > button,
-.favoriteSource > button {
-    width: 100%;
-    min-height: 40px;
-    margin-top: 12px;
-    border: 0;
-    border-radius: 10px;
-    background: var(--discussion-blue);
-    color: #fff;
-    font-size: 13px;
-    font-weight: 800;
-}
-
-.favoriteEmpty {
-    margin-top: 12px;
-    padding: 16px 10px;
-    border: 1px dashed #ccd9e7;
-    border-radius: 10px;
-    background: #f8fbfe;
-    display: grid;
-    justify-items: center;
-    text-align: center;
-}
-
-.favoriteEmpty > span {
-    color: #e7536c;
-    font-size: 24px;
-}
-
-.favoriteEmpty strong {
-    margin-top: 3px;
-    font-size: 12px;
-}
-
-.favoriteEmpty p {
-    margin: 4px 0 0;
-    color: var(--discussion-muted);
-    font-size: 10px;
 }
 
 .candidateNotice,
@@ -239,21 +136,46 @@
 }
 
 .candidateCard {
+    width: 100%;
     display: grid;
-    grid-template-columns: 66px minmax(0, 1fr);
+    grid-template-columns: 66px minmax(0, 1fr) 22px;
+    align-items: center;
     gap: 11px;
     position: relative;
-    padding: 11px;
+    padding: 12px;
     border: 1px solid #dfe7ef;
     border-radius: 14px;
     background: #fff;
-    box-shadow: 0 4px 14px rgba(27, 44, 64, 0.06);
+    box-shadow: 0 4px 14px rgba(27, 44, 64, 0.05);
+    color: var(--discussion-text);
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition:
+        border-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
 }
 
-.candidateCard.selected {
-    border: 2px solid var(--discussion-blue);
-    padding: 10px;
-    box-shadow: 0 7px 18px rgba(23, 105, 194, 0.13);
+.candidateCard:hover {
+    border-color: #bfd6ee;
+    box-shadow: 0 8px 20px rgba(27, 74, 121, 0.1);
+    transform: translateY(-1px);
+}
+
+.candidateCard:focus-visible {
+    outline: 3px solid rgba(23, 105, 194, 0.2);
+    outline-offset: 2px;
+}
+
+.candidateCard--destination {
+    grid-template-columns: minmax(0, 1fr) 22px;
+    min-height: 112px;
+    padding: 16px 14px 14px 16px;
+    border-left: 4px solid var(--discussion-blue);
+    background:
+        linear-gradient(90deg, rgba(231, 244, 255, 0.7), rgba(255, 255, 255, 0) 42%),
+        #fff;
 }
 
 .candidateIcon {
@@ -281,60 +203,59 @@
     min-width: 0;
 }
 
-.candidateInfo > span {
-    color: var(--discussion-blue);
-    font-size: 10px;
-    font-weight: 800;
-}
-
-.candidateInfo h3 {
-    margin: 2px 0 3px;
-    font-size: 14px;
-    line-height: 1.3;
-}
-
-.candidateInfo p {
-    margin: 0;
-    color: var(--discussion-muted);
-    font-size: 10px;
-    line-height: 1.4;
-}
-
-.voteSummary {
-    margin-top: 7px;
+.candidateMeta {
     display: flex;
     align-items: center;
     gap: 7px;
 }
 
-.voteSummary b {
-    color: #48566a;
-    font-size: 11px;
-}
-
-.voteSummary span {
-    padding: 3px 6px;
-    border-radius: 999px;
-    background: #e7f3ff;
-    color: var(--discussion-blue-dark);
-    font-size: 9px;
-    font-weight: 800;
-}
-
-.candidateVoteButton {
-    grid-column: 1 / -1;
-    min-height: 36px;
-    border: 1px solid var(--discussion-blue);
-    border-radius: 10px;
-    background: #fff;
+.candidateMeta > span {
     color: var(--discussion-blue);
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 800;
 }
 
-.candidateVoteButton[aria-pressed="true"] {
-    background: var(--discussion-blue);
-    color: #fff;
+.candidateMeta small {
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #edf5fc;
+    color: #60738a;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.candidateInfo h3 {
+    margin: 4px 0 4px;
+    font-size: 15px;
+    line-height: 1.35;
+    letter-spacing: 0.01em;
+}
+
+.candidateInfo p {
+    margin: 0;
+    color: var(--discussion-muted);
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 1.5;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.candidateDetailLink {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--discussion-blue);
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.candidateChevron {
+    color: #8ca0b6;
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+    text-align: center;
 }
 
 .candidateEmpty {
@@ -355,6 +276,74 @@
 .candidateEmpty p {
     margin: 5px 0 0;
     font-size: 11px;
+}
+
+.candidateDetail {
+    display: grid;
+    gap: 14px;
+}
+
+.candidateModalHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.candidateModalHeader span {
+    color: var(--discussion-blue);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.candidateModalHeader h3 {
+    margin: 2px 0 0;
+    font-size: 19px;
+}
+
+.candidateModalHeader button {
+    width: 32px;
+    height: 32px;
+    border: 0;
+    border-radius: 50%;
+    background: #f0f3f7;
+    color: #586579;
+    font-size: 20px;
+}
+
+.candidateDetailVisual {
+    min-height: 150px;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    border-radius: 13px;
+    background: linear-gradient(145deg, #e9f6ff, #d8edff);
+    color: var(--discussion-blue);
+}
+
+.candidateDetailVisual img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.candidateDetailVisual span {
+    font-size: 54px;
+}
+
+.candidateDetailBody {
+    display: grid;
+    gap: 5px;
+}
+
+.candidateDetailBody strong {
+    font-size: 13px;
+}
+
+.candidateDetailBody p {
+    margin: 0;
+    color: var(--discussion-muted);
+    font-size: 12px;
+    line-height: 1.65;
 }
 
 @media (max-width: 360px) {
