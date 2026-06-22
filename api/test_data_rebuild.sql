@@ -738,14 +738,7 @@ VALUES
   ('1', 'restaurant', '伊勢うどん 山口屋', '伊勢うどんを味わえる老舗です。', NULL, 3, 'candidate', '2026-06-18 11:50:00'),
   ('2', 'destination', '京都府（東山エリア）', '清水寺や祇園を徒歩で巡れます。', NULL, 2, 'candidate', '2026-06-19 15:00:00');
 
-INSERT INTO `trip_candidate_votes` (`candidate_id`, `user_id`, `vote_type`, `created_at`) VALUES
-  (1, 1, 'like', '2026-06-18 12:00:00'),
-  (1, 2, 'like', '2026-06-18 12:05:00'),
-  (2, 3, 'like', '2026-06-18 12:10:00'),
-  (3, 1, 'like', '2026-06-18 12:15:00'),
-  (3, 2, 'like', '2026-06-18 12:20:00'),
-  (4, 3, 'like', '2026-06-18 12:25:00'),
-  (5, 1, 'like', '2026-06-18 12:30:00');
+-- 候補投票は初期状態を空にし、各ユーザーが画面から投票します。
 
 INSERT INTO `trip_date_candidates`
   (`trip_id`, `candidate_start_date`, `candidate_end_date`, `created_by`, `created_at`)
