@@ -17,7 +17,7 @@ function BottomNav() {
         { id: 'meeting', label: '話し合い' , path:`/group/${groupId}/talk`, icon: Meet},
         { id: 'time', label: 'スケジュール', path: '/schedule', icon: timeIcon },
         { id: 'album', label: 'アルバム', path: '/album', icon: photoIcon },
-        { id: 'other', label: 'その他機能', path: '#', icon: AppsIcon },
+        { id: 'other', label: 'その他機能', path: '/Other', icon: AppsIcon },
     ];
 
     const handleNavigation = (path) => {
