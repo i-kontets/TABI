@@ -15,11 +15,8 @@ import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
 import Appointment from './pages/appointment/appointment.jsx';
 import Discussion from './pages/Discussion/Discussion';
-<<<<<<< HEAD
 import Other from './pages/Other/Other.jsx';
-=======
 import TouristRanking from './pages/TouristRanking/TouristRanking';
->>>>>>> bell
 
 
 export const TripContext = createContext();
