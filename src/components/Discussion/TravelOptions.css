@@ -45,13 +45,14 @@
 .candidateTypes {
     padding: 0 14px 12px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
     flex-shrink: 0;
 }
 
 .candidateTypes button {
     min-height: 52px;
+    min-width: 0;
     border: 1px solid #dbe4ee;
     border-radius: 12px;
     background: #fff;
@@ -60,9 +61,10 @@
     place-items: center;
     align-content: center;
     gap: 2px;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
     box-shadow: 0 2px 8px rgba(38, 55, 76, 0.04);
+    white-space: nowrap;
 }
 
 .candidateTypes button span {
@@ -353,5 +355,13 @@
 
     .candidateListHeader small {
         display: none;
+    }
+
+    .candidateTypes {
+        gap: 5px;
+    }
+
+    .candidateTypes button {
+        font-size: 10px;
     }
 }
