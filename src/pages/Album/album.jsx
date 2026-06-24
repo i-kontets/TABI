@@ -175,7 +175,7 @@ function Album() {
         const maxPhotoId = photos.reduce((maxId, photo) => Math.max(maxId, photo.id), 0);
 
         // 追加する画像のデータをさらに変更
-        //
+        //idをすでにある画像からのつづきの番号にするためにmaxPhotoId + index + 1にしている
         const newPhotos = pendingPhotos.map((photo, index) => ({
             id: maxPhotoId + index + 1,
             src: photo.src,
@@ -186,17 +186,25 @@ function Album() {
         }));
 
         // 新しく追加した写真を、一覧の先頭に表示します。
+        //setphotosに選択した画像を追加　追加した画像のほうを先に出すために newPhotosのほうが先に入れる
         setPhotos((currentPhotos) => [...newPhotos, ...currentPhotos]);
+        //追加予定用の配列をリセット
         setPendingPhotos([]);
+        //追加画像用のプレビューをリセット
         setPreviewPhoto(null);
+        //Viewをaddからlistに変更し、画像一覧に画面変更
         setView('list');
     };
 
     // 一覧の写真を押したとき、詳細画面を開く処理です。
     const handlePhotoClick = (index) => {
+        //選択された画像のphoto配列内の要素番号を保存
         setSelectedIndex(index);
+        //一覧から画像を押したときに出る三点リーダーを閉じる
         setIsMenuOpen(false);
+        //三点リーダー内の詳細情報を閉じる
         setIsInfoOpen(false);
+        //viewをaddからdetailに変える 画像詳細に(詳細情報とはべつ)
         setView('detail');
     };
 
