@@ -6,11 +6,12 @@ import Modal from "../Modal/Modal";
 import "./TravelOptions.css";
 
 // 候補カテゴリーの日本語ラベルマッピング
-// 「旅行先」「スポット」「宿泊先」の3つのカテゴリーを定義
+// 「旅行先」「スポット」「宿泊先」「食べたい物」のカテゴリーを定義
 const categoryLabels = {
     destination: "旅行先",
     spot: "スポット",
     hotel: "宿泊先",
+    restaurant: "食べたい物",
 };
 
 /**
@@ -20,7 +21,7 @@ const categoryLabels = {
  * 
  * 処理：
  * 1. img_url が存在する場合：画像タグで表示
- * 2. img_url が空の場合：候補タイプに応じたアイコン（⌂, ⌖, ◇）を表示
+ * 2. img_url が空の場合：候補タイプに応じたアイコン（⌂, ⌖, ◇, 🍴）を表示
  */
 function CandidateVisual({ candidate }) {
     // 画像URLが設定されている場合、その画像を表示
@@ -29,8 +30,13 @@ function CandidateVisual({ candidate }) {
     }
 
     // 画像がない場合、候補タイプに応じたアイコンを表示
-    // hotel: ⌂（家のマーク）、spot: ⌖（ターゲットマーク）、destination: ◇（ダイヤモンド）
-    const icon = candidate.candidate_type === "hotel" ? "⌂" : candidate.candidate_type === "spot" ? "⌖" : "◇";
+    const icons = {
+        destination: "◇",
+        spot: "⌖",
+        hotel: "⌂",
+        restaurant: "🍴",
+    };
+    const icon = icons[candidate.candidate_type] || "◇";
     return <span aria-hidden="true">{icon}</span>;
 }
 
@@ -70,7 +76,7 @@ async function requestCandidates(groupId) {
  * 旅行候補一覧を表示するメインコンポーネント
  * 
  * 機能：
- * - 複数のカテゴリー（旅行先、スポット、宿泊先）の候補を表示
+ * - 複数のカテゴリー（旅行先、スポット、宿泊先、食べたい物）の候補を表示
  * - タブで候補のカテゴリーを切り替え
  * - 候補をクリックしてモーダルで詳細情報を表示
  * - API から候補データを取得
@@ -80,7 +86,7 @@ function TravelOptions({ active }) {
     const { groupId = "1" } = useParams();
     
     // 状態管理
-    // activeCategory: 現在選択されているカテゴリー（destination, spot, hotel）
+    // activeCategory: 現在選択されているカテゴリー（destination, spot, hotel, restaurant）
     const [activeCategory, setActiveCategory] = useState("destination");
     
     // candidates: 取得した候補データの配列
@@ -172,7 +178,7 @@ function TravelOptions({ active }) {
                 </a>
             </header>
 
-            {/* カテゴリータブ：destination, spot, hotel を切り替えるボタングループ */}
+            {/* カテゴリータブ：destination, spot, hotel, restaurant を切り替えるボタングループ */}
             <div className="candidateTypes" aria-label="候補カテゴリ">
                 {Object.entries(categoryLabels).map(([category, label]) => (
                     <button
@@ -184,7 +190,7 @@ function TravelOptions({ active }) {
                         onClick={() => changeCategory(category)}
                     >
                         {/* カテゴリーを表すアイコン */}
-                        <span>{category === "destination" ? "✎" : category === "spot" ? "⌖" : "⌂"}</span>
+                        <span>{category === "destination" ? "✎" : category === "spot" ? "⌖" : category === "hotel" ? "⌂" : "🍴"}</span>
                         {label}
                     </button>
                 ))}
