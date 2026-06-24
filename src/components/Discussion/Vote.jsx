@@ -8,6 +8,7 @@ const categoryLabels = {
     destination: "旅行先",
     spot: "スポット",
     hotel: "宿泊先",
+    restaurant: "食べたい物",
 };
 
 // 日時入力欄の初期値として、現在から1週間後の値を返す
