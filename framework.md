@@ -30,19 +30,19 @@ SVGファイルをReactコンポーネントとして利用
 
 パスワード強度判定への利用を想定
 
-# 使用予定
-
 ## Mantine Timeline
 
 タイムスケジュールUIベース
 
-## dnd-kit
-
-編集・移動
-
 ## sonner
 
 通知UX
+
+# 使用予定
+
+## dnd-kit
+
+編集・移動
 
 ## react-scroll
 
