@@ -8,6 +8,7 @@ header("Content-Type: application/json; charset=UTF-8");
 // データベース接続設定を読み込む
 require_once __DIR__ . "/../config/db.php";
 
+// 先頭1文字を抜き出して、ユーザー名の頭文字アイコンとして使う。
 function firstCharacter(string $value): string
 {
     return function_exists("mb_substr")
@@ -15,6 +16,7 @@ function firstCharacter(string $value): string
         : substr($value, 0, 1);
 }
 
+// メッセージ一覧は閲覧専用なので GET のみ受け付ける。
 if ($_SERVER["REQUEST_METHOD"] !== "GET") {
     http_response_code(405);
     echo json_encode([
@@ -24,6 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] !== "GET") {
     exit;
 }
 
+// 未ログインなら閲覧できない。
 if (!isset($_SESSION["user_id"])) {
     http_response_code(401);
     echo json_encode([
@@ -33,10 +36,12 @@ if (!isset($_SESSION["user_id"])) {
     exit;
 }
 
+// 現在ログイン中のユーザーIDと、対象チャット/グループIDを受け取る。
 $userId = (int) $_SESSION["user_id"];
 $chatId = filter_input(INPUT_GET, "chat_id", FILTER_VALIDATE_INT);
 $groupId = filter_input(INPUT_GET, "group_id", FILTER_VALIDATE_INT);
 
+// 無効なIDは未指定扱いにする。
 if ($chatId !== null && $chatId !== false && $chatId < 1) {
     $chatId = false;
 }
@@ -45,6 +50,7 @@ if ($groupId !== null && $groupId !== false && $groupId < 1) {
     $groupId = false;
 }
 
+// chat_id か group_id のどちらかが必要。
 if (!$chatId && !$groupId) {
     http_response_code(400);
     echo json_encode([
@@ -55,6 +61,7 @@ if (!$chatId && !$groupId) {
 }
 
 try {
+    // group_id しかなければ、そのグループの最新チャットIDを解決する。
     if (!$chatId) {
         $chatStmt = $pdo->prepare("
             SELECT c.chat_id
@@ -79,6 +86,7 @@ try {
         }
     }
 
+    // ログインユーザーがこのチャットのメンバーか確認する。
     $memberStmt = $pdo->prepare("
         SELECT 1
         FROM chat_members
@@ -99,6 +107,7 @@ try {
         exit;
     }
 
+    // メッセージ本体と、既読数・自分が既読済みかどうかをまとめて取得する。
     $messageStmt = $pdo->prepare("
         SELECT
             m.message_id,
@@ -133,6 +142,7 @@ try {
     $messages = [];
     $weekdays = ["日", "月", "火", "水", "木", "金", "土"];
 
+    // 1件ずつ読み取り、フロントで使いやすい配列形式に変換する。
     while ($message = $messageStmt->fetch(PDO::FETCH_ASSOC)) {
         $sentAt = $message["sent_at"] ? new DateTimeImmutable($message["sent_at"]) : null;
         $senderName = $message["sender_name"] ?? "不明なユーザー";
@@ -140,6 +150,7 @@ try {
             ? $sentAt->format("Y年n月j日") . " " . $weekdays[(int) $sentAt->format("w")] . "曜日"
             : "";
 
+        // 表示用の補助情報も合わせて付与する。
         $messages[] = [
             "id" => (int) $message["message_id"],
             "message_id" => (int) $message["message_id"],
@@ -161,12 +172,14 @@ try {
         ];
     }
 
+    // 会話画面でそのまま使える形で返す。
     echo json_encode([
         "success" => true,
         "chat_id" => (int) $chatId,
         "messages" => $messages
     ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 } catch (Throwable $error) {
+    // 内部エラーは詳細を隠し、取得失敗のみ通知する。
     http_response_code(500);
     echo json_encode([
         "success" => false,
