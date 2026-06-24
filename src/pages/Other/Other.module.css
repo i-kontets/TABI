@@ -1,0 +1,345 @@
+.page {
+    min-height: 100vh;
+    color: var(--sub-color);
+    background: var(--main-color);
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif;
+}
+
+.content {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 28px 20px 112px;
+}
+
+.sectionLabel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: fit-content;
+    min-width: 220px;
+    margin: 0 auto 22px;
+    padding: 9px 20px;
+    color: var(--sub-color);
+    background: var(--main-color);
+    border: 1px solid var(--other-color);
+    border-radius: 999px;
+    box-shadow: 0 3px 10px var(--other-color);
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+}
+
+.labelIcon {
+    color: var(--sub-color);
+    font-size: 15px;
+}
+
+.supportCard {
+    position: relative;
+    overflow: hidden;
+    padding: 32px 16px 16px;
+    background: var(--main-color);
+    border: 1px solid var(--other-color);
+    border-radius: 20px;
+    box-shadow: 0 10px 28px var(--other-color);
+}
+
+.supportCard::before,
+.supportCard::after {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    content: "";
+    background: var(--other-color);
+    border-radius: 50%;
+    box-shadow: 18px 31px var(--other-color), 330px 12px var(--other-color), 350px 84px var(--other-color);
+    opacity: 0.65;
+}
+
+.supportCard::before {
+    top: 12px;
+    left: 10px;
+}
+
+.supportCard::after {
+    right: 28px;
+    bottom: 110px;
+}
+
+.hero {
+    position: relative;
+    z-index: 1;
+    min-height: 112px;
+    padding: 2px 126px 0 10px;
+}
+
+.eyebrow {
+    margin: 0 0 6px;
+    color: var(--sub-color);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+}
+
+.hero h1 {
+    margin: 0;
+    color: var(--sub-color);
+    font-family: "Segoe Script", "Brush Script MT", cursive;
+    font-size: clamp(27px, 8vw, 36px);
+    font-weight: 500;
+    line-height: 1.15;
+    transform: rotate(-2deg);
+}
+
+.hero > p:last-child {
+    margin: 10px 0 0 3px;
+    color: var(--sub-color);
+    font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+    font-size: 12px;
+    line-height: 1.6;
+    letter-spacing: 0.04em;
+}
+
+.decorations {
+    position: absolute;
+    z-index: 2;
+    top: 6px;
+    right: 9px;
+    width: 130px;
+    height: 104px;
+    pointer-events: none;
+}
+
+.leaf {
+    position: absolute;
+    top: -16px;
+    right: -3px;
+    color: var(--sub-color);
+    font-size: 58px;
+    transform: rotate(22deg);
+    opacity: 0.75;
+}
+
+.tape {
+    position: absolute;
+    z-index: 3;
+    top: 37px;
+    left: 43px;
+    width: 55px;
+    height: 13px;
+    background: var(--other-color);
+    transform: rotate(-8deg);
+}
+
+.photoStack span {
+    position: absolute;
+    display: grid;
+    place-items: end start;
+    box-sizing: border-box;
+    width: 70px;
+    height: 51px;
+    padding: 4px;
+    color: var(--main-color);
+    background: linear-gradient(145deg, var(--other-color) 0 48%, var(--sub-color) 49% 62%, var(--other-color) 63%);
+    border: 4px solid var(--main-color);
+    box-shadow: 0 3px 8px var(--other-color);
+    font-size: 8px;
+}
+
+.photoOne {
+    top: 48px;
+    left: 13px;
+    transform: rotate(-9deg);
+}
+
+.photoTwo {
+    top: 41px;
+    right: 2px;
+    background: linear-gradient(155deg, var(--other-color) 0 45%, var(--sub-color) 46% 60%, var(--other-color) 61%) !important;
+    transform: rotate(7deg);
+}
+
+.menu {
+    position: relative;
+    z-index: 4;
+    overflow: hidden;
+    background: var(--main-color);
+    border: 1px solid var(--other-color);
+    border-radius: 14px;
+    box-shadow: 0 3px 12px var(--other-color);
+}
+
+.menuItem {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr) 28px;
+    align-items: center;
+    width: 100%;
+    min-height: 84px;
+    padding: 0;
+    color: inherit;
+    text-align: left;
+    background: var(--main-color);
+    border: 0;
+    border-bottom: 1px solid var(--other-color);
+    cursor: pointer;
+    transition: background-color 0.18s ease, transform 0.18s ease;
+}
+
+.menuItem:last-child {
+    border-bottom: 0;
+}
+
+.menuItem:hover {
+    background: var(--other-color);
+}
+
+.menuItem:active {
+    transform: scale(0.99);
+}
+
+.menuItem:focus-visible {
+    position: relative;
+    z-index: 2;
+    outline: 2px solid var(--sub-color);
+    outline-offset: -2px;
+}
+
+.thumbnail {
+    position: relative;
+    display: grid;
+    place-items: center;
+    align-self: stretch;
+    overflow: hidden;
+    min-height: 84px;
+    color: var(--main-color);
+    font-family: Georgia, serif;
+    font-size: 24px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px var(--sub-color);
+}
+
+.thumbnail::before,
+.thumbnail::after {
+    position: absolute;
+    content: "";
+}
+
+.thumbnail span {
+    position: relative;
+    z-index: 2;
+}
+
+.sky {
+    background: linear-gradient(var(--other-color) 0 56%, var(--sub-color) 57%);
+}
+
+.sky::before {
+    right: 10px;
+    bottom: 7px;
+    width: 42px;
+    height: 24px;
+    background: var(--sub-color);
+    clip-path: polygon(0 100%, 35% 10%, 57% 62%, 76% 22%, 100% 100%);
+}
+
+.gold {
+    background: linear-gradient(145deg, var(--other-color), var(--sub-color));
+}
+
+.gold::before {
+    width: 42px;
+    height: 42px;
+    border: 3px solid var(--main-color);
+    border-radius: 50%;
+}
+
+.paper {
+    color: var(--sub-color);
+    text-shadow: none;
+    background: linear-gradient(135deg, var(--other-color), var(--main-color));
+}
+
+.paper::before {
+    width: 50px;
+    height: 38px;
+    background: var(--main-color);
+    border: 1px solid var(--sub-color);
+    transform: rotate(-5deg);
+}
+
+.blue {
+    background: linear-gradient(165deg, var(--other-color) 0 52%, var(--sub-color) 53% 61%, var(--other-color) 62%);
+}
+
+.green {
+    background: linear-gradient(var(--other-color) 0 50%, var(--sub-color) 51%);
+}
+
+.itemText {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+    padding: 14px 12px 14px 18px;
+}
+
+.itemText strong {
+    color: var(--sub-color);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.itemText small {
+    color: var(--sub-color);
+    font-size: 12px;
+    line-height: 1.55;
+    white-space: normal;
+}
+
+.arrow {
+    display: grid;
+    place-items: center;
+    color: var(--sub-color);
+}
+
+.arrow svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.6;
+}
+
+@media (max-width: 380px) {
+    .content {
+        padding: 20px 14px 106px;
+    }
+
+    .supportCard {
+        padding: 28px 10px 12px;
+    }
+
+    .hero {
+        padding-left: 9px;
+    }
+
+    .menuItem {
+        grid-template-columns: 76px minmax(0, 1fr) 24px;
+    }
+
+    .itemText {
+        padding-left: 12px;
+    }
+}
+
+@media (min-width: 700px) {
+    .content {
+        padding-top: 42px;
+    }
+}

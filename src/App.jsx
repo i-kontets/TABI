@@ -13,7 +13,10 @@ import Schedule from './pages/Schedule/schedule';
 import Chat from './pages/Chat/Chat';
 import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
+import Appointment from './pages/appointment/appointment.jsx';
 import Discussion from './pages/Discussion/Discussion';
+import Other from './pages/Other/Other.jsx';
+
 
 export const TripContext = createContext();
 
@@ -39,6 +42,8 @@ function App() {
                     <Route path="/group/:groupId/talk" element={<Discussion />} />
                     <Route path="/album" element={<Album />} />
                     <Route path="/Invoice" element={<Invoice />} />
+                    <Route path="/Appointment" element={<Appointment />}/>
+                    <Route path="/Other" element={<Other />} />
                 </Routes>
             </BrowserRouter>
         </TripContext.Provider>
