@@ -226,7 +226,7 @@ CREATE TABLE `trips` (
 CREATE TABLE `trip_candidates` (
   `candidate_id` bigint NOT NULL COMMENT '候補ID',
   `trip_id` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '所属旅行ID',
-  `candidate_type` enum('destination','spot','hotel','restaurant') COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '候補種別 destination=旅行先 spot=観光地 hotel=宿泊先 restaurant=飲食店',
+  `candidate_type` enum('destination','spot','hotel','restaurant') COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '候補種別 destination=旅行先 spot=観光地 hotel=宿泊先 restaurant=食べたい物',
   `candidate_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '候補名',
   `description` text COLLATE utf8mb4_unicode_ci COMMENT '候補の説明文',
   `img_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '候補画像URL',
@@ -281,7 +281,7 @@ CREATE TABLE `trip_surveys` (
   `survey_id` bigint NOT NULL COMMENT 'アンケートID',
   `trip_id` bigint NOT NULL COMMENT '対象旅行ID',
   `title` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'アンケートタイトル',
-  `candidate_type` enum('destination','spot','hotel') COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '投票対象の候補カテゴリ',
+  `candidate_type` enum('destination','spot','hotel','restaurant') COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '投票対象の候補カテゴリ',
   `created_by` bigint NOT NULL COMMENT '作成者ユーザーID',
   `deadline_at` datetime DEFAULT NULL COMMENT '回答締切日時',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '作成日時'

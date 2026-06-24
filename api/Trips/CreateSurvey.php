@@ -21,7 +21,7 @@ try {
     $groupId = filter_var($input["group_id"] ?? 1, FILTER_VALIDATE_INT) ?: 1;
     // アンケートの表示タイトル
     $title = trim($input["title"] ?? "");
-    // 対象カテゴリ（destination / spot / hotel）
+    // 対象カテゴリ（destination / spot / hotel / restaurant）
     $candidateType = $input["candidate_type"] ?? "";
     // 選択対象の候補ID群。重複や不正値を除去して配列化する
     $candidateIds = array_values(array_unique(array_filter(
@@ -35,7 +35,7 @@ try {
     $trip = findTrip($pdo, $groupId);
 
     // タイトル未入力またはカテゴリが不正なら400を返す
-    if ($title === "" || !in_array($candidateType, ["destination", "spot", "hotel"], true)) {
+    if ($title === "" || !in_array($candidateType, ["destination", "spot", "hotel", "restaurant"], true)) {
         respond(400, ["success" => false, "message" => "タイトルとカテゴリを入力してください"]);
     }
 
