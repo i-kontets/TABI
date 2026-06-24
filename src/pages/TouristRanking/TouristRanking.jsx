@@ -1,4 +1,6 @@
 import styles from './TouristRanking.module.css';
+import Header from '../../components/header/Header';
+import BtmNav from '../../components/bottomNav/BottomNav';
 
 const rankingSpots = [
     {
@@ -75,14 +77,6 @@ const searchMenus = [
     { label: 'ジャンルから探す', icon: 'grid' },
     { label: 'テーマから探す', icon: 'crown' },
     { label: '地図から探す', icon: 'map' },
-];
-
-const navItems = [
-    { label: 'ホーム', icon: 'home', active: true },
-    { label: 'ランキング', icon: 'crown' },
-    { label: 'エリア', icon: 'pin' },
-    { label: 'お気に入り', icon: 'heart' },
-    { label: 'マイページ', icon: 'user' },
 ];
 
 function Icon({ name, className = '' }) {
@@ -188,28 +182,10 @@ function Rating({ score, reviews }) {
 
 function TouristRanking() {
     return (
+        <div>
+        <Header />
         <div className={styles.page}>
             <div className={styles.phoneCanvas}>
-                <header className={styles.header}>
-                    <button className={styles.iconButton} type="button" aria-label="メニュー">
-                        <Icon name="menu" />
-                    </button>
-                    <div className={styles.brand}>
-                        <div className={styles.logoMark}>
-                            <span />
-                        </div>
-                        <p>TABI</p>
-                    </div>
-                    <div className={styles.headerActions}>
-                        <button className={styles.iconButton} type="button" aria-label="検索">
-                            <Icon name="search" />
-                        </button>
-                        <button className={`${styles.iconButton} ${styles.notification}`} type="button" aria-label="通知">
-                            <Icon name="bell" />
-                        </button>
-                    </div>
-                </header>
-
                 <main className={styles.content}>
                     <section className={styles.hero}>
                         <div className={styles.heroText}>
@@ -304,16 +280,11 @@ function TouristRanking() {
                         <Icon name="arrowRight" className={styles.updateArrow} />
                     </section>
                 </main>
-
-                <nav className={styles.bottomNav} aria-label="下部ナビゲーション">
-                    {navItems.map((item) => (
-                        <button className={`${styles.navItem} ${item.active ? styles.navActive : ''}`} type="button" key={item.label}>
-                            <Icon name={item.icon} />
-                            <span>{item.label}</span>
-                        </button>
-                    ))}
-                </nav>
             </div>
+        </div>
+        <div className={styles.btmNavWrapper}>
+        <BtmNav />
+      </div>
         </div>
     );
 }
