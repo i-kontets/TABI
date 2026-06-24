@@ -94,7 +94,8 @@ return (
         </div>
 
         <p className={styles.subDate}>
-          2026/05/14 (木) - 05/16 (土)
+          出発：2026/05/14 (木)<br/>
+          帰宅：2026/05/16 (土)
         </p>
 
         <div className={styles.memberRow}>
@@ -132,10 +133,29 @@ return (
       </button>
     </div>
 
-    <div className={styles.appointmentWidget}>
-      <p>大阪～三重</p>
+    {/* タイトルウィジェット */}
+    <div className={styles.WidgetFrame}>
+      <div className={styles.WidgetTitle}>しおりタイトル</div>
+      <div className={styles.WidgetText}>{trip.name}</div>
+    </div>
+
+    {/* 旅行期間ウィジェット */}
+    <div className={styles.WidgetFrame}>
+      <div className={styles.WidgetTitle}>旅行期間</div>
+      <div className={styles.WidgetText}>2026年5/14(木) - 2026年5月16日(土)</div>
+    </div>
+
+    {/* メンバー数ウィジェット */}
+    <div className={styles.WidgetFrame}>
+      <div className={styles.WidgetTitle}>メンバー数</div>
+      <div className={styles.WidgetText}>4人</div>
+    </div>
+
+    <div className={styles.subContainer}>
       
     </div>
+
+
 
 
     {/* 固定ボトムナビ */}

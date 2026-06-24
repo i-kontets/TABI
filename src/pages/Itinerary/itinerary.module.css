@@ -151,8 +151,23 @@
   z-index: 10;
 }
 
-.appointmentWidget {
-  box-shadow: 0 4 10;
-  margin: 5;
-
+.WidgetFrame {
+  box-shadow: 0px 1px 3px;
+  margin: 10px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+  border-radius: 5px;
 }
+
+.WidgetTitle {
+  font-size: 12px;
+    margin-left: 10px;
+    margin-bottom: 5px;
+}
+
+.WidgetText {
+    margin-left: 10px;
+    font-size: 17px;
+}
+
+
