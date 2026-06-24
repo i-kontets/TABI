@@ -15,6 +15,7 @@ import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
 import Appointment from './pages/appointment/appointment.jsx';
 import Discussion from './pages/Discussion/Discussion';
+import TouristRanking from './pages/TouristRanking/TouristRanking';
 
 
 export const TripContext = createContext();
@@ -42,6 +43,7 @@ function App() {
                     <Route path="/album" element={<Album />} />
                     <Route path="/Invoice" element={<Invoice />} />
                     <Route path="/Appointment" element={<Appointment />}/>
+                    <Route path="/TouristRanking" element={<TouristRanking />} />
                 </Routes>
             </BrowserRouter>
         </TripContext.Provider>
