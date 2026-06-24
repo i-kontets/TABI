@@ -789,7 +789,7 @@ INSERT INTO `users` (`user_id`, `name`, `email`, `password_hash`, `icon_url`, `l
 (3, '鈴木 健', 'suzuki.ken@example.com', 'trustno1', 'https://cdn.example.com/icons/users/3.png', 'ja', 'active', '2026-04-03 11:20:00', '2026-04-22 08:45:00', NULL),
 (4, '山本 美咲', 'yamamoto.misaki@example.com', 'Skirk100', 'https://cdn.example.com/icons/users/4.png', 'en', 'suspended', '2026-04-04 12:30:00', '2026-04-23 09:05:00', '2026-04-24 00:00:00'),
 (5, 'Bell', 'ayuki.y1027@icloud.com', '2024Gakusei', NULL, 'ja', 'active', '2026-06-15 16:24:40', '2026-06-15 16:24:40', NULL),
-(6, 'Bell', '2410041@i-seifu.jp', 'Jyhmaz-kupno7-mujtum', NULL, 'ja', 'active', '2026-06-16 17:35:15', '2026-06-16 17:35:15', NULL),
+(6, 'Bell', '2410041@i-seifu.jp', '2024Gakusei', NULL, 'ja', 'active', '2026-06-16 17:35:15', '2026-06-16 17:35:15', NULL),
 (7, 'Bell', 'test@gmail.com', '2024Test', NULL, 'ja', 'active', '2026-06-16 17:38:21', '2026-06-16 17:38:21', NULL),
 (8, 'HirotoIshigaki', '2410026@i-seifu.jp', 'Hirotoseifu2024', NULL, 'ja', 'active', '2026-06-17 14:40:41', '2026-06-17 14:40:41', NULL),
 (9, 'metax0376', '2410017@i-seifu.jp', '2024Gakusei', NULL, 'ja', 'active', '2026-06-17 15:51:36', '2026-06-17 15:51:36', NULL);
