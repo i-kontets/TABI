@@ -1,0 +1,35 @@
+.page {
+    width: min(100%, 430px);
+    min-height: calc(100vh - 120px);
+    margin: 0 auto;
+    padding: 24px 20px 104px;
+    box-sizing: border-box;
+}
+
+.titleArea {
+    margin-bottom: 20px;
+}
+
+.titleArea h2 {
+    margin: 0;
+    color: #222;
+    font-size: 22px;
+}
+
+.titleArea p {
+    margin: 8px 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.sections {
+    display: grid;
+    gap: 14px;
+}
+
+@media (max-width: 360px) {
+    .page {
+        padding-right: 14px;
+        padding-left: 14px;
+    }
+}

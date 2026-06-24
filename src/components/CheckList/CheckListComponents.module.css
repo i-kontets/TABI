@@ -1,0 +1,296 @@
+.section {
+    border: 1px solid #d9deea;
+    border-radius: 12px;
+    background-color: #fff;
+    overflow: hidden;
+}
+
+.summary {
+    min-height: 76px;
+    padding: 16px 46px 16px 16px;
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    list-style: none;
+    box-sizing: border-box;
+}
+
+.summary::-webkit-details-marker {
+    display: none;
+}
+
+.summary::after {
+    content: "";
+    width: 9px;
+    height: 9px;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    border-right: 2px solid var(--sub-color);
+    border-bottom: 2px solid var(--sub-color);
+    transform: translateY(-65%) rotate(45deg);
+    transition: transform 0.2s ease;
+}
+
+.section[open] .summary::after {
+    transform: translateY(-35%) rotate(225deg);
+}
+
+.sectionTitle,
+.description,
+.itemName,
+.itemNote {
+    display: block;
+}
+
+.sectionTitle {
+    color: #222;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.description {
+    margin-top: 5px;
+    color: #737373;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.progress {
+    min-width: 42px;
+    padding: 5px 8px;
+    border-radius: 14px;
+    background-color: var(--other-color);
+    color: #29365f;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.itemList {
+    padding: 4px 14px 14px;
+    display: grid;
+}
+
+.item {
+    min-height: 62px;
+    padding: 10px 4px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid #eceef4;
+    box-sizing: border-box;
+}
+
+.itemContent {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.itemContent input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    accent-color: var(--sub-color);
+}
+
+.itemName {
+    color: #2d2d2d;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.itemNote {
+    margin-top: 3px;
+    color: #777;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.assignee {
+    display: inline-block;
+    margin-top: 5px;
+    padding: 3px 8px;
+    border-radius: 10px;
+    background-color: #e9edf7;
+    color: #3f507e;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.itemContent:has(input:checked) .itemName {
+    color: #8a8a8a;
+    text-decoration: line-through;
+}
+
+.itemMenu {
+    position: relative;
+    align-self: start;
+}
+
+.menuButton {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: transparent;
+    color: #555;
+    cursor: pointer;
+    font-size: 25px;
+    line-height: 1;
+    font-weight: 700;
+}
+
+.menuButton:hover,
+.menuButton:focus-visible {
+    background-color: #edf0f6;
+}
+
+.menuList {
+    width: 96px;
+    position: absolute;
+    top: 34px;
+    right: 0;
+    display: grid;
+    border: 1px solid #d9deea;
+    border-radius: 7px;
+    background-color: #fff;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 14%);
+    overflow: hidden;
+    z-index: 3;
+}
+
+.menuList button {
+    min-height: 38px;
+    padding: 0 14px;
+    border: none;
+    background-color: #fff;
+    color: #333;
+    cursor: pointer;
+    text-align: left;
+    font-size: 13px;
+}
+
+.menuList button:hover,
+.menuList button:focus-visible {
+    background-color: #f1f3f8;
+}
+
+.menuList button:last-child {
+    color: #a12d2d;
+}
+
+.deleteActions {
+    margin: 0 14px 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.deleteActions button {
+    min-height: 36px;
+    padding: 6px;
+    border: 1px solid #d9a1a1;
+    border-radius: 6px;
+    background-color: #fff;
+    color: #a12d2d;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.deleteActions button:disabled {
+    border-color: #ddd;
+    color: #aaa;
+    cursor: not-allowed;
+}
+
+.emptyText {
+    margin: 0 14px 12px;
+    padding: 14px;
+    border-radius: 6px;
+    background-color: #f5f6f9;
+    color: #777;
+    text-align: center;
+    font-size: 13px;
+}
+
+.addItemButton {
+    width: calc(100% - 28px);
+    min-height: 42px;
+    margin: 0 14px 14px;
+    border: 1px dashed var(--sub-color);
+    border-radius: 8px;
+    background-color: #f8f9fd;
+    color: var(--sub-color);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.itemForm {
+    margin: 0 14px 14px;
+    padding: 14px;
+    display: grid;
+    gap: 12px;
+    border-radius: 8px;
+    background-color: #f1f3f8;
+}
+
+.itemForm label {
+    display: grid;
+    gap: 5px;
+    color: #444;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.itemForm input {
+    width: 100%;
+    height: 40px;
+    padding: 0 10px;
+    border: 1px solid #ccd2df;
+    border-radius: 6px;
+    background-color: #fff;
+    box-sizing: border-box;
+    font-size: 15px;
+}
+
+.formActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.formActions button {
+    min-height: 38px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.formActions button:first-child {
+    background-color: #e1e3e9;
+    color: #444;
+}
+
+.formActions button:last-child {
+    background-color: var(--sub-color);
+    color: #fff;
+}
+
+@media (max-width: 360px) {
+    .summary {
+        padding-left: 14px;
+    }
+}
