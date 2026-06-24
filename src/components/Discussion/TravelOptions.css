@@ -84,8 +84,7 @@
     padding: 0 14px 22px;
 }
 
-.candidateNotice,
-.previewNotice {
+.candidateNotice {
     margin: 10px 2px 0;
     padding: 8px 10px;
     border-radius: 8px;
@@ -95,11 +94,6 @@
 .candidateNotice {
     background: #e9f5ff;
     color: var(--discussion-blue-dark);
-}
-
-.previewNotice {
-    background: #fff7dd;
-    color: #795c00;
 }
 
 .candidateListHeader {
