@@ -63,8 +63,28 @@ export default function Itinerary() {
     { title: 'レンタカー代', meta: '5/14 ゆうき', amount: '¥4,800' },
   ];
 
+  const closeInviteModal = () => {
+  setIsInviteModalOpen(false);
+  };
   // 移動手段ウィジェットのアコーディオン
-  const appointmentList = [];
+  const appointmentList = [
+    {
+      id: 1,
+      type: "新幹線",
+      from: "東京",
+      to: "大阪",
+      departure: "09:00",
+      arrival: "11:30",
+    },
+    {
+      id: 2,
+      type: "レンタカー",
+      from: "大阪駅",
+      to: "USJ",
+      departure: "13:00",
+      arrival: "13:30",
+    },
+  ];
 
   const handleAppointmentClick = () => {
     if(!appointmentList || appointmentList.length == 0) {
@@ -159,13 +179,27 @@ return (
     {/* サブウィジェット */}
     <div className={styles.subWidget}>
       {/* 移動手段ウィジェット */}
-      <div onClick={handleAppointmentClick} className={styles.scheduleWidget}>
-        <div>移動手段の予約に進む</div>
+      <div className={styles.appointmentWidget}>
+        <div className={styles.WidgetTitle}>移動手段</div>
+        <div className={styles.appointmentHeader} onClick={handleAppointmentClick}>
+          {appointmentList.length == 0 ? "移動手段の予約に進む" : `${appointmentList[0].from} → ${appointmentList[0].to}`}
+        </div>
+
+        {isOpen && (
+          <div className={styles.appointmentAccordion}>
+            {appointmentList.map((item) => (
+              <div key={item.id}>
+                {item.type}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 天気予報ウィジェット */}
       <div className={styles.weatherWidget}>
-        <div>晴れ🌞</div>
+        <div className={styles.WidgetTitle}>天気予報</div>
+        <div className={styles.WidgetText}>東京　晴れ<br />大阪　雨天</div>
       </div>
     </div>
 

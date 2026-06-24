@@ -174,25 +174,34 @@
   display: flex;
   margin: 10px;
   gap: 10px;
-
+  align-items: flex-start;
 }
 
-.scheduleWidget {
+.appointmentWidget {
   box-shadow: 0px 1px 3px;
   padding: 7px;
   border-radius: 5px;
-  
   width: 50%;
   height: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.appointmentHeader {
+  padding: 10px;
+  cursor: pointer;
 }
 
 .weatherWidget {
   box-shadow: 0px 1px 3px;
   padding: 7px;
   border-radius: 5px;
-  
   width: 50%;
   height: auto;
+}
+
+.appointmentAccordion {
+  padding: 10px;
 }
 
 
