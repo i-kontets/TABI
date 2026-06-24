@@ -170,4 +170,29 @@
     font-size: 17px;
 }
 
+.subWidget {
+  display: flex;
+  margin: 10px;
+  gap: 10px;
+
+}
+
+.scheduleWidget {
+  box-shadow: 0px 1px 3px;
+  padding: 7px;
+  border-radius: 5px;
+  
+  width: 50%;
+  height: auto;
+}
+
+.weatherWidget {
+  box-shadow: 0px 1px 3px;
+  padding: 7px;
+  border-radius: 5px;
+  
+  width: 50%;
+  height: auto;
+}
+
 

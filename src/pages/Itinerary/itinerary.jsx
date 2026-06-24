@@ -16,6 +16,7 @@ export default function Itinerary() {
   const {trip} = useContext(TripContext);
   // 招待モーダルの管理状態
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   
   // 参加中の旅行データ
   const travelGroups = [
@@ -62,14 +63,18 @@ export default function Itinerary() {
     { title: 'レンタカー代', meta: '5/14 ゆうき', amount: '¥4,800' },
   ];
 
-  const invitationClick = () => {
-        setIsInviteModalOpen(true);
-    };
+  // 移動手段ウィジェットのアコーディオン
+  const appointmentList = [];
 
-    const closeInviteModal = () => {
-        setIsInviteModalOpen(false);
-    };
-
+  const handleAppointmentClick = () => {
+    if(!appointmentList || appointmentList.length == 0) {
+      // データがない　→　Appointment.jsxへ
+      navigate('/Appointment')
+    } else {
+      // データがある　→　アコーディオン開閉
+      setIsOpen(!isOpen);
+    }
+  }
 return (
   <div>
     <Header />
@@ -151,8 +156,17 @@ return (
       <div className={styles.WidgetText}>4人</div>
     </div>
 
-    <div className={styles.subContainer}>
-      
+    {/* サブウィジェット */}
+    <div className={styles.subWidget}>
+      {/* 移動手段ウィジェット */}
+      <div onClick={handleAppointmentClick} className={styles.scheduleWidget}>
+        <div>移動手段の予約に進む</div>
+      </div>
+
+      {/* 天気予報ウィジェット */}
+      <div className={styles.weatherWidget}>
+        <div>晴れ🌞</div>
+      </div>
     </div>
 
 
