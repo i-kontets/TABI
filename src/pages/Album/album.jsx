@@ -65,7 +65,7 @@ function Album() {
     // App.jsxで管理している旅行名を、Context経由で受け取っています。
     const { tripName } = useContext(TripContext);
 
-    // 非表示のfile inputをJavaScriptからクリックするための参照です。
+    //「後で隠れているファイル選択ボタンを見つけるためのメモ帳を作る」
     const fileInputRef = useRef(null);
 
     // 現在表示している画面を管理します。list: 一覧、detail: 詳細、add: 写真追加。
@@ -89,7 +89,8 @@ function Album() {
     // 追加画面で大きくプレビュー表示している写真です。
     const [previewPhoto, setPreviewPhoto] = useState(null);
 
-    // 追加画面に切り替わったタイミングで、自動的にファイル選択を開きます。
+    // 追加画面に切り替わったタイミングで、ここの処理が動き、fileInputRefに保存してた
+    // <input type="file">を.click();されることになるので、自動的にファイル選択を開きます。
     useEffect(() => {
         if (view !== 'add') return;
 
@@ -100,7 +101,9 @@ function Album() {
         return () => window.clearTimeout(timerId);
     }, [view]);
 
-    // 「+」ボタンから、手動でファイル選択を開く処理です。
+    // 追加画面の「+」ボタンから、手動でファイル選択を開く処理
+    //プラスボタンをおすことで、inputがあるかを見に行く、なければ処理終了
+    //ある場合は,input内のvalueをリセットし、inputを開く処理
     const openFilePicker = () => {
         if (!fileInputRef.current) return;
         fileInputRef.current.value = '';
@@ -108,13 +111,16 @@ function Album() {
     };
 
     // ファイル選択で画像が選ばれたときに呼ばれる処理です。
+    //選択されたファイルを配列に変換している　もし選択されたファイルがなければ処理はなし
     const handleFileSelect = (event) => {
         const files = Array.from(event.target.files || []);
         if (files.length === 0) return;
 
         // 選ばれたFileオブジェクトを、画面表示しやすい写真データの形に変換します。
+        //fileを含んだ新しいオブジェクトの作成
         const selectedPhotos = files.map((file, index) => ({
             id: `${file.name}-${file.lastModified}-${Date.now()}-${index}-${Math.random()}`,
+            //画像データからURLを作成
             src: URL.createObjectURL(file),
             file,
         }));
@@ -124,35 +130,52 @@ function Album() {
     };
 
     // 追加前の写真を1枚削除する処理です。
+    //376行目でphoto.idを引数として持ってきています。
     const removePendingPhoto = (photoId) => {
+        //setPedingphotosの中身を更新
         setPendingPhotos((currentPhotos) => {
+            //追加予定の画像たち(currentPhotos)から削除予定のやつと同じidのものを探し出し、targetphotoに入れる
             const targetPhoto = currentPhotos.find((photo) => photo.id === photoId);
 
-            // createObjectURLで作ったURLは、不要になったら解放します。
+            // 124行目のcreateObjectURLで作ったtargetPhotoのURLを開放する
             if (targetPhoto) URL.revokeObjectURL(targetPhoto.src);
+            //filterを使い追加予定の画像たち(currentPhoto)から削除予定のやつとidが異なったものだけを
+            //新しい配列に入れることで実質削除になる returnすることでsetPendingPhotosに自動的に新しく作った配列が入る
             return currentPhotos.filter((photo) => photo.id !== photoId);
         });
 
-        // 削除した写真をプレビュー中だった場合は、プレビューも閉じます。
+        // setPreviewの更新　削除予定の画像のプレビューを開いている場合プレビューから削除する(ほぼ機能しないと思っていい)
+        //プレビューを開いている画像のidと削除予定のidが一緒ならnullを返し、違うのであればそのままプレビュー中の画像を返す
         setPreviewPhoto((currentPhoto) => (currentPhoto?.id === photoId ? null : currentPhoto));
     };
 
     // 写真追加をキャンセルして一覧画面に戻る処理です。
     const cancelAddPhotos = () => {
+        //追加予定の画像(pendingPhotos)をforEachで画像すべてのURLを開放
         pendingPhotos.forEach((photo) => URL.revokeObjectURL(photo.src));
+        //追加予定の画像用の配列をリセット
         setPendingPhotos([]);
+        //プレビューもリセット
         setPreviewPhoto(null);
+        //Viewをaddからlistに変更し、画像一覧に戻る
         setView('list');
     };
 
     // 選択中の写真をアルバムに追加確定する処理です。
     const addPendingPhotos = () => {
+        //追加する画像がなければ何もなしで終了
         if (pendingPhotos.length === 0) return;
 
+        //今日の日付を取得
         const today = new Date().toLocaleDateString('ja-JP');
+        //今登録されている写真の一番大きいIDを取得
+        //maxIdを初手に後ろに書いてある0で初期化
+        //photos配列を一つずつ出していきMath.maxでmaxIdとphoto.idを比べて大きいほうの数値を返し、
+        //reduceは返された値でmaxIdを上書きしてループを行うため最大値を持ってくることができる
         const maxPhotoId = photos.reduce((maxId, photo) => Math.max(maxId, photo.id), 0);
 
-        // pendingPhotosはまだファイル情報中心なので、アルバム用の写真データに変換します。
+        // 追加する画像のデータをさらに変更
+        //
         const newPhotos = pendingPhotos.map((photo, index) => ({
             id: maxPhotoId + index + 1,
             src: photo.src,
