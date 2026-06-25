@@ -3,7 +3,7 @@ import { useLocation, useParams } from "react-router-dom";
 import "./Chat.css";
 
 // チャットAPIの共通ベースURL
-const chatApiBase = `${import.meta.env.BASE_URL}api/Chat`;
+const chatApiBase = `${import.meta.env.BASE_URL}api/Discussion`;
 
 // APIレスポンスを共通の形式で検証し、成功時だけデータを返す
 async function parseApiResponse(response) {
