@@ -28,7 +28,14 @@ function formatDateLabel(?string $value): string
         return "";
     }
 
-    return (new DateTimeImmutable($value))->format("Y-m-d");
+    $date = new DateTimeImmutable($value);
+    $oneYearAgo = (new DateTimeImmutable("now"))->modify("-1 year");
+
+    if ($date < $oneYearAgo) {
+        return $date->format("Y年n月j日");
+    }
+
+    return $date->format("n月j日");
 }
 
 function formatTime(?string $value): string
