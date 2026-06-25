@@ -5,8 +5,6 @@
     min-height: 0;
 }
 
-
-
 .messageList {
     min-height: 0;
     flex: 1;
@@ -15,6 +13,22 @@
     -webkit-overflow-scrolling: touch;
     padding: 8px 12px 14px;
     scrollbar-width: thin;
+}
+
+.chatState,
+.chatNotice {
+    margin: 18px auto;
+    padding: 10px 12px;
+    border-radius: 10px;
+    color: var(--discussion-muted);
+    background: #f3f6f9;
+    font-size: 12px;
+    text-align: center;
+}
+
+.chatNotice {
+    color: #a23b3b;
+    background: #fff0f0;
 }
 
 .chatBlock {
@@ -151,7 +165,7 @@
 
 .composer textarea {
     min-width: 0;
-    min-height: 40px;
+    min-height: 42px;
     max-height: 120px;
 
     border: 1px solid #d5dee8;
@@ -178,6 +192,15 @@
 .composer .sendButton {
     background: var(--discussion-blue);
     color: #fff;
+}
+
+.composer .sendButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.composer textarea:disabled {
+    cursor: wait;
 }
 
 .userHeader {

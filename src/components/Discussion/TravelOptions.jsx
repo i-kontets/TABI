@@ -1,385 +1,299 @@
+// React Hooks と React Router のインポート
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
+// モーダル表示用コンポーネント
+import Modal from "../Modal/Modal";
 import "./TravelOptions.css";
 
+// 候補カテゴリーの日本語ラベルマッピング
+// 「旅行先」「スポット」「宿泊先」「食べたい物」のカテゴリーを定義
 const categoryLabels = {
     destination: "旅行先",
     spot: "スポット",
     hotel: "宿泊先",
+    restaurant: "食べたい物",
 };
 
-const fallbackCandidates = [
-    {
-        candidate_id: 1,
-        candidate_type: "destination",
-        candidate_name: "三重県（伊勢・鳥羽エリア）",
-        description: "伊勢神宮や鳥羽水族館、海の幸も楽しめる旅行先",
-        img_url: "",
-        vote_count: 3,
-        has_voted: true,
-    },
-    {
-        candidate_id: 2,
-        candidate_type: "destination",
-        candidate_name: "京都府",
-        description: "歴史ある街並みとグルメを楽しめる旅行先",
-        img_url: "",
-        vote_count: 1,
-        has_voted: false,
-    },
-    {
-        candidate_id: 3,
-        candidate_type: "spot",
-        candidate_name: "伊勢神宮",
-        description: "お気に入りから追加されたスポット",
-        img_url: "",
-        vote_count: 2,
-        has_voted: false,
-    },
-    {
-        candidate_id: 4,
-        candidate_type: "hotel",
-        candidate_name: "鳥羽シーサイドコテージ",
-        description: "お気に入りから追加された宿泊先",
-        img_url: "",
-        vote_count: 2,
-        has_voted: false,
-    },
-];
-
+/**
+ * 候補に紐づいた画像またはアイコンを表示するコンポーネント
+ * 
+ * @param {Object} candidate 候補オブジェクト（candidate_type, img_url を含む）
+ * 
+ * 処理：
+ * 1. img_url が存在する場合：画像タグで表示
+ * 2. img_url が空の場合：候補タイプに応じたアイコン（⌂, ⌖, ◇, 🍴）を表示
+ */
 function CandidateVisual({ candidate }) {
+    // 画像URLが設定されている場合、その画像を表示
     if (candidate.img_url) {
         return <img src={candidate.img_url} alt="" />;
     }
 
-    const icon = candidate.candidate_type === "hotel" ? "⌂" : candidate.candidate_type === "spot" ? "⌖" : "◇";
+    // 画像がない場合、候補タイプに応じたアイコンを表示
+    const icons = {
+        destination: "◇",
+        spot: "⌖",
+        hotel: "⌂",
+        restaurant: "🍴",
+    };
+    const icon = icons[candidate.candidate_type] || "◇";
     return <span aria-hidden="true">{icon}</span>;
 }
 
+/**
+ * バックエンドAPI（GetCandidates.php）から候補・旅行情報を取得する非同期関数
+ * 
+ * @param {string} groupId グループID
+ * @returns {Promise<Object>} { candidates: [], trip: {} } の形式で、候補一覧と旅行情報を返す
+ * 
+ * 処理：
+ * 1. GetCandidates.php へGETリクエストを送信
+ * 2. レスポンスをJSON形式でパース
+ * 3. エラー時は詳細なエラーメッセージをthrow
+ * 4. 成功時は候補一覧と旅行情報を含むオブジェクトを返す
+ */
 async function requestCandidates(groupId) {
+    // GetCandidates.php への HTTP GETリクエストを送信
+    // credentials: "include" により、クッキー（セッション情報）を自動的に含める
     const response = await fetch(
-        `${import.meta.env.BASE_URL}api/trips/candidates.php?group_id=${encodeURIComponent(groupId)}`,
+        `${import.meta.env.BASE_URL}api/Trips/GetCandidates.php?group_id=${encodeURIComponent(groupId)}`,
         { credentials: "include" },
     );
+    // レスポンス本体をJSON形式にパース
     const data = await response.json();
 
+    // HTTPステータスコードが200未満または success フラグが false の場合
     if (!response.ok || !data.success) {
+        // エラーメッセージを付けて例外をthrow（呼び出し元の catch で処理される）
         throw new Error(data.message || "候補を取得できませんでした");
     }
 
+    // 候補一覧と旅行情報を含むオブジェクトを返す
     return data;
 }
 
+/**
+ * 旅行候補一覧を表示するメインコンポーネント
+ * 
+ * 機能：
+ * - 複数のカテゴリー（旅行先、スポット、宿泊先、食べたい物）の候補を表示
+ * - タブで候補のカテゴリーを切り替え
+ * - 候補をクリックしてモーダルで詳細情報を表示
+ * - API から候補データを取得
+ */
 function TravelOptions({ active }) {
+    // URL パラメータから groupId を取得（デフォルト値は "1"）
     const { groupId = "1" } = useParams();
+    
+    // 状態管理
+    // activeCategory: 現在選択されているカテゴリー（destination, spot, hotel, restaurant）
     const [activeCategory, setActiveCategory] = useState("destination");
+    
+    // candidates: 取得した候補データの配列
     const [candidates, setCandidates] = useState([]);
+    
+    // tripTitle: 旅行タイトル（API から取得）
     const [tripTitle, setTripTitle] = useState("");
-    const [destinationName, setDestinationName] = useState("");
-    const [destinationDescription, setDestinationDescription] = useState("");
-    const [favoritePickerOpen, setFavoritePickerOpen] = useState(false);
+    
+    // selectedCandidate: モーダルで表示する選択された候補オブジェクト（null の場合モーダルは非表示）
+    const [selectedCandidate, setSelectedCandidate] = useState(null);
+    
+    // loading: API通信中かどうかを示すフラグ（true = 読み込み中）
     const [loading, setLoading] = useState(true);
+    
+    // notice: ユーザーへの通知メッセージ
     const [notice, setNotice] = useState("");
-    const [usingFallback, setUsingFallback] = useState(false);
-
-    const loadCandidates = async () => {
-        setLoading(true);
-
-        try {
-            const data = await requestCandidates(groupId);
-            setCandidates(data.candidates);
-            setTripTitle(data.trip?.title || "");
-            setUsingFallback(false);
-        } catch {
-            if (import.meta.env.DEV) {
-                setCandidates(fallbackCandidates);
-                setUsingFallback(true);
-            } else {
-                setCandidates([]);
-                setNotice("候補データを取得できませんでした");
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    
+    // コンポーネント マウント時に候補・旅行データを初期取得する処理
     useEffect(() => {
+        // cleanup 関数用の cancelled フラグ：非同期処理完了後に状態を更新しないようにするため
+        // （コンポーネント がアンマウントされた場合、古い状態更新を防ぐ）
         let cancelled = false;
 
+        // GetCandidates.php から候補データと旅行情報を非同期に取得
         requestCandidates(groupId)
+            // 取得成功時
             .then((data) => {
                 if (cancelled) {
                     return;
                 }
 
+                // API から取得したデータで状態を更新
                 setCandidates(data.candidates);
                 setTripTitle(data.trip?.title || "");
-                setUsingFallback(false);
             })
+            // 取得失敗時
             .catch(() => {
                 if (cancelled) {
                     return;
                 }
 
-                if (import.meta.env.DEV) {
-                    setCandidates(fallbackCandidates);
-                    setUsingFallback(true);
-                } else {
-                    setCandidates([]);
-                    setNotice("候補データを取得できませんでした");
-                }
+                setCandidates([]);
+                setNotice("候補データを取得できませんでした");
             })
+            // 成功・失敗の両方で実行
             .finally(() => {
                 if (!cancelled) {
+                    // ローディング状態を終了
                     setLoading(false);
                 }
             });
 
+        // cleanup 関数：コンポーネント のアンマウント時に古い非同期処理の状態更新を防ぐ
         return () => {
             cancelled = true;
         };
-    }, [groupId]);
+    }, [groupId]); // groupId が変更されたときに再実行
 
+    // 現在のカテゴリーに属する候補のみをフィルタリングする処理
+    // activeCategory が変更されたときのみ再計算される
     const visibleCandidates = useMemo(
         () => candidates.filter((candidate) => candidate.candidate_type === activeCategory),
         [activeCategory, candidates],
     );
 
-    const submitDestination = async (event) => {
-        event.preventDefault();
-        const name = destinationName.trim();
-
-        if (!name) {
-            setNotice("旅行先の名前を入力してください");
-            return;
-        }
-
-        if (usingFallback) {
-            setCandidates((current) => [
-                ...current,
-                {
-                    candidate_id: `local-${Date.now()}`,
-                    candidate_type: "destination",
-                    candidate_name: name,
-                    description: destinationDescription.trim(),
-                    img_url: "",
-                    vote_count: 0,
-                    has_voted: false,
-                },
-            ]);
-            setDestinationName("");
-            setDestinationDescription("");
-            setNotice("旅行先を候補に追加しました（プレビュー）");
-            return;
-        }
-
-        try {
-            const response = await fetch(`${import.meta.env.BASE_URL}api/trips/candidates.php`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "add_candidate",
-                    group_id: Number(groupId),
-                    candidate_type: "destination",
-                    candidate_name: name,
-                    description: destinationDescription.trim(),
-                }),
-            });
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || "旅行先を追加できませんでした");
-            }
-
-            setDestinationName("");
-            setDestinationDescription("");
-            setNotice("旅行先を候補に追加しました");
-            await loadCandidates();
-        } catch (error) {
-            setNotice(error.message);
-        }
-    };
-
-    const voteForCandidate = async (candidateId) => {
-        if (usingFallback) {
-            setCandidates((current) =>
-                current.map((candidate) => ({
-                    ...candidate,
-                    has_voted:
-                        candidate.candidate_type === activeCategory
-                            ? candidate.candidate_id === candidateId
-                            : candidate.has_voted,
-                })),
-            );
-            setNotice(`${categoryLabels[activeCategory]}の投票先を変更しました（プレビュー）`);
-            return;
-        }
-
-        try {
-            const response = await fetch(`${import.meta.env.BASE_URL}api/trips/candidates.php`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    action: "vote",
-                    group_id: Number(groupId),
-                    candidate_id: Number(candidateId),
-                }),
-            });
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(data.message || "投票できませんでした");
-            }
-
-            setNotice("投票先を変更しました");
-            await loadCandidates();
-        } catch (error) {
-            setNotice(error.message);
-        }
-    };
-
+    // カテゴリー変更時の処理
     const changeCategory = (category) => {
+        // アクティブなカテゴリーを変更
         setActiveCategory(category);
-        setFavoritePickerOpen(false);
+        // 通知メッセージをクリア
         setNotice("");
     };
 
     return (
+        // メインコンテナ：候補パネル
+        // hidden={!active} により、active が false の場合は非表示になる
         <section className="candidatePanel" aria-label="旅行候補" hidden={!active}>
+            {/* ヘッダーセクション：タイトル・説明・「候補に追加」ボタン */}
             <header className="candidateHeading">
                 <div>
-                    <span className="sectionKicker">みんなで1つを選ぶ</span>
+                    <span className="sectionKicker">みんなで候補を集める</span>
                     <h2>旅行の候補</h2>
+                    {/* API から取得した旅行タイトルを表示（取得できない場合は表示しない） */}
                     {tripTitle && <p>{tripTitle}</p>}
                 </div>
-                <span className="singleVoteBadge">各カテゴリ 1票</span>
+                {/* 候補追加ボタン */}
+                <a className="addCandidateButton" href="#">
+                    候補に追加
+                </a>
             </header>
 
+            {/* カテゴリータブ：destination, spot, hotel, restaurant を切り替えるボタングループ */}
             <div className="candidateTypes" aria-label="候補カテゴリ">
                 {Object.entries(categoryLabels).map(([category, label]) => (
                     <button
                         key={category}
+                        // クラス selected を追加して、アクティブなタブをハイライト
                         className={activeCategory === category ? "selected" : ""}
                         type="button"
+                        // タブクリック時にカテゴリーを切り替える
                         onClick={() => changeCategory(category)}
                     >
-                        <span>{category === "destination" ? "✎" : category === "spot" ? "⌖" : "⌂"}</span>
+                        {/* カテゴリーを表すアイコン */}
+                        <span>{category === "destination" ? "✎" : category === "spot" ? "⌖" : category === "hotel" ? "⌂" : "🍴"}</span>
                         {label}
                     </button>
                 ))}
             </div>
 
+            {/* 候補一覧表示エリア */}
             <div className="candidateBody">
-                {activeCategory === "destination" ? (
-                    <form className="destinationForm" onSubmit={submitDestination}>
-                        <div className="sourceTitle">
-                            <div>
-                                <strong>旅行先を手入力</strong>
-                                <p>都道府県やエリア名を候補に追加できます</p>
-                            </div>
-                        </div>
-                        <label>
-                            <span>旅行先</span>
-                            <input
-                                value={destinationName}
-                                onChange={(event) => setDestinationName(event.target.value)}
-                                placeholder="例：三重県（伊勢・鳥羽）"
-                            />
-                        </label>
-                        <label>
-                            <span>ひとことメモ</span>
-                            <input
-                                value={destinationDescription}
-                                onChange={(event) => setDestinationDescription(event.target.value)}
-                                placeholder="例：伊勢神宮と海の幸を楽しみたい"
-                            />
-                        </label>
-                        <button type="submit">候補に追加</button>
-                    </form>
-                ) : (
-                    <div className="favoriteSource">
-                        <div className="sourceTitle">
-                            <div className="favoriteMark" aria-hidden="true">♥</div>
-                            <div>
-                                <strong>お気に入りから追加</strong>
-                                <p>
-                                    {activeCategory === "spot"
-                                        ? "保存した観光スポットから候補を選びます"
-                                        : "保存したホテル・コテージから候補を選びます"}
-                                </p>
-                            </div>
-                        </div>
-                        <button type="button" onClick={() => setFavoritePickerOpen((open) => !open)}>
-                            {favoritePickerOpen ? "閉じる" : "お気に入りを選ぶ"}
-                        </button>
-                        {favoritePickerOpen && (
-                            <div className="favoriteEmpty">
-                                <span aria-hidden="true">♡</span>
-                                <strong>お気に入りのDB連携準備中</strong>
-                                <p>お気に入りテーブル接続後、ここに保存済みの項目を表示します。</p>
-                            </div>
-                        )}
-                    </div>
-                )}
-
+                {/* 通知メッセージ表示（投票完了、エラーメッセージなど） */}
                 {notice && <p className="candidateNotice" role="status">{notice}</p>}
-                {usingFallback && (
-                    <p className="previewNotice">APIに接続できないため、サンプルデータを表示しています。</p>
-                )}
-
+                {/* 候補一覧のヘッダー：カテゴリー名と候補件数を表示 */}
                 <div className="candidateListHeader">
                     <div>
                         <strong>{categoryLabels[activeCategory]}の候補</strong>
                         <span>{visibleCandidates.length}件</span>
                     </div>
-                    <small>投票先はいつでも変更できます</small>
                 </div>
 
+                {/* 候補一覧の本体 */}
                 <div className="candidateList">
+                    {/* ローディング中の表示 */}
                     {loading ? (
                         <div className="candidateEmpty">候補を読み込んでいます…</div>
                     ) : visibleCandidates.length === 0 ? (
+                        /* 候補がない場合のメッセージ */
                         <div className="candidateEmpty">
                             <strong>候補はまだありません</strong>
-                            <p>
-                                {activeCategory === "destination"
-                                    ? "上の入力欄から旅行先を追加してください。"
-                                    : "お気に入りから候補を追加してください。"}
-                            </p>
+                            <p>「候補に追加」ボタンから追加してください。</p>
                         </div>
                     ) : (
+                        /* 候補が存在する場合：候補カードを表示 */
                         visibleCandidates.map((candidate) => (
-                            <article
-                                className={`candidateCard ${candidate.has_voted ? "selected" : ""}`}
+                            <button
+                                className={`candidateCard candidateCard--${candidate.candidate_type}`}
+                                type="button"
                                 key={candidate.candidate_id}
+                                // ボタンクリック時にモーダルで詳細を表示するため、selectedCandidate を設定
+                                onClick={() => setSelectedCandidate(candidate)}
                             >
-                                <div className="candidateIcon">
-                                    <CandidateVisual candidate={candidate} />
-                                </div>
-                                <div className="candidateInfo">
-                                    <span>{categoryLabels[candidate.candidate_type]}</span>
-                                    <h3>{candidate.candidate_name}</h3>
-                                    {candidate.description && <p>{candidate.description}</p>}
-                                    <div className="voteSummary">
-                                        <b>{candidate.vote_count}票</b>
-                                        {candidate.has_voted && <span>あなたの投票</span>}
+                                {/* destination 以外の候補にはアイコンを表示 */}
+                                {candidate.candidate_type !== "destination" && (
+                                    <div className="candidateIcon">
+                                        <CandidateVisual candidate={candidate} />
                                     </div>
+                                )}
+                                {/* 候補の情報セクション */}
+                                <div className="candidateInfo">
+                                    <div className="candidateMeta">
+                                        {/* カテゴリーラベル */}
+                                        <span>{categoryLabels[candidate.candidate_type]}</span>
+                                        {/* destination の場合は行き先候補と明記 */}
+                                        {candidate.candidate_type === "destination" && (
+                                            <small>行き先候補</small>
+                                        )}
+                                    </div>
+                                    {/* 候補の名前 */}
+                                    <h3>{candidate.candidate_name}</h3>
+                                    {/* 候補の説明（説明がある場合のみ表示） */}
+                                    {candidate.description && <p>{candidate.description}</p>}
+                                    {/* 詳細閲覧へのテキストリンク */}
+                                    <span className="candidateDetailLink">詳細を見る</span>
                                 </div>
-                                <button
-                                    className="candidateVoteButton"
-                                    type="button"
-                                    aria-pressed={candidate.has_voted}
-                                    onClick={() => voteForCandidate(candidate.candidate_id)}
-                                >
-                                    {candidate.has_voted ? "投票中 ✓" : "この候補に投票"}
-                                </button>
-                            </article>
+                                {/* 右矢印アイコン */}
+                                <span className="candidateChevron" aria-hidden="true">›</span>
+                            </button>
                         ))
                     )}
                 </div>
             </div>
+
+            {/* 詳細情報表示用モーダル */}
+            <Modal isOpen={selectedCandidate !== null} onClose={() => setSelectedCandidate(null)}>
+                {/* 候補が選択されている場合のみ詳細を表示 */}
+                {selectedCandidate && (
+                    <div className="candidateDetail">
+                        {/* モーダルヘッダー：カテゴリー・タイトル・閉じるボタン */}
+                        <div className="candidateModalHeader">
+                            <div>
+                                <span>{categoryLabels[selectedCandidate.candidate_type]}</span>
+                                <h3>{selectedCandidate.candidate_name}</h3>
+                            </div>
+                            <button
+                                type="button"
+                                aria-label="閉じる"
+                                onClick={() => setSelectedCandidate(null)}
+                            >
+                                ×
+                            </button>
+                        </div>
+                        {/* モーダル内の画像表示エリア（destination 以外） */}
+                        {selectedCandidate.candidate_type !== "destination" && (
+                            <div className="candidateDetailVisual">
+                                <CandidateVisual candidate={selectedCandidate} />
+                            </div>
+                        )}
+                        {/* モーダル内の詳細説明 */}
+                        <div className="candidateDetailBody">
+                            <strong>詳細</strong>
+                            {/* 説明がある場合は表示、ない場合はプレースホルダーテキストを表示 */}
+                            <p>{selectedCandidate.description || "詳細情報はまだありません。"}</p>
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </section>
     );
 }
