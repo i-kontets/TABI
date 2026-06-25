@@ -1,6 +1,10 @@
 import React from 'react';
 import styles from './ChatHeader.module.css';
 
+function isImageAvatar(value) {
+  return typeof value === 'string' && (/^(https?:)?\/\//.test(value) || value.startsWith('/'));
+}
+
 const ChatHeader = ({ contact, reservation, onMobileBack }) => {
   if (!contact) return null;
 
@@ -20,20 +24,26 @@ const ChatHeader = ({ contact, reservation, onMobileBack }) => {
   return (
     <div className={styles.headerContainer}>
       <div className={styles.contactInfoArea}>
-        <button className={styles.mobileBackBtn} onClick={onMobileBack} title="リストに戻る">
+        <button className={styles.mobileBackBtn} onClick={onMobileBack} title="一覧に戻る">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
           戻る
         </button>
 
-        <img src={contact.avatar} alt={contact.name} className={styles.avatar} />
+        {isImageAvatar(contact.avatar) ? (
+          <img src={contact.avatar} alt={contact.name} className={styles.avatar} />
+        ) : (
+          <div className={styles.avatarFallback} aria-hidden="true">
+            {String(contact.avatar || contact.name || '?').slice(0, 1)}
+          </div>
+        )}
         <div className={styles.infoTexts}>
           <span className={styles.name}>
             {contact.name}
             {/* ヘッダーのグループ名横にも人数を表示 */}
             {contact.category === 'group' && contact.memberCount && (
-              <span className={styles.memberCount}>({contact.memberCount}人)</span>
+              <span className={styles.memberCount}>({contact.memberCount})</span>
             )}
           </span>
           {/* オンライン表示テキストは削除しました */}

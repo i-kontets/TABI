@@ -2,7 +2,7 @@ import React from 'react';
 import styles from './MessageList.module.css';
 import MessageBubble from '../MessageBubble/MessageBubble';
 
-const MessageList = ({ messages }) => {
+const MessageList = ({ messages, memberCount = 0 }) => {
   let currentDate = '';
 
   return (
@@ -20,7 +20,7 @@ const MessageList = ({ messages }) => {
                 <span className={styles.dateBadge}>{msg.date}</span>
               </div>
             )}
-            <MessageBubble message={msg} />
+            <MessageBubble message={msg} memberCount={memberCount} />
           </React.Fragment>
         );
       })}
