@@ -99,3 +99,17 @@
   color: var(--accent-color); /* 淡い系統の青色を適用 */
   font-weight: bold;
 }
+.msgAvatarFallback {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--other-color);
+  color: var(--nav-bg);
+  font-size: 14px;
+  font-weight: 700;
+}

@@ -1,6 +1,10 @@
 import React from 'react';
 import styles from './ChatSidebar.module.css';
 
+function isImageAvatar(value) {
+  return typeof value === 'string' && (/^(https?:)?\/\//.test(value) || value.startsWith('/'));
+}
+
 const ChatSidebar = ({ contacts, activeId, onSelect }) => {
   return (
     <div className={styles.sidebarContainer}>
@@ -20,8 +24,13 @@ const ChatSidebar = ({ contacts, activeId, onSelect }) => {
             onClick={() => onSelect(contact.id)}
           >
             <div className={styles.avatarWrapper}>
-              <img src={contact.avatar} alt={contact.name} className={styles.avatar} />
-              {/* オンラインの緑ドットは削除しました */}
+              {isImageAvatar(contact.avatar) ? (
+                <img src={contact.avatar} alt={contact.name} className={styles.avatar} />
+              ) : (
+                <div className={styles.avatarFallback} aria-hidden="true">
+                  {String(contact.avatar || contact.name || '?').slice(0, 1)}
+                </div>
+              )}
             </div>
             <div className={styles.info}>
               <div className={styles.headerRow}>

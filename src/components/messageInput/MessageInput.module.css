@@ -59,3 +59,14 @@
   background-color: #D62828; /* 少し濃い赤 */
   transform: scale(1.05);
 }
+.actionBtn:disabled,
+.sendBtn:disabled,
+.textField:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sendBtn:disabled:hover {
+  background: var(--accent-color);
+  transform: none;
+}
