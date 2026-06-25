@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import styles from './Chat.module.css';
 import GlobalNav from '../../components/GlobalNav/GlobalNav';
@@ -7,12 +7,16 @@ import ChatHeader from '../../components/ChatHeader/ChatHeader';
 import MessageList from '../../components/MessageList/MessageList';
 import MessageInput from '../../components/MessageInput/MessageInput';
 
-// Chat 用 API の共通 URL。
-// ここを基点に、各機能の PHP エンドポイントへアクセスする。
+// チャット機能で使う API の共通ベース URL。
+// ここを起点に Messages / Reads / Send の各 PHP を呼び分ける。
 const chatApiBase = `${import.meta.env.BASE_URL}api/Chat`;
 
-// API の共通レスポンスを検証する。
-// 失敗時は、画面側でそのまま表示できる日本語メッセージを投げる。
+// メッセージの自動更新間隔。
+// 新着確認のため、選択中の会話を数秒おきに取り直す。
+const pollingIntervalMs = 3000;
+
+// API の JSON レスポンスを共通で検証するヘルパー。
+// HTTP エラー、または success=false の場合は画面表示用の例外に変換する。
 async function parseApiResponse(response) {
     const data = await response.json().catch(() => null);
 
@@ -23,8 +27,8 @@ async function parseApiResponse(response) {
     return data;
 }
 
-// メッセージ一覧に既読状態を反映する。
-// message_id をキーにして対応する既読情報を引けるよう Map を使う。
+// 取得済みメッセージ一覧に、既読情報を重ねるための関数。
+// message_id をキーにして、対応する read 状態を各メッセージへ反映する。
 function mergeReadStatuses(messages, reads) {
     const statusByMessageId = new Map(
         reads.map((read) => [Number(read.message_id), read]),
@@ -48,43 +52,50 @@ function mergeReadStatuses(messages, reads) {
 
 const Chat = () => {
     const location = useLocation();
-    // 左側メニューのカテゴリ絞り込み状態。
+    // 多重ポーリングを防ぐためのフラグ。
+    // 前回の更新が終わる前に次回更新が始まらないようにする。
+    const pollingRef = useRef(false);
+
+    // 左メニューの絞り込みカテゴリ。
     const [activeCategory, setActiveCategory] = useState('all');
-    // 現在表示対象になっているチャット相手の ID。
+    // 現在選択中のチャット相手の ID。
     const [activeContactId, setActiveContactId] = useState(null);
-    // 選択中の相手情報。API の返却結果をそのまま保持する。
+    // API から返ってきた会話相手情報。
+    // ヘッダーやサイドバーの表示元になる。
     const [contact, setContact] = useState(null);
-    // 現在のチャットに属するメッセージ一覧。
+    // 表示中のメッセージ配列。
     const [messages, setMessages] = useState([]);
-    // 入力欄に編集中の本文。
+    // 入力欄に編集中のメッセージ本文。
     const [draft, setDraft] = useState('');
-    // 読み込み中フラグ。初回表示や相手切り替え時に true になる。
+    // 画面初期読み込み中かどうか。
     const [loading, setLoading] = useState(true);
-    // 送信処理の二重実行を防ぐフラグ。
+    // 送信中かどうか。
+    // 二重送信防止のため、送信ボタンを無効化する用途で使う。
     const [sending, setSending] = useState(false);
-    // API エラーや案内文を画面上に出すためのメッセージ。
+    // API エラーや補足メッセージを表示する領域。
     const [notice, setNotice] = useState('');
     // モバイル表示で会話画面を前面に出しているかどうか。
     const [isMobileChatView, setIsMobileChatView] = useState(false);
 
-    // URL のクエリ文字列を毎回解釈し直さないようにメモ化する。
+    // URL のクエリパラメータを使い、特定の会話を直接開けるようにする。
+    // location.search が変わったときだけ再生成する。
     const urlParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
-    // 画面遷移元が個別チャットを指定していた場合のチャット ID。
+    // 個別チャットを指定するクエリ。
     const requestedChatId = urlParams.get('chat_id') || urlParams.get('chatId');
-    // グループ起点で表示したい場合のグループ ID。
+    // グループ起点で表示するためのクエリ。
     const requestedGroupId = urlParams.get('group_id') || urlParams.get('groupId');
 
-    // いまは単一の contact を配列に包んで一覧コンポーネントへ渡している。
+    // 現時点では contact を 1 件だけ扱う構成なので、配列にして一覧へ渡す。
     const contacts = useMemo(() => (contact ? [contact] : []), [contact]);
-    // 現在の選択 ID と API 取得済み contact を使って、ヘッダーに出す相手を決める。
+    // サイドバーで選ばれている相手、または取得済み contact を表示対象にする。
     const activeContact = contacts.find((item) => item.id === activeContactId) || contact;
-    // サイドバーのカテゴリで連絡先を絞り込む。
+    // カテゴリ絞り込みを適用した連絡先一覧。
     const filteredContacts = activeCategory === 'all'
         ? contacts
         : contacts.filter((item) => item.category === activeCategory);
 
-    // 既読情報だけをサーバーへ問い合わせて、手元の messages に反映する。
-    // 会話本文を再取得せず、既読カウントだけ更新したいときに使う。
+    // 既読情報だけをサーバーへ問い合わせて、既存メッセージへ反映する。
+    // 会話本文を取り直さず、既読カウントだけ更新したいときに使う。
     const markMessagesAsRead = useCallback(async (chatId, signal = undefined) => {
         const response = await fetch(`${chatApiBase}/Reads.php`, {
             method: 'POST',
@@ -100,14 +111,24 @@ const Chat = () => {
         setMessages((currentMessages) => mergeReadStatuses(currentMessages, data.reads || []));
     }, []);
 
-    // 指定されたチャットのメッセージを取得する。
-    // chatId が無ければ URL のクエリに従い、さらに groupId も見に行く。
-    const loadMessages = useCallback(async (chatId = null, signal = undefined) => {
-        setLoading(true);
-        setNotice('');
+    // メッセージ一覧を取得する中心処理。
+    // chatId が指定されていればそれを優先し、なければ URL のクエリを参照する。
+    // options で loading 表示や notice 初期化の有無を切り替えられる。
+    const loadMessages = useCallback(async (chatId = null, signal = undefined, options = {}) => {
+        const { showLoading = true, showNotice = true } = options;
+
+        // ポーリング時は画面全体のローディングを出したくないため、必要時のみ表示する。
+        if (showLoading) {
+            setLoading(true);
+        }
+
+        // エラー表示を毎回クリアするかどうかも呼び出し元で制御する。
+        if (showNotice) {
+            setNotice('');
+        }
 
         try {
-            // どの条件でメッセージを取りに行くかを URLSearchParams で組み立てる。
+            // リクエスト条件を検索パラメータとして組み立てる。
             const params = new URLSearchParams();
 
             if (chatId) {
@@ -127,32 +148,35 @@ const Chat = () => {
                 },
             );
             const data = await parseApiResponse(response);
-            // API から返った chat_id か contact の chat_id を正規化して使う。
+            // レスポンス内の chat_id は数値化して、以降の state 更新で共通利用する。
             const resolvedChatId = Number(data.chat_id || data.contact?.chat_id);
 
+            // 表示対象の相手情報とメッセージ群を state に反映する。
             setActiveContactId(resolvedChatId || null);
             setContact(data.contact || null);
             setMessages(data.messages || []);
 
-            // 会話が特定できた場合は、表示後すぐ既読情報を同期する。
+            // 会話が確定できたら、その会話の既読情報もすぐ取得する。
             if (resolvedChatId) {
                 await markMessagesAsRead(resolvedChatId, signal);
             }
         } catch (error) {
-            if (error.name !== 'AbortError') {
+            // AbortError は画面遷移時などの正常終了なので、ユーザー向け表示はしない。
+            if (error.name !== 'AbortError' && showNotice) {
                 setContact(null);
                 setMessages([]);
                 setNotice(error.message);
             }
         } finally {
-            if (!signal?.aborted) {
+            // ポーリングの中など、画面側でローディング表示を抑えたい場合は state を戻さない。
+            if (!signal?.aborted && showLoading) {
                 setLoading(false);
             }
         }
     }, [markMessagesAsRead, requestedChatId, requestedGroupId]);
 
     // 初回表示時に 1 回だけ会話を読み込む。
-    // AbortController を使い、画面離脱時の state 更新を防ぐ。
+    // AbortController を使って、アンマウント後の state 更新を防ぐ。
     useEffect(() => {
         const controller = new AbortController();
         loadMessages(null, controller.signal);
@@ -160,15 +184,43 @@ const Chat = () => {
         return () => controller.abort();
     }, [loadMessages]);
 
-    // サイドバーで別の相手を選んだときに、その会話を開き直す。
+    // 選択中の相手がある場合だけ、一定間隔で新着を取りに行く。
+    // すでに更新処理中なら重複呼び出しを避ける。
+    useEffect(() => {
+        if (!activeContactId) {
+            return undefined;
+        }
+
+        const intervalId = window.setInterval(async () => {
+            if (pollingRef.current) {
+                return;
+            }
+
+            pollingRef.current = true;
+
+            try {
+                // ポーリングでは画面をちらつかせないよう、読み込み表示と通知表示を抑制する。
+                await loadMessages(activeContactId, undefined, {
+                    showLoading: false,
+                    showNotice: false,
+                });
+            } finally {
+                pollingRef.current = false;
+            }
+        }, pollingIntervalMs);
+
+        return () => window.clearInterval(intervalId);
+    }, [activeContactId, loadMessages]);
+
+    // サイドバーから会話相手を選んだときに、その相手の会話を開く。
     const handleContactSelect = (id) => {
         setActiveContactId(id);
         setIsMobileChatView(true);
         loadMessages(id);
     };
 
-    // 送信ボタンまたは Enter で発火する送信処理。
-    // 空文字、送信中、相手未選択のいずれかでは送らない。
+    // 送信フォームの送信処理。
+    // 空文字、送信中、相手未選択の場合は何もしない。
     const handleSendMessage = async (event) => {
         event.preventDefault();
 
@@ -177,10 +229,12 @@ const Chat = () => {
             return;
         }
 
+        // 送信中にして、二重送信を防止する。
         setSending(true);
         setNotice('');
 
         try {
+            // 送信先 chat_id と本文を JSON で API へ送る。
             const response = await fetch(`${chatApiBase}/Send.php`, {
                 method: 'POST',
                 headers: {
@@ -194,23 +248,26 @@ const Chat = () => {
             });
             const data = await parseApiResponse(response);
 
+            // 送信成功後は、ローカルのメッセージ一覧に追記して入力欄を空にする。
             setMessages((currentMessages) => [...currentMessages, data.message]);
             setDraft('');
         } catch (error) {
+            // 送信失敗時は、その理由を画面に出す。
             setNotice(error.message);
         } finally {
             setSending(false);
         }
     };
 
-    // モバイル向けの戻る操作はブラウザ履歴に戻す。
+    // モバイル表示での戻る操作。
+    // ブラウザ履歴へ戻ることで、直前画面へ自然に戻れるようにする。
     const handleBackToApp = () => {
         window.history.back();
     };
 
     return (
         <div className={`${styles.appContainer} ${isMobileChatView ? styles.mobileChatActive : ''}`}>
-            {/* 左カラム: グローバルナビとチャット相手一覧 */}
+            {/* 左側: グローバルナビとチャット相手一覧 */}
             <div className={styles.sidebarWrapper}>
                 <GlobalNav
                     activeCategory={activeCategory}
@@ -224,7 +281,7 @@ const Chat = () => {
                 />
             </div>
 
-            {/* 右カラム: 選択中の会話本文と入力欄 */}
+            {/* 右側: チャットヘッダー、メッセージ一覧、入力欄 */}
             <div className={styles.mainArea}>
                 <ChatHeader
                     contact={activeContact}
@@ -232,14 +289,14 @@ const Chat = () => {
                     onMobileBack={() => setIsMobileChatView(false)}
                 />
 
-                {/* 通信エラーや注意文をユーザーへ見せる領域 */}
+                {/* 通信エラーや案内を表示するエリア */}
                 {notice && (
                     <div className={styles.stateMessage} role="alert">
                         {notice}
                     </div>
                 )}
 
-                {/* 読み込み中 → メッセージなし → 一覧表示、の順で出し分ける */}
+                {/* 読み込み中 -> メッセージなし -> メッセージ一覧、の順で出し分ける */}
                 {loading ? (
                     <div className={styles.stateMessage}>メッセージを読み込んでいます...</div>
                 ) : messages.length === 0 ? (
