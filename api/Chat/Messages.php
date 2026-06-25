@@ -290,10 +290,13 @@ try {
     $chatId = resolveChatId($pdo, $userId, $_GET["chat_id"] ?? null, $_GET["group_id"] ?? null);
     ensureMember($pdo, $chatId, $userId);
 
+    $contact = fetchContact($pdo, $chatId);
+
     respond([
         "success" => true,
         "chat_id" => $chatId,
-        "contact" => fetchContact($pdo, $chatId),
+        "member_count" => (int) ($contact["memberCount"] ?? 0),
+        "contact" => $contact,
         "messages" => fetchMessages($pdo, $chatId, $userId)
     ]);
 } catch (Throwable $error) {

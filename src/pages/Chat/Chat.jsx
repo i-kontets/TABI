@@ -321,7 +321,7 @@ const Chat = () => {
                 ) : messages.length === 0 ? (
                     <div className={styles.stateMessage}>まだメッセージはありません。</div>
                 ) : (
-                    <MessageList messages={messages} />
+                    <MessageList messages={messages} memberCount={activeContact?.memberCount || 0} />
                 )}
 
                 <MessageInput
