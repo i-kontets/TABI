@@ -209,10 +209,14 @@ function Album() {
     };
 
     // 写真のお気に入り状態を切り替える処理です。
+    //引数で選択した画像のIdを持ってくる
     const toggleFavorite = (photoId) => {
+        //photosを更新します
         setPhotos((currentPhotos) =>
             // mapで新しい配列を作り、対象の写真だけfavoriteを反転します。
             currentPhotos.map((photo) =>
+                //お気に入り登録する画像のidとcurrentPhotoのidを見比べて同じIdのものの
+                //photoのfovoriteの値を反転させる 違うやつはphotoを返す(そのまま返すってこと)
                 photo.id === photoId ? { ...photo, favorite: !photo.favorite } : photo
             )
         );
@@ -220,32 +224,41 @@ function Album() {
 
     // 詳細画面を閉じて、一覧画面へ戻る処理です。
     const closeDetail = () => {
+        //三点リーダーを閉じる
         setIsMenuOpen(false);
+        //詳細情報を閉じる
         setIsInfoOpen(false);
+        //Viewをdetailからlistに変更
         setView('list');
     };
 
     // 詳細表示中の写真をアルバムから削除する処理です。
     const removeSelectedPhoto = () => {
+        //現状ほぼ動くことのないもの 選択された画像の要素数がnullなら終了
         if (selectedIndex === null) return;
 
+        //selectedPhotoに選択された写真の情報を入れる
         const selectedPhoto = photos[selectedIndex];
 
         // ユーザーが追加した画像の場合は、不要になったURLを解放します。
+        //selectedPhotoがNULlじゃなくて、blob:から始まるURLならURLを開放
         if (selectedPhoto?.src.startsWith('blob:')) URL.revokeObjectURL(selectedPhoto.src);
 
+        //削除予定の写真の要素番号とPhotosの写真すべての要素番号を比べ、違ったものだけを集めて新しいPhotosを作る
         setPhotos((currentPhotos) => currentPhotos.filter((_, index) => index !== selectedIndex));
+        //削除後はすべてリセットし、写真一覧に戻る
         setSelectedIndex(null);
         setIsMenuOpen(false);
         setIsInfoOpen(false);
         setView('list');
     };
 
-    // viewがdetailのときは、一覧ではなく写真詳細画面を表示します。
+    // viewがdetail()かつ選択されてる画像がNULLじゃないなら
     if (view === 'detail' && selectedIndex !== null) {
+        //photoに選択されてる画像の情報を補完
         const photo = photos[selectedIndex];
 
-        // 選択中の写真が見つからない場合は、何も表示しません。
+        // 選択中の写真の要素番号が見つからないなら何もしない
         if (!photo) return null;
 
         // favoriteは未設定だとundefinedなので、Booleanでtrue/falseにそろえています。
@@ -253,18 +266,21 @@ function Album() {
 
         return (
             <div className={styles.detailOverlay}>
-                {/* 詳細画面のメイン画像です。 */}
+                {/* 詳細画面で画像です　photoには選択された画像の情報が入っているので、そこからurlやその他の情報を持ってこれます*/}
                 <img className={styles.fullscreenImage} src={photo.src} alt={`${photo.uploader}の写真`} />
 
                 {/* 詳細画面上部の戻るボタン、タイトル、メニューです。 */}
                 <div className={styles.detailHeader}>
+                    {/*/Closeボタンが押されたら226行目のcloseDetail関数を実行*/}
                     <button className={styles.closeButton} onClick={closeDetail} aria-label="閉じる">
                         ×
                     </button>
                     <div className={styles.headerCenter}>
                         <p className={styles.albumTitle}>
+                            {/*tripNameがあればtripNameをなければアルバム表示 selectedIndexとphotos.lengthで何枚目/画像数 を表示*/}
                             {tripName || 'アルバム'} {selectedIndex + 1} / {photos.length}
                         </p>
+                        {/*画像を上げた人の名前 */}
                         <p className={styles.uploaderName}>{photo.uploader}</p>
                     </div>
                     <div className={styles.menuArea}>
