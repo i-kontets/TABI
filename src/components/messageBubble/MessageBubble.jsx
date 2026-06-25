@@ -1,26 +1,37 @@
 import React from 'react';
 import styles from './MessageBubble.module.css';
 
+function isImageAvatar(value) {
+  return typeof value === 'string' && (/^(https?:)?\/\//.test(value) || value.startsWith('/'));
+}
+
 const MessageBubble = ({ message }) => {
-  const isUser = message.sender === 'user';
+  const isUser = Boolean(message.isMine) || message.sender === 'user';
+  const senderName = message.senderName || message.sender_name || message.sender || '';
+  const avatarText = senderName.slice(0, 1) || String(message.avatar || '').slice(0, 1) || '?';
 
   return (
     <div className={`${styles.row} ${isUser ? styles.rowUser : styles.rowOwner}`}>
-      {/* チャットバブルの横に発言者のユーザーアイコンを表示 */}
-      <img src={message.avatar} alt={message.senderName} className={styles.msgAvatar} />
-      
+      {isImageAvatar(message.avatar) ? (
+        <img src={message.avatar} alt={senderName} className={styles.msgAvatar} />
+      ) : (
+        <div className={styles.msgAvatarFallback} aria-hidden="true">
+          {avatarText}
+        </div>
+      )}
+
       <div className={styles.bubbleContent}>
-        {/* 誰の発言かひと目でわかる名前テキスト */}
-        <span className={styles.senderName}>{message.senderName}</span>
-        
+        <span className={styles.senderName}>{senderName}</span>
+
         <div className={styles.bubbleAndMeta}>
           <div className={`${styles.bubble} ${isUser ? styles.bubbleUser : styles.bubbleOwner}`}>
-            {message.text}
+            {message.text || message.body}
           </div>
-          
+
           <div className={styles.metaInfo}>
-            {/* 自分が送信したメッセージで既読の場合にのみ「既読」を表示 */}
-            {isUser && message.isRead && <span className={styles.readStatus}>既読</span>}
+            {isUser && message.readCount > 0 && (
+              <span className={styles.readStatus}>既読 {message.readCount}</span>
+            )}
             <span className={styles.time}>{message.time}</span>
           </div>
         </div>
