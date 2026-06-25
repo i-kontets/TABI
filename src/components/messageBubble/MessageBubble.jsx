@@ -30,11 +30,7 @@ const MessageBubble = ({ message }) => {
 
           <div className={styles.metaInfo}>
             {isUser && message.readCount > 0 && (
-<<<<<<< HEAD
               <span className={styles.readStatus}>既読</span>
-=======
-              <span className={styles.readStatus}>既読 {message.readCount}</span>
->>>>>>> db9c859cf8914a49b28cfa988854a919addcecaf
             )}
             <span className={styles.time}>{message.time}</span>
           </div>

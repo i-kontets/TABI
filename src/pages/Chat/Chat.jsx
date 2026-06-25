@@ -195,66 +195,7 @@ const Chat = () => {
     // メッセージ一覧を取得する中心処理。
     // chatId が指定されていればそれを優先し、なければ URL のクエリを参照する。
     // options で loading 表示や notice 初期化の有無を切り替えられる。
-    const loadMessages = useCallback(async (chatId = null, signal = undefined, options = {}) => {
-        const { showLoading = true, showNotice = true } = options;
-
-        // ポーリング時は画面全体のローディングを出したくないため、必要時のみ表示する。
-        if (showLoading) {
-            setLoading(true);
-        }
-
-        // エラー表示を毎回クリアするかどうかも呼び出し元で制御する。
-        if (showNotice) {
-            setNotice('');
-        }
-
-        try {
-            // リクエスト条件を検索パラメータとして組み立てる。
-            const params = new URLSearchParams();
-
-            if (chatId) {
-                params.set('chat_id', chatId);
-            } else if (requestedChatId) {
-                params.set('chat_id', requestedChatId);
-            } else if (requestedGroupId) {
-                params.set('group_id', requestedGroupId);
-            }
-
-            const query = params.toString();
-            const response = await fetch(
-                `${chatApiBase}/Messages.php${query ? `?${query}` : ''}`,
-                {
-                    credentials: 'include',
-                    signal,
-                },
-            );
-            const data = await parseApiResponse(response);
-            // レスポンス内の chat_id は数値化して、以降の state 更新で共通利用する。
-            const resolvedChatId = Number(data.chat_id || data.contact?.chat_id);
-
-            // 表示対象の相手情報とメッセージ群を state に反映する。
-            setActiveContactId(resolvedChatId || null);
-            setContact(data.contact || null);
-            setMessages(data.messages || []);
-
-            // 会話が確定できたら、その会話の既読情報もすぐ取得する。
-            if (resolvedChatId) {
-                await markMessagesAsRead(resolvedChatId, signal);
-            }
-        } catch (error) {
-            // AbortError は画面遷移時などの正常終了なので、ユーザー向け表示はしない。
-            if (error.name !== 'AbortError' && showNotice) {
-                setContact(null);
-                setMessages([]);
-                setNotice(error.message);
-            }
-        } finally {
-            // ポーリングの中など、画面側でローディング表示を抑えたい場合は state を戻さない。
-            if (!signal?.aborted && showLoading) {
-                setLoading(false);
-            }
-        }
-    }, [markMessagesAsRead, requestedChatId, requestedGroupId]);
+    
 
     // 初回表示時に 1 回だけ会話を読み込む。
     // AbortController を使って、アンマウント後の state 更新を防ぐ。
@@ -337,43 +278,7 @@ const Chat = () => {
 
     // 送信フォームの送信処理。
     // 空文字、送信中、相手未選択の場合は何もしない。
-    const handleSendMessage = async (event) => {
-        event.preventDefault();
-
-        const text = draft.trim();
-        if (!text || sending || !activeContactId) {
-            return;
-        }
-
-        // 送信中にして、二重送信を防止する。
-        setSending(true);
-        setNotice('');
-
-        try {
-            // 送信先 chat_id と本文を JSON で API へ送る。
-            const response = await fetch(`${chatApiBase}/Send.php`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    chat_id: activeContactId,
-                    body: text,
-                }),
-            });
-            const data = await parseApiResponse(response);
-
-            // 送信成功後は、ローカルのメッセージ一覧に追記して入力欄を空にする。
-            setMessages((currentMessages) => [...currentMessages, data.message]);
-            setDraft('');
-        } catch (error) {
-            // 送信失敗時は、その理由を画面に出す。
-            setNotice(error.message);
-        } finally {
-            setSending(false);
-        }
-    };
+    
 
     // モバイル表示での戻る操作。
     // ブラウザ履歴へ戻ることで、直前画面へ自然に戻れるようにする。
