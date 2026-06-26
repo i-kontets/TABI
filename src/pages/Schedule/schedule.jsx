@@ -10,6 +10,8 @@ const days = [
     { id: 'day1', date: '6/28(日)' },
     { id: 'day2', date: '6/29(月)' },
     { id: 'day3', date: '6/30(火)' },
+    { id: 'day4', date: '7/1(水)' },
+    { id: 'day5', date: '7/2(木)' },
 ];
 
 export default function SchedulePage() {
@@ -53,7 +55,7 @@ export default function SchedulePage() {
                         }}
                     />
 
-                    <div className={styles.stepperClickLayer} aria-label="日付を切り替え">
+                    <div className={styles.stepperClickLayer} style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }} aria-label="日付を切り替え">
                         {days.map((day) => (
                             <button
                                 key={day.id}

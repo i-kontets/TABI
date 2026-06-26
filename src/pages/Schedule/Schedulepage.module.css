@@ -34,7 +34,7 @@
   inset: 8px 10px 4px;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-flow: column;
 }
 
 .stepperClickTarget {
