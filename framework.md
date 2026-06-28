@@ -24,15 +24,17 @@
 
 SVGファイルをReactコンポーネントとして利用
 
+## Mantine Timeline
+
+タイムスケジュールUIベース
+
+時間軸の線、ポイント、時刻表示に使用
+
 # 導入済み・未使用
 
 ## zxcvbn
 
 パスワード強度判定への利用を想定
-
-## Mantine Timeline
-
-タイムスケジュールUIベース
 
 ## sonner
 

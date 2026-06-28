@@ -4,16 +4,13 @@
   margin-bottom: 20px;
   gap: 10px;
 }
-/* 相手：アバターが左、テキストが右 */
 .rowOwner {
   flex-direction: row;
 }
-/* 自分：アバターが右、テキストが左 */
 .rowUser {
   flex-direction: row-reverse;
 }
 
-/* メッセージの横に並ぶユーザーアイコン */
 .msgAvatar {
   width: 36px;
   height: 36px;
@@ -21,6 +18,21 @@
   object-fit: cover;
   flex-shrink: 0;
   margin-top: 2px;
+}
+
+.msgAvatarFallback {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--other-color);
+  color: var(--nav-bg);
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .bubbleContent {
@@ -35,7 +47,6 @@
   align-items: flex-end;
 }
 
-/* ユーザーアイコン上の名前表示 */
 .senderName {
   font-size: 11px;
   color: #777777;
@@ -43,7 +54,6 @@
   font-weight: 500;
 }
 
-/* バブル本体と既読・時間の並び */
 .bubbleAndMeta {
   display: flex;
   align-items: flex-end;
@@ -53,10 +63,9 @@
   flex-direction: row;
 }
 .rowUser .bubbleAndMeta {
-  flex-direction: row-reverse; /* 自分の時はバブルの左側に既読と時間を配置 */
+  flex-direction: row-reverse;
 }
 
-/* バブル自体の装飾 */
 .bubble {
   padding: 10px 14px;
   font-size: 14px;
@@ -76,7 +85,6 @@
   border-top-right-radius: 4px;
 }
 
-/* メタ情報（時間・既読）の縦並び */
 .metaInfo {
   display: flex;
   flex-direction: column;
@@ -93,9 +101,22 @@
   color: #999999;
 }
 
-/* 既読テキストの装飾 */
 .readStatus {
   font-size: 10px;
-  color: var(--accent-color); /* 淡い系統の青色を適用 */
+  color: var(--accent-color);
   font-weight: bold;
+}
+.msgAvatarFallback {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--other-color);
+  color: var(--nav-bg);
+  font-size: 14px;
+  font-weight: 700;
 }

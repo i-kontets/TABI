@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import styles from './Chat.module.css';
 import GlobalNav from '../../components/GlobalNav/GlobalNav';
 import ChatSidebar from '../../components/ChatSidebar/ChatSidebar';
@@ -6,101 +7,288 @@ import ChatHeader from '../../components/ChatHeader/ChatHeader';
 import MessageList from '../../components/MessageList/MessageList';
 import MessageInput from '../../components/MessageInput/MessageInput';
 
-// ダミーデータ：サイドバー用
-const DUMMY_CONTACTS = [
-    { id: 1, name: 'TABI HOTEL OSAKA', category: 'hotel', avatar: 'https://i.pravatar.cc/150?img=32', lastMessage: 'お待ちしております', time: '10:30', unread: 2 },
-    { id: 2, name: 'Yuta (大学の友達)', category: 'friend', avatar: 'https://i.pravatar.cc/150?img=11', lastMessage: '明日の待ち合わせ時間って何時だっけ？', time: '10:15', unread: 1 },
-    { id: 3, name: '北海道旅行グループ', category: 'group', avatar: 'https://i.pravatar.cc/150?img=24', lastMessage: 'レンタカー予約完了！', time: '昨日', unread: 0, memberCount: 4 },
-    { id: 4, name: 'Kyoto Machiya Inn', category: 'hotel', avatar: 'https://i.pravatar.cc/150?img=12', lastMessage: 'チェックイン方法について', time: '昨日', unread: 0 },
-    { id: 5, name: 'Okinawa Beach Villa', category: 'hotel', avatar: 'https://i.pravatar.cc/150?img=20', lastMessage: 'ご予約ありがとうございます。', time: '3月15日', unread: 0 },
-    { id: 6, name: '家族旅行チャット', category: 'group', avatar: 'https://i.pravatar.cc/150?img=5', lastMessage: 'お土産買いました', time: '2月10日', unread: 0, memberCount: 3 }
-];
+const chatApiBase = `${import.meta.env.BASE_URL}api/Chat`;
+const pollingIntervalMs = 3000;
 
-// メッセージデータ：【修正】各チャットに紐づくよう `contactId` を追加し、相手ごとのメッセージを用意
-const DUMMY_MESSAGES = [
-    // 1: TABI HOTEL OSAKA のチャット履歴
-    { id: 1, contactId: 1, sender: 'owner', senderName: 'TABI HOTEL', avatar: 'https://i.pravatar.cc/150?img=32', text: 'ご予約ありがとうございます。TABI HOTEL OSAKAです。', time: '10:00', isRead: true },
-    { id: 2, contactId: 1, sender: 'owner', senderName: 'TABI HOTEL', avatar: 'https://i.pravatar.cc/150?img=32', text: 'チェックイン時間の確認ですが、15:00でよろしいでしょうか？', time: '10:01', isRead: true },
-    { id: 3, contactId: 1, sender: 'user', senderName: '自分', avatar: 'https://i.pravatar.cc/150?img=68', text: 'はい、15:00の予定です。', time: '10:05', isRead: true },
-    { id: 4, contactId: 1, sender: 'user', senderName: '自分', avatar: 'https://i.pravatar.cc/150?img=68', text: '少し早めに到着した場合、荷物を預かっていただくことは可能ですか？', time: '10:06', isRead: true },
-    { id: 5, contactId: 1, sender: 'owner', senderName: 'TABI HOTEL', avatar: 'https://i.pravatar.cc/150?img=32', text: 'はい、フロントにてお預かりいたします。', time: '10:15', isRead: true },
-    { id: 6, contactId: 1, sender: 'owner', senderName: 'TABI HOTEL', avatar: 'https://i.pravatar.cc/150?img=32', text: 'お待ちしております。お気をつけてお越しください。', time: '10:30', isRead: false },
+async function parseApiResponse(response) {
+    const data = await response.json().catch(() => null);
 
-    // 2: Yuta (大学の友達) のチャット履歴
-    { id: 7, contactId: 2, sender: 'owner', senderName: 'Yuta', avatar: 'https://i.pravatar.cc/150?img=11', text: 'お疲れ！旅行の準備進んでる？', time: '10:00', isRead: true },
-    { id: 8, contactId: 2, sender: 'user', senderName: '自分', avatar: 'https://i.pravatar.cc/150?img=68', text: '進んでるよー！チケットも買った！', time: '10:10', isRead: true },
-    { id: 9, contactId: 2, sender: 'owner', senderName: 'Yuta', avatar: 'https://i.pravatar.cc/150?img=11', text: '明日の待ち合わせ時間って何時だっけ？', time: '10:15', isRead: false },
-
-    // 3: 北海道旅行グループ のチャット履歴
-    { id: 10, contactId: 3, sender: 'owner', senderName: 'Takuya', avatar: 'https://i.pravatar.cc/150?img=15', text: 'みんな、しおり作ったから見てね！', time: '昨日', isRead: true },
-    { id: 11, contactId: 3, sender: 'user', senderName: '自分', avatar: 'https://i.pravatar.cc/150?img=68', text: 'ありがとう！めちゃくちゃ助かる', time: '昨日', isRead: true },
-    { id: 12, contactId: 3, sender: 'owner', senderName: 'Mei', avatar: 'https://i.pravatar.cc/150?img=40', text: 'レンタカー予約完了！', time: '昨日', isRead: true },
-
-    // 4: Kyoto Machiya Inn のチャット履歴
-    { id: 13, contactId: 4, sender: 'owner', senderName: 'Kyoto Machiya Inn', avatar: 'https://i.pravatar.cc/150?img=12', text: 'ご予約ありがとうございます。当日のチェックイン方法についてのご案内です。', time: '昨日', isRead: true },
-
-    // 5: Okinawa Beach Villa のチャット履歴
-    { id: 14, contactId: 5, sender: 'owner', senderName: 'Okinawa Beach Villa', avatar: 'https://i.pravatar.cc/150?img=20', text: 'ご予約ありがとうございます。沖縄でお待ちしております！', time: '3月15日', isRead: true },
-
-    // 6: 家族旅行チャット のチャット履歴
-    { id: 15, contactId: 6, sender: 'owner', senderName: 'お母さん', avatar: 'https://i.pravatar.cc/150?img=5', text: 'お土産買いました', time: '2月10日', isRead: true }
-];
-
-// 予約情報データ：【修正】ホテルごとに異なる予約内容を表示できるようにオブジェクト化
-const DUMMY_RESERVATIONS = {
-    1: {
-        hotelName: 'TABI HOTEL OSAKA',
-        period: '2026/05/14〜2026/05/16',
-        checkIn: '15:00',
-        checkOut: '10:00',
-        guests: '4名利用'
-    },
-    4: {
-        hotelName: 'Kyoto Machiya Inn',
-        period: '2026/06/10〜2026/06/12',
-        checkIn: '16:00',
-        checkOut: '11:00',
-        guests: '2名利用'
-    },
-    5: {
-        hotelName: 'Okinawa Beach Villa',
-        period: '2026/07/20〜2026/07/25',
-        checkIn: '14:00',
-        checkOut: '11:00',
-        guests: '5名利用'
+    if (!response.ok || !data?.success) {
+        throw new Error(data?.message || 'チャットAPIとの通信に失敗しました。');
     }
-};
+
+    return data;
+}
+
+function mergeReadStatuses(messages, reads) {
+    const statusByMessageId = new Map(
+        reads.map((read) => [Number(read.message_id), read]),
+    );
+
+    return messages.map((message) => {
+        const status = statusByMessageId.get(Number(message.message_id ?? message.id));
+
+        if (!status) {
+            return message;
+        }
+
+        return {
+            ...message,
+            readCount: Number(status.read_count),
+            read_count: Number(status.read_count),
+            isRead: Boolean(status.is_read),
+        };
+    });
+}
 
 const Chat = () => {
+    const location = useLocation();
+    const pollingRef = useRef(false);
     const [activeCategory, setActiveCategory] = useState('all');
-    const [activeContactId, setActiveContactId] = useState(1);
+    const [activeContactId, setActiveContactId] = useState(null);
+    const [contacts, setContacts] = useState([]);
+    const [messages, setMessages] = useState([]);
+    const [draft, setDraft] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [sending, setSending] = useState(false);
+    const [notice, setNotice] = useState('');
     const [isMobileChatView, setIsMobileChatView] = useState(false);
 
-    // 現在選択されているチャット相手を取得
-    const activeContact = DUMMY_CONTACTS.find(c => c.id === activeContactId);
+    const urlParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+    const requestedChatId = urlParams.get('chat_id') || urlParams.get('chatId');
 
-    // 左側サイドバーに表示するリスト（カテゴリーフィルター対応）
+    const activeContact = contacts.find((contact) => contact.id === activeContactId) || null;
     const filteredContacts = activeCategory === 'all'
-        ? DUMMY_CONTACTS
-        : DUMMY_CONTACTS.filter(c => c.category === activeCategory);
+        ? contacts
+        : contacts.filter((contact) => contact.category === activeCategory);
 
-    // 【修正】現在選択されているチャット相手（contactId）のメッセージだけを絞り込む
-    const filteredMessages = DUMMY_MESSAGES.filter(m => m.contactId === activeContactId);
+    const loadContacts = useCallback(async (signal = undefined, options = {}) => {
+        const { showNotice = true } = options;
 
-    // 【修正】現在選択されているホテルの予約情報を取得（ホテル以外なら null）
-    const currentReservation = DUMMY_RESERVATIONS[activeContactId] || null;
+        try {
+            const response = await fetch(`${chatApiBase}/List.php`, {
+                credentials: 'include',
+                signal,
+            });
+            const data = await parseApiResponse(response);
+            const nextContacts = data.contacts || [];
 
+            setContacts(nextContacts);
+            return nextContacts;
+        } catch (error) {
+            if (error.name !== 'AbortError' && showNotice) {
+                setNotice(error.message);
+            }
+            return [];
+        }
+    }, []);
+
+    const markMessagesAsRead = useCallback(async (chatId, signal = undefined) => {
+        const response = await fetch(`${chatApiBase}/Reads.php`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({ chat_id: chatId }),
+            signal,
+        });
+        const data = await parseApiResponse(response);
+
+        setMessages((currentMessages) => mergeReadStatuses(currentMessages, data.reads || []));
+    }, []);
+
+    const loadMessages = useCallback(async (chatId, signal = undefined, options = {}) => {
+        const { showLoading = true, showNotice = true } = options;
+
+        if (!chatId) {
+            setMessages([]);
+            return;
+        }
+
+        if (showLoading) {
+            setLoading(true);
+        }
+
+        if (showNotice) {
+            setNotice('');
+        }
+
+        try {
+            const response = await fetch(
+                `${chatApiBase}/Messages.php?chat_id=${encodeURIComponent(chatId)}`,
+                {
+                    credentials: 'include',
+                    signal,
+                },
+            );
+            const data = await parseApiResponse(response);
+            const resolvedChatId = Number(data.chat_id || chatId);
+
+            setActiveContactId(resolvedChatId);
+            setMessages(data.messages || []);
+            await markMessagesAsRead(resolvedChatId, signal);
+        } catch (error) {
+            if (error.name !== 'AbortError' && showNotice) {
+                setMessages([]);
+                setNotice(error.message);
+            }
+        } finally {
+            if (!signal?.aborted && showLoading) {
+                setLoading(false);
+            }
+        }
+    }, [markMessagesAsRead]);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        const initialize = async () => {
+            setLoading(true);
+            setNotice('');
+
+            const nextContacts = await loadContacts(controller.signal);
+            const requestedId = requestedChatId ? Number(requestedChatId) : null;
+            const firstChatId = requestedId || nextContacts[0]?.id || null;
+
+            setActiveContactId(firstChatId);
+            await loadMessages(firstChatId, controller.signal, {
+                showLoading: false,
+            });
+
+            if (!controller.signal.aborted) {
+                setLoading(false);
+            }
+        };
+
+        initialize();
+
+        return () => controller.abort();
+    }, [loadContacts, loadMessages, requestedChatId]);
+
+    useEffect(() => {
+        if (!activeContactId) {
+            return undefined;
+        }
+
+        const intervalId = window.setInterval(async () => {
+            if (pollingRef.current) {
+                return;
+            }
+
+            pollingRef.current = true;
+
+            try {
+                await loadContacts(undefined, { showNotice: false });
+                await loadMessages(activeContactId, undefined, {
+                    showLoading: false,
+                    showNotice: false,
+                });
+            } finally {
+                pollingRef.current = false;
+            }
+        }, pollingIntervalMs);
+
+        return () => window.clearInterval(intervalId);
+    }, [activeContactId, loadContacts, loadMessages]);
+
+    // メッセージ一覧を取得する中心処理。
+    // chatId が指定されていればそれを優先し、なければ URL のクエリを参照する。
+    // options で loading 表示や notice 初期化の有無を切り替えられる。
+    
+
+    // 初回表示時に 1 回だけ会話を読み込む。
+    // AbortController を使って、アンマウント後の state 更新を防ぐ。
+    useEffect(() => {
+        const controller = new AbortController();
+        loadMessages(null, controller.signal);
+
+        return () => controller.abort();
+    }, [loadMessages]);
+
+    // 選択中の相手がある場合だけ、一定間隔で新着を取りに行く。
+    // すでに更新処理中なら重複呼び出しを避ける。
+    useEffect(() => {
+        if (!activeContactId) {
+            return undefined;
+        }
+
+        const intervalId = window.setInterval(async () => {
+            if (pollingRef.current) {
+                return;
+            }
+
+            pollingRef.current = true;
+
+            try {
+                // ポーリングでは画面をちらつかせないよう、読み込み表示と通知表示を抑制する。
+                await loadMessages(activeContactId, undefined, {
+                    showLoading: false,
+                    showNotice: false,
+                });
+            } finally {
+                pollingRef.current = false;
+            }
+        }, pollingIntervalMs);
+
+        return () => window.clearInterval(intervalId);
+    }, [activeContactId, loadMessages]);
+
+    // サイドバーから会話相手を選んだときに、その相手の会話を開く。
     const handleContactSelect = (id) => {
         setActiveContactId(id);
         setIsMobileChatView(true);
+        loadMessages(id);
     };
 
+    const handleSendMessage = async (event) => {
+        event.preventDefault();
+
+        const text = draft.trim();
+        if (!text || sending || !activeContactId) {
+            return;
+        }
+
+        setSending(true);
+        setNotice('');
+
+        try {
+            const response = await fetch(`${chatApiBase}/Send.php`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    chat_id: activeContactId,
+                    body: text,
+                }),
+            });
+            const data = await parseApiResponse(response);
+
+            setMessages((currentMessages) => [...currentMessages, data.message]);
+            setDraft('');
+            await loadContacts(undefined, { showNotice: false });
+        } catch (error) {
+            setNotice(error.message);
+        } finally {
+            setSending(false);
+        }
+    };
+
+    // 送信フォームの送信処理。
+    // 空文字、送信中、相手未選択の場合は何もしない。
+    
+
+    // モバイル表示での戻る操作。
+    // ブラウザ履歴へ戻ることで、直前画面へ自然に戻れるようにする。
     const handleBackToApp = () => {
-        alert("アプリの前のページ（ホーム等）に戻ります");
+        window.history.back();
     };
 
     return (
         <div className={`${styles.appContainer} ${isMobileChatView ? styles.mobileChatActive : ''}`}>
+            {/* 左側: グローバルナビとチャット相手一覧 */}
             <div className={styles.sidebarWrapper}>
                 <GlobalNav
                     activeCategory={activeCategory}
@@ -114,16 +302,34 @@ const Chat = () => {
                 />
             </div>
 
+            {/* 右側: チャットヘッダー、メッセージ一覧、入力欄 */}
             <div className={styles.mainArea}>
                 <ChatHeader
                     contact={activeContact}
-                    // ホテルカテゴリーの時だけ、そのホテルに対応する予約情報を渡す
-                    reservation={activeContact?.category === 'hotel' ? currentReservation : null}
+                    reservation={null}
                     onMobileBack={() => setIsMobileChatView(false)}
                 />
-                {/* 【修正】全メッセージではなく、絞り込んだメッセージ履歴を渡す */}
-                <MessageList messages={filteredMessages} />
-                <MessageInput />
+
+                {notice && (
+                    <div className={styles.stateMessage} role="alert">
+                        {notice}
+                    </div>
+                )}
+
+                {loading ? (
+                    <div className={styles.stateMessage}>メッセージを読み込んでいます...</div>
+                ) : messages.length === 0 ? (
+                    <div className={styles.stateMessage}>まだメッセージはありません。</div>
+                ) : (
+                    <MessageList messages={messages} memberCount={activeContact?.memberCount || 0} />
+                )}
+
+                <MessageInput
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    onSubmit={handleSendMessage}
+                    disabled={sending || !activeContactId}
+                />
             </div>
         </div>
     );

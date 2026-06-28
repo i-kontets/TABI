@@ -26,6 +26,17 @@ function textLength(string $value): int
         : strlen($value);
 }
 
+function formatDateLabel(DateTimeImmutable $date): string
+{
+    $oneYearAgo = (new DateTimeImmutable("now"))->modify("-1 year");
+
+    if ($date < $oneYearAgo) {
+        return $date->format("Y年n月j日");
+    }
+
+    return $date->format("n月j日");
+}
+
 // 送信は POST のみ受け付ける。
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
@@ -216,13 +227,8 @@ try {
     // 画面表示で使いやすいように、日付ラベルと時刻を生成する。
     $sentAt = new DateTimeImmutable($message["sent_at"]);
     $senderName = $message["sender_name"] ?? ($_SESSION["user_name"] ?? "自分");
-    $weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-    $dateLabel = $sentAt->format("Y年n月j日")
-        . " "
-        . $weekdays[(int) $sentAt->format("w")]
-        . "曜日";
-
-    // フロント側でそのまま利用できる形に整えて返す。
+    $dateLabel = formatDateLabel($sentAt);
+// フロント側でそのまま利用できる形に整えて返す。
     http_response_code(201);
     echo json_encode([
         "success" => true,

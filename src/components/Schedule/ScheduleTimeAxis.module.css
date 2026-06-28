@@ -1,0 +1,98 @@
+.timelineSection {
+    padding: 36px 8px 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.timeAxis {
+    width: 108px;
+}
+
+.timeItem {
+    min-height: 104px;
+}
+
+.timeItem:not(:first-of-type) {
+    margin-top: 0;
+}
+
+.timeItem:last-of-type {
+    min-height: 22px;
+}
+
+.timeLabel {
+    margin: 0;
+    color: var(--sub-color);
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 22px;
+}
+
+.timeBullet {
+    background-color: #ffffff;
+}
+
+.cardsColumn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.cardSlot {
+    min-height: 104px;
+    display: flex;
+    align-items: flex-start;
+    padding-top: 2px;
+    gap: 6px;
+}
+
+.cardSlotLast {
+    min-height: 22px;
+    display: flex;
+    align-items: flex-start;
+    padding-top: 2px;
+    gap: 6px;
+}
+
+.scheduleCard {
+    flex: 1;
+    margin-top: 4px;
+    padding: 8px 10px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(32, 35, 50, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.groupBadge {
+    display: inline-block;
+    align-self: flex-start;
+    padding: 2px 8px;
+    border-radius: 999px;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.memberRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+
+.scheduleTitle {
+    margin: 0;
+    color: var(--text-color, #333);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.scheduleDuration {
+    margin: 0;
+    color: #999;
+    font-size: 11px;
+}
