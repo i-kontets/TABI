@@ -65,6 +65,8 @@ function Album() {
     // App.jsxで管理している旅行名を、Context経由で受け取っています。
     const { tripName } = useContext(TripContext);
 
+    
+
     //「後で隠れているファイル選択ボタンを見つけるためのメモ帳を作る」
     const fileInputRef = useRef(null);
 
@@ -284,6 +286,7 @@ function Album() {
                         <p className={styles.uploaderName}>{photo.uploader}</p>
                     </div>
                     <div className={styles.menuArea}>
+                        {/*三点リーダーを押したときに開いたり閉じたりする処理 */}
                         <button
                             className={styles.menuButton}
                             onClick={() => setIsMenuOpen((current) => !current)}
@@ -297,6 +300,7 @@ function Album() {
                             <div className={styles.menuPanel}>
                                 <button
                                     className={styles.menuItem}
+                                    //詳細情報を押したときの処理
                                     onClick={() => {
                                         setIsMenuOpen(false);
                                         setIsInfoOpen(true);
@@ -304,6 +308,7 @@ function Album() {
                                 >
                                     詳細情報
                                 </button>
+                                    {/* アルバムから削除を押したときの処理  removeSelectedPhoto関数を呼ぶ */}
                                 <button className={styles.deleteMenuItem} onClick={removeSelectedPhoto}>
                                     アルバムから削除
                                 </button>
@@ -356,11 +361,14 @@ function Album() {
                 {/* 詳細画面下部のアクションボタンです。 */}
                 <div className={styles.detailFooter}>
                     <button
+                        //お気に入りなら favoriteActive を追加違うなら何も追加しない
                         className={`${styles.reactionButton} ${isFavorite ? styles.favoriteActive : ''}`}
+                        //選択された画像のお気に入りの切り替え
                         onClick={() => toggleFavorite(photo.id)}
                         aria-label={isFavorite ? 'お気に入りを解除' : 'お気に入りに追加'}
                         aria-pressed={isFavorite}
                     >
+                        {/*isFavoriteがtrueなら★ falseなら☆ */}
                         {isFavorite ? '★' : '☆'}
                     </button>
                     <button className={styles.downloadButton}>↓</button>
@@ -375,6 +383,7 @@ function Album() {
             <div className={styles.addView}>
                 {/* 追加画面のヘッダーです。キャンセル、タイトル、追加ボタンがあります。 */}
                 <div className={styles.addHeader}>
+                    {/*153行目の追加をキャンセルする機能を実行*/}
                     <button className={styles.addCancelButton} onClick={cancelAddPhotos} aria-label="追加をキャンセル">
                         ×
                     </button>
@@ -383,10 +392,13 @@ function Album() {
                         <h1>写真を追加</h1>
                     </div>
                     <div className={styles.addActionGroup}>
+                        {/*現在追加される予定の写真の枚数の表示 */}
                         <span className={styles.addCount}>{pendingPhotos.length}</span>
                         <button
                             className={styles.addSubmitButton}
+                            /*ボタンが押されたら165行目のaddPendingPhotosを実行*/
                             onClick={addPendingPhotos}
+                            /*もし追加予定の画像が一つも選択されていない場合ボタンを押せなくする*/
                             disabled={pendingPhotos.length === 0}
                         >
                             追加
@@ -396,6 +408,7 @@ function Album() {
 
                 {/* 実際のファイル選択inputです。画面には出さず、ボタンからクリックします。 */}
                 <input
+                    /*ここでこれを宣言することでこのinputをfileInputRefで操作できるようにする*/
                     ref={fileInputRef}
                     className={styles.hiddenFileInput}
                     type="file"
@@ -406,9 +419,11 @@ function Album() {
 
                 {/* 追加前の写真一覧です。先頭の+からさらに写真を選べます。 */}
                 <div className={styles.addPhotoGrid}>
+                    {/*openFilePickerを実行し、ファイル選択画面を開く */}
                     <button className={styles.addPhotoTile} onClick={openFilePicker} aria-label="写真を選択">
                         +
                     </button>
+                    {/*追加予定も画像を一枚ずつ表示する */}
                     {pendingPhotos.map((photo) => (
                         <div className={styles.pendingPhotoCard} key={photo.id}>
                             {/* サムネイルを押すと、その写真を大きくプレビューします。 */}
@@ -422,6 +437,7 @@ function Album() {
                             {/* 追加前の写真を1枚削除します。 */}
                             <button
                                 className={styles.removePendingButton}
+                                //追加画像の写真を消すためにremovePendingPhotoを使う 
                                 onClick={() => removePendingPhoto(photo.id)}
                                 aria-label={`${photo.file.name}を削除`}
                             >
@@ -437,6 +453,7 @@ function Album() {
                         <img className={styles.pendingPreviewImage} src={previewPhoto.src} alt={previewPhoto.file.name} />
                         <button
                             className={styles.pendingPreviewCloseButton}
+                            //プレビューを閉じるためにプレビューにnullを代入 
                             onClick={() => setPreviewPhoto(null)}
                             aria-label="プレビューを閉じる"
                         >
@@ -460,6 +477,7 @@ function Album() {
                         <div
                             key={photo.id}
                             className={styles.photoCard}
+                            //画像をクリックしたらhandlePhotoClickが機能し、画像詳細画面に切り替わる
                             onClick={() => handlePhotoClick(index)}
                             role="button"
                             tabIndex={0}
