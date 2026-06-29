@@ -915,10 +915,10 @@ ALTER TABLE `trip_members`
   ADD CONSTRAINT `fk_trip_members_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
 
 -- ═══════════════════════════════════════════════════════════
--- コテージ管理人チャット用データ
+-- ホテル管理人チャット用データ（管理画面はhotelタイプのチャットを使用）
 -- ═══════════════════════════════════════════════════════════
 
--- コテージ管理人ユーザー（user_id=8、trip_membersに登録しないことで管理人と識別）
+-- ホテル管理人ユーザー（user_id=8、trip_membersに登録しないことで管理人と識別）
 INSERT INTO `users`
   (`name`, `email`, `password_hash`, `icon_url`, `language_code`, `status`, `created_at`, `updated_at`, `deleted_at`)
 VALUES
@@ -927,38 +927,18 @@ VALUES
 INSERT INTO `user_profiles`
   (`user_id`, `nickname`, `birthday`, `gender`, `self_introduction`, `country_code`, `timezone`)
 VALUES
-  (8, '管理人', NULL, NULL, '鳥羽海辺コテージの管理人です。', 'JP', 'Asia/Tokyo');
+  (8, '管理人', NULL, NULL, '鳥羽シーサイドホテルの管理人です。', 'JP', 'Asia/Tokyo');
 
 INSERT INTO `user_roles` (`user_id`, `role_id`) VALUES (8, 2);
 
--- コテージ候補（candidate_id=8、trip_id=1のhotel候補として追加）
-INSERT INTO `trip_candidates`
-  (`trip_id`, `candidate_type`, `candidate_name`, `description`, `img_url`, `created_by`, `status`, `created_at`)
-VALUES
-  ('1', 'hotel', '鳥羽海辺コテージ', '海の見えるプライベートコテージです。BBQ設備完備。', NULL, 1, 'candidate', '2026-06-20 11:00:00');
-
--- コテージチャット（chat_id=4、chat_type='cottage'）
--- related_entity_id=8 は上で追加したcandidate_id=8（鳥羽海辺コテージ）を指す
-INSERT INTO `chats`
-  (`trip_id`, `chat_type`, `related_entity_type`, `related_entity_id`, `created_at`)
-VALUES
-  (1, 'cottage', 'cottage', 8, '2026-06-20 12:00:00');
-
--- コテージチャットのメンバー（trip_id=1のユーザー全員 + 管理人）
+-- 管理人を既存のホテルチャット（chat_id=2、鳥羽シーサイドホテル）に追加
 INSERT INTO `chat_members` (`chat_id`, `user_id`, `joined_at`) VALUES
-  (4, 1, '2026-06-20 12:00:00'),
-  (4, 2, '2026-06-20 12:00:00'),
-  (4, 3, '2026-06-20 12:00:00'),
-  (4, 4, '2026-06-20 12:00:00'),
-  (4, 5, '2026-06-20 12:00:00'),
-  (4, 6, '2026-06-20 12:00:00'),
-  (4, 7, '2026-06-20 12:00:00'),
-  (4, 8, '2026-06-20 12:00:00');
+  (2, 8, '2026-06-20 12:00:00');
 
--- 初期メッセージ（管理人→ユーザー→管理人の会話サンプル）
+-- 管理人からの初期返信メッセージ（chat_id=2に追加）
 INSERT INTO `messages` (`chat_id`, `sender_user_id`, `body`, `sent_at`) VALUES
-  (4, 8, 'ご予約ありがとうございます。チェックイン予定時間を教えてください。', '2026-06-20 12:10:00'),
-  (4, 1, '15時ごろ到着予定です。駐車場は利用できますか？', '2026-06-20 14:25:00'),
-  (4, 8, 'はい、1台分ご用意しています。到着前にこちらへご連絡ください。', '2026-06-20 14:40:00');
+  (2, 8, 'お問い合わせありがとうございます。3名様の空室をご用意できます。ご希望の日程を教えてください。', '2026-06-20 13:00:00'),
+  (2, 1, '8月20日から22日で、3名でお願いできますか？', '2026-06-20 14:00:00'),
+  (2, 8, 'はい、その日程でご予約可能です。到着予定時刻をお知らせください。', '2026-06-20 14:30:00');
 
 SET FOREIGN_KEY_CHECKS = 1;
