@@ -26,7 +26,17 @@ const MessageBubble = ({ message, memberCount = 0 }) => {
 
                 <div className={styles.bubbleAndMeta}>
                     <div className={`${styles.bubble} ${isUser ? styles.bubbleUser : styles.bubbleOwner}`}>
-                        {message.text || message.body}
+                        {message.image_url ? (
+                            <img
+                                src={message.image_url}
+                                alt="送信画像"
+                                className={styles.chatImage}
+                                loading="lazy"
+                                onClick={() => window.open(message.image_url, '_blank')}
+                            />
+                        ) : (
+                            message.text || message.body
+                        )}
                     </div>
 
                     <div className={styles.metaInfo}>

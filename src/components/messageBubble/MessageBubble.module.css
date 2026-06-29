@@ -108,6 +108,16 @@
   color: var(--accent-color);
   font-weight: bold;
 }
+
+/* 画像メッセージ */
+.chatImage {
+  max-width: 220px;
+  max-height: 280px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
 .msgAvatarFallback {
   width: 36px;
   height: 36px;

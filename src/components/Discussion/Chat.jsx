@@ -215,7 +215,19 @@ function Chat({ active }) {
                                         <time>{message.time}</time>
                                     </div>
                                 )}
-                                <div className="bubble">{message.text}</div>
+                                <div className="bubble">
+                                    {message.image_url ? (
+                                        <img
+                                            src={message.image_url}
+                                            alt="送信画像"
+                                            style={{ maxWidth: '200px', maxHeight: '260px', borderRadius: '8px', display: 'block', cursor: 'pointer' }}
+                                            loading="lazy"
+                                            onClick={() => window.open(message.image_url, '_blank')}
+                                        />
+                                    ) : (
+                                        message.text
+                                    )}
+                                </div>
                                 {!message.isMine && (
                                     <div className="messageMeta">
                                         <time>{message.time}</time>
@@ -228,6 +240,40 @@ function Chat({ active }) {
             );
         });
     }, [memberCount, messages]);
+
+    const handleImageUpload = async (file) => {
+        if (sending) return;
+        setSending(true);
+        setNotice("");
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            const uploadRes = await fetch(`${chatApiBase}/Upload.php`, {
+                method: 'POST',
+                credentials: 'include',
+                body: formData,
+            });
+            const uploadData = await parseApiResponse(uploadRes);
+
+            const sendRes = await fetch(`${chatApiBase}/Send.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(
+                    chatId
+                        ? { chat_id: chatId, image_url: uploadData.image_url }
+                        : { group_id: groupId, image_url: uploadData.image_url },
+                ),
+            });
+            const sendData = await parseApiResponse(sendRes);
+            setChatId(Number(sendData.message.chat_id));
+            setMessages((prev) => [...prev, sendData.message]);
+        } catch (error) {
+            setNotice(error.message);
+        } finally {
+            setSending(false);
+        }
+    };
 
     const sendMessage = async (event) => {
         event.preventDefault();
@@ -288,6 +334,31 @@ function Chat({ active }) {
                 )}
             </div>
             <form className="composer" onSubmit={sendMessage}>
+                {/* 非表示ファイル入力 */}
+                <input
+                    id="discussionImageInput"
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) { handleImageUpload(f); e.target.value = ''; }
+                    }}
+                />
+                {/* 画像ボタン */}
+                <button
+                    type="button"
+                    className="imageButton"
+                    aria-label="画像を送信"
+                    disabled={sending}
+                    onClick={() => document.getElementById('discussionImageInput')?.click()}
+                >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                </button>
                 <textarea
                     ref={textareaRef}
                     value={draft}

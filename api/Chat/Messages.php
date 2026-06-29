@@ -218,6 +218,7 @@ function fetchMessages(PDO $pdo, int $chatId, int $userId): array
             m.chat_id,
             m.sender_user_id,
             m.body,
+            m.image_url,
             m.sent_at,
             u.name AS sender_name,
             u.icon_url AS sender_icon_url,
@@ -234,6 +235,7 @@ function fetchMessages(PDO $pdo, int $chatId, int $userId): array
             m.chat_id,
             m.sender_user_id,
             m.body,
+            m.image_url,
             m.sent_at,
             u.name,
             u.icon_url
@@ -260,6 +262,7 @@ function fetchMessages(PDO $pdo, int $chatId, int $userId): array
             "sender_icon_url" => $message["sender_icon_url"],
             "text" => $message["body"],
             "body" => $message["body"],
+            "image_url" => $message["image_url"],
             "sent_at" => $message["sent_at"],
             "date" => formatDateLabel($message["sent_at"]),
             "time" => formatTime($message["sent_at"]),

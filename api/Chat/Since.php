@@ -75,6 +75,7 @@ try {
             m.chat_id,
             m.sender_user_id,
             m.body,
+            m.image_url,
             m.sent_at,
             u.name AS sender_name,
             u.icon_url AS sender_icon_url,
@@ -89,7 +90,7 @@ try {
           AND m.message_id > :after_id
         GROUP BY
             m.message_id, m.chat_id, m.sender_user_id,
-            m.body, m.sent_at, u.name, u.icon_url
+            m.body, m.image_url, m.sent_at, u.name, u.icon_url
         ORDER BY m.sent_at ASC, m.message_id ASC
     ");
     $msgStmt->bindValue(":current_user_id", $userId, PDO::PARAM_INT);
@@ -117,6 +118,7 @@ try {
             "sender_icon_url" => $row["sender_icon_url"],
             "text"            => $row["body"],
             "body"            => $row["body"],
+            "image_url"       => $row["image_url"],
             "sent_at"         => $row["sent_at"],
             "date"            => formatDateLabel($row["sent_at"]),
             "time"            => formatTime($row["sent_at"]),

@@ -263,6 +263,42 @@ const Chat = () => {
         }
     };
 
+    const handleImageUpload = async (file) => {
+        if (!activeContactId || sending) return;
+        setSending(true);
+        setNotice('');
+        try {
+            // 1. 画像をアップロード
+            const formData = new FormData();
+            formData.append('image', file);
+            const uploadRes = await fetch(`${chatApiBase}/Upload.php`, {
+                method: 'POST',
+                credentials: 'include',
+                body: formData,
+            });
+            const uploadData = await parseApiResponse(uploadRes);
+
+            // 2. image_url を含めてメッセージ送信
+            const sendRes = await fetch(`${chatApiBase}/Send.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    chat_id: activeContactId,
+                    image_url: uploadData.image_url,
+                }),
+            });
+            const sendData = await parseApiResponse(sendRes);
+
+            setMessages((currentMessages) => [...currentMessages, sendData.message]);
+            await loadContacts(undefined, { showNotice: false });
+        } catch (error) {
+            setNotice(error.message);
+        } finally {
+            setSending(false);
+        }
+    };
+
     // 送信フォームの送信処理。
     // 空文字、送信中、相手未選択の場合は何もしない。
     
@@ -315,6 +351,7 @@ const Chat = () => {
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
                     onSubmit={handleSendMessage}
+                    onImageUpload={handleImageUpload}
                     disabled={sending || !activeContactId}
                 />
             </div>

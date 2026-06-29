@@ -162,6 +162,7 @@ CREATE TABLE `messages` (
   `chat_id` bigint DEFAULT NULL COMMENT 'チャットID',
   `sender_user_id` bigint DEFAULT NULL COMMENT '送信者',
   `body` text COLLATE utf8mb4_unicode_ci COMMENT '本文',
+  `image_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '画像パス（画像メッセージの場合）',
   `sent_at` datetime DEFAULT NULL COMMENT '送信日時'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
