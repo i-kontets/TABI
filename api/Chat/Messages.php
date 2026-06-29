@@ -113,9 +113,12 @@ function resolveChatId(PDO $pdo, int $userId, $chatIdInput, $groupIdInput): int
         }
 
         respond([
-            "success" => false,
-            "message" => "Group chat not found."
-        ], 404);
+            "success" => true,
+            "chat_id" => null,
+            "member_count" => 0,
+            "contact" => null,
+            "messages" => []
+        ]);
     }
 
     $chatStmt = $pdo->prepare("

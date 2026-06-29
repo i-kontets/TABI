@@ -86,6 +86,13 @@ function Vote({ active }) {
 
     // 初回表示時と groupId 変更時にデータを取得する
     useEffect(() => {
+        if (!active) {
+            return undefined;
+        }
+
+        setLoading(true);
+        setNotice("");
+
         // アンマウント後の state 更新を防ぐためのフラグ
         let cancelled = false;
 
@@ -116,7 +123,7 @@ function Vote({ active }) {
         return () => {
             cancelled = true;
         };
-    }, [groupId]);
+    }, [active, groupId]);
 
     // 現在のカテゴリに合う候補だけを絞り込む
     const selectableCandidates = useMemo(

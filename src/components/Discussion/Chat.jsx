@@ -103,7 +103,9 @@ function Chat({ active }) {
         } catch (error) {
             if (error.name !== "AbortError" && showNotice) {
                 setMessages([]);
-                setNotice(error.message);
+                setChatId(null);
+                setMemberCount(0);
+                setNotice(error.message === "Group chat not found." ? "" : error.message);
             }
         } finally {
             if (!signal?.aborted && showLoading) {
@@ -255,7 +257,7 @@ function Chat({ active }) {
                 {loading ? (
                     <p className="chatState">メッセージを読み込んでいます...</p>
                 ) : messages.length === 0 && !notice ? (
-                    <p className="chatState">まだメッセージはありません。</p>
+                    null
                 ) : (
                     chatContent
                 )}
