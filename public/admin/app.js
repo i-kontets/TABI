@@ -462,4 +462,17 @@ async function updateReadStatus(chatId) {
         if (!data.success) return;
 
         const readSet = new Set(data.read_message_ids);
-        readSet.forEach(mid
+        readSet.forEach(mid => {
+            const row = document.querySelector(`[data-mid="${mid}"]`);
+            if (!row) return;
+            const meta = row.querySelector('.meta-me');
+            if (!meta || meta.querySelector('.read-lbl')) return;
+            const lbl = document.createElement('span');
+            lbl.className = 'read-lbl';
+            lbl.textContent = '既読';
+            const timeEl = meta.querySelector('.msg-time');
+            if (timeEl) meta.insertBefore(lbl, timeEl);
+            else meta.appendChild(lbl);
+        });
+    } catch { /* silent */ }
+}
