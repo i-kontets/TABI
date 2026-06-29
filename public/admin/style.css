@@ -536,4 +536,96 @@ html, body {
   flex-shrink: 0;
   transition: background .15s, transform .1s;
 }
-.btn-send:hover:n
+.btn-send:hover:not(:disabled)  { background: var(--primary-dk); }
+.btn-send:hover:not(:disabled):active { transform: scale(.93); }
+.btn-send:disabled { opacity: .45; cursor: not-allowed; }
+
+/* 送信エラー */
+.send-err {
+  font-size: 12px;
+  color: var(--danger);
+  margin: 4px 0 0;
+}
+
+/* ── 画像送信ボタン ──────────────────────── */
+.btn-image {
+  width: 38px; height: 38px;
+  border: none; background: none;
+  color: var(--sub);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background .15s, color .15s;
+}
+.btn-image:hover:not(:disabled) { background: var(--primary-lt); color: var(--primary); }
+.btn-image:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 送受信画像 */
+.chat-img {
+  max-width: 220px;
+  max-height: 280px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+
+/* ── フェードインアニメーション ─────────── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   モバイル対応（767px以下）
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+@media (max-width: 767px) {
+  :root { --list-w: 100%; }
+
+  /* list-pane と chat-pane を重ねて配置 */
+  .app-body {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .list-pane {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    z-index: 1;
+    transform: translateX(0);
+    transition: transform .25s ease;
+  }
+
+  .chat-pane {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    transform: translateX(100%);
+    transition: transform .25s ease;
+  }
+
+  /* チャット開いたとき: chat-pane を前面に */
+  .chat-pane.open {
+    transform: translateX(0);
+  }
+
+  /* list-pane をスライドアウト */
+  .app-body:has(.chat-pane.open) .list-pane {
+    transform: translateX(-30%);
+  }
+
+  /* バックボタンを表示 */
+  .back-btn {
+    display: flex !important;
+  }
+
+  /* ヘッダーを少しコンパクトに */
+  .app-header {
+    padding: 0 12px;
+  }
+  .hd-logo { font-size: 14px; }
+}
