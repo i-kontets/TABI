@@ -17,6 +17,7 @@ import Appointment from './pages/appointment/appointment.jsx';
 import Discussion from './pages/Discussion/Discussion';
 import Other from './pages/Other/Other.jsx';
 import TouristRanking from './pages/TouristRanking/TouristRanking';
+import Candidates from './pages/Candidates/Candidates';
 
 
 export const TripContext = createContext();
@@ -46,6 +47,7 @@ function App() {
                     <Route path="/Appointment" element={<Appointment />}/>
                     <Route path="/Other" element={<Other />} />
                     <Route path="/TouristRanking" element={<TouristRanking />} />
+                    <Route path="/Candidates" element={<Candidates />} />
                 </Routes>
             </BrowserRouter>
         </TripContext.Provider>

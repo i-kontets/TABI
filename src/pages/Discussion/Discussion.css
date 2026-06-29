@@ -38,7 +38,7 @@ body {
 }
 
 .phoneFrame > nav:last-child {
-    width: min(100vw, 430px);
+    width: min(100%, 430px);
     left: 50%;
     right: auto;
     transform: translateX(-50%);
