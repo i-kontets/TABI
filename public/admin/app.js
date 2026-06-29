@@ -66,6 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
     bindEvents();
 });
 
+
+// ─── API ヘルパー ──────────────────────────────────
+function apiFetch(path, options) {
+    return fetch(API + '/' + path, Object.assign({ credentials: 'include' }, options || {}));
+}
+
 function bindEvents() {
     loginForm.addEventListener('submit', handleLogin);
     logoutBtn.addEventListener('click', handleLogout);
@@ -672,19 +678,3 @@ function escHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
-async function apiFetch(path, options = {}) {
-    return fetch(`${API}/${path}`, {
-        credentials: 'include',
-        ...options,
-    });
-}
-
-// ─── フェードインアニメーション ────────────────────
-const styleEl = document.createElement('style');
-styleEl.textContent = `
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(6px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-`;
-document.head.appendChild(styleEl);

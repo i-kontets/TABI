@@ -1,6 +1,6 @@
 <?php
 // メッセージ送信API（管理人→旅行者）
-// POST /api/chat_send.php  body: { chat_id, body }
+// POST /api/chat_send.php  body: { chat_id, body } or { chat_id, image_url }
 session_start();
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -19,7 +19,7 @@ if (!isset($_SESSION['admin_user_id'])) {
     respond(['success' => false, 'message' => 'ログインが必要です'], 401);
 }
 
-$input  = json_decode(file_get_contents('php://input'), true);
+$input    = json_decode(file_get_contents('php://input'), true);
 if (!is_array($input)) $input = $_POST;
 
 $userId   = (int)$_SESSION['admin_user_id'];
@@ -58,7 +58,7 @@ try {
     $pdo->beginTransaction();
 
     // 次のmessage_id
-    $idR = $pdo->query("SELECT COALESCE(MAX(message_id),0)+1 FROM messages");
+    $idR   = $pdo->query("SELECT COALESCE(MAX(message_id),0)+1 FROM messages");
     $msgId = (int)$idR->fetchColumn();
 
     // 挿入
@@ -66,11 +66,11 @@ try {
         INSERT INTO messages (message_id, chat_id, sender_user_id, body, image_url, sent_at)
         VALUES (:mid, :cid, :uid, :body, :image_url, NOW())
     ");
-    $ins->bindValue(':mid',       $msgId,                           PDO::PARAM_INT);
-    $ins->bindValue(':cid',       $chatId,                          PDO::PARAM_INT);
-    $ins->bindValue(':uid',       $userId,                          PDO::PARAM_INT);
-    $ins->bindValue(':body',      $body !== '' ? $body : null,      PDO::PARAM_STR);
-    $ins->bindValue(':image_url', $imageUrl,                        PDO::PARAM_STR);
+    $ins->bindValue(':mid',       $msgId,                      PDO::PARAM_INT);
+    $ins->bindValue(':cid',       $chatId,                     PDO::PARAM_INT);
+    $ins->bindValue(':uid',       $userId,                     PDO::PARAM_INT);
+    $ins->bindValue(':body',      $body !== '' ? $body : null, PDO::PARAM_STR);
+    $ins->bindValue(':image_url', $imageUrl,                   PDO::PARAM_STR);
     $ins->execute();
 
     // 保存後のレコード取得
@@ -100,4 +100,18 @@ try {
             'sender_type'     => 'manager',
             'body'            => $msg['body'],
             'image_url'       => $msg['image_url'],
-            'sent_at'         => $msg['sent_at
+            'sent_at'         => $msg['sent_at'],
+            'time'            => $sentAt->format('H:i'),
+            'date'            => $sentAt->format('n月j日'),
+            'isMine'          => true,
+            'is_read'         => false,
+        ],
+    ]);
+
+} catch (Throwable $e) {
+    if ($lockAcquired) {
+        try { $pdo->rollBack(); } catch (Throwable $_) {}
+        try { $pdo->query("SELECT RELEASE_LOCK('tabi_messages_id_lock')"); } catch (Throwable $_) {}
+    }
+    respond(['success' => false, 'message' => '送信に失敗しました: ' . $e->getMessage()], 500);
+}
