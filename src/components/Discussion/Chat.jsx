@@ -49,9 +49,10 @@ function Chat({ active }) {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [notice, setNotice] = useState("");
-    const messageListRef = useRef(null);
-    const textareaRef = useRef(null);
-    const pollingRef = useRef(false);
+    const messageListRef    = useRef(null);
+    const textareaRef       = useRef(null);
+    const pollingRef        = useRef(false);
+    const lastMessageIdRef  = useRef(0);   // 差分ポーリング用
 
     const applyReadStatuses = useCallback((reads) => {
         setMessages((currentMessages) => applyReadStatusesToMessages(currentMessages, reads));
@@ -95,7 +96,11 @@ function Chat({ active }) {
 
             setChatId(resolvedChatId);
             setMemberCount(Number(data.member_count || data.contact?.memberCount || 0));
-            setMessages(data.messages || []);
+            const msgs = data.messages || [];
+            setMessages(msgs);
+            // 差分ポーリング用に最大IDを記録
+            const maxId = msgs.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
+            lastMessageIdRef.current = maxId;
 
             if (resolvedChatId) {
                 await markMessagesAsRead(resolvedChatId, signal);
@@ -103,7 +108,9 @@ function Chat({ active }) {
         } catch (error) {
             if (error.name !== "AbortError" && showNotice) {
                 setMessages([]);
-                setNotice(error.message);
+                setChatId(null);
+                setMemberCount(0);
+                setNotice(error.message === "Group chat not found." ? "" : error.message);
             }
         } finally {
             if (!signal?.aborted && showLoading) {
@@ -123,30 +130,50 @@ function Chat({ active }) {
         return () => controller.abort();
     }, [active, loadMessages]);
 
+    // 差分ポーリング：Since.php で新着のみ取得してリストに追記
+    const pollNewMessages = useCallback(async () => {
+        if (!chatId) return;
+        try {
+            const response = await fetch(
+                `${chatApiBase}/Since.php?chat_id=${encodeURIComponent(chatId)}&after_id=${lastMessageIdRef.current}`,
+                { credentials: "include" },
+            );
+            const data = await response.json().catch(() => null);
+            if (!data?.success || !data.messages?.length) return;
+
+            setMessages((prev) => {
+                const existingIds = new Set(prev.map((m) => m.message_id));
+                const newMsgs = data.messages.filter((m) => !existingIds.has(m.message_id));
+                if (!newMsgs.length) return prev;
+                return [...prev, ...newMsgs];
+            });
+
+            const newMax = data.messages.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
+            if (newMax > lastMessageIdRef.current) lastMessageIdRef.current = newMax;
+
+            await markMessagesAsRead(chatId).catch(() => {});
+        } catch {
+            // silent
+        }
+    }, [chatId, markMessagesAsRead]);
+
     useEffect(() => {
         if (!active || !chatId) {
             return undefined;
         }
 
         const intervalId = window.setInterval(async () => {
-            if (pollingRef.current) {
-                return;
-            }
-
+            if (pollingRef.current) return;
             pollingRef.current = true;
-
             try {
-                await loadMessages({
-                    showLoading: false,
-                    showNotice: false,
-                });
+                await pollNewMessages();
             } finally {
                 pollingRef.current = false;
             }
         }, pollingIntervalMs);
 
         return () => window.clearInterval(intervalId);
-    }, [active, chatId, loadMessages]);
+    }, [active, chatId, pollNewMessages]);
 
     useLayoutEffect(() => {
         const messageList = messageListRef.current;
@@ -188,7 +215,19 @@ function Chat({ active }) {
                                         <time>{message.time}</time>
                                     </div>
                                 )}
-                                <div className="bubble">{message.text}</div>
+                                <div className="bubble">
+                                    {message.image_url ? (
+                                        <img
+                                            src={message.image_url}
+                                            alt="送信画像"
+                                            style={{ maxWidth: '200px', maxHeight: '260px', borderRadius: '8px', display: 'block', cursor: 'pointer' }}
+                                            loading="lazy"
+                                            onClick={() => window.open(message.image_url, '_blank')}
+                                        />
+                                    ) : (
+                                        message.text
+                                    )}
+                                </div>
                                 {!message.isMine && (
                                     <div className="messageMeta">
                                         <time>{message.time}</time>
@@ -201,6 +240,40 @@ function Chat({ active }) {
             );
         });
     }, [memberCount, messages]);
+
+    const handleImageUpload = async (file) => {
+        if (sending) return;
+        setSending(true);
+        setNotice("");
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            const uploadRes = await fetch(`${chatApiBase}/Upload.php`, {
+                method: 'POST',
+                credentials: 'include',
+                body: formData,
+            });
+            const uploadData = await parseApiResponse(uploadRes);
+
+            const sendRes = await fetch(`${chatApiBase}/Send.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(
+                    chatId
+                        ? { chat_id: chatId, image_url: uploadData.image_url }
+                        : { group_id: groupId, image_url: uploadData.image_url },
+                ),
+            });
+            const sendData = await parseApiResponse(sendRes);
+            setChatId(Number(sendData.message.chat_id));
+            setMessages((prev) => [...prev, sendData.message]);
+        } catch (error) {
+            setNotice(error.message);
+        } finally {
+            setSending(false);
+        }
+    };
 
     const sendMessage = async (event) => {
         event.preventDefault();
@@ -255,12 +328,37 @@ function Chat({ active }) {
                 {loading ? (
                     <p className="chatState">メッセージを読み込んでいます...</p>
                 ) : messages.length === 0 && !notice ? (
-                    <p className="chatState">まだメッセージはありません。</p>
+                    null
                 ) : (
                     chatContent
                 )}
             </div>
             <form className="composer" onSubmit={sendMessage}>
+                {/* 非表示ファイル入力 */}
+                <input
+                    id="discussionImageInput"
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) { handleImageUpload(f); e.target.value = ''; }
+                    }}
+                />
+                {/* 画像ボタン */}
+                <button
+                    type="button"
+                    className="imageButton"
+                    aria-label="画像を送信"
+                    disabled={sending}
+                    onClick={() => document.getElementById('discussionImageInput')?.click()}
+                >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                </button>
                 <textarea
                     ref={textareaRef}
                     value={draft}

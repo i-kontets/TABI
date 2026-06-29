@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import Modal from "../Modal/Modal";
 import "./Vote.css";
@@ -10,6 +10,8 @@ const categoryLabels = {
     hotel: "宿泊先",
     restaurant: "食べたい物",
 };
+
+const refreshIntervalMs = 10000;
 
 // 日時入力欄の初期値として、現在から1週間後の値を返す
 function oneWeekLaterValue() {
@@ -74,7 +76,7 @@ function Vote({ active }) {
     const [submitting, setSubmitting] = useState(false);
 
     // 候補一覧とアンケート一覧をまとめて取得する
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         const query = `group_id=${encodeURIComponent(groupId)}`;
         const [candidateData, surveyData] = await Promise.all([
             requestJson(`${import.meta.env.BASE_URL}api/Trips/GetCandidates.php?${query}`),
@@ -82,22 +84,24 @@ function Vote({ active }) {
         ]);
         setCandidates(candidateData.candidates);
         setSurveys(surveyData.surveys);
-    };
+    }, [groupId]);
 
     // 初回表示時と groupId 変更時にデータを取得する
     useEffect(() => {
+        if (!active) {
+            return undefined;
+        }
+
+        setLoading(true);
+        setNotice("");
+
         // アンマウント後の state 更新を防ぐためのフラグ
         let cancelled = false;
 
-        const query = `group_id=${encodeURIComponent(groupId)}`;
-        Promise.all([
-            requestJson(`${import.meta.env.BASE_URL}api/Trips/GetCandidates.php?${query}`),
-            requestJson(`${import.meta.env.BASE_URL}api/Trips/GetSurveys.php?${query}`),
-        ])
-            .then(([candidateData, surveyData]) => {
+        loadData()
+            .then(() => {
                 if (!cancelled) {
-                    setCandidates(candidateData.candidates);
-                    setSurveys(surveyData.surveys);
+                    setLoading(false);
                 }
             })
             .catch((error) => {
@@ -105,24 +109,40 @@ function Vote({ active }) {
                     setCandidates([]);
                     setSurveys([]);
                     setNotice(error.message);
-                }
-            })
-            .finally(() => {
-                if (!cancelled) {
                     setLoading(false);
                 }
             });
 
+        const intervalId = window.setInterval(() => {
+            loadData().catch(() => {
+                // Keep the current list if a background refresh fails.
+            });
+        }, refreshIntervalMs);
+
         return () => {
             cancelled = true;
+            window.clearInterval(intervalId);
         };
-    }, [groupId]);
+    }, [active, loadData]);
 
     // 現在のカテゴリに合う候補だけを絞り込む
     const selectableCandidates = useMemo(
         () => candidates.filter((candidate) => candidate.candidate_type === category),
         [candidates, category],
     );
+
+    const visibleSurveys = useMemo(() => {
+        return [...surveys].sort((left, right) => {
+            const leftDone = left.is_expired || left.options?.some((option) => option.has_voted);
+            const rightDone = right.is_expired || right.options?.some((option) => option.has_voted);
+
+            if (leftDone === rightDone) {
+                return 0;
+            }
+
+            return leftDone ? 1 : -1;
+        });
+    }, [surveys]);
 
     // 作成モーダルを開く前に状態を初期化する
     const openCreate = () => {
@@ -221,7 +241,7 @@ function Vote({ active }) {
                 {/* 読み込み中は一覧を出さずに待機表示する */}
                 {loading ? (
                     <div className="pollEmpty">アンケートを読み込んでいます…</div>
-                ) : surveys.length === 0 ? (
+                ) : visibleSurveys.length === 0 ? (
                     // アンケートが1件もない場合の案内
                     <div className="pollEmpty">
                         <strong>アンケートはまだありません</strong>
@@ -229,7 +249,7 @@ function Vote({ active }) {
                     </div>
                 ) : (
                     // アンケートごとにカード表示する
-                    surveys.map((survey) => (
+                    visibleSurveys.map((survey) => (
                         <article className={`pollCard ${survey.is_expired ? "expired" : ""}`} key={survey.survey_id}>
                             <div className="pollCardHeader">
                                 <div>

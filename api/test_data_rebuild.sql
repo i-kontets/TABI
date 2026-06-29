@@ -162,6 +162,7 @@ CREATE TABLE `messages` (
   `chat_id` bigint DEFAULT NULL COMMENT 'チャットID',
   `sender_user_id` bigint DEFAULT NULL COMMENT '送信者',
   `body` text COLLATE utf8mb4_unicode_ci COMMENT '本文',
+  `image_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '画像パス（画像メッセージの場合）',
   `sent_at` datetime DEFAULT NULL COMMENT '送信日時'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -304,7 +305,7 @@ CREATE TABLE `trip_survey_votes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='アンケート回答';
 
 CREATE TABLE `users` (
-  `user_id` int NOT NULL,
+  `user_id` int NOT NULL COMMENT 'ユーザーID（AUTO_INCREMENTで自動採番）',
   `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'ユーザーの表示名（アプリ内で表示される名前）',
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'ログイン用メールアドレス（一意制約で重複防止）',
   `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'ハッシュ化されたパスワード（平文保存禁止）',
@@ -647,7 +648,9 @@ VALUES
   ('寺川慎哉', '2410017@i-seifu.jp', '2024gakusei', NULL, 'ja', 'active', '2026-06-17 15:51:36', '2026-06-22 15:00:00', NULL),
   ('小野絃輝', '2410019@i-seifu.jp', '2024gakusei', NULL, 'ja', 'active', '2026-06-22 15:00:00', '2026-06-22 15:00:00', NULL),
   ('田中煌', '2410027@i-seifu.jp', '2024gakusei', NULL, 'ja', 'active', '2026-06-22 15:00:00', '2026-06-22 15:00:00', NULL),
-  ('志田真人', '2410056@i-seifu.jp', '2024gakusei', NULL, 'ja', 'active', '2026-06-22 15:00:00', '2026-06-22 15:00:00', NULL);
+  ('志田真人', '2410056@i-seifu.jp', '2024gakusei', NULL, 'ja', 'active', '2026-06-22 15:00:00', '2026-06-22 15:00:00', NULL),
+  -- ホテル管理人（trip_membersに登録しないことで管理人と識別）
+  ('コテージ管理人', 'cottage.manager@example.test', '2024gakusei', NULL, 'ja', 'active', '2026-06-20 10:00:00', '2026-06-20 10:00:00', NULL);
 
 INSERT INTO `roles` (`role_name`) VALUES
   ('admin'),
@@ -663,7 +666,8 @@ VALUES
   (4, '慎哉', NULL, NULL, 'チャットと候補管理を担当します。', 'JP', 'Asia/Tokyo'),
   (5, '絃輝', NULL, NULL, 'スポット情報の管理を担当します。', 'JP', 'Asia/Tokyo'),
   (6, '煌', NULL, NULL, 'スケジュール確認を担当します。', 'JP', 'Asia/Tokyo'),
-  (7, '真人', NULL, NULL, '旅行費用の確認を担当します。', 'JP', 'Asia/Tokyo');
+  (7, '真人', NULL, NULL, '旅行費用の確認を担当します。', 'JP', 'Asia/Tokyo'),
+  (8, '管理人', NULL, NULL, '鳥羽シーサイドコテージの管理人です。', 'JP', 'Asia/Tokyo');
 
 INSERT INTO `user_roles` (`user_id`, `role_id`) VALUES
   (1, 1),
@@ -673,7 +677,8 @@ INSERT INTO `user_roles` (`user_id`, `role_id`) VALUES
   (4, 2),
   (5, 2),
   (6, 2),
-  (7, 2);
+  (7, 2),
+  (8, 2); -- 管理人は一般ユーザーロール
 
 INSERT INTO `user_devices` (`user_id`, `push_token`, `platform`, `last_login_at`) VALUES
   (1, 'test_web_push_2410026', 'Web', '2026-06-22 15:00:00'),
@@ -691,7 +696,7 @@ INSERT INTO `user_groups`
   (`group_name`, `created_by`, `description`, `status`, `created_at`, `updated_at`)
 VALUES
   ('三重旅行メンバー', 1, '伊勢・鳥羽を巡る2泊3日の旅行グループです。', 'active', '2026-06-18 10:00:00', '2026-06-22 09:00:00'),
-  ('京都日帰り旅', 2, '京都の寺社とカフェを巡る日帰り旅行です。', 'active', '2026-06-19 13:00:00', '2026-06-21 18:00:00');
+  ('北海道旅行メンバー', 2, '札幌・小樽を巡る2泊3日の旅行グループです。', 'active', '2026-06-19 13:00:00', '2026-06-21 18:00:00');
 
 INSERT INTO `group_members`
   (`group_id`, `user_id`, `role_in_group`, `joined_at`, `invitation_status`)
@@ -711,13 +716,13 @@ INSERT INTO `group_invitations`
 VALUES
   (1, 1, 2, 'test-invite-mie-hiroto-001', 'accepted', '2026-06-25 23:59:59', '2026-06-18 10:05:00'),
   (1, 1, 3, 'test-invite-mie-metax-001', 'accepted', '2026-06-25 23:59:59', '2026-06-18 10:06:00'),
-  (2, 2, 3, 'test-invite-kyoto-metax-001', 'pending', '2026-06-28 23:59:59', '2026-06-21 12:00:00');
+  (2, 2, 3, 'test-invite-hokkaido-metax-001', 'pending', '2026-06-28 23:59:59', '2026-06-21 12:00:00');
 
 INSERT INTO `trips`
   (`group_id`, `title`, `description`, `start_date`, `end_date`, `destination_summary`, `status`, `created_by`, `created_at`, `updated_at`)
 VALUES
   (1, '三重旅行', '伊勢神宮、鳥羽水族館、温泉を楽しむ2泊3日の旅行です。', '2026-08-20', '2026-08-22', '三重県 伊勢・鳥羽エリア', 'voting', 1, '2026-06-18 10:30:00', '2026-06-22 09:00:00'),
-  (2, '京都日帰り旅行', '清水寺と祇園周辺を巡る日帰り旅行です。', '2026-09-12', '2026-09-12', '京都市東山区・中京区', 'draft', 2, '2026-06-19 14:00:00', '2026-06-21 18:00:00');
+  (2, '北海道旅行', '札幌、小樽、温泉を楽しむ2泊3日の旅行です。', '2026-09-12', '2026-09-14', '北海道 札幌・小樽エリア', 'draft', 2, '2026-06-19 14:00:00', '2026-06-21 18:00:00');
 
 INSERT INTO `trip_members` (`trip_id`, `user_id`, `participation_status`, `joined_at`) VALUES
   (1, 1, 'joined', '2026-06-18 10:30:00'),
@@ -737,9 +742,9 @@ VALUES
   ('1', 'destination', '三重県（志摩エリア）', '英虞湾の景色とリゾートを楽しめるエリアです。', NULL, 2, 'candidate', '2026-06-18 11:10:00'),
   ('1', 'spot', '伊勢神宮', '内宮・外宮を巡る三重旅行の定番スポットです。', 'https://images.unsplash.com/photo-1627575191507-6a4a0619a909?auto=format&fit=crop&w=800&q=80', 2, 'candidate', '2026-06-18 11:20:00'),
   ('1', 'spot', '鳥羽水族館', 'ジュゴンやラッコで有名な水族館です。', 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80', 3, 'candidate', '2026-06-18 11:30:00'),
-  ('1', 'hotel', '鳥羽シーサイドホテル', '海を眺められる温泉付きホテルです。', NULL, 1, 'candidate', '2026-06-18 11:40:00'),
+  ('1', 'hotel', '鳥羽シーサイドコテージ', '海を一望できるBBQ付きコテージです。グループ旅行に最適です。', NULL, 1, 'candidate', '2026-06-18 11:40:00'),
   ('1', 'restaurant', '伊勢うどん 山口屋', '伊勢うどんを味わえる老舗です。', NULL, 3, 'candidate', '2026-06-18 11:50:00'),
-  ('2', 'destination', '京都府（東山エリア）', '清水寺や祇園を徒歩で巡れます。', NULL, 2, 'candidate', '2026-06-19 15:00:00');
+  ('2', 'destination', '北海道（札幌・小樽エリア）', '札幌の街歩きと小樽運河、海鮮グルメを楽しめます。', NULL, 2, 'candidate', '2026-06-19 15:00:00');
 
 -- 候補投票は初期状態を空にし、各ユーザーが画面から投票します。
 
@@ -748,7 +753,7 @@ INSERT INTO `trip_date_candidates`
 VALUES
   (1, '2026-08-20', '2026-08-22', 1, '2026-06-18 13:00:00'),
   (1, '2026-08-27', '2026-08-29', 2, '2026-06-18 13:05:00'),
-  (2, '2026-09-12', '2026-09-12', 2, '2026-06-19 15:30:00');
+  (2, '2026-09-12', '2026-09-14', 2, '2026-06-19 15:30:00');
 
 INSERT INTO `trip_date_votes` (`candidate_id`, `user_id`, `vote_type`, `voted_at`) VALUES
   (1, 1, 'yes', '2026-06-18 14:00:00'),
@@ -783,8 +788,9 @@ INSERT INTO `chat_members` (`chat_id`, `user_id`, `joined_at`) VALUES
   (1, 5, '2026-06-18 10:50:00'),
   (1, 6, '2026-06-18 10:55:00'),
   (1, 7, '2026-06-18 11:00:00'),
-  (2, 1, '2026-06-20 12:00:00'),
+  -- chat_id=2（鳥羽シーサイドコテージ）: 旅行者1名 + 管理人のみ（1対1）
   (2, 2, '2026-06-20 12:00:00'),
+  (2, 8, '2026-06-20 12:00:00'),
   (3, 1, '2026-06-19 14:10:00'),
   (3, 2, '2026-06-19 14:00:00');
 
@@ -793,9 +799,17 @@ INSERT INTO `messages` (`chat_id`, `sender_user_id`, `body`, `sent_at`) VALUES
   (1, 2, '鳥羽水族館にも行きたいです。', '2026-06-18 16:02:00'),
   (1, 3, '宿は温泉付きで探してみます。', '2026-06-18 16:05:00'),
   (1, 1, '予算は1人5万円くらいを目安にしよう。', '2026-06-18 16:10:00'),
-  (2, 2, '3名で宿泊予定です。空室を確認したいです。', '2026-06-20 12:10:00'),
-  (3, 2, '京都は清水寺から回るのはどう？', '2026-06-19 18:00:00'),
-  (3, 1, '賛成！午後は祇園でカフェに行きたい。', '2026-06-19 18:05:00');
+  -- chat_id=2: 山口歩希(user_id=2) ↔ コテージ管理人(user_id=8) の1対1
+  (2, 2, '3名でコテージの宿泊を考えています。8月20日〜22日の空室はありますか？', '2026-06-20 12:10:00'),
+  (2, 8, 'お問い合わせありがとうございます！8月20日〜22日（2泊3日）、3名様でのご利用ですね。その日程は空室がございます。', '2026-06-20 13:00:00'),
+  (2, 8, 'コテージAは最大4名様までご利用いただけます。BBQスペースも完備しており、グループ旅行に最適です。ご興味はいかがでしょうか？', '2026-06-20 13:02:00'),
+  (2, 2, 'BBQ付きはいいですね！料金を教えていただけますか？', '2026-06-20 13:30:00'),
+  (2, 8, 'コテージA（最大4名）の2泊分の料金は36,000円（税込）です。3名様でご利用の場合、お1人あたり約12,000円になります。', '2026-06-20 14:00:00'),
+  (2, 8, 'チェックインは15:00〜、チェックアウトは11:00となっております。駐車場は無料でご利用いただけます。', '2026-06-20 14:02:00'),
+  (2, 2, 'ありがとうございます！グループで相談してまた連絡します。', '2026-06-20 14:30:00'),
+  (2, 8, 'ごゆっくりご検討ください。ご予約はお早めにどうぞ。ご不明な点があればいつでもお気軽にご連絡ください！', '2026-06-20 14:35:00'),
+  (3, 2, '北海道はまず札幌から回るのはどう？', '2026-06-19 18:00:00'),
+  (3, 1, '賛成！午後は小樽運河にも行きたい。', '2026-06-19 18:05:00');
 
 INSERT INTO `message_reads` (`message_id`, `user_id`, `read_at`) VALUES
   (1, 2, '2026-06-18 16:01:00'),
@@ -813,7 +827,7 @@ INSERT INTO `itineraries` (`trip_id`, `itinerary_date`, `title`, `note`) VALUES
   (1, '2026-08-20', '1日目 伊勢', '伊勢神宮とおかげ横丁を巡ります。'),
   (1, '2026-08-21', '2日目 鳥羽', '鳥羽水族館と海沿いを観光します。'),
   (1, '2026-08-22', '3日目 帰宅', '朝食後にお土産を購入して帰ります。'),
-  (2, '2026-09-12', '京都日帰り', '清水寺、祇園、伏見稲荷を巡ります。');
+  (2, '2026-09-12', '1日目 札幌', '大通公園と時計台、すすきの周辺を巡ります。');
 
 INSERT INTO `itinerary_items`
   (`itinerary_id`, `item_type`, `place_id`, `start_time`, `end_time`, `order_no`, `memo`)
@@ -821,15 +835,15 @@ VALUES
   (1, 'move', NULL, '2026-08-20 08:00:00', '2026-08-20 10:00:00', 1, '近鉄特急で伊勢市駅へ移動'),
   (1, 'visit', 3, '2026-08-20 10:30:00', '2026-08-20 12:30:00', 2, '伊勢神宮 外宮・内宮を参拝'),
   (1, 'meal', 6, '2026-08-20 13:00:00', '2026-08-20 14:00:00', 3, '伊勢うどんを食べる'),
-  (1, 'hotel', 5, '2026-08-20 17:00:00', '2026-08-20 18:00:00', 4, 'ホテルへチェックイン'),
+  (1, 'hotel', 5, '2026-08-20 15:00:00', '2026-08-20 16:00:00', 4, '鳥羽シーサイドコテージへチェックイン'),
   (2, 'visit', 4, '2026-08-21 10:00:00', '2026-08-21 14:00:00', 1, '鳥羽水族館を見学'),
   (2, 'free_time', NULL, '2026-08-21 15:00:00', '2026-08-21 17:00:00', 2, '鳥羽駅周辺で自由行動'),
-  (4, 'visit', 7, '2026-09-12 09:30:00', '2026-09-12 11:30:00', 1, '清水寺周辺を散策');
+  (4, 'visit', NULL, '2026-09-12 09:30:00', '2026-09-12 11:30:00', 1, '大通公園と時計台周辺を散策');
 
 INSERT INTO `checklists` (`trip_id`, `checklist_type`, `title`, `created_by`) VALUES
   (1, '持ち物', '三重旅行の持ち物', 1),
   (1, '買い物', '旅行前に買うもの', 2),
-  (2, '持ち物', '京都日帰りの持ち物', 2);
+  (2, '持ち物', '北海道旅行の持ち物', 2);
 
 INSERT INTO `checklist_items`
   (`checklist_id`, `item_name`, `is_checked`, `assigned_user_id`, `sort_order`)
@@ -840,7 +854,7 @@ VALUES
   (1, '着替え2日分', 1, 1, 4),
   (2, 'お菓子と飲み物', 0, 2, 1),
   (2, '旅行用シャンプー', 0, 3, 2),
-  (3, '歩きやすい靴', 1, 2, 1);
+  (3, '防寒着', 1, 2, 1);
 
 INSERT INTO `expenses`
   (`trip_id`, `paid_by_user_id`, `title`, `amount`, `expense_date`, `category`, `memo`)
@@ -848,7 +862,7 @@ VALUES
   (1, 1, 'ホテル予約金', 30000.00, '2026-06-20', '宿泊', '3名分の予約金'),
   (1, 2, '近鉄特急券', 12600.00, '2026-06-21', '交通', '往路3名分'),
   (1, 3, '水族館前売り券', 8400.00, '2026-06-22', '観光', '大人3名分'),
-  (2, 2, '京都までの電車代', 3200.00, '2026-09-12', '交通', '2名分');
+  (2, 2, '北海道までの航空券代', 48000.00, '2026-09-12', '交通', '2名分');
 
 INSERT INTO `expense_participants`
   (`expense_id`, `user_id`, `share_ratio`, `share_amount`, `is_settled`)
@@ -876,13 +890,13 @@ VALUES
 
 INSERT INTO `albums` (`trip_id`, `title`, `created_by`, `created_at`) VALUES
   (1, '三重旅行アルバム', 1, '2026-08-20 20:00:00'),
-  (2, '京都日帰りアルバム', 2, '2026-09-12 20:00:00');
+  (2, '北海道旅行アルバム', 2, '2026-09-14 20:00:00');
 
 INSERT INTO `photos` (`album_id`, `uploaded_by`, `file_url`, `caption`, `shot_at`) VALUES
   (1, 1, 'https://images.unsplash.com/photo-1627575191507-6a4a0619a909?auto=format&fit=crop&w=1200&q=80', '伊勢神宮で集合', '2026-08-20 11:30:00'),
   (1, 2, 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80', '鳥羽水族館の水槽', '2026-08-21 12:00:00'),
   (1, 3, 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80', '鳥羽の海', '2026-08-21 16:00:00'),
-  (2, 2, 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1200&q=80', '京都の街並み', '2026-09-12 15:00:00');
+  (2, 2, 'https://images.unsplash.com/photo-1528164344705-47542687000d?auto=format&fit=crop&w=1200&q=80', '小樽運河の街並み', '2026-09-13 15:00:00');
 
 INSERT INTO `photo_tags` (`photo_id`, `tagged_user_id`) VALUES
   (1, 1),
@@ -913,5 +927,34 @@ INSERT INTO `system_settings` (`setting_key`, `setting_value`, `updated_at`) VAL
 ALTER TABLE `trip_members`
   ADD CONSTRAINT `fk_trip_members_trip` FOREIGN KEY (`trip_id`) REFERENCES `trips` (`trip_id`),
   ADD CONSTRAINT `fk_trip_members_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+
+-- ═══════════════════════════════════════════════════════════
+-- ホテル管理人チャット用データ（管理画面はhotelタイプのチャットを使用）
+-- ═══════════════════════════════════════════════════════════
+
+-- ホテル管理人ユーザー（user_id=8、trip_membersに登録しないことで管理人と識別）
+INSERT INTO `users`
+  (`name`, `email`, `password_hash`, `icon_url`, `language_code`, `status`, `created_at`, `updated_at`, `deleted_at`)
+VALUES
+  ('コテージ管理人', 'cottage.manager@example.test', '2024gakusei', NULL, 'ja', 'active', '2026-06-20 10:00:00', '2026-06-20 10:00:00', NULL);
+
+-- 管理人プロフィール（ニックネーム・自己紹介のみ設定）
+INSERT INTO `user_profiles`
+  (`user_id`, `nickname`, `birthday`, `gender`, `self_introduction`, `country_code`, `timezone`)
+VALUES
+  (8, '管理人', NULL, NULL, '鳥羽シーサイドコテージの管理人です。', 'JP', 'Asia/Tokyo');
+
+-- 管理人に一般ユーザーロール（role_id=2）を付与
+INSERT INTO `user_roles` (`user_id`, `role_id`) VALUES (8, 2);
+
+-- 管理人を既存のホテルチャット（chat_id=2、鳥羽シーサイドホテル）に追加
+INSERT INTO `chat_members` (`chat_id`, `user_id`, `joined_at`) VALUES
+  (2, 8, '2026-06-20 12:00:00');
+
+-- 管理人からの初期返信メッセージ（chat_id=2に追加）
+INSERT INTO `messages` (`chat_id`, `sender_user_id`, `body`, `sent_at`) VALUES
+  (2, 8, 'お問い合わせありがとうございます。3名様の空室をご用意できます。ご希望の日程を教えてください。', '2026-06-20 13:00:00'),
+  (2, 1, '8月20日から22日で、3名でお願いできますか？', '2026-06-20 14:00:00'),
+  (2, 8, 'はい、その日程でご予約可能です。到着予定時刻をお知らせください。', '2026-06-20 14:30:00');
 
 SET FOREIGN_KEY_CHECKS = 1;
