@@ -304,7 +304,7 @@ CREATE TABLE `trip_survey_votes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='アンケート回答';
 
 CREATE TABLE `users` (
-  `user_id` int NOT NULL,
+  `user_id` int NOT NULL COMMENT 'ユーザーID（AUTO_INCREMENTで自動採番）',
   `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'ユーザーの表示名（アプリ内で表示される名前）',
   `email` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'ログイン用メールアドレス（一意制約で重複防止）',
   `password_hash` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'ハッシュ化されたパスワード（平文保存禁止）',
@@ -924,11 +924,13 @@ INSERT INTO `users`
 VALUES
   ('コテージ管理人', 'cottage.manager@example.test', '2024gakusei', NULL, 'ja', 'active', '2026-06-20 10:00:00', '2026-06-20 10:00:00', NULL);
 
+-- 管理人プロフィール（ニックネーム・自己紹介のみ設定）
 INSERT INTO `user_profiles`
   (`user_id`, `nickname`, `birthday`, `gender`, `self_introduction`, `country_code`, `timezone`)
 VALUES
   (8, '管理人', NULL, NULL, '鳥羽シーサイドホテルの管理人です。', 'JP', 'Asia/Tokyo');
 
+-- 管理人に一般ユーザーロール（role_id=2）を付与
 INSERT INTO `user_roles` (`user_id`, `role_id`) VALUES (8, 2);
 
 -- 管理人を既存のホテルチャット（chat_id=2、鳥羽シーサイドホテル）に追加
