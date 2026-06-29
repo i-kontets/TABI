@@ -107,6 +107,13 @@ function TravelOptions({ active }) {
     
     // コンポーネント マウント時に候補・旅行データを初期取得する処理
     useEffect(() => {
+        if (!active) {
+            return undefined;
+        }
+
+        setLoading(true);
+        setNotice("");
+
         // cleanup 関数用の cancelled フラグ：非同期処理完了後に状態を更新しないようにするため
         // （コンポーネント がアンマウントされた場合、古い状態更新を防ぐ）
         let cancelled = false;
@@ -144,7 +151,7 @@ function TravelOptions({ active }) {
         return () => {
             cancelled = true;
         };
-    }, [groupId]); // groupId が変更されたときに再実行
+    }, [active, groupId]); // groupId が変更されたときに再実行
 
     // 現在のカテゴリーに属する候補のみをフィルタリングする処理
     // activeCategory が変更されたときのみ再計算される

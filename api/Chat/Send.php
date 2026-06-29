@@ -26,6 +26,17 @@ function textLength(string $value): int
         : strlen($value);
 }
 
+function formatDateLabel(DateTimeImmutable $date): string
+{
+    $oneYearAgo = (new DateTimeImmutable("now"))->modify("-1 year");
+
+    if ($date < $oneYearAgo) {
+        return $date->format("Y年n月j日");
+    }
+
+    return $date->format("n月j日");
+}
+
 // 送信は POST のみ受け付ける。
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
@@ -54,10 +65,12 @@ if (!is_array($input)) {
 }
 
 // 送信者のユーザーID、送信先チャットID / グループID、本文を取り出す。
-$userId = (int) $_SESSION["user_id"];
-$chatId = filter_var($input["chat_id"] ?? null, FILTER_VALIDATE_INT);
-$groupId = filter_var($input["group_id"] ?? null, FILTER_VALIDATE_INT);
-$body = trim((string) ($input["body"] ?? $input["message"] ?? $input["text"] ?? ""));
+$userId   = (int) $_SESSION["user_id"];
+$chatId   = filter_var($input["chat_id"]  ?? null, FILTER_VALIDATE_INT);
+$groupId  = filter_var($input["group_id"] ?? null, FILTER_VALIDATE_INT);
+$body     = trim((string) ($input["body"] ?? $input["message"] ?? $input["text"] ?? ""));
+$imageUrl = isset($input["image_url"]) ? trim((string) $input["image_url"]) : null;
+if ($imageUrl === '') $imageUrl = null;
 
 // 0 以下の値は無効として扱う。
 if ($chatId !== null && $chatId !== false && $chatId < 1) {
@@ -78,12 +91,12 @@ if (!$chatId && !$groupId) {
     exit;
 }
 
-// 本文が空なら送信しない。
-if ($body === "") {
+// 本文と画像の両方が空なら送信しない。
+if ($body === "" && $imageUrl === null) {
     http_response_code(400);
     echo json_encode([
         "success" => false,
-        "message" => "メッセージを入力してください"
+        "message" => "メッセージまたは画像を入力してください"
     ]);
     exit;
 }
@@ -174,19 +187,22 @@ try {
             chat_id,
             sender_user_id,
             body,
+            image_url,
             sent_at
         ) VALUES (
             :message_id,
             :chat_id,
             :sender_user_id,
             :body,
+            :image_url,
             NOW()
         )
     ");
     $insertStmt->bindValue(":message_id", $messageId, PDO::PARAM_INT);
     $insertStmt->bindValue(":chat_id", $chatId, PDO::PARAM_INT);
     $insertStmt->bindValue(":sender_user_id", $userId, PDO::PARAM_INT);
-    $insertStmt->bindValue(":body", $body, PDO::PARAM_STR);
+    $insertStmt->bindValue(":body", $body !== '' ? $body : null, PDO::PARAM_STR);
+    $insertStmt->bindValue(":image_url", $imageUrl, PDO::PARAM_STR);
     $insertStmt->execute();
 
     // 保存直後のレコードを読み直して、送信者名やアイコン情報も含めたレスポンスを組み立てる。
@@ -196,6 +212,7 @@ try {
             m.chat_id,
             m.sender_user_id,
             m.body,
+            m.image_url,
             m.sent_at,
             u.name AS sender_name,
             u.icon_url AS sender_icon_url
@@ -216,13 +233,8 @@ try {
     // 画面表示で使いやすいように、日付ラベルと時刻を生成する。
     $sentAt = new DateTimeImmutable($message["sent_at"]);
     $senderName = $message["sender_name"] ?? ($_SESSION["user_name"] ?? "自分");
-    $weekdays = ["日", "月", "火", "水", "木", "金", "土"];
-    $dateLabel = $sentAt->format("Y年n月j日")
-        . " "
-        . $weekdays[(int) $sentAt->format("w")]
-        . "曜日";
-
-    // フロント側でそのまま利用できる形に整えて返す。
+    $dateLabel = formatDateLabel($sentAt);
+// フロント側でそのまま利用できる形に整えて返す。
     http_response_code(201);
     echo json_encode([
         "success" => true,
@@ -237,6 +249,7 @@ try {
             "sender_icon_url" => $message["sender_icon_url"],
             "text" => $message["body"],
             "body" => $message["body"],
+            "image_url" => $message["image_url"],
             "sent_at" => $message["sent_at"],
             "date" => $dateLabel,
             "time" => $sentAt->format("H:i"),
