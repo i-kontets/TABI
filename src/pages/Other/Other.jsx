@@ -38,7 +38,7 @@ const supportItems = [
         description: '近くの観光スポットや人気スポットを探す',
         icon: '⌖',
         tone: 'green',
-        path: '/TouristRanking',
+        path: '/Tourist',
     },
 ];
 
