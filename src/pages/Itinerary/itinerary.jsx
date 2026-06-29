@@ -66,7 +66,7 @@ export default function Itinerary() {
   const closeInviteModal = () => {
   setIsInviteModalOpen(false);
   };
-  // 移動手段ウィジェットのアコーディオン
+  // 移動手段のデータ
   const appointmentList = [
     {
       id: 1,
@@ -87,141 +87,139 @@ export default function Itinerary() {
   ];
 
   const handleAppointmentClick = () => {
-    if(!appointmentList || appointmentList.length == 0) {
-      // データがない　→　Appointment.jsxへ
-      navigate('/Appointment')
-    } else {
-      // データがある　→　アコーディオン開閉
-      setIsOpen(!isOpen);
-    }
+    // データがない　→　Appointment.jsxへ
+     navigate('/Appointment')
   }
-return (
-  <div>
-    <Header />
+  
+  return (
+    <div>
+      <Header />
 
-    {/* カバー画像ヘッダー */}
-    <div className={styles.coverHeader}>
+      {/* カバー画像ヘッダー */}
+      <div className={styles.coverHeader}>
 
-      <div className={styles.coverOverlay}></div>
+        <div className={styles.coverOverlay}></div>
 
-      <div className={styles.coverMainInfo}>
+        <div className={styles.coverMainInfo}>
 
-        <div className={styles.titleRow}>
+          <div className={styles.titleRow}>
 
-          <h1 className={styles.mainTitle}>
-            {trip.name}
-          </h1>
+            <h1 className={styles.mainTitle}>
+              {trip.name}
+            </h1>
 
-          <span className={styles.daysBadge}>
-            あと 24 日
-          </span>
+            <span className={styles.daysBadge}>
+              あと 24 日
+            </span>
 
-        </div>
+          </div>
 
-        <p className={styles.subDate}>
-          出発：2026/05/14 (木)<br/>
-          帰宅：2026/05/16 (土)
-        </p>
+          <p className={styles.subDate}>
+            出発：2026/05/14 (木)<br/>
+            帰宅：2026/05/16 (土)
+          </p>
 
-        <div className={styles.memberRow}>
+          <div className={styles.memberRow}>
 
-          <div className={styles.avatarGroup}>
+            <div className={styles.avatarGroup}>
 
-            {members.map((member,index)=>(
-              <span
-                key={index}
-                className={styles.avatar}
-                style={{backgroundColor:member.color}}
-                title={member.name}
+              {members.map((member,index)=>(
+                <span
+                  key={index}
+                  className={styles.avatar}
+                  style={{backgroundColor:member.color}}
+                  title={member.name}
+                >
+                  {member.initial}
+                </span>
+              ))}
+
+
+              <button
+                className={styles.inviteBtn}
+                onClick={() => setIsInviteModalOpen(true)}
               >
-                {member.initial}
-              </span>
-            ))}
-
-
-            <button
-              className={styles.inviteBtn}
-              onClick={() => setIsInviteModalOpen(true)}
-            >
-              +
-            </button>
+                +
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* 編集ボタン */}
+        <button
+          className={styles.editBtn}
+          onClick={() => navigate("/ItineraryEdit")}
+        >
+          旅行情報を編集
+        </button>
       </div>
 
-      {/* 編集ボタン */}
-      <button
-        className={styles.editBtn}
-        onClick={() => navigate("/ItineraryEdit")}
-      >
-        旅行情報を編集
-      </button>
-    </div>
+      {/* タイトルウィジェット */}
+      <div className={styles.WidgetFrame}>
+        <div className={styles.WidgetTitle}>しおりタイトル</div>
+        <div className={styles.WidgetText}>{trip.name}</div>
+      </div>
 
-    {/* タイトルウィジェット */}
-    <div className={styles.WidgetFrame}>
-      <div className={styles.WidgetTitle}>しおりタイトル</div>
-      <div className={styles.WidgetText}>{trip.name}</div>
-    </div>
+      {/* 旅行期間ウィジェット */}
+      <div className={styles.WidgetFrame}>
+        <div className={styles.WidgetTitle}>旅行期間</div>
+        <div className={styles.WidgetText}>2026年5/14(木) - 2026年5月16日(土)</div>
+      </div>
 
-    {/* 旅行期間ウィジェット */}
-    <div className={styles.WidgetFrame}>
-      <div className={styles.WidgetTitle}>旅行期間</div>
-      <div className={styles.WidgetText}>2026年5/14(木) - 2026年5月16日(土)</div>
-    </div>
+      {/* メンバー数ウィジェット */}
+      <div className={styles.WidgetFrame}>
+        <div className={styles.WidgetTitle}>メンバー数</div>
+        <div className={styles.WidgetText}>4人</div>
+      </div>
 
-    {/* メンバー数ウィジェット */}
-    <div className={styles.WidgetFrame}>
-      <div className={styles.WidgetTitle}>メンバー数</div>
-      <div className={styles.WidgetText}>4人</div>
-    </div>
-
-    {/* サブウィジェット */}
-    <div className={styles.subWidget}>
-      {/* 移動手段ウィジェット */}
-      <div className={styles.appointmentWidget}>
-        <div className={styles.WidgetTitle}>移動手段</div>
-        <div className={styles.appointmentHeader} onClick={handleAppointmentClick}>
-          {appointmentList.length == 0 ? "移動手段の予約に進む" : `${appointmentList[0].from} → ${appointmentList[0].to}`}
-        </div>
-
-        {isOpen && (
-          <div className={styles.appointmentAccordion}>
-            {appointmentList.map((item) => (
-              <div key={item.id}>
-                {item.type}
-              </div>
-            ))}
+      <div className={styles.WidgetFrame} >
+        {appointmentList.length == 0 ? (
+          <div className={styles.WidgetText} onClick={handleAppointmentClick}>
+            移動手段の予約に進む
+          </div>
+          ) : (
+            <div className={styles.WidgetTitle}>
+            <div className={styles.WidgetText}>
+              {appointmentList[0].type}
+            </div>
+            <div>
+              ここにマップ表示
+            </div>
           </div>
         )}
       </div>
 
-      {/* 天気予報ウィジェット */}
-      <div className={styles.weatherWidget}>
-        <div className={styles.WidgetTitle}>天気予報</div>
-        <div className={styles.WidgetText}>東京　晴れ<br />大阪　雨天</div>
+
+      {/* サブウィジェット */}
+      <div className={styles.subWidget}>
+        {/* 移動手段ウィジェット */}
+
+        {/* 天気予報ウィジェット */}
+        <div className={styles.weatherWidget}>
+          <div className={styles.WidgetTitle}>天気予報</div>
+          <div className={styles.WidgetText}>東京　晴れ<br />大阪　雨天</div>
+        </div>
       </div>
+
+
+
+
+      {/* 固定ボトムナビ */}
+      <div className={styles.btmNavWrapper}>
+        <BtmNav />
+      </div>
+
+      {/* 招待モーダル */}
+      <Modal 
+        isOpen={isInviteModalOpen}
+        onClose={closeInviteModal}
+      >
+
+        <InviteModal onClose={closeInviteModal}/>
+
+      </Modal>
+
+
     </div>
-
-
-
-
-    {/* 固定ボトムナビ */}
-    <div className={styles.btmNavWrapper}>
-      <BtmNav />
-    </div>
-
-    {/* 招待モーダル */}
-    <Modal 
-      isOpen={isInviteModalOpen}
-      onClose={closeInviteModal}
-    >
-
-      <InviteModal onClose={closeInviteModal}/>
-
-    </Modal>
-
-
-  </div>
-);
+  );
 }
