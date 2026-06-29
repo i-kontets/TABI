@@ -1,8 +1,34 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import styles from './MessageInput.module.css';
 
 const MessageInput = ({ value = '', onChange, onSubmit, onImageUpload, disabled = false }) => {
-  const fileInputRef = useRef(null);
+  const fileInputRef   = useRef(null);
+  const textareaRef    = useRef(null);
+
+  // value が空になったとき（送信後）に高さをリセット
+  useEffect(() => {
+    if (value === '' && textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+  }, [value]);
+
+  const handleChange = (event) => {
+    onChange(event);
+    // テキスト量に合わせて高さを自動調整
+    const el = event.target;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  };
+
+  // Enter で送信、Shift+Enter で改行
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      if (value.trim() && !disabled) {
+        onSubmit(event);
+      }
+    }
+  };
 
   const handleImageButtonClick = () => {
     if (!disabled) fileInputRef.current?.click();
@@ -12,7 +38,6 @@ const MessageInput = ({ value = '', onChange, onSubmit, onImageUpload, disabled 
     const file = event.target.files?.[0];
     if (!file) return;
     onImageUpload?.(file);
-    // 同じファイルを再選択できるようリセット
     event.target.value = '';
   };
 
@@ -43,13 +68,15 @@ const MessageInput = ({ value = '', onChange, onSubmit, onImageUpload, disabled 
         </svg>
       </button>
 
-      <input
-        type="text"
+      <textarea
+        ref={textareaRef}
         className={styles.textField}
-        placeholder="メッセージを入力..."
+        placeholder="メッセージを入力…"
         value={value}
-        onChange={onChange}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
         disabled={disabled}
+        rows={1}
       />
 
       <button className={styles.sendBtn} type="submit" title="送信" disabled={disabled || value.trim() === ''}>
