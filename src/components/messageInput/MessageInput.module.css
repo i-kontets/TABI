@@ -10,7 +10,7 @@
 @media (max-width: 767px) {
   .inputContainer {
     padding: 12px 16px;
-    padding-bottom: env(safe-area-inset-bottom, 16px); /* iPhone下部の余白対応 */
+    padding-bottom: env(safe-area-inset-bottom, 16px);
   }
 }
 .actionBtn {
