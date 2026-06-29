@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import styles from './bottomNav.module.css';
 import timeIcon from '../../assets/icons/time.svg';
 import photoIcon from '../../assets/icons/photo.svg';
@@ -9,8 +9,9 @@ import Meet from '../../assets/icons/speaker_notes.svg';
 function BottomNav() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { groupId: pathGroupId } = useParams();
     const params = new URLSearchParams(location.search);
-    const groupId = params.get('groupId') || '1';
+    const groupId = pathGroupId || params.get('groupId') || '1';
 
     const menuItems = [
         { id: 'bookmark', label: 'しおり', path:'/Itinerary', icon: Tbook},
@@ -25,7 +26,7 @@ function BottomNav() {
             navigate(path);
             return;
         }
-        navigate(`${path}${location.search}`);
+        navigate(`${path}?groupId=${groupId}`);
     };
 
     return (
