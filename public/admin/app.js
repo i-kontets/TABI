@@ -17,26 +17,26 @@ let isSending = false;
 let eventSource = null;     // SSE接続
 let pollTimer = null;     // ポーリングタイマー
 let listTimer = null;     // 一覧更新タイマー
-let readTimer  = null;     // 既読状態ポーリングタイマー
+let readTimer = null;     // 既読状態ポーリングタイマー
 
 // ─── DOM参照 ───────────────────────────────────────
-const loginScreen    = document.getElementById('loginScreen');
+const loginScreen = document.getElementById('loginScreen');
 const registerScreen = document.getElementById('registerScreen');
-const appScreen      = document.getElementById('appScreen');
-const loginForm      = document.getElementById('loginForm');
-const loginErr       = document.getElementById('loginErr');
-const loginBtn       = document.getElementById('loginBtn');
-const emailInput     = document.getElementById('emailInput');
-const passInput      = document.getElementById('passInput');
-const toRegisterBtn  = document.getElementById('toRegisterBtn');
-const toLoginBtn     = document.getElementById('toLoginBtn');
-const registerForm   = document.getElementById('registerForm');
-const registerErr    = document.getElementById('registerErr');
-const registerOk     = document.getElementById('registerOk');
-const registerBtn    = document.getElementById('registerBtn');
-const regNameInput   = document.getElementById('regNameInput');
-const regEmailInput  = document.getElementById('regEmailInput');
-const regPassInput   = document.getElementById('regPassInput');
+const appScreen = document.getElementById('appScreen');
+const loginForm = document.getElementById('loginForm');
+const loginErr = document.getElementById('loginErr');
+const loginBtn = document.getElementById('loginBtn');
+const emailInput = document.getElementById('emailInput');
+const passInput = document.getElementById('passInput');
+const toRegisterBtn = document.getElementById('toRegisterBtn');
+const toLoginBtn = document.getElementById('toLoginBtn');
+const registerForm = document.getElementById('registerForm');
+const registerErr = document.getElementById('registerErr');
+const registerOk = document.getElementById('registerOk');
+const registerBtn = document.getElementById('registerBtn');
+const regNameInput = document.getElementById('regNameInput');
+const regEmailInput = document.getElementById('regEmailInput');
+const regPassInput = document.getElementById('regPassInput');
 const regChatIdInput = document.getElementById('regChatIdInput');
 const hdUser = document.getElementById('hdUser');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -161,19 +161,19 @@ function showLoginError(msg) {
 async function handleRegister(e) {
     e.preventDefault();
     registerErr.hidden = true;
-    registerOk.hidden  = true;
+    registerOk.hidden = true;
     registerBtn.disabled = true;
     registerBtn.textContent = '登録中…';
 
     try {
-        const res  = await apiFetch('register.php', {
+        const res = await apiFetch('register.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                name:     regNameInput.value.trim(),
-                email:    regEmailInput.value.trim(),
+                name: regNameInput.value.trim(),
+                email: regEmailInput.value.trim(),
                 password: regPassInput.value,
-                chat_id:  parseInt(regChatIdInput.value, 10),
+                chat_id: parseInt(regChatIdInput.value, 10),
             }),
         });
         const data = await res.json();
@@ -220,7 +220,7 @@ function showRegister() {
     appScreen.classList.add('hidden');
     registerScreen.classList.remove('hidden');
     registerErr.hidden = true;
-    registerOk.hidden  = true;
+    registerOk.hidden = true;
     registerForm.reset();
 }
 
@@ -350,8 +350,8 @@ function startRealtime(chatId) {
 
 function stopRealtime() {
     if (eventSource) { eventSource.close(); eventSource = null; }
-    if (pollTimer)   { clearInterval(pollTimer);  pollTimer  = null; }
-    if (readTimer)   { clearInterval(readTimer);   readTimer  = null; }
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    if (readTimer) { clearInterval(readTimer); readTimer = null; }
 }
 
 // SSE接続
@@ -457,7 +457,7 @@ async function markRead(chatId) {
 async function updateReadStatus(chatId) {
     if (chatId !== activeChatId) return;
     try {
-        const res  = await apiFetch(`read_status.php?chat_id=${chatId}`);
+        const res = await apiFetch(`read_status.php?chat_id=${chatId}`);
         const data = await res.json();
         if (!data.success) return;
 
@@ -465,14 +465,226 @@ async function updateReadStatus(chatId) {
         readSet.forEach(mid => {
             const row = document.querySelector(`[data-mid="${mid}"]`);
             if (!row) return;
-            const meta = row.querySelector('.meta-me');
-            if (!meta || meta.querySelector('.read-lbl')) return;
-            const lbl = document.createElement('span');
-            lbl.className = 'read-lbl';
-            lbl.textContent = '既読';
-            const timeEl = meta.querySelector('.msg-time');
-            if (timeEl) meta.insertBefore(lbl, timeEl);
-            else meta.appendChild(lbl);
+            // まだ既読ラベルがなければ追加
+            if (!row.querySelector('.read-lbl')) {
+                const timeEl = row.querySelector('.meta-me .msg-time');
+                if (timeEl) {
+                    const lbl = document.createElement('span');
+                    lbl.className = 'read-lbl';
+                    lbl.textContent = '既読';
+                    timeEl.before(lbl);
+                }
+            }
         });
     } catch { /* silent */ }
 }
+
+// ─── メッセージ描画 ────────────────────────────────
+let lastRenderedDate = '';
+
+function appendMessage(msg, animate) {
+    const isMe = msg.isMine;
+    const isMgr = msg.sender_type === 'manager';
+    const date = msg.date || '';
+    const time = msg.time || '';
+
+    // 日付区切り
+    if (date && date !== lastRenderedDate) {
+        const div = document.createElement('div');
+        div.className = 'date-divider';
+        div.innerHTML = `<span class="date-badge">${escHtml(date)}</span>`;
+        msgList.appendChild(div);
+        lastRenderedDate = date;
+    }
+
+    const row = document.createElement('div');
+    row.className = `msg-row ${isMe ? 'msg-row-me' : 'msg-row-other'}`;
+    row.dataset.mid = msg.message_id;
+
+    const bubbleClass = isMe ? 'bubble-me' : isMgr ? 'bubble-mgr' : 'bubble-other';
+    const senderLabel = msg.sender_name || (isMgr ? '管理人' : 'メンバー');
+    const avatarClass = `msg-avatar${isMgr ? ' mgr' : ''}`;
+    const avatarChar = senderLabel.slice(0, 1);
+
+    row.innerHTML = `
+    ${!isMe ? `<div class="${avatarClass}">${escHtml(avatarChar)}</div>` : ''}
+    <div class="msg-content">
+      ${!isMe ? `
+        <div class="sender-line">
+          <span class="sender-name">${escHtml(senderLabel)}</span>
+          ${isMgr ? '<span class="mgr-badge">管理人</span>' : ''}
+        </div>
+      ` : ''}
+      <div class="bubble-wrap">
+        ${isMe ? `
+          <div class="meta-me">
+            ${msg._sending ? '<span class="sending-lbl">送信中…</span>' : ''}
+            ${msg._failed ? '<button class="failed-lbl" data-retry="${msg.message_id}">再送</button>' : ''}
+            ${msg.is_read ? '<span class="read-lbl">既読</span>' : ''}
+            <span class="msg-time">${escHtml(time)}</span>
+          </div>
+        ` : ''}
+        <div class="bubble ${bubbleClass}">${msg.image_url
+            ? `<img src="${escHtml(msg.image_url)}" class="chat-img" alt="送信画像" loading="lazy" onclick="window.open(this.src,'_blank')">`
+            : escHtml(msg.body || '')}</div>
+        ${!isMe ? `<span class="msg-time">${escHtml(time)}</span>` : ''}
+      </div>
+    </div>
+  `;
+
+    if (animate) row.style.animation = 'fadeIn .2s ease';
+    msgList.appendChild(row);
+}
+
+function scrollBottom() {
+    msgEnd.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+// ─── 画像送信 ─────────────────────────────────────
+async function handleImageSend(file) {
+    if (!activeChatId || isSending) return;
+    isSending = true;
+    imageBtn.disabled = true;
+    sendErr.classList.add('hidden');
+
+    try {
+        // 1. 画像アップロード
+        const formData = new FormData();
+        formData.append('image', file);
+        const uploadRes = await fetch('api/upload_image.php', { method: 'POST', body: formData });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) throw new Error(uploadData.message || '画像のアップロードに失敗しました');
+
+        // 2. メッセージ送信
+        const chatId = activeChatId;
+        const sendRes = await fetch('api/chat_send.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, image_url: uploadData.image_url }),
+        });
+        const sendData = await sendRes.json();
+        if (!sendData.success || chatId !== activeChatId) return;
+
+        appendMessage(sendData.message, false);
+        if (sendData.message.message_id > lastMsgId) lastMsgId = sendData.message.message_id;
+        scrollBottom();
+        loadChatList();
+    } catch (err) {
+        showSendError(err.message || '画像の送信に失敗しました');
+    } finally {
+        isSending = false;
+        imageBtn.disabled = false;
+        sendBtn.disabled = msgInput.value.trim() === '';
+    }
+}
+
+// ─── メッセージ送信 ────────────────────────────────
+async function handleSend(e) {
+    e.preventDefault();
+    const text = msgInput.value.trim();
+    if (!text || isSending || !activeChatId) return;
+
+    isSending = true;
+    sendBtn.disabled = true;
+    sendErr.classList.add('hidden');
+
+    const tempId = `tmp_${Date.now()}`;
+    const optimistic = {
+        message_id: tempId,
+        sender_user_id: currentUser?.user_id,
+        sender_name: currentUser?.name || '管理人',
+        sender_type: 'manager',
+        body: text,
+        time: new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        date: '',
+        isMine: true,
+        _sending: true,
+    };
+
+    appendMessage(optimistic, true);
+    scrollBottom();
+    msgInput.value = '';
+    msgInput.style.height = 'auto';
+    sendBtn.disabled = true;
+
+    const chatId = activeChatId;
+
+    try {
+        const res = await apiFetch('chat_send.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: chatId, body: text }),
+        });
+        const data = await res.json();
+
+        // 楽観的メッセージを削除
+        document.querySelector(`[data-mid="${tempId}"]`)?.remove();
+
+        if (data.success && chatId === activeChatId) {
+            appendMessage(data.message, false);
+            if (data.message.message_id > lastMsgId) lastMsgId = data.message.message_id;
+            scrollBottom();
+            loadChatList();
+        } else {
+            showSendError(data.message || '送信に失敗しました');
+            // 楽観メッセージを失敗状態で戻す
+            const failMsg = { ...optimistic, _sending: false, _failed: true };
+            appendMessage(failMsg, false);
+        }
+    } catch {
+        document.querySelector(`[data-mid="${tempId}"]`)?.remove();
+        showSendError('送信エラーが発生しました');
+    } finally {
+        isSending = false;
+        sendBtn.disabled = msgInput.value.trim() === '';
+        msgInput.focus();
+    }
+}
+
+function showSendError(msg) {
+    sendErr.textContent = msg;
+    sendErr.classList.remove('hidden');
+    setTimeout(() => sendErr.classList.add('hidden'), 4000);
+}
+
+// ─── 接続バッジ ────────────────────────────────────
+function setConnBadge(status) {
+    connBadge.className = 'conn-badge';
+    const map = {
+        connecting: ['conn-connecting', '接続中…'],
+        ok: ['conn-ok', 'リアルタイム'],
+        polling: ['conn-polling', 'ポーリング中'],
+        error: ['conn-error', '切断'],
+    };
+    const [cls, label] = map[status] || map.connecting;
+    connBadge.classList.add(cls);
+    connBadge.textContent = label;
+}
+
+// ─── ユーティリティ ────────────────────────────────
+function escHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+async function apiFetch(path, options = {}) {
+    return fetch(`${API}/${path}`, {
+        credentials: 'include',
+        ...options,
+    });
+}
+
+// ─── フェードインアニメーション ────────────────────
+const styleEl = document.createElement('style');
+styleEl.textContent = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+`;
+document.head.appendChild(styleEl);
