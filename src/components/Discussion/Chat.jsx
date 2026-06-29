@@ -49,9 +49,10 @@ function Chat({ active }) {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [notice, setNotice] = useState("");
-    const messageListRef = useRef(null);
-    const textareaRef = useRef(null);
-    const pollingRef = useRef(false);
+    const messageListRef    = useRef(null);
+    const textareaRef       = useRef(null);
+    const pollingRef        = useRef(false);
+    const lastMessageIdRef  = useRef(0);   // 差分ポーリング用
 
     const applyReadStatuses = useCallback((reads) => {
         setMessages((currentMessages) => applyReadStatusesToMessages(currentMessages, reads));
@@ -95,7 +96,11 @@ function Chat({ active }) {
 
             setChatId(resolvedChatId);
             setMemberCount(Number(data.member_count || data.contact?.memberCount || 0));
-            setMessages(data.messages || []);
+            const msgs = data.messages || [];
+            setMessages(msgs);
+            // 差分ポーリング用に最大IDを記録
+            const maxId = msgs.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
+            lastMessageIdRef.current = maxId;
 
             if (resolvedChatId) {
                 await markMessagesAsRead(resolvedChatId, signal);
@@ -125,30 +130,50 @@ function Chat({ active }) {
         return () => controller.abort();
     }, [active, loadMessages]);
 
+    // 差分ポーリング：Since.php で新着のみ取得してリストに追記
+    const pollNewMessages = useCallback(async () => {
+        if (!chatId) return;
+        try {
+            const response = await fetch(
+                `${chatApiBase}/Since.php?chat_id=${encodeURIComponent(chatId)}&after_id=${lastMessageIdRef.current}`,
+                { credentials: "include" },
+            );
+            const data = await response.json().catch(() => null);
+            if (!data?.success || !data.messages?.length) return;
+
+            setMessages((prev) => {
+                const existingIds = new Set(prev.map((m) => m.message_id));
+                const newMsgs = data.messages.filter((m) => !existingIds.has(m.message_id));
+                if (!newMsgs.length) return prev;
+                return [...prev, ...newMsgs];
+            });
+
+            const newMax = data.messages.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
+            if (newMax > lastMessageIdRef.current) lastMessageIdRef.current = newMax;
+
+            await markMessagesAsRead(chatId).catch(() => {});
+        } catch {
+            // silent
+        }
+    }, [chatId, markMessagesAsRead]);
+
     useEffect(() => {
         if (!active || !chatId) {
             return undefined;
         }
 
         const intervalId = window.setInterval(async () => {
-            if (pollingRef.current) {
-                return;
-            }
-
+            if (pollingRef.current) return;
             pollingRef.current = true;
-
             try {
-                await loadMessages({
-                    showLoading: false,
-                    showNotice: false,
-                });
+                await pollNewMessages();
             } finally {
                 pollingRef.current = false;
             }
         }, pollingIntervalMs);
 
         return () => window.clearInterval(intervalId);
-    }, [active, chatId, loadMessages]);
+    }, [active, chatId, pollNewMessages]);
 
     useLayoutEffect(() => {
         const messageList = messageListRef.current;
