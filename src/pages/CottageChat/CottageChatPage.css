@@ -1,0 +1,859 @@
+/* ================================================================
+   TABI コテージ管理ダッシュボード — スタイルシート
+   LINE風リアルタイムチャット管理UI
+   ================================================================ */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+:root {
+    --primary: #44558D;
+    --primary-dk: #323e6a;
+    --primary-lt: #EEF2FF;
+    --accent: #5B8DEF;
+    --bg: #F0F2F8;
+    --card: #FFFFFF;
+    --border: #E2E8F4;
+    --text: #1a2040;
+    --sub: #6B7280;
+    --danger: #EF4444;
+    --success: #4ADE80;
+    --warn: #FBBF24;
+    --hd-h: 52px;
+    --list-w: 300px;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    font-size: 14px;
+}
+
+/* ── ユーティリティ ────────────────────── */
+.hidden {
+    display: none !important;
+}
+
+.screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.err-msg {
+    color: var(--danger);
+    font-size: 12px;
+    margin: 4px 0 8px;
+}
+
+/* ── ログイン画面 ──────────────────────── */
+#loginScreen {
+    background: linear-gradient(135deg, var(--primary) 0%, #6B7CB0 100%);
+    align-items: center;
+    justify-content: center;
+}
+
+.login-box {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 40px 36px 36px;
+    width: min(380px, 90vw);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .25);
+}
+
+.login-logo {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.logo-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.login-logo h1 {
+    margin: 0 0 4px;
+    font-size: 20px;
+    color: var(--primary);
+}
+
+.login-logo p {
+    margin: 0;
+    color: var(--sub);
+    font-size: 12px;
+}
+
+.field {
+    margin-bottom: 16px;
+}
+
+.field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sub);
+    margin-bottom: 5px;
+    letter-spacing: .03em;
+}
+
+.field input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    color: var(--text);
+    background: #F8F9FB;
+    outline: none;
+    transition: border-color .15s;
+}
+
+.field input:focus {
+    border-color: var(--primary);
+    background: #fff;
+}
+
+.btn-primary {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    margin-top: 4px;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--primary-dk);
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: scale(.97);
+}
+
+.btn-primary:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.login-switch {
+    text-align: center;
+    margin: 16px 0 0;
+    font-size: 13px;
+    color: var(--sub);
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 13px;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.btn-link:hover {
+    color: var(--primary-dk);
+}
+
+.field-hint {
+    display: block;
+    font-size: 11px;
+    color: var(--sub);
+    margin-top: 4px;
+}
+
+.ok-msg {
+    color: #166534;
+    background: #DCFCE7;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    margin: 4px 0 8px;
+}
+
+/* ── アプリ全体 ────────────────────────── */
+#appScreen {
+    background: var(--bg);
+}
+
+/* ヘッダー */
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: var(--hd-h);
+    padding: 0 20px;
+    background: var(--primary);
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .18);
+    z-index: 10;
+}
+
+.hd-logo {
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.hd-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.hd-user {
+    font-size: 13px;
+    opacity: .85;
+    white-space: nowrap;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-logout {
+    padding: 5px 14px;
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .35);
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background .15s;
+}
+
+.btn-logout:hover {
+    background: rgba(255, 255, 255, .3);
+}
+
+/* ボディ（一覧 + 詳細） */
+.app-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* ── チャット一覧ペイン ─────────────────── */
+.list-pane {
+    width: var(--list-w);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--card);
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.list-header {
+    padding: 16px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.list-header h2 {
+    margin: 0 0 2px;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.list-sub {
+    font-size: 11px;
+    color: var(--sub);
+}
+
+.chat-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.loading-txt {
+    padding: 20px;
+    text-align: center;
+    color: var(--sub);
+}
+
+/* チャットアイテム */
+.chat-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background .12s;
+}
+
+.chat-item:hover {
+    background: #F5F7FF;
+}
+
+.chat-item.active {
+    background: var(--primary-lt);
+}
+
+.ci-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.ci-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.ci-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 3px;
+}
+
+.ci-title {
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+    margin-right: 6px;
+}
+
+.ci-time {
+    font-size: 10px;
+    color: var(--sub);
+    flex-shrink: 0;
+}
+
+.ci-bot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ci-last {
+    font-size: 12px;
+    color: var(--sub);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+    margin-right: 6px;
+}
+
+.ci-badge {
+    background: var(--danger);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    flex-shrink: 0;
+}
+
+/* ── チャット詳細ペイン ─────────────────── */
+.chat-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+}
+
+.empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--sub);
+    gap: 12px;
+}
+
+.empty-icon {
+    font-size: 48px;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* チャットヘッダー */
+.chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: background .12s;
+    display: none;
+    /* モバイルのみ表示 */
+}
+
+.back-btn:hover {
+    background: var(--primary-lt);
+}
+
+.chat-title-block {
+    flex: 1;
+    min-width: 0;
+}
+
+.chat-title {
+    margin: 0 0 1px;
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-sub {
+    font-size: 11px;
+    color: var(--sub);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+/* 接続バッジ */
+.conn-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.conn-connecting {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.conn-ok {
+    background: #DCFCE7;
+    color: #166534;
+}
+
+.conn-polling {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.conn-error {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+
+/* メッセージエリア */
+.msg-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    scroll-behavior: smooth;
+}
+
+/* 日付区切り */
+.date-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0 6px;
+}
+
+.date-badge {
+    background: rgba(0, 0, 0, .07);
+    color: var(--sub);
+    font-size: 11px;
+    padding: 3px 14px;
+    border-radius: 12px;
+}
+
+/* メッセージ行 */
+.msg-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: 100%;
+    margin-bottom: 3px;
+}
+
+.msg-row-me {
+    flex-direction: row-reverse;
+}
+
+.msg-row-other {
+    flex-direction: row;
+}
+
+/* アバター */
+.msg-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.msg-avatar.mgr {
+    background: #6B7CB0;
+}
+
+/* 吹き出しブロック */
+.msg-content {
+    display: flex;
+    flex-direction: column;
+    max-width: 75%;
+}
+
+.msg-row-me .msg-content {
+    align-items: flex-end;
+}
+
+.msg-row-other .msg-content {
+    align-items: flex-start;
+}
+
+.sender-line {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 3px;
+}
+
+.sender-name {
+    font-size: 11px;
+    color: var(--sub);
+    font-weight: 500;
+}
+
+.mgr-badge {
+    font-size: 10px;
+    background: var(--primary-lt);
+    color: var(--primary);
+    border: 1px solid #C7D2FE;
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-weight: 700;
+}
+
+.bubble-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+}
+
+.msg-row-me .bubble-wrap {
+    flex-direction: row;
+}
+
+.msg-row-other .bubble-wrap {
+    flex-direction: row-reverse;
+}
+
+.bubble {
+    padding: 9px 13px;
+    border-radius: 18px;
+    font-size: 14px;
+    line-height: 1.55;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.bubble-me {
+    background: var(--primary);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.bubble-mgr {
+    background: #DCE2F0;
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+}
+
+.bubble-other {
+    background: var(--card);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+}
+
+.meta-me {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+    margin-bottom: 2px;
+}
+
+.msg-time {
+    font-size: 10px;
+    color: var(--sub);
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-bottom: 2px;
+}
+
+.sending-lbl {
+    font-size: 10px;
+    color: var(--sub);
+}
+
+.read-lbl {
+    font-size: 10px;
+    color: var(--sub);
+    margin-right: 2px;
+}
+
+.failed-lbl {
+    font-size: 10px;
+    color: var(--danger);
+    cursor: pointer;
+    background: none;
+    border: 1px solid #FCA5A5;
+    border-radius: 4px;
+    padding: 1px 6px;
+}
+
+/* 入力エリア */
+.input-area {
+    flex-shrink: 0;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 10px 14px 12px;
+}
+
+.input-area form {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+#msgInput {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    font-size: 14px;
+    line-height: 1.45;
+    outline: none;
+    background: #F8F9FB;
+    color: var(--text);
+    transition: border-color .15s;
+    font-family: inherit;
+    resize: none;
+    min-height: 40px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+#msgInput:focus {
+    border-color: var(--primary);
+    background: #fff;
+}
+
+.btn-send {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background .15s, transform .1s;
+}
+
+.btn-send:hover:not(:disabled) {
+    background: var(--primary-dk);
+}
+
+.btn-send:hover:not(:disabled):active {
+    transform: scale(.93);
+}
+
+.btn-send:disabled {
+    opacity: .45;
+    cursor: not-allowed;
+}
+
+/* 送信エラー */
+.send-err {
+    font-size: 12px;
+    color: var(--danger);
+    margin: 4px 0 0;
+}
+
+/* ── 画像送信ボタン ──────────────────────── */
+.btn-image {
+    width: 38px;
+    height: 38px;
+    border: none;
+    background: none;
+    color: var(--sub);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: background .15s, color .15s;
+}
+
+.btn-image:hover:not(:disabled) {
+    background: var(--primary-lt);
+    color: var(--primary);
+}
+
+.btn-image:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+/* 送受信画像 */
+.chat-img {
+    max-width: 220px;
+    max-height: 280px;
+    border-radius: 10px;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+}
+
+/* ── フェードインアニメーション ─────────── */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   モバイル対応（767px以下）
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+@media (max-width: 767px) {
+    :root {
+        --list-w: 100%;
+    }
+
+    /* list-pane と chat-pane を重ねて配置 */
+    .app-body {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .list-pane {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        z-index: 1;
+        transform: translateX(0);
+        transition: transform .25s ease;
+    }
+
+    .chat-pane {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        transform: translateX(100%);
+        transition: transform .25s ease;
+    }
+
+    /* チャット開いたとき: chat-pane を前面に */
+    .chat-pane.open {
+        transform: translateX(0);
+    }
+
+    /* list-pane をスライドアウト */
+    .app-body:has(.chat-pane.open) .list-pane {
+        transform: translateX(-30%);
+    }
+
+    /* バックボタンを表示 */
+    .back-btn {
+        display: flex !important;
+    }
+
+    /* ヘッダーを少しコンパクトに */
+    .app-header {
+        padding: 0 12px;
+    }
+
+    .hd-logo {
+        font-size: 14px;
+    }
+}
