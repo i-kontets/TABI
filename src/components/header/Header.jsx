@@ -30,7 +30,7 @@ function Header({tripName}) {
             </button>
 
             <div className={styles.titleWrapper}>
-                <h1 className={styles.title}>{trip.name}</h1>
+                <h1 className={styles.title}>{tripname}</h1>
                 <p className={styles.subtitle}>{subtitle}</p>
             </div>
 
