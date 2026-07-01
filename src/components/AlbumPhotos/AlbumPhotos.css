@@ -1,0 +1,23 @@
+.photoGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.photoCard {
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.photoImage {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    display: block;
+}
+
+.caption {
+    padding: 8px;
+    font-size: 13px;
+}
