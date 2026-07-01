@@ -1,7 +1,17 @@
 import Modal from '../../components/Modal/Modal';
 import styles from './TouristDetailModal.module.css';
 
-function TouristDetailModal({ isOpen, spot, isLoading, message, onClose }) {
+function TouristDetailModal({
+    isOpen,
+    spot,
+    isLoading,
+    message,
+    isFavorite,
+    favoriteMessage,
+    isFavoriteLoading,
+    onToggleFavorite,
+    onClose,
+}) {
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
             <div className={styles.header}>
@@ -27,6 +37,24 @@ function TouristDetailModal({ isOpen, spot, isLoading, message, onClose }) {
                     {spot.image_url && (
                         <img className={styles.image} src={spot.image_url} alt={spot.name} />
                     )}
+
+                    <div className={styles.actions}>
+                        <button
+                            className={`${styles.favoriteButton} ${isFavorite ? styles.favoriteActive : ''}`}
+                            type="button"
+                            onClick={onToggleFavorite}
+                            disabled={isFavoriteLoading}
+                        >
+                            {isFavoriteLoading
+                                ? '処理中...'
+                                : isFavorite
+                                    ? 'お気に入りから削除'
+                                    : 'お気に入りに追加'}
+                        </button>
+                        {favoriteMessage && (
+                            <p className={styles.favoriteMessage}>{favoriteMessage}</p>
+                        )}
+                    </div>
 
                     <div className={styles.summary}>
                         <span>{spot.prefecture || '都道府県未設定'}</span>

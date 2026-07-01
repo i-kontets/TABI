@@ -49,6 +49,41 @@
     gap: 14px;
 }
 
+.actions {
+    display: grid;
+    gap: 8px;
+}
+
+.favoriteButton {
+    width: 100%;
+    min-height: 44px;
+    color: #ffffff;
+    background: var(--sub-color);
+    border: 0;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.favoriteButton:disabled {
+    cursor: wait;
+    opacity: 0.72;
+}
+
+.favoriteActive {
+    color: var(--sub-color);
+    background: var(--main-color);
+    border: 1px solid var(--other-color);
+}
+
+.favoriteMessage {
+    margin: 0;
+    color: var(--sub-color);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
 .image {
     display: block;
     width: 100%;
