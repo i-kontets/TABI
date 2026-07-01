@@ -14,19 +14,17 @@ if ($_SERVER["REQUEST_METHOD"] !== "GET") {
     respond([
         "success" => false,
         "message" => "GETで送信してください。",
-        "city" => "",
-        "spots" => [],
+        "spot" => null,
     ], 405);
 }
 
-$city = isset($_GET["city"]) ? trim($_GET["city"]) : "";
+$id = isset($_GET["id"]) ? trim($_GET["id"]) : "";
 
-if ($city === "") {
+if ($id === "" || !ctype_digit($id) || (int) $id <= 0) {
     respond([
         "success" => false,
-        "message" => "地域名を入力してください。",
-        "city" => "",
-        "spots" => [],
+        "message" => "観光地IDを正しく指定してください。",
+        "spot" => null,
     ], 400);
 }
 
@@ -51,21 +49,28 @@ try {
             created_at,
             updated_at
         FROM tourist_spots
-        WHERE city LIKE :locationKeyword
-            OR prefecture LIKE :locationKeyword
-            OR name LIKE :keyword
-            OR category LIKE :keyword
-            OR type LIKE :keyword
-        ORDER BY name ASC, tourist_spot_id ASC
+        WHERE tourist_spot_id = :id
+        LIMIT 1
     ");
 
     $stmt->execute([
-        ":locationKeyword" => $city . "%",
-        ":keyword" => "%" . $city . "%",
+        ":id" => (int) $id,
     ]);
 
-    $spots = array_map(static function (array $spot): array {
-        return [
+    $spot = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$spot) {
+        respond([
+            "success" => false,
+            "message" => "指定された観光地が見つかりません。",
+            "spot" => null,
+        ], 404);
+    }
+
+    respond([
+        "success" => true,
+        "message" => "",
+        "spot" => [
             "tourist_spot_id" => (int) $spot["tourist_spot_id"],
             "osm_type" => $spot["osm_type"],
             "osm_id" => $spot["osm_id"] === null ? null : (int) $spot["osm_id"],
@@ -76,21 +81,14 @@ try {
             "description" => $spot["description"],
             "category" => $spot["category"],
             "type" => $spot["type"],
-            "lat" => (float) $spot["lat"],
-            "lon" => (float) $spot["lon"],
+            "lat" => $spot["lat"] === null ? null : (float) $spot["lat"],
+            "lon" => $spot["lon"] === null ? null : (float) $spot["lon"],
             "image_url" => $spot["image_url"],
             "source" => $spot["source"],
             "osm_updated_at" => $spot["osm_updated_at"],
             "created_at" => $spot["created_at"],
             "updated_at" => $spot["updated_at"],
-        ];
-    }, $stmt->fetchAll(PDO::FETCH_ASSOC));
-
-    respond([
-        "success" => true,
-        "message" => count($spots) > 0 ? "" : "該当する観光地がありません。",
-        "city" => $city,
-        "spots" => $spots,
+        ],
     ]);
 } catch (PDOException $error) {
     error_log($error->getMessage());
@@ -98,7 +96,6 @@ try {
     respond([
         "success" => false,
         "message" => "観光地データの取得に失敗しました。",
-        "city" => $city,
-        "spots" => [],
+        "spot" => null,
     ], 500);
 }

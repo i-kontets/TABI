@@ -3,6 +3,7 @@ import Header from '../../components/header/Header';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import SearchBar from './SearchBar';
 import TouristCard from './TouristCard';
+import TouristDetailModal from './TouristDetailModal';
 import styles from './Tourist.module.css';
 
 function Tourist() {
@@ -10,6 +11,9 @@ function Tourist() {
     const [city, setCity] = useState('京都');
     const [message, setMessage] = useState('地域名を入力して検索してください。');
     const [isLoading, setIsLoading] = useState(false);
+    const [selectedSpot, setSelectedSpot] = useState(null);
+    const [detailMessage, setDetailMessage] = useState('');
+    const [isDetailLoading, setIsDetailLoading] = useState(false);
 
     const fetchTouristSpots = useCallback(async (keyword) => {
         const searchCity = keyword.trim();
@@ -46,6 +50,36 @@ function Tourist() {
         }
     }, []);
 
+    const fetchTouristSpotDetail = useCallback(async (spot) => {
+        setSelectedSpot(spot);
+        setDetailMessage('');
+        setIsDetailLoading(true);
+
+        try {
+            const params = new URLSearchParams({ id: spot.tourist_spot_id });
+            const response = await fetch(`${import.meta.env.BASE_URL}api/tourist/getTouristSpotDetail.php?${params.toString()}`);
+            const data = await response.json();
+
+            if (!data.success) {
+                setDetailMessage(data.message || '観光地の詳細を取得できませんでした。');
+                return;
+            }
+
+            setSelectedSpot(data.spot);
+        } catch (error) {
+            console.error('観光地詳細取得エラー:', error);
+            setDetailMessage('通信に失敗しました。時間をおいて再度お試しください。');
+        } finally {
+            setIsDetailLoading(false);
+        }
+    }, []);
+
+    const closeDetailModal = () => {
+        setSelectedSpot(null);
+        setDetailMessage('');
+        setIsDetailLoading(false);
+    };
+
     return (
         <>
             <Header tripName="観光地検索" />
@@ -76,7 +110,11 @@ function Tourist() {
                     {!isLoading && !message && (
                         <div className={styles.cardList}>
                             {spots.map((spot) => (
-                                <TouristCard key={spot.id} spot={spot} />
+                                <TouristCard
+                                    key={spot.tourist_spot_id}
+                                    spot={spot}
+                                    onSelect={fetchTouristSpotDetail}
+                                />
                             ))}
                         </div>
                     )}
@@ -91,6 +129,13 @@ function Tourist() {
                     </div>
                 </section>
             </main>
+            <TouristDetailModal
+                isOpen={selectedSpot !== null}
+                spot={selectedSpot}
+                isLoading={isDetailLoading}
+                message={detailMessage}
+                onClose={closeDetailModal}
+            />
             <BottomNav />
         </>
     );

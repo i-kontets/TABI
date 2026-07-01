@@ -1,12 +1,32 @@
 .card {
-    display: grid;
-    grid-template-columns: 44px minmax(0, 1fr);
-    gap: 12px;
-    padding: 14px;
+    overflow: hidden;
     background: #ffffff;
     border: 1px solid var(--other-color);
     border-radius: 12px;
     box-shadow: 0 6px 18px rgba(68, 85, 141, 0.08);
+}
+
+.cardButton {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 12px;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 14px;
+    color: inherit;
+    text-align: left;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
+.cardButton:focus-visible {
+    outline: 3px solid rgba(68, 85, 141, 0.26);
+    outline-offset: -3px;
+}
+
+.cardButton:hover {
+    background: rgba(68, 85, 141, 0.04);
 }
 
 .pin {

@@ -1,8 +1,18 @@
 import styles from './TouristCard.module.css';
 
-function TouristCard({ spot }) {
+function TouristCard({ spot, onSelect }) {
+    const handleClick = () => {
+        onSelect(spot);
+    };
+
     return (
         <article className={styles.card}>
+            <button
+                className={styles.cardButton}
+                type="button"
+                onClick={handleClick}
+                aria-label={`${spot.name}の詳細を見る`}
+            >
             <div className={styles.pin} aria-hidden="true">
                 📍
             </div>
@@ -20,6 +30,7 @@ function TouristCard({ spot }) {
                     </div>
                 </dl>
             </div>
+            </button>
         </article>
     );
 }
