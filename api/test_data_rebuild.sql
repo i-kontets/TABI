@@ -928,16 +928,6 @@ ALTER TABLE `trip_members`
   ADD CONSTRAINT `fk_trip_members_trip` FOREIGN KEY (`trip_id`) REFERENCES `trips` (`trip_id`),
   ADD CONSTRAINT `fk_trip_members_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
 
--- ═══════════════════════════════════════════════════════════
--- ホテル管理人チャット用データ（管理画面はhotelタイプのチャットを使用）
--- ═══════════════════════════════════════════════════════════
-
--- ホテル管理人ユーザー（user_id=8、trip_membersに登録しないことで管理人と識別）
-INSERT INTO `users`
-  (`name`, `email`, `password_hash`, `icon_url`, `language_code`, `status`, `created_at`, `updated_at`, `deleted_at`)
-VALUES
-  ('コテージ管理人', 'cottage.manager@example.test', '2024gakusei', NULL, 'ja', 'active', '2026-06-20 10:00:00', '2026-06-20 10:00:00', NULL);
-
 -- 管理人プロフィール（ニックネーム・自己紹介のみ設定）
 INSERT INTO `user_profiles`
   (`user_id`, `nickname`, `birthday`, `gender`, `self_introduction`, `country_code`, `timezone`)
