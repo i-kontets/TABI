@@ -2,78 +2,63 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useLocation, useParams } from "react-router-dom";
 import "./Chat.css";
 
-// チャットAPIの共通ベースURL
 const chatApiBase = `${import.meta.env.BASE_URL}api/Chat`;
+const pollingIntervalMs = 3000;
 
-// APIレスポンスを共通の形式で検証し、成功時だけデータを返す
 async function parseApiResponse(response) {
-    // JSONとして読めない場合もあるので、失敗時は null を返す
     const data = await response.json().catch(() => null);
 
-    // HTTPステータスと success フラグの両方を確認して、APIとして正常か判断する
     if (!response.ok || !data?.success) {
-        // API側の message があればそれを優先し、なければ汎用エラーを返す
         throw new Error(data?.message || "チャットAPIとの通信に失敗しました");
     }
 
     return data;
 }
 
-// 旅行グループのチャット一覧表示と送信を行うコンポーネント
+function applyReadStatusesToMessages(messages, reads) {
+    const statusByMessageId = new Map(
+        reads.map((read) => [Number(read.message_id), read]),
+    );
+
+    return messages.map((message) => {
+        const status = statusByMessageId.get(Number(message.message_id ?? message.id));
+
+        if (!status) {
+            return message;
+        }
+
+        return {
+            ...message,
+            readCount: Number(status.read_count),
+            read_count: Number(status.read_count),
+            isRead: Boolean(status.is_read),
+        };
+    });
+}
+
 function Chat({ active }) {
-    // URLパラメータから groupId を取得する。パスに無ければクエリにも対応する
     const { groupId: pathGroupId } = useParams();
     const location = useLocation();
     const queryGroupId = new URLSearchParams(location.search).get("groupId");
     const groupId = pathGroupId || queryGroupId || "1";
 
-    // 入力中のメッセージ本文
     const [draft, setDraft] = useState("");
-    // 画面に表示するメッセージ一覧
     const [messages, setMessages] = useState([]);
-    // 現在のチャットID。初回読み込み後に確定する
     const [chatId, setChatId] = useState(null);
-    // 一覧取得中のフラグ
+    const [memberCount, setMemberCount] = useState(0);
     const [loading, setLoading] = useState(true);
-    // 送信中のフラグ。二重送信を防ぐ
     const [sending, setSending] = useState(false);
-    // ユーザー向け通知メッセージ
     const [notice, setNotice] = useState("");
-    // メッセージ一覧のDOM参照。スクロール制御に使う
-    const messageListRef = useRef(null);
-    // テキストエリアのDOM参照。送信後の高さ調整に使う
-    const textareaRef = useRef(null);
+    const messageListRef    = useRef(null);
+    const textareaRef       = useRef(null);
+    const pollingRef        = useRef(false);
+    const lastMessageIdRef  = useRef(0);   // 差分ポーリング用
 
-    // 読み取り済み情報をメッセージ配列へ反映する
     const applyReadStatuses = useCallback((reads) => {
-        // message_id をキーにしたMapへ変換し、メッセージごとの既読情報を引けるようにする
-        const statusByMessageId = new Map(
-            reads.map((read) => [Number(read.message_id), read]),
-        );
-
-        // 既存メッセージを走査し、既読数や既読状態を差し替える
-        setMessages((currentMessages) => currentMessages.map((message) => {
-            // message.message_id が無い場合もあるため id も見ておく
-            const status = statusByMessageId.get(Number(message.message_id ?? message.id));
-
-            // 対応する既読情報がなければ、そのメッセージはそのまま返す
-            if (!status) {
-                return message;
-            }
-
-            // 既読数と既読状態を React state 用の形にそろえる
-            return {
-                ...message,
-                readCount: Number(status.read_count),
-                read_count: Number(status.read_count),
-                isRead: Boolean(status.is_read),
-            };
-        }));
+        setMessages((currentMessages) => applyReadStatusesToMessages(currentMessages, reads));
     }, []);
 
-    // 特定のチャットの既読情報をサーバーへ通知し、その結果を state に反映する
     const markMessagesAsRead = useCallback(async (targetChatId, signal) => {
-        // Reads.php に対象チャットIDを送って既読更新を依頼する
         const response = await fetch(`${chatApiBase}/Reads.php`, {
             method: "POST",
             headers: {
@@ -83,71 +68,116 @@ function Chat({ active }) {
             body: JSON.stringify({ chat_id: targetChatId }),
             signal,
         });
-        // レスポンスの妥当性を共通処理でチェックする
         const data = await parseApiResponse(response);
-        // 返却された既読情報を画面に反映する
         applyReadStatuses(data.reads || []);
     }, [applyReadStatuses]);
 
-    // active になったタイミングでチャットを読み込み、メッセージを取得する
+    const loadMessages = useCallback(async (options = {}) => {
+        const { signal, showLoading = true, showNotice = true } = options;
+
+        if (showLoading) {
+            setLoading(true);
+        }
+
+        if (showNotice) {
+            setNotice("");
+        }
+
+        try {
+            const query = chatId
+                ? `chat_id=${encodeURIComponent(chatId)}`
+                : `group_id=${encodeURIComponent(groupId)}`;
+            const response = await fetch(`${chatApiBase}/Messages.php?${query}`, {
+                credentials: "include",
+                signal,
+            });
+            const data = await parseApiResponse(response);
+            const resolvedChatId = Number(data.chat_id);
+
+            setChatId(resolvedChatId);
+            setMemberCount(Number(data.member_count || data.contact?.memberCount || 0));
+            const msgs = data.messages || [];
+            setMessages(msgs);
+            // 差分ポーリング用に最大IDを記録
+            const maxId = msgs.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
+            lastMessageIdRef.current = maxId;
+
+            if (resolvedChatId) {
+                await markMessagesAsRead(resolvedChatId, signal);
+            }
+        } catch (error) {
+            if (error.name !== "AbortError" && showNotice) {
+                setMessages([]);
+                setChatId(null);
+                setMemberCount(0);
+                setNotice(error.message === "Group chat not found." ? "" : error.message);
+            }
+        } finally {
+            if (!signal?.aborted && showLoading) {
+                setLoading(false);
+            }
+        }
+    }, [chatId, groupId, markMessagesAsRead]);
+
     useEffect(() => {
-        // このコンポーネントが非表示なら何もしない
         if (!active) {
             return undefined;
         }
 
-        // 非同期処理のキャンセル制御用。アンマウント後の state 更新を防ぐ
         const controller = new AbortController();
+        loadMessages({ signal: controller.signal });
 
-        // 画面表示用のメッセージ一覧を取得する本体処理
-        const loadMessages = async () => {
-            setLoading(true);
-            setNotice("");
-
-            try {
-                // Messages.php から指定グループのチャットメッセージを取得する
-                const response = await fetch(
-                    `${chatApiBase}/Messages.php?group_id=${encodeURIComponent(groupId)}`,
-                    {
-                        credentials: "include",
-                        signal: controller.signal,
-                    },
-                );
-                // 取得結果を共通のレスポンス処理で検証する
-                const data = await parseApiResponse(response);
-
-                // 取得したチャットIDとメッセージ一覧を state に保存する
-                setChatId(Number(data.chat_id));
-                setMessages(data.messages || []);
-
-                // 読み込み直後のメッセージを既読にして、既読情報も反映する
-                await markMessagesAsRead(Number(data.chat_id), controller.signal);
-            } catch (error) {
-                // AbortError はコンポーネント切り替え時のキャンセルなので通知しない
-                if (error.name !== "AbortError") {
-                    setMessages([]);
-                    setNotice(error.message);
-                }
-            } finally {
-                // キャンセルされていなければローディングを終了する
-                if (!controller.signal.aborted) {
-                    setLoading(false);
-                }
-            }
-        };
-
-        // 実際の読み込みを開始する
-        loadMessages();
-
-        // アンマウント時や再実行時に通信を中断する
         return () => controller.abort();
-    }, [active, groupId, markMessagesAsRead]);
+    }, [active, loadMessages]);
 
-    // メッセージが増えたら末尾へスクロールして、最新メッセージを見せる
+    // 差分ポーリング：Since.php で新着のみ取得してリストに追記
+    const pollNewMessages = useCallback(async () => {
+        if (!chatId) return;
+        try {
+            const response = await fetch(
+                `${chatApiBase}/Since.php?chat_id=${encodeURIComponent(chatId)}&after_id=${lastMessageIdRef.current}`,
+                { credentials: "include" },
+            );
+            const data = await response.json().catch(() => null);
+            if (!data?.success || !data.messages?.length) return;
+
+            setMessages((prev) => {
+                const existingIds = new Set(prev.map((m) => m.message_id));
+                const newMsgs = data.messages.filter((m) => !existingIds.has(m.message_id));
+                if (!newMsgs.length) return prev;
+                return [...prev, ...newMsgs];
+            });
+
+            const newMax = data.messages.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
+            if (newMax > lastMessageIdRef.current) lastMessageIdRef.current = newMax;
+
+            await markMessagesAsRead(chatId).catch(() => {});
+        } catch {
+            // silent
+        }
+    }, [chatId, markMessagesAsRead]);
+
+    useEffect(() => {
+        if (!active || !chatId) {
+            return undefined;
+        }
+
+        const intervalId = window.setInterval(async () => {
+            if (pollingRef.current) return;
+            pollingRef.current = true;
+            try {
+                await pollNewMessages();
+            } finally {
+                pollingRef.current = false;
+            }
+        }, pollingIntervalMs);
+
+        return () => window.clearInterval(intervalId);
+    }, [active, chatId, pollNewMessages]);
+
     useLayoutEffect(() => {
         const messageList = messageListRef.current;
 
-        // パネルが開いていて、一覧要素が存在する場合だけスクロールする
         if (active && messageList) {
             messageList.scrollTo({
                 top: messageList.scrollHeight,
@@ -156,19 +186,16 @@ function Chat({ active }) {
         }
     }, [active, messages.length]);
 
-    // メッセージ一覧を JSX として組み立てる。描画処理を見通しよくするために分離している
     const chatContent = useMemo(() => {
         return messages.map((message, index) => {
-            // 同じ日付が連続する場合は日付チップを省略し、日付が切り替わる箇所だけ表示する
             const showDate = index === 0 || message.date !== messages[index - 1].date;
+            const readLabel = memberCount > 2 ? `既読 ${message.readCount}` : "既読";
 
             return (
                 <div className="chatBlock" key={message.id}>
-                    {/* 日付区切り */}
                     {showDate && <div className="dateChip">{message.date}</div>}
                     <article className={`messageRow ${message.isMine ? "mine" : ""}`}>
                         <div className="messageStack">
-                            {/* 自分以外のメッセージは、送信者情報を上に表示する */}
                             {!message.isMine && (
                                 <div className="userHeader">
                                     <div className="avatar">
@@ -180,18 +207,27 @@ function Chat({ active }) {
                                 </div>
                             )}
                             <div className="bubbleLine">
-                                {/* 自分のメッセージは、本文の上に既読数と時刻を並べる */}
                                 {message.isMine && (
                                     <div className="messageMeta mineMeta">
                                         {message.readCount > 0 && (
-                                            <span>既読 {message.readCount}</span>
+                                            <span>{readLabel}</span>
                                         )}
                                         <time>{message.time}</time>
                                     </div>
                                 )}
-                                {/* 吹き出し本体 */}
-                                <div className="bubble">{message.text}</div>
-                                {/* 相手のメッセージは、本文の下に時刻を表示する */}
+                                <div className="bubble">
+                                    {message.image_url ? (
+                                        <img
+                                            src={message.image_url}
+                                            alt="送信画像"
+                                            style={{ maxWidth: '200px', maxHeight: '260px', borderRadius: '8px', display: 'block', cursor: 'pointer' }}
+                                            loading="lazy"
+                                            onClick={() => window.open(message.image_url, '_blank')}
+                                        />
+                                    ) : (
+                                        message.text
+                                    )}
+                                </div>
                                 {!message.isMine && (
                                     <div className="messageMeta">
                                         <time>{message.time}</time>
@@ -203,16 +239,47 @@ function Chat({ active }) {
                 </div>
             );
         });
-    }, [messages]);
+    }, [memberCount, messages]);
 
-    // メッセージ送信処理。フォーム送信時に呼ばれる
+    const handleImageUpload = async (file) => {
+        if (sending) return;
+        setSending(true);
+        setNotice("");
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            const uploadRes = await fetch(`${chatApiBase}/Upload.php`, {
+                method: 'POST',
+                credentials: 'include',
+                body: formData,
+            });
+            const uploadData = await parseApiResponse(uploadRes);
+
+            const sendRes = await fetch(`${chatApiBase}/Send.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(
+                    chatId
+                        ? { chat_id: chatId, image_url: uploadData.image_url }
+                        : { group_id: groupId, image_url: uploadData.image_url },
+                ),
+            });
+            const sendData = await parseApiResponse(sendRes);
+            setChatId(Number(sendData.message.chat_id));
+            setMessages((prev) => [...prev, sendData.message]);
+        } catch (error) {
+            setNotice(error.message);
+        } finally {
+            setSending(false);
+        }
+    };
+
     const sendMessage = async (event) => {
         event.preventDefault();
 
-        // 前後の空白を除去した送信本文
         const text = draft.trim();
 
-        // 空送信と送信中の多重実行は無視する
         if (!text || sending) {
             return;
         }
@@ -221,7 +288,6 @@ function Chat({ active }) {
         setNotice("");
 
         try {
-            // Send.php に送信する。chatId があるなら既存チャットへ、ないなら group_id から新規紐付けする
             const response = await fetch(`${chatApiBase}/Send.php`, {
                 method: "POST",
                 headers: {
@@ -234,72 +300,78 @@ function Chat({ active }) {
                         : { group_id: groupId, body: text },
                 ),
             });
-                // レスポンスを検証して、送信結果を取り出す
             const data = await parseApiResponse(response);
 
-                // サーバーが採番した chat_id を保存する
             setChatId(Number(data.message.chat_id));
-                // 送信済みメッセージを画面末尾に追加する
             setMessages((currentMessages) => [
                 ...currentMessages,
                 data.message,
             ]);
-                // 入力欄を空にする
             setDraft("");
 
-                // テキストエリアの高さも初期状態に戻す
             if (textareaRef.current) {
                 textareaRef.current.style.height = "40px";
             }
         } catch (error) {
-                // 通信失敗やバリデーション失敗のメッセージを表示する
             setNotice(error.message);
         } finally {
-                // 送信完了後は送信中フラグを戻す
             setSending(false);
         }
     };
 
     return (
-            // active が false の場合は非表示になるチャットパネル
         <section className="chatPanel" aria-label="チャット" hidden={!active}>
-                {/* メッセージ一覧領域。ここへ自動スクロールする */}
             <div className="messageList" ref={messageListRef}>
-                    {/* エラーや通知を上部に表示する */}
                 {notice && (
                     <p className="chatNotice" role="alert">{notice}</p>
                 )}
-                    {/* 読み込み中 / 空状態 / メッセージ一覧を条件分岐で表示する */}
                 {loading ? (
-                    <p className="chatState">メッセージを読み込んでいます…</p>
+                    <p className="chatState">メッセージを読み込んでいます...</p>
                 ) : messages.length === 0 && !notice ? (
-                        // メッセージがまだ無い場合の案内
-                    <p className="chatState">まだメッセージはありません。</p>
+                    null
                 ) : (
-                        // 取得したメッセージをそのまま描画する
                     chatContent
                 )}
             </div>
-                {/* メッセージ入力フォーム */}
             <form className="composer" onSubmit={sendMessage}>
+                {/* 非表示ファイル入力 */}
+                <input
+                    id="discussionImageInput"
+                    type="file"
+                    accept="image/jpeg,image/png,image/gif,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) { handleImageUpload(f); e.target.value = ''; }
+                    }}
+                />
+                {/* 画像ボタン */}
+                <button
+                    type="button"
+                    className="imageButton"
+                    aria-label="画像を送信"
+                    disabled={sending}
+                    onClick={() => document.getElementById('discussionImageInput')?.click()}
+                >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                </button>
                 <textarea
                     ref={textareaRef}
                     value={draft}
                     onChange={(event) => {
-                            // 入力内容を state に反映する
                         setDraft(event.target.value);
-
-                            // 入力に合わせて高さを自動調整する
                         event.target.style.height = "auto";
-                        event.target.style.height =
-                            `${event.target.scrollHeight}px`;
+                        event.target.style.height = `${event.target.scrollHeight}px`;
                     }}
                     placeholder="メッセージを入力..."
                     aria-label="メッセージ"
                     rows={1}
                     disabled={sending}
                 />
-                {/* 送信ボタン。入力が空なら無効化する */}
                 <button
                     className="sendButton"
                     type="submit"
