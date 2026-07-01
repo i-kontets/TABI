@@ -101,6 +101,11 @@
     border-radius: 6px;
 }
 
+.error {
+    margin-top: 8px;
+    color: #b00020;
+}
+
 .card {
     padding: 12px;
     border-radius: 8px;

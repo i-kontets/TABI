@@ -13,7 +13,7 @@ import Schedule from './pages/Schedule/schedule';
 import Chat from './pages/Chat/Chat';
 import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
-import Appointment from './pages/appointment/appointment.jsx';
+import Appointment from './pages/Appointment/Appointment.jsx';
 import Discussion from './pages/Discussion/Discussion';
 
 import CheckList from './pages/CheckList/CheckList';

@@ -8,9 +8,9 @@ import checklistData from "./CheckList.json";
 import styles from "./CheckList.module.css";
 
 const initialSections = [
-    ...checklistData.sections,
+    checklistData.sections.find((section) => section.id === "common"),
     checklistData.personal,
-];
+].filter(Boolean);
 
 function createInitialChecks() {
     return Object.fromEntries(
@@ -29,15 +29,21 @@ export default function CheckList() {
     const [checks, setChecks] = useState(createInitialChecks);
     const [addTarget, setAddTarget] = useState(null);
     const [editingItem, setEditingItem] = useState(null);
-    const [openSections, setOpenSections] = useState([]);
-
-    const handleSectionToggle = (sectionId, isOpen) => {
-        setOpenSections((currentSections) =>
-            isOpen
-                ? [...new Set([...currentSections, sectionId])]
-                : currentSections.filter((id) => id !== sectionId)
-        );
-    };
+    const [activeSectionId, setActiveSectionId] = useState(
+        initialSections[0]?.id || ""
+    );
+    const totalItemCount = sections.reduce(
+        (count, section) => count + section.items.length,
+        0
+    );
+    const checkedItemCount = sections.reduce(
+        (count, section) =>
+            count +
+            section.items.filter(
+                (item) => checks[createItemKey(section.id, item.id)]
+            ).length,
+        0
+    );
 
     const handleCheck = (itemKey) => {
         setChecks((currentChecks) => ({
@@ -65,7 +71,7 @@ export default function CheckList() {
         setSections((currentSections) =>
             currentSections.map((section) =>
                 section.id === sectionId
-                    ? { ...section, items: [...section.items, item] }
+                    ? { ...section, items: [item, ...section.items] }
                     : section
             )
         );
@@ -130,30 +136,52 @@ export default function CheckList() {
             <Header tripName={trip.name || "持ちものチェック"} />
 
             <main className={styles.page}>
-                <div className={styles.titleArea}>
-                    <h2>持ちものチェックリスト</h2>
-                    <p>準備できたものにチェックを入れましょう。</p>
+                <div className={styles.toolbar}>
+                    <div className={styles.tabs} role="tablist" aria-label="持ちものの分類">
+                        {sections.map((section) => (
+                            <button
+                                key={section.id}
+                                className={`${styles.tabButton} ${
+                                    activeSectionId === section.id ? styles.activeTab : ""
+                                }`}
+                                type="button"
+                                role="tab"
+                                aria-selected={activeSectionId === section.id}
+                                onClick={() => {
+                                    setActiveSectionId(section.id);
+                                    setAddTarget(null);
+                                    setEditingItem(null);
+                                }}
+                            >
+                                {section.id === "personal" ? "個人の分" : "全員の分"}
+                            </button>
+                        ))}
+                    </div>
+
+                    <span className={styles.progress}>
+                        {checkedItemCount}/{totalItemCount}
+                    </span>
                 </div>
 
                 <div className={styles.sections}>
-                    {sections.map((section) => (
-                        <ChecklistSection
-                            key={section.id}
-                            section={section}
-                            checks={checks}
-                            isOpen={openSections.includes(section.id)}
-                            addTarget={addTarget}
-                            editingItem={editingItem}
-                            onToggle={handleSectionToggle}
-                            onCheck={handleCheck}
-                            onStartAdd={handleStartAdd}
-                            onStartEdit={handleStartEdit}
-                            onCancelForm={handleCancelForm}
-                            onAdd={handleAddItem}
-                            onEdit={handleEditItem}
-                            onDelete={handleDeleteItems}
-                        />
-                    ))}
+                    {sections
+                        .filter((section) => section.id === activeSectionId)
+                        .map((section) => (
+                            <ChecklistSection
+                                key={section.id}
+                                section={section}
+                                checks={checks}
+                                addTarget={addTarget}
+                                editingItem={editingItem}
+                                onCheck={handleCheck}
+                                onStartAdd={handleStartAdd}
+                                onStartEdit={handleStartEdit}
+                                onCancelForm={handleCancelForm}
+                                onAdd={handleAddItem}
+                                onEdit={handleEditItem}
+                                onDelete={handleDeleteItems}
+                            />
+                        ))}
                 </div>
             </main>
 

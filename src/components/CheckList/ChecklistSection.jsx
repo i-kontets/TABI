@@ -7,10 +7,8 @@ import styles from "./CheckListComponents.module.css";
 export default function ChecklistSection({
     section,
     checks,
-    isOpen,
     addTarget,
     editingItem,
-    onToggle,
     onCheck,
     onStartAdd,
     onStartEdit,
@@ -26,20 +24,31 @@ export default function ChecklistSection({
     const isAdding = addTarget === section.id;
 
     return (
-        <details
-            className={styles.section}
-            open={isOpen}
-            onToggle={(event) => onToggle(section.id, event.currentTarget.open)}
-        >
-            <summary className={styles.summary}>
+        <section className={styles.section}>
+            <div className={styles.sectionHeader}>
                 <span>
                     <span className={styles.sectionTitle}>{section.title}</span>
                     <span className={styles.description}>{section.description}</span>
                 </span>
-                <span className={styles.progress}>
-                    {checkedItemIds.length}/{section.items.length}
-                </span>
-            </summary>
+                {!isEditing && !isAdding ? (
+                    <button
+                        className={styles.addHeaderButton}
+                        type="button"
+                        aria-label={`${section.title}に持ちものを追加`}
+                        onClick={() => onStartAdd(section.id)}
+                    >
+                        +
+                    </button>
+                ) : null}
+            </div>
+
+            {isAdding ? (
+                <ChecklistItemForm
+                    sectionId={section.id}
+                    onSave={(item) => onAdd(section.id, item)}
+                    onCancel={onCancelForm}
+                />
+            ) : null}
 
             <ChecklistItems
                 items={section.items}
@@ -68,21 +77,7 @@ export default function ChecklistSection({
                     onSave={(item) => onEdit(section.id, item)}
                     onCancel={onCancelForm}
                 />
-            ) : isAdding ? (
-                <ChecklistItemForm
-                    sectionId={section.id}
-                    onSave={(item) => onAdd(section.id, item)}
-                    onCancel={onCancelForm}
-                />
-            ) : (
-                <button
-                    className={styles.addItemButton}
-                    type="button"
-                    onClick={() => onStartAdd(section.id)}
-                >
-                    ＋ {section.id === "personal" ? "自分の" : ""}持ちものを追加
-                </button>
-            )}
-        </details>
+            ) : null}
+        </section>
     );
 }

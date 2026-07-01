@@ -1,42 +1,15 @@
 .section {
-    border: 1px solid #d9deea;
-    border-radius: 12px;
-    background-color: #fff;
-    overflow: hidden;
+    background-color: transparent;
 }
 
-.summary {
-    min-height: 76px;
-    padding: 16px 46px 16px 16px;
-    position: relative;
+.sectionHeader {
+    min-height: auto;
+    padding: 4px 0 10px;
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 12px;
-    cursor: pointer;
-    list-style: none;
     box-sizing: border-box;
-}
-
-.summary::-webkit-details-marker {
-    display: none;
-}
-
-.summary::after {
-    content: "";
-    width: 9px;
-    height: 9px;
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    border-right: 2px solid var(--sub-color);
-    border-bottom: 2px solid var(--sub-color);
-    transform: translateY(-65%) rotate(45deg);
-    transition: transform 0.2s ease;
-}
-
-.section[open] .summary::after {
-    transform: translateY(-35%) rotate(225deg);
 }
 
 .sectionTitle,
@@ -59,30 +32,38 @@
     line-height: 1.5;
 }
 
-.progress {
-    min-width: 42px;
-    padding: 5px 8px;
-    border-radius: 14px;
-    background-color: var(--other-color);
-    color: #29365f;
-    text-align: center;
-    font-size: 12px;
+.addHeaderButton {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--sub-color);
+    border-radius: 50%;
+    background-color: #fff;
+    color: var(--sub-color);
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
     font-weight: 700;
 }
 
+.addHeaderButton:hover,
+.addHeaderButton:focus-visible {
+    background-color: #f8f9fd;
+}
+
 .itemList {
-    padding: 4px 14px 14px;
+    padding: 0;
     display: grid;
 }
 
 .item {
     min-height: 62px;
-    padding: 10px 4px;
+    padding: 12px 0;
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 10px;
-    border-top: 1px solid #eceef4;
+    border-bottom: 1px solid #eceef4;
     box-sizing: border-box;
 }
 
@@ -189,7 +170,7 @@
 }
 
 .deleteActions {
-    margin: 0 14px 12px;
+    margin: 14px 0 12px;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
@@ -214,30 +195,16 @@
 }
 
 .emptyText {
-    margin: 0 14px 12px;
-    padding: 14px;
-    border-radius: 6px;
-    background-color: #f5f6f9;
+    margin: 8px 0 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid #eceef4;
     color: #777;
     text-align: center;
     font-size: 13px;
 }
 
-.addItemButton {
-    width: calc(100% - 28px);
-    min-height: 42px;
-    margin: 0 14px 14px;
-    border: 1px dashed var(--sub-color);
-    border-radius: 8px;
-    background-color: #f8f9fd;
-    color: var(--sub-color);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 700;
-}
-
 .itemForm {
-    margin: 0 14px 14px;
+    margin: 12px 0 14px;
     padding: 14px;
     display: grid;
     gap: 12px;
@@ -290,7 +257,7 @@
 }
 
 @media (max-width: 360px) {
-    .summary {
+    .sectionHeader {
         padding-left: 14px;
     }
 }
