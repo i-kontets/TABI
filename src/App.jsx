@@ -15,9 +15,7 @@ import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
 import Appointment from './pages/Appointment/Appointment.jsx';
 import Discussion from './pages/Discussion/Discussion';
-
 import CheckList from './pages/CheckList/CheckList';
-
 import Other from './pages/Other/Other.jsx';
 import Tourist from './pages/Tourist/Tourist';
 
@@ -50,9 +48,7 @@ function App() {
                     <Route path="/Other" element={<Other />} />
                     <Route path="/Tourist" element={<Tourist />} />
                     <Route path="/TouristRanking" element={<Tourist />} />
-                    <Route path="/CheckList" element={<CheckList /> }/>
-                    <Route path="/TouristRanking" element={<TouristRanking />} />
-                </Routes>
+                    <Route path="/CheckList" element={<CheckList /> }/>                </Routes>
             </BrowserRouter>
         </TripContext.Provider>
     )
