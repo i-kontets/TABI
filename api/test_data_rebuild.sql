@@ -928,19 +928,6 @@ ALTER TABLE `trip_members`
   ADD CONSTRAINT `fk_trip_members_trip` FOREIGN KEY (`trip_id`) REFERENCES `trips` (`trip_id`),
   ADD CONSTRAINT `fk_trip_members_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
 
--- 管理人プロフィール（ニックネーム・自己紹介のみ設定）
-INSERT INTO `user_profiles`
-  (`user_id`, `nickname`, `birthday`, `gender`, `self_introduction`, `country_code`, `timezone`)
-VALUES
-  (8, '管理人', NULL, NULL, '鳥羽シーサイドコテージの管理人です。', 'JP', 'Asia/Tokyo');
-
--- 管理人に一般ユーザーロール（role_id=2）を付与
-INSERT INTO `user_roles` (`user_id`, `role_id`) VALUES (8, 2);
-
--- 管理人を既存のホテルチャット（chat_id=2、鳥羽シーサイドホテル）に追加
-INSERT INTO `chat_members` (`chat_id`, `user_id`, `joined_at`) VALUES
-  (2, 8, '2026-06-20 12:00:00');
-
 -- 管理人からの初期返信メッセージ（chat_id=2に追加）
 INSERT INTO `messages` (`chat_id`, `sender_user_id`, `body`, `sent_at`) VALUES
   (2, 8, 'お問い合わせありがとうございます。3名様の空室をご用意できます。ご希望の日程を教えてください。', '2026-06-20 13:00:00'),
