@@ -6,6 +6,8 @@ import ChatIcon from '../../assets/icons/chat.svg?react';
 function Header({tripName}) {
     const navigate = useNavigate();
     const subtitle = '2026年05月14日 - 2026年05月16日';
+    const {trip} = useContext(TripContext);
+    
 
     const handleBackClick = () => {
         navigate('/Home');
@@ -28,7 +30,7 @@ function Header({tripName}) {
             </button>
 
             <div className={styles.titleWrapper}>
-                <h1 className={styles.title}>{tripName}</h1>
+                <h1 className={styles.title}>{trip.name}</h1>
                 <p className={styles.subtitle}>{subtitle}</p>
             </div>
 

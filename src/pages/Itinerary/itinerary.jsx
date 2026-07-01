@@ -16,8 +16,8 @@ export default function Itinerary() {
   const {trip} = useContext(TripContext);
   // 招待モーダルの管理状態
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  
+  const [isLiquidationOpen, setIsLiquidationOpen] = useState(false);  
+
   // 参加中の旅行データ
   const travelGroups = [
     { id: 1, name: '三重旅行', date: '2026/05/14 - 05/16', active: true, image: 'https://images.unsplash.com/photo-1549693578-d683be217e58?auto=format&fit=crop&w=150&q=80' },
@@ -63,9 +63,6 @@ export default function Itinerary() {
     { title: 'レンタカー代', meta: '5/14 ゆうき', amount: '¥4,800' },
   ];
 
-  const closeInviteModal = () => {
-  setIsInviteModalOpen(false);
-  };
   // 移動手段のデータ
   const appointmentList = [
     {
@@ -85,6 +82,22 @@ export default function Itinerary() {
       arrival: "13:30",
     },
   ];
+
+  // 未清算のデータ
+  const liquidationList = [
+    {
+      amount: 3000,
+      from: "石垣大斗"
+    },
+    {
+      amount: 4000,
+      from: "小野紘輝"
+    }
+  ];
+
+  const closeInviteModal = () => {
+  setIsInviteModalOpen(false);
+  };
 
   const handleAppointmentClick = () => {
     // データがない　→　Appointment.jsxへ
@@ -189,10 +202,57 @@ export default function Itinerary() {
         )}
       </div>
 
-
       {/* サブウィジェット */}
       <div className={styles.subWidget}>
-        {/* 移動手段ウィジェット */}
+
+        {/* 清算ウィジェット */}
+        <div className={styles.liquidationWidget}>
+          {liquidationList.length == 0 ? (
+            <div className={WidgetText}>
+              請求はありません
+            </div>
+          ) : (
+            <>
+              {/* アコーディオンメニュー */}
+              <div
+                className={styles.WidgetTitle}
+                onClick={() => setIsLiquidationOpen(!isLiquidationOpen)}
+              >
+                <div className={styles.WidgetTitle}>清算</div>
+                <div className={styles.WidgetText}>
+                  請求合計：￥
+                  {liquidationList
+                    .reduce((sum, item) => sum + item.amount, 0)
+                    .toLocaleString()}
+                  {isLiquidationOpen ? "▲" : "▼"}
+                </div>
+              </div>
+
+              {/* 詳細 */}
+              <div className={`${styles.WidgetText} ${
+                isLiquidationOpen ? styles.open : ""
+              }`}
+              >
+                {liquidationList.map((item,index) => (
+                  <div className={styles.WidgetText}>
+                    <span>{item.from}へ:</span>
+                    <span>￥{item.amount}</span>
+                  </div>
+                ))}
+
+              </div>
+            
+
+            </>
+          )}
+        </div>
+
+
+
+
+
+
+
 
         {/* 天気予報ウィジェット */}
         <div className={styles.weatherWidget}>
