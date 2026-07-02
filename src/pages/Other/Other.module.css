@@ -2,7 +2,7 @@
     min-height: 100vh;
     color: var(--sub-color);
     background: var(--main-color);
-    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .content {

@@ -23,7 +23,7 @@ body {
     place-items: center;
     background: #dceff4;
     color: var(--discussion-text);
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .phoneFrame {
