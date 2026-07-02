@@ -1,230 +1,230 @@
 .mainLayout {
-  display: flex;
-  flex: 1;
-  overflow: hidden;
-  position: relative;
+display: flex;
+flex: 1;
+overflow: hidden;
+position: relative;
 }
 
 /* 中央メインスクロールエリア */
 .centerContent {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0px 0 35px;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
+flex: 1;
+overflow-y: auto;
+padding: 0px 0 35px;
+display: flex;
+flex-direction: column;
+gap: 28px;
 }
 
 /* [大] カバーヘッダー：縦潰れの修正と最適化 */
 .coverHeader {
-  position: relative;
-  height: 260px; /* カンプの存在感に合わせて少し高さを拡大 */
-  overflow: hidden;
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  padding: 32px;
-  flex-shrink: 0;
+position: relative;
+height: 260px; /* カンプの存在感に合わせて少し高さを拡大 */
+overflow: hidden;
+background-size: cover;
+background-position: center;
+display: flex;
+justify-content: space-between;
+align-items: flex-end;
+padding: 32px;
+flex-shrink: 0;
 }
 
 .coverOverlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
-  z-index: 1;
+position: absolute;
+inset: 0;
+background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
+z-index: 1;
 }
 
 .coverMainInfo {
-  position: relative;
-  z-index: 2;
-  color: #ffffff;
+position: relative;
+z-index: 2;
+color: #ffffff;
 }
 
 .titleRow {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 6px;
+display: flex;
+align-items: center;
+gap: 16px;
+margin-bottom: 6px;
 }
 
 .mainTitle {
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  margin: 0;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+font-size: 32px;
+font-weight: 800;
+letter-spacing: -0.02em;
+margin: 0;
+text-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .daysBadge {
-  background-color: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(8px);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 9999px;
+background-color: rgba(255, 255, 255, 0.25);
+backdrop-filter: blur(8px);
+color: #ffffff;
+font-size: 11px;
+font-weight: 700;
+padding: 4px 10px;
+border-radius: 9999px;
 }
 
 .subDate {
-  font-size: 13px;
-  font-weight: 600;
-  opacity: 0.9;
-  margin: 0 0 16px 0;
+font-size: 13px;
+font-weight: 600;
+opacity: 0.9;
+margin: 0 0 16px 0;
 }
 
 .memberRow {
-  display: flex;
-  align-items: center;
+display: flex;
+align-items: center;
 }
 
 .avatarGroup {
-  display: flex;
-  align-items: center;
+display: flex;
+align-items: center;
 }
 
 /* アバター内に文字を中央配置できるように修正 */
 .avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: 9999px;
-  color: #1e293b;
-  font-size: 12px;
-  font-weight: bold;
-  border: 2px solid #ffffff;
-  margin-left: -8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+width: 34px;
+height: 34px;
+border-radius: 9999px;
+color: #1e293b;
+font-size: 12px;
+font-weight: bold;
+border: 2px solid #ffffff;
+margin-left: -8px;
+display: flex;
+align-items: center;
+justify-content: center;
+box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 
 .avatar:first-child {
-  margin-left: 0;
+margin-left: 0;
 }
 
 .inviteBtn {
-  width: 34px;
-  height: 34px;
-  border-radius: 9999px;
-  background-color: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 400;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  margin-left: 6px;
-  transition: background-color 0.2s;
+width: 34px;
+height: 34px;
+border-radius: 9999px;
+background-color: rgba(255, 255, 255, 0.2);
+backdrop-filter: blur(8px);
+border: 1px solid rgba(255, 255, 255, 0.3);
+color: #ffffff;
+font-size: 18px;
+font-weight: 400;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+margin-left: 6px;
+transition: background-color 0.2s;
 }
 
 .inviteBtn:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+background-color: rgba(255, 255, 255, 0.3);
 }
 
 .editBtn {
-  position: relative;
-  z-index: 2;
-  background-color: #ffffff;
-  color: #1e293b;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 10px 18px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: background-color 0.2s, transform 0.2s;
+position: relative;
+z-index: 2;
+background-color: #ffffff;
+color: #1e293b;
+font-size: 12px;
+font-weight: 700;
+padding: 10px 18px;
+border: none;
+border-radius: 10px;
+cursor: pointer;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+transition: background-color 0.2s, transform 0.2s;
 }
 
 .editBtn:hover {
-  background-color: #f8fafc;
-  transform: translateY(-1px);
+background-color: #f8fafc;
+transform: translateY(-1px);
 }
 
 /* [小] 補助情報エリア */
 .subInfoGrid {
-  display: grid;
-  grid-template-columns: 5fr 7fr;
-  gap: 24px;
+display: grid;
+grid-template-columns: 5fr 7fr;
+gap: 24px;
 }
 
 .cardSmall {
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
-  border: 1px solid #eef2f6;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
-  display: flex;
-  flex-direction: column;
+background-color: #ffffff;
+border-radius: 16px;
+padding: 24px;
+border: 1px solid #eef2f6;
+box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+display: flex;
+flex-direction: column;
 }
 
 .sectionSubTitle {
-  font-size: 11px;
-  font-weight: 700;
-  color: #94a3b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 14px 0;
+font-size: 11px;
+font-weight: 700;
+color: #94a3b8;
+text-transform: uppercase;
+letter-spacing: 0.05em;
+margin: 0 0 14px 0;
 }
 
 .progressHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 10px;
 }
 
 .progressText {
-  font-size: 12px;
-  font-weight: 700;
-  color: #64748b;
+font-size: 12px;
+font-weight: 700;
+color: #64748b;
 }
 
 .progressPercent {
-  font-size: 15px;
-  font-weight: 800;
-  color: #2563eb;
+font-size: 15px;
+font-weight: 800;
+color: #2563eb;
 }
 
 .progressBarBg {
-  width: 100%;
-  height: 8px;
-  background-color: #f1f5f9;
-  border-radius: 9999px;
-  overflow: hidden;
-  margin-bottom: 16px;
+width: 100%;
+height: 8px;
+background-color: #f1f5f9;
+border-radius: 9999px;
+overflow: hidden;
+margin-bottom: 16px;
 }
 
 .progressBarFill {
-  height: 100%;
-  background-color: #2563eb;
-  border-radius: 9999px;
+height: 100%;
+background-color: #2563eb;
+border-radius: 9999px;
 }
 
 .progressStats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 8px;
 }
 
 .statBox {
-  background-color: #f8fafc;
-  padding: 10px;
-  border-radius: 10px;
-  text-align: center;
+background-color: #f8fafc;
+padding: 10px;
+border-radius: 10px;
+text-align: center;
 }
 
 .statLabel {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-  color: #94a3b8;
-  margin-bottom: 2px;
+display: block;
+font-size: 10px;
+font-weight: 600;
+color: #94a3b8;
+margin-bottom: 2px;
 }
 
 .statValGreen { font-size: 13px; font-weight: 700; color: #16a34a; }
@@ -232,562 +232,562 @@
 .statValBlue { font-size: 13px; font-weight: 700; color: #2563eb; }
 
 .nextScheduleHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 14px;
 }
 
 .scheduleDay {
-  font-size: 12px;
-  font-weight: 700;
-  color: #2563eb;
+font-size: 12px;
+font-weight: 700;
+color: #2563eb;
 }
 
 /* 予定リストの複数表示エリア */
 .scheduleList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 140px;
-  overflow-y: auto;
+display: flex;
+flex-direction: column;
+gap: 8px;
+max-height: 140px;
+overflow-y: auto;
 }
 
 .timelineItem {
-  display: flex;
-  align-items: center;
-  background-color: #f8fafc;
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid #f1f5f9;
+display: flex;
+align-items: center;
+background-color: #f8fafc;
+padding: 12px 16px;
+border-radius: 12px;
+border: 1px solid #f1f5f9;
 }
 
 .timelineTime {
-  font-size: 13px;
-  font-weight: 700;
-  color: #94a3b8;
-  margin-right: 16px;
-  font-variant-numeric: tabular-nums;
+font-size: 13px;
+font-weight: 700;
+color: #94a3b8;
+margin-right: 16px;
+font-variant-numeric: tabular-nums;
 }
 
 .timelineContent {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1e293b;
-  flex: 1;
+font-size: 13px;
+font-weight: 700;
+color: #1e293b;
+flex: 1;
 }
 
 .timelineTag {
-  font-size: 10px;
-  font-weight: 700;
-  color: #2563eb;
-  background-color: #ffffff;
-  border: 1px solid #bfdbfe;
-  padding: 2px 8px;
-  border-radius: 4px;
+font-size: 10px;
+font-weight: 700;
+color: #2563eb;
+background-color: #ffffff;
+border: 1px solid #bfdbfe;
+padding: 2px 8px;
+border-radius: 4px;
 }
 
 /* [中] リアルタイム広場 */
 .midContentGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 24px;
 }
 
 .cardMedium {
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 24px;
-  border: 1px solid #eef2f6;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
-  display: flex;
-  flex-direction: column;
-  height: 380px; /* カンプの情報量（4件チャット等）に合わせて高さを調整 */
+background-color: #ffffff;
+border-radius: 16px;
+padding: 24px;
+border: 1px solid #eef2f6;
+box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+display: flex;
+flex-direction: column;
+height: 380px; /* カンプの情報量（4件チャット等）に合わせて高さを調整 */
 }
 
 .cardHeaderRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 16px;
 }
 
 .cardTitle {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1a1a1a;
-  letter-spacing: -0.02em;
-  margin: 0;
+font-size: 18px;
+font-weight: 700;
+color: #1a1a1a;
+letter-spacing: -0.02em;
+margin: 0;
 }
 
 .moreLink {
-  font-size: 11px;
-  font-weight: 700;
-  color: #94a3b8;
-  cursor: pointer;
+font-size: 11px;
+font-weight: 700;
+color: #94a3b8;
+cursor: pointer;
 }
 
 .chatList, .todoList, .expenseList {
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 4px;
+flex: 1;
+overflow-y: auto;
+padding-right: 4px;
 }
 
 /* 話し合いデザイン */
 .chatItem {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 12px;
+display: flex;
+gap: 10px;
+margin-bottom: 12px;
 }
 
 .chatAvatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 9999px;
-  color: #1e293b;
-  font-size: 11px;
-  font-weight: bold;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+width: 28px;
+height: 28px;
+border-radius: 9999px;
+color: #1e293b;
+font-size: 11px;
+font-weight: bold;
+flex-shrink: 0;
+display: flex;
+align-items: center;
+justify-content: center;
 }
 
 .chatContentWrapper {
-  background-color: #f8fafc;
-  padding: 8px 12px;
-  border-radius: 0 14px 14px 14px;
-  border: 1px solid #f1f5f9;
-  flex: 1;
+background-color: #f8fafc;
+padding: 8px 12px;
+border-radius: 0 14px 14px 14px;
+border: 1px solid #f1f5f9;
+flex: 1;
 }
 
 .chatMeta {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 4px;
+display: flex;
+justify-content: space-between;
+margin-bottom: 4px;
 }
 
 .chatUser {
-  font-size: 11px;
-  font-weight: 700;
-  color: #334155;
+font-size: 11px;
+font-weight: 700;
+color: #334155;
 }
 
 .chatTime {
-  font-size: 9px;
-  color: #94a3b8;
+font-size: 9px;
+color: #94a3b8;
 }
 
 .chatText {
-  font-size: 12px;
-  color: #475569;
-  margin: 0;
-  line-height: 1.4;
+font-size: 12px;
+color: #475569;
+margin: 0;
+line-height: 1.4;
 }
 
 .chatInputWrapper {
-  margin-top: 12px;
-  border-top: 1px solid #f1f5f9;
-  padding-top: 12px;
+margin-top: 12px;
+border-top: 1px solid #f1f5f9;
+padding-top: 12px;
 }
 
 .chatInput {
-  width: 100%;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 12px;
-  outline: none;
+width: 100%;
+background-color: #f8fafc;
+border: 1px solid #e2e8f0;
+border-radius: 8px;
+padding: 8px 12px;
+font-size: 12px;
+outline: none;
 }
 
 /* やることリストデザイン */
 .todoItem {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  cursor: pointer;
-  margin-bottom: 12px;
+display: flex;
+align-items: flex-start;
+gap: 10px;
+cursor: pointer;
+margin-bottom: 12px;
 }
 
 .todoCheckbox {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 1px solid #cbd5e1;
-  margin-top: 2px;
+width: 16px;
+height: 16px;
+border-radius: 4px;
+border: 1px solid #cbd5e1;
+margin-top: 2px;
 }
 
 .todoTextWrapper {
-  display: flex;
-  flex-direction: column;
+display: flex;
+flex-direction: column;
 }
 
 .todoText {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1e293b;
+font-size: 13px;
+font-weight: 700;
+color: #1e293b;
 }
 
 .todoTextChecked {
-  font-size: 13px;
-  font-weight: 700;
-  color: #94a3b8;
-  text-decoration: line-through;
+font-size: 13px;
+font-weight: 700;
+color: #94a3b8;
+text-decoration: line-through;
 }
 
 .todoMeta {
-  font-size: 10px;
-  color: #94a3b8;
-  margin-top: 2px;
+font-size: 10px;
+color: #94a3b8;
+margin-top: 2px;
 }
 
 .addTodoBtn, .addExpenseBtn {
-  width: 100%;
-  background: none;
-  border: 1px dashed #cbd5e1;
-  border-radius: 10px;
-  padding: 10px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #64748b;
-  cursor: pointer;
-  margin-top: 12px;
-  flex-shrink: 0;
+width: 100%;
+background: none;
+border: 1px dashed #cbd5e1;
+border-radius: 10px;
+padding: 10px;
+font-size: 11px;
+font-weight: 700;
+color: #64748b;
+cursor: pointer;
+margin-top: 12px;
+flex-shrink: 0;
 }
 
 .addTodoBtn:hover, .addExpenseBtn:hover {
-  background-color: #f8fafc;
+background-color: #f8fafc;
 }
 
 /* 精算状況デザイン */
 .settlementSummary {
-  background-color: #f8fafc;
-  border-radius: 12px;
-  border: 1px solid #f1f5f9;
-  padding: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
+background-color: #f8fafc;
+border-radius: 12px;
+border: 1px solid #f1f5f9;
+padding: 12px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 12px;
 }
 
 .summaryLabel {
-  font-size: 9px;
-  font-weight: 700;
-  color: #94a3b8;
-  text-transform: uppercase;
+font-size: 9px;
+font-weight: 700;
+color: #94a3b8;
+text-transform: uppercase;
 }
 
 .summaryAmount {
-  font-size: 16px;
-  font-weight: 900;
-  color: #1e293b;
-  margin-top: 2px;
+font-size: 16px;
+font-weight: 900;
+color: #1e293b;
+margin-top: 2px;
 }
 
 .summaryRight {
-  text-align: right;
+text-align: right;
 }
 
 .summarySubAmount {
-  font-size: 15px;
-  font-weight: 900;
-  color: #2563eb;
-  margin-top: 2px;
+font-size: 15px;
+font-weight: 900;
+color: #2563eb;
+margin-top: 2px;
 }
 
 .expenseItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #f8fafc;
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 8px 0;
+border-bottom: 1px solid #f8fafc;
 }
 
 .expenseLeft {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+display: flex;
+align-items: center;
+gap: 10px;
 }
 
 .expenseAvatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 9999px;
-  background-color: #e2e8f0;
+width: 24px;
+height: 24px;
+border-radius: 9999px;
+background-color: #e2e8f0;
 }
 
 .expenseName {
-  font-size: 12px;
-  font-weight: 700;
-  color: #1e293b;
+font-size: 12px;
+font-weight: 700;
+color: #1e293b;
 }
 
 .expenseMeta {
-  font-size: 10px;
-  color: #94a3b8;
-  margin-top: 1px;
+font-size: 10px;
+color: #94a3b8;
+margin-top: 1px;
 }
 
 .expenseAmount {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1e293b;
+font-size: 13px;
+font-weight: 700;
+color: #1e293b;
 }
 
 /* [大] しおり・スポットの候補：伊勢神宮リンク切れ防止 */
 .cardLarge {
-  background-color: #ffffff;
-  border-radius: 16px;
-  padding: 28px;
-  border: 1px solid #eef2f6;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
-  margin-bottom: 24px; /* 最下部の余白確保 */
+background-color: #ffffff;
+border-radius: 16px;
+padding: 28px;
+border: 1px solid #eef2f6;
+box-shadow: 0 4px 14px rgba(0, 0, 0, 0.02);
+margin-bottom: 24px; /* 最下部の余白確保 */
 }
 
 .cardTitleLarge {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1a1a1a;
-  letter-spacing: -0.02em;
-  margin: 0;
+font-size: 20px;
+font-weight: 700;
+color: #1a1a1a;
+letter-spacing: -0.02em;
+margin: 0;
 }
 
 .moreLinkBlue {
-  font-size: 12px;
-  font-weight: 700;
-  color: #2563eb;
-  cursor: pointer;
+font-size: 12px;
+font-weight: 700;
+color: #2563eb;
+cursor: pointer;
 }
 
 .spotGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 20px;
 }
 
 .spotCard {
-  cursor: pointer;
+cursor: pointer;
 }
 
 .spotImgWrapper {
-  position: relative;
-  aspect-ratio: 4 / 3;
-  border-radius: 14px;
-  overflow: hidden;
-  margin-bottom: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
-  background-color: #f1f5f9; /* 読み込み中対策 */
+position: relative;
+aspect-ratio: 4 / 3;
+border-radius: 14px;
+overflow: hidden;
+margin-bottom: 10px;
+box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+background-color: #f1f5f9; /* 読み込み中対策 */
 }
 
 .spotImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s;
+width: 100%;
+height: 100%;
+object-fit: cover;
+transition: transform 0.3s;
 }
 
 .spotCard:hover .spotImg {
-  transform: scale(1.04);
+transform: scale(1.04);
 }
 
 .spotTag {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background-color: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  color: #ffffff;
-  font-size: 9px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 4px;
+position: absolute;
+top: 10px;
+left: 10px;
+background-color: rgba(0, 0, 0, 0.6);
+backdrop-filter: blur(4px);
+color: #ffffff;
+font-size: 9px;
+font-weight: 700;
+padding: 3px 8px;
+border-radius: 4px;
 }
 
 .spotName {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0 0 4px 0;
+font-size: 13px;
+font-weight: 700;
+color: #1e293b;
+margin: 0 0 4px 0;
 }
 
 .spotDesc {
-  font-size: 11px;
-  color: #94a3b8;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+font-size: 11px;
+color: #94a3b8;
+margin: 0;
+display: -webkit-box;
+-webkit-line-clamp: 1;
+-webkit-box-orient: vertical;
+overflow: hidden;
 }
 
 /* 右サイドバー */
 .rightSidebar {
-  width: 320px;
-  background-color: #ffffff;
-  border-left: 1px solid #eef2f6;
-  padding: 32px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  flex-shrink: 0;
-  overflow-y: auto;
+width: 320px;
+background-color: #ffffff;
+border-left: 1px solid #eef2f6;
+padding: 32px 24px;
+display: flex;
+flex-direction: column;
+gap: 28px;
+flex-shrink: 0;
+overflow-y: auto;
 }
 
 .rightSection {
-  display: flex;
-  flex-direction: column;
+display: flex;
+flex-direction: column;
 }
 
 .rightSectionTitle {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0;
+font-size: 13px;
+font-weight: 700;
+color: #1e293b;
+margin: 0;
 }
 
 .infoBox {
-  border: 1px solid #f1f5f9;
-  background-color: #f8fafc;
-  border-radius: 14px;
-  padding: 16px;
-  margin-top: 12px;
+border: 1px solid #f1f5f9;
+background-color: #f8fafc;
+border-radius: 14px;
+padding: 16px;
+margin-top: 12px;
 }
 
 .infoRow {
-  display: flex;
-  padding: 10px 0;
-  font-size: 12px;
-  border-bottom: 1px solid #f1f5f9;
+display: flex;
+padding: 10px 0;
+font-size: 12px;
+border-bottom: 1px solid #f1f5f9;
 }
 
 .infoRow:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+border-bottom: none;
+padding-bottom: 0;
 }
 
 .infoRow:first-child {
-  padding-top: 0;
+padding-top: 0;
 }
 
 .infoLabel {
-  width: 72px;
-  color: #94a3b8;
-  font-weight: 600;
+width: 72px;
+color: #94a3b8;
+font-weight: 600;
 }
 
 .infoValue {
-  font-weight: 700;
-  color: #334155;
-  flex: 1;
+font-weight: 700;
+color: #334155;
+flex: 1;
 }
 
 /* ファイル・アルバムの画像表示最適化 */
 .albumGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-top: 12px;
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 6px;
+margin-top: 12px;
 }
 
 .albumItem {
-  aspect-ratio: 1;
-  background-color: #f1f5f9;
-  border-radius: 8px;
-  overflow: hidden;
+aspect-ratio: 1;
+background-color: #f1f5f9;
+border-radius: 8px;
+overflow: hidden;
 }
 
 .albumImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: opacity 0.2s;
+width: 100%;
+height: 100%;
+object-fit: cover;
+transition: opacity 0.2s;
 }
 
 .albumImg:hover {
-  opacity: 0.85;
+opacity: 0.85;
 }
 
 /* 天気予報 */
 .weatherGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 12px;
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 8px;
+margin-top: 12px;
 }
 
 .weatherCard {
-  border: 1px solid #f1f5f9;
-  background-color: #f8fafc;
-  border-radius: 14px;
-  padding: 12px 6px;
-  text-align: center;
+border: 1px solid #f1f5f9;
+background-color: #f8fafc;
+border-radius: 14px;
+padding: 12px 6px;
+text-align: center;
 }
 
 .weatherDay {
-  font-size: 11px;
-  font-weight: 600;
-  color: #94a3b8;
+font-size: 11px;
+font-weight: 600;
+color: #94a3b8;
 }
 
 /* 絵文字化に伴いサイズ・余白を調整 */
 .weatherIconSunny, .weatherIconCloudy, .weatherIconRainy {
-  font-size: 20px;
-  margin: 8px auto;
-  line-height: 1;
+font-size: 20px;
+margin: 8px auto;
+line-height: 1;
 }
 
 .weatherTemp {
-  font-size: 13px;
-  font-weight: 800;
-  color: #1e293b;
+font-size: 13px;
+font-weight: 800;
+color: #1e293b;
 }
 
 .weatherPop {
-  font-size: 9px;
-  color: #94a3b8;
-  margin-top: 2px;
+font-size: 9px;
+color: #94a3b8;
+margin-top: 2px;
 }
 
 /* 新規追加：地図エリア */
 .mapContainer {
-  position: relative;
-  width: 100%;
-  height: 120px;
-  border-radius: 12px;
-  overflow: hidden;
-  margin-top: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+position: relative;
+width: 100%;
+height: 120px;
+border-radius: 12px;
+overflow: hidden;
+margin-top: 12px;
+box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .mapImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+width: 100%;
+height: 100%;
+object-fit: cover;
 }
 
 .mapOverlay {
-  position: absolute;
-  inset: 0;
-  background-color: rgba(37, 99, 235, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
+position: absolute;
+inset: 0;
+background-color: rgba(37, 99, 235, 0.08);
+display: flex;
+align-items: center;
+justify-content: center;
+pointer-events: none;
 }
 
 .mapOverlay span {
-  background-color: rgba(255, 255, 255, 0.9);
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #2563eb;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+background-color: rgba(255, 255, 255, 0.9);
+padding: 4px 10px;
+border-radius: 6px;
+font-size: 11px;
+font-weight: 700;
+color: #2563eb;
+box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
 .btmNavWrapper {
-  width: 100%;
-  z-index: 10;
+width: 100%;
+z-index: 10;
 }

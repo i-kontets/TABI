@@ -2,7 +2,7 @@ import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import BtmNav from '../bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
-import styles from '../../pages/Appointment/appointment.module.css';
+import styles from '../../pages/Appointment/Appointment.module.css';
 
 function DecisionComponent() {
     const navigate = useNavigate();

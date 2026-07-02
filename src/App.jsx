@@ -13,11 +13,13 @@ import Schedule from './pages/Schedule/Schedule.jsx';
 import Chat from './pages/Chat/Chat';
 import Album from './pages/Album/album.jsx';
 import Invoice from './pages/Invoice/Invoice';
-import Appointment from './pages/appointment/appointment.jsx';
+import Appointment from './pages/Appointment/Appointment.jsx';
 import Discussion from './pages/Discussion/Discussion';
+import CheckList from './pages/CheckList/CheckList';
 import Other from './pages/Other/Other.jsx';
 import TouristRanking from './pages/TouristRanking/TouristRanking';
 import Candidates from './pages/Candidates/Candidates';
+import Tourist from './pages/Tourist/Tourist';
 
 
 export const TripContext = createContext();
@@ -49,6 +51,9 @@ function App() {
                     <Route path="/TouristRanking" element={<TouristRanking />} />
                     <Route path="/Candidates" element={<Candidates />} />
                 </Routes>
+                    <Route path="/Tourist" element={<Tourist />} />
+                    <Route path="/TouristRanking" element={<Tourist />} />
+                    <Route path="/CheckList" element={<CheckList /> }/>                </Routes>
             </BrowserRouter>
         </TripContext.Provider>
     )
