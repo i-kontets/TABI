@@ -1,7 +1,7 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import styles from './bottomNav.module.css';
 import timeIcon from '../../assets/icons/time.svg';
-import photoIcon from '../../assets/icons/photo.svg';
+import checklistIcon from '../../assets/icons/checklist.svg';
 import AppsIcon from '../../assets/icons/apps.svg';
 import Tbook from '../../assets/icons/Tbook.svg';
 import Meet from '../../assets/icons/speaker_notes.svg';
@@ -9,14 +9,15 @@ import Meet from '../../assets/icons/speaker_notes.svg';
 function BottomNav() {
     const navigate = useNavigate();
     const location = useLocation();
+    const { groupId: pathGroupId } = useParams();
     const params = new URLSearchParams(location.search);
-    const groupId = params.get('groupId') || '1';
+    const groupId = pathGroupId || params.get('groupId') || '1';
 
     const menuItems = [
         { id: 'bookmark', label: 'しおり', path:'/Itinerary', icon: Tbook},
         { id: 'meeting', label: '話し合い' , path:`/group/${groupId}/talk`, icon: Meet},
         { id: 'time', label: 'スケジュール', path: '/schedule', icon: timeIcon },
-        { id: 'album', label: 'アルバム', path: '/album', icon: photoIcon },
+        { id: 'checkList', label: '持ち物リスト', path: '/CheckList', icon: checklistIcon },
         { id: 'other', label: 'その他機能', path: '/Other', icon: AppsIcon },
     ];
 
@@ -25,7 +26,7 @@ function BottomNav() {
             navigate(path);
             return;
         }
-        navigate(`${path}${location.search}`);
+        navigate(`${path}?groupId=${groupId}`);
     };
 
     return (

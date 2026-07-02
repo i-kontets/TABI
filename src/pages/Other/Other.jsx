@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 import styles from './Other.module.css';
@@ -37,6 +38,7 @@ const supportItems = [
         description: '近くの観光スポットや人気スポットを探す',
         icon: '⌖',
         tone: 'green',
+        path: '/Tourist',
     },
 ];
 
@@ -49,6 +51,8 @@ function ArrowIcon() {
 }
 
 export default function Other() {
+    const navigate = useNavigate();
+
     return (
         <>
         <Header />
@@ -57,7 +61,16 @@ export default function Other() {
                 <section className={styles.supportCard}>
                     <div className={styles.menu}>
                         {supportItems.map((item) => (
-                            <button className={styles.menuItem} type="button" key={item.id}>
+                            <button
+                                className={styles.menuItem}
+                                type="button"
+                                key={item.id}
+                                onClick={() => {
+                                    if (item.path) {
+                                        navigate(item.path);
+                                    }
+                                }}
+                            >
                                 <span className={`${styles.thumbnail} ${styles[item.tone]}`}>
                                     <span>{item.icon}</span>
                                 </span>

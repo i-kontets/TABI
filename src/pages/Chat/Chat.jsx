@@ -9,6 +9,7 @@ import MessageInput from '../../components/MessageInput/MessageInput';
 
 const chatApiBase = `${import.meta.env.BASE_URL}api/Chat`;
 const pollingIntervalMs = 3000;
+const listPollingIntervalMs = 10000; // 一覧は10秒ごとで十分
 
 async function parseApiResponse(response) {
     const data = await response.json().catch(() => null);
@@ -43,7 +44,8 @@ function mergeReadStatuses(messages, reads) {
 
 const Chat = () => {
     const location = useLocation();
-    const pollingRef = useRef(false);
+    const pollingRef       = useRef(false);
+    const lastMessageIdRef = useRef(0);   // 差分ポーリング用：最後に受信したmessage_id
     const [activeCategory, setActiveCategory] = useState('all');
     const [activeContactId, setActiveContactId] = useState(null);
     const [contacts, setContacts] = useState([]);
@@ -126,7 +128,11 @@ const Chat = () => {
             const resolvedChatId = Number(data.chat_id || chatId);
 
             setActiveContactId(resolvedChatId);
-            setMessages(data.messages || []);
+            const msgs = data.messages || [];
+            setMessages(msgs);
+            // 差分ポーリング用に最大IDを記録
+            const maxId = msgs.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
+            lastMessageIdRef.current = maxId;
             await markMessagesAsRead(resolvedChatId, signal);
         } catch (error) {
             if (error.name !== 'AbortError' && showNotice) {
@@ -140,6 +146,36 @@ const Chat = () => {
         }
     }, [markMessagesAsRead]);
 
+    // 差分ポーリング：Since.php で新着のみ取得してリストに追記
+    const pollNewMessages = useCallback(async (chatId) => {
+        if (!chatId) return;
+        try {
+            const response = await fetch(
+                `${chatApiBase}/Since.php?chat_id=${encodeURIComponent(chatId)}&after_id=${lastMessageIdRef.current}`,
+                { credentials: 'include' },
+            );
+            const data = await response.json().catch(() => null);
+            if (!data?.success || !data.messages?.length) return;
+
+            setMessages((prev) => {
+                const existingIds = new Set(prev.map((m) => m.message_id));
+                const newMsgs = data.messages.filter((m) => !existingIds.has(m.message_id));
+                if (!newMsgs.length) return prev;
+                return [...prev, ...newMsgs];
+            });
+
+            // 最大IDを更新
+            const maxId = data.messages.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
+            if (maxId > lastMessageIdRef.current) lastMessageIdRef.current = maxId;
+
+            // 新着を既読にする
+            await markMessagesAsRead(chatId).catch(() => {});
+        } catch {
+            // silent
+        }
+    }, [markMessagesAsRead]);
+
+    // 初回：コンタクト一覧 + 最初のチャットメッセージを読み込む
     useEffect(() => {
         const controller = new AbortController();
 
@@ -152,87 +188,38 @@ const Chat = () => {
             const firstChatId = requestedId || nextContacts[0]?.id || null;
 
             setActiveContactId(firstChatId);
-            await loadMessages(firstChatId, controller.signal, {
-                showLoading: false,
-            });
+            await loadMessages(firstChatId, controller.signal, { showLoading: false });
 
-            if (!controller.signal.aborted) {
-                setLoading(false);
-            }
+            if (!controller.signal.aborted) setLoading(false);
         };
 
         initialize();
-
         return () => controller.abort();
     }, [loadContacts, loadMessages, requestedChatId]);
 
+    // 差分ポーリング：3秒ごとに新着メッセージを追記、10秒ごとにコンタクト一覧も更新
     useEffect(() => {
-        if (!activeContactId) {
-            return undefined;
-        }
+        if (!activeContactId) return undefined;
+
+        let msgTick = 0;
 
         const intervalId = window.setInterval(async () => {
-            if (pollingRef.current) {
-                return;
-            }
-
+            if (pollingRef.current) return;
             pollingRef.current = true;
-
             try {
-                await loadContacts(undefined, { showNotice: false });
-                await loadMessages(activeContactId, undefined, {
-                    showLoading: false,
-                    showNotice: false,
-                });
+                await pollNewMessages(activeContactId);
+                msgTick++;
+                // コンタクト一覧は10秒に1回（3回に1回）
+                if (msgTick % Math.round(listPollingIntervalMs / pollingIntervalMs) === 0) {
+                    await loadContacts(undefined, { showNotice: false });
+                }
             } finally {
                 pollingRef.current = false;
             }
         }, pollingIntervalMs);
 
         return () => window.clearInterval(intervalId);
-    }, [activeContactId, loadContacts, loadMessages]);
-
-    // メッセージ一覧を取得する中心処理。
-    // chatId が指定されていればそれを優先し、なければ URL のクエリを参照する。
-    // options で loading 表示や notice 初期化の有無を切り替えられる。
-    
-
-    // 初回表示時に 1 回だけ会話を読み込む。
-    // AbortController を使って、アンマウント後の state 更新を防ぐ。
-    useEffect(() => {
-        const controller = new AbortController();
-        loadMessages(null, controller.signal);
-
-        return () => controller.abort();
-    }, [loadMessages]);
-
-    // 選択中の相手がある場合だけ、一定間隔で新着を取りに行く。
-    // すでに更新処理中なら重複呼び出しを避ける。
-    useEffect(() => {
-        if (!activeContactId) {
-            return undefined;
-        }
-
-        const intervalId = window.setInterval(async () => {
-            if (pollingRef.current) {
-                return;
-            }
-
-            pollingRef.current = true;
-
-            try {
-                // ポーリングでは画面をちらつかせないよう、読み込み表示と通知表示を抑制する。
-                await loadMessages(activeContactId, undefined, {
-                    showLoading: false,
-                    showNotice: false,
-                });
-            } finally {
-                pollingRef.current = false;
-            }
-        }, pollingIntervalMs);
-
-        return () => window.clearInterval(intervalId);
-    }, [activeContactId, loadMessages]);
+    }, [activeContactId, pollNewMessages, loadContacts]);
 
     // サイドバーから会話相手を選んだときに、その相手の会話を開く。
     const handleContactSelect = (id) => {
@@ -268,6 +255,42 @@ const Chat = () => {
 
             setMessages((currentMessages) => [...currentMessages, data.message]);
             setDraft('');
+            await loadContacts(undefined, { showNotice: false });
+        } catch (error) {
+            setNotice(error.message);
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const handleImageUpload = async (file) => {
+        if (!activeContactId || sending) return;
+        setSending(true);
+        setNotice('');
+        try {
+            // 1. 画像をアップロード
+            const formData = new FormData();
+            formData.append('image', file);
+            const uploadRes = await fetch(`${chatApiBase}/Upload.php`, {
+                method: 'POST',
+                credentials: 'include',
+                body: formData,
+            });
+            const uploadData = await parseApiResponse(uploadRes);
+
+            // 2. image_url を含めてメッセージ送信
+            const sendRes = await fetch(`${chatApiBase}/Send.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    chat_id: activeContactId,
+                    image_url: uploadData.image_url,
+                }),
+            });
+            const sendData = await parseApiResponse(sendRes);
+
+            setMessages((currentMessages) => [...currentMessages, sendData.message]);
             await loadContacts(undefined, { showNotice: false });
         } catch (error) {
             setNotice(error.message);
@@ -328,6 +351,7 @@ const Chat = () => {
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
                     onSubmit={handleSendMessage}
+                    onImageUpload={handleImageUpload}
                     disabled={sending || !activeContactId}
                 />
             </div>

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Avatar, Timeline } from '@mantine/core';
 import styles from './ScheduleTimeAxis.module.css';
 
@@ -25,6 +26,9 @@ const scheduleData = {
         '11:00': [
             { group: '全員', title: '昼食・休憩', endTime: '13:00' },
         ],
+        '14:00': [
+            { group: '全員', title: '昼食・休憩', endTime: '16:00' },
+        ],
     }),
     day2: generateHours(),
     day3: generateHours(),
@@ -33,6 +37,10 @@ const scheduleData = {
 };
 
 const SLOT_HEIGHT = 104;
+const COMPACT_SLOT_HEIGHT = 22;
+const COMPACT_SLOT_MARGIN_BOTTOM = 30;
+const TIMELINE_PADDING_TOP = 36;
+const TIMELINE_BULLET_CENTER = 11;
 
 function buildShadowedTimes(items) {
     const slotsWithEvents = new Set(
@@ -66,17 +74,89 @@ function getSpan(startTime, endTime, items) {
     return endH - startH;
 }
 
+function isCompactSlot(item) {
+    return item.events.length === 0;
+}
+
+function getSlotVisualHeight(item, shadowedTimes, isLast) {
+    if (isCompactSlot(item) && !shadowedTimes.has(item.time)) {
+        return COMPACT_SLOT_HEIGHT + COMPACT_SLOT_MARGIN_BOTTOM;
+    }
+
+    return isLast ? COMPACT_SLOT_HEIGHT : SLOT_HEIGHT;
+}
+
+function formatTime(date) {
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+function getCurrentTimeTop(items, shadowedTimes, now) {
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:00`;
+    const currentIndex = items.findIndex((item) => item.time === currentTime);
+
+    if (currentIndex === -1) {
+        return null;
+    }
+
+    const offsetBeforeCurrent = items
+        .slice(0, currentIndex)
+        .reduce((total, item, index) => (
+            total + getSlotVisualHeight(item, shadowedTimes, index === items.length - 1)
+        ), 0);
+    const currentItem = items[currentIndex];
+    const currentHeight = getSlotVisualHeight(currentItem, shadowedTimes, currentIndex === items.length - 1);
+    const minuteOffset = currentHeight * (now.getMinutes() / 60);
+
+    return TIMELINE_PADDING_TOP + TIMELINE_BULLET_CENTER + offsetBeforeCurrent + minuteOffset;
+}
+
+function isCurrentTimeOverEvent(items, now) {
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    return items.some((item) => {
+        const startHour = parseInt(item.time);
+        const startMinutes = startHour * 60;
+
+        return item.events.some((event) => {
+            const endHour = parseInt(event.endTime ?? item.time) || startHour + 1;
+            const endMinutes = endHour * 60;
+            return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+        });
+    });
+}
+
 export default function ScheduleTimeAxis({ selectedDay }) {
+    const [now, setNow] = useState(() => new Date());
     const items = scheduleData[selectedDay] ?? [];
+
+    useEffect(() => {
+        const timerId = window.setInterval(() => {
+            setNow(new Date());
+        }, 60000);
+
+        return () => window.clearInterval(timerId);
+    }, []);
 
     if (items.length === 0) {
         return null;
     }
 
     const shadowedTimes = buildShadowedTimes(items);
+    const currentTimeTop = getCurrentTimeTop(items, shadowedTimes, now);
+    const currentTimeOverEvent = isCurrentTimeOverEvent(items, now);
 
     return (
         <section className={styles.timelineSection} aria-label="スケジュール時間軸">
+            {currentTimeTop !== null && (
+                <div
+                    className={`${styles.currentTimeLine} ${currentTimeOverEvent ? styles.currentTimeLineShort : ''}`}
+                    style={{ top: currentTimeTop }}
+                    aria-label={`現在時刻 ${formatTime(now)}`}
+                >
+                    <span className={styles.currentTimeLabel}>{formatTime(now)}</span>
+                </div>
+            )}
+
             <Timeline
                 active={items.length - 1}
                 align="right"
@@ -90,13 +170,21 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                     itemBullet: styles.timeBullet,
                 }}
             >
-                {items.map((item) => (
-                    <Timeline.Item key={item.time} title={item.time} />
-                ))}
+                {items.map((item) => {
+                    const isCompact = isCompactSlot(item) && !shadowedTimes.has(item.time);
+                    return (
+                        <Timeline.Item
+                            key={item.time}
+                            title={item.time}
+                            style={isCompact ? { minHeight: COMPACT_SLOT_HEIGHT, marginBottom: COMPACT_SLOT_MARGIN_BOTTOM } : undefined}
+                        />
+                    );
+                })}
             </Timeline>
 
             <div className={styles.cardsColumn}>
                 {items.map((item, index) => {
+                    const isCompact = isCompactSlot(item);
                     if (shadowedTimes.has(item.time)) {
                         return <div key={item.time} style={{ height: 0, minHeight: 0, padding: 0 }} />;
                     }
@@ -105,6 +193,7 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                         <div
                             key={item.time}
                             className={isLast ? styles.cardSlotLast : styles.cardSlot}
+                            style={isCompact ? { minHeight: COMPACT_SLOT_HEIGHT, marginBottom: COMPACT_SLOT_MARGIN_BOTTOM } : undefined}
                         >
                             {item.events.map((event, i) => {
                                 const span = getSpan(item.time, event.endTime, items);
