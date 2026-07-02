@@ -50,10 +50,10 @@ function App() {
                     <Route path="/Other" element={<Other />} />
                     <Route path="/TouristRanking" element={<TouristRanking />} />
                     <Route path="/Candidates" element={<Candidates />} />
-                </Routes>
                     <Route path="/Tourist" element={<Tourist />} />
                     <Route path="/TouristRanking" element={<Tourist />} />
-                    <Route path="/CheckList" element={<CheckList /> }/>                </Routes>
+                    <Route path="/CheckList" element={<CheckList /> }/>
+                </Routes>
             </BrowserRouter>
         </TripContext.Provider>
     )
