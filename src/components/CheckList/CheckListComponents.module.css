@@ -36,6 +36,9 @@
     width: 32px;
     height: 32px;
     padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border: 1px solid var(--sub-color);
     border-radius: 50%;
     background-color: #fff;
@@ -44,6 +47,7 @@
     font-size: 22px;
     line-height: 1;
     font-weight: 700;
+    transform: translateY(-1px);
 }
 
 .addHeaderButton:hover,
