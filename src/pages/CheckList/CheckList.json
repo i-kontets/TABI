@@ -1,0 +1,16 @@
+{
+    "sections": [
+        {
+            "id": "common",
+            "title": "全員が必要なもの",
+            "description": "旅行メンバー全員が、それぞれ用意する持ちものです。",
+            "items": []
+        }
+    ],
+    "personal": {
+        "id": "personal",
+        "title": "個人で必要なもの",
+        "description": "自分だけが確認できる持ちものです。",
+        "items": []
+    }
+}
