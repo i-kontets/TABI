@@ -1,7 +1,11 @@
 import { useNavigate } from 'react-router-dom';
+import { useState, useContext } from "react"
 import styles from './header.module.css';
 import Home from '../../assets/icons/home.svg?react';
 import ChatIcon from '../../assets/icons/chat.svg?react';
+import { ssrExportNameKey } from 'vite/module-runner';
+import { TripContext } from "../../App";
+
 
 function Header({tripName}) {
     const navigate = useNavigate();
@@ -30,7 +34,7 @@ function Header({tripName}) {
             </button>
 
             <div className={styles.titleWrapper}>
-                <h1 className={styles.title}>{tripname}</h1>
+                <h1 className={styles.title}>{trip.name}</h1>
                 <p className={styles.subtitle}>{subtitle}</p>
             </div>
 

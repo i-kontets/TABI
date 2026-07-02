@@ -87,11 +87,11 @@ export default function Itinerary() {
   const liquidationList = [
     {
       amount: 3000,
-      from: "石垣大斗"
+      from: "i"
     },
     {
       amount: 4000,
-      from: "小野紘輝"
+      from: "o"
     }
   ];
 
@@ -204,65 +204,37 @@ export default function Itinerary() {
 
       {/* サブウィジェット */}
       <div className={styles.subWidget}>
-
         {/* 清算ウィジェット */}
         <div className={styles.liquidationWidget}>
+          <div className={styles.WidgetTitle}>清算</div>
           {liquidationList.length == 0 ? (
-            <div className={WidgetText}>
+            <div className={styles.WidgetText}>
               請求はありません
             </div>
           ) : (
-            <>
-              {/* アコーディオンメニュー */}
-              <div
-                className={styles.WidgetTitle}
-                onClick={() => setIsLiquidationOpen(!isLiquidationOpen)}
-              >
-                <div className={styles.WidgetTitle}>清算</div>
-                <div className={styles.WidgetText}>
-                  請求合計：￥
-                  {liquidationList
-                    .reduce((sum, item) => sum + item.amount, 0)
-                    .toLocaleString()}
-                  {isLiquidationOpen ? "▲" : "▼"}
+             <>
+              {/* 合計金額 */}
+              <div className={styles.WidgetText}>
+                合計：￥
+                {liquidationList.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}
+              </div>
+
+              {/* 各請求 */}
+              {liquidationList.map((item, index) => (
+                <div key={index} className={styles.WidgetText}>
+                  {item.from}さんへ：￥{item.amount.toLocaleString()}
                 </div>
-              </div>
-
-              {/* 詳細 */}
-              <div className={`${styles.WidgetText} ${
-                isLiquidationOpen ? styles.open : ""
-              }`}
-              >
-                {liquidationList.map((item,index) => (
-                  <div className={styles.WidgetText}>
-                    <span>{item.from}へ:</span>
-                    <span>￥{item.amount}</span>
-                  </div>
-                ))}
-
-              </div>
-            
-
+              ))}
             </>
           )}
         </div>
 
-
-
-
-
-
-
-
         {/* 天気予報ウィジェット */}
         <div className={styles.weatherWidget}>
           <div className={styles.WidgetTitle}>天気予報</div>
-          <div className={styles.WidgetText}>東京　晴れ<br />大阪　雨天</div>
+          <div className={styles.WidgetText}></div>
         </div>
       </div>
-
-
-
 
       {/* 固定ボトムナビ */}
       <div className={styles.btmNavWrapper}>
