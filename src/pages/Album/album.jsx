@@ -98,6 +98,7 @@ function Album() {
             id: `${file.name}-${file.lastModified}-${Date.now()}-${index}-${Math.random()}`,
             //画像データからURLを作成
             src: URL.createObjectURL(file),
+            hashtags: '',
             file,
         }));
 
@@ -123,6 +124,14 @@ function Album() {
         // setPreviewの更新　削除予定の画像のプレビューを開いている場合プレビューから削除する(ほぼ機能しないと思っていい)
         //プレビューを開いている画像のidと削除予定のidが一緒ならnullを返し、違うのであればそのままプレビュー中の画像を返す
         setPreviewPhoto((currentPhoto) => (currentPhoto?.id === photoId ? null : currentPhoto));
+    };
+
+    const updatePendingPhotoHashtags = (photoId, hashtags) => {
+        setPendingPhotos((currentPhotos) =>
+            currentPhotos.map((photo) =>
+                photo.id === photoId ? { ...photo, hashtags } : photo
+            )
+        );
     };
 
     // 写真追加をキャンセルして一覧画面に戻る処理です。
@@ -154,11 +163,11 @@ function Album() {
         //idをすでにある画像からのつづきの番号にするためにmaxPhotoId + index + 1にしている
         const newPhotos = pendingPhotos.map((photo, index) => ({
             id: maxPhotoId + index + 1,
-            src: photo.src,
-            uploader: '自分',
-            date: today,
-            place: '未設定',
-            memo: photo.file.name,
+            image_url: photo.src,
+            uploaded_by: '自分',
+            shot_at: today,
+            caption: photo.file.name,
+            hashtags: photo.hashtags,
         }));
 
         // 新しく追加した写真を、一覧の先頭に表示します。
@@ -218,7 +227,7 @@ function Album() {
 
         // ユーザーが追加した画像の場合は、不要になったURLを解放します。
         //selectedPhotoがNULlじゃなくて、blob:から始まるURLならURLを開放
-        if (selectedPhoto?.src.startsWith('blob:')) URL.revokeObjectURL(selectedPhoto.src);
+        if (selectedPhoto?.image_url.startsWith('blob:')) URL.revokeObjectURL(selectedPhoto.image_url);
 
         //削除予定の写真の要素番号とPhotosの写真すべての要素番号を比べ、違ったものだけを集めて新しいPhotosを作る
         setPhotos((currentPhotos) => currentPhotos.filter((_, index) => index !== selectedIndex));
@@ -237,14 +246,10 @@ function Album() {
         // 選択中の写真の要素番号が見つからないなら何もしない
         if (!photo) return null;
 
-        // favoriteは未設定だとundefinedなので、Booleanでtrue/falseにそろえています。
-        const isFavorite = Boolean(photo.favorite);
+        const hashtags = photo.hashtags || '';
 
         return (
             <div className={styles.detailOverlay}>
-                {/* 詳細画面で画像です　photoには選択された画像の情報が入っているので、そこからurlやその他の情報を持ってこれます*/}
-                <img className={styles.fullscreenImage} src={photo.src} alt={`${photo.uploader}の写真`} />
-
                 {/* 詳細画面上部の戻るボタン、タイトル、メニューです。 */}
                 <div className={styles.detailHeader}>
                     {/*/Closeボタンが押されたら226行目のcloseDetail関数を実行*/}
@@ -257,7 +262,7 @@ function Album() {
                             {tripName || 'アルバム'} {selectedIndex + 1} / {photos.length}
                         </p>
                         {/*画像を上げた人の名前 */}
-                        <p className={styles.uploaderName}>{photo.uploader}</p>
+                        <p className={styles.uploaderName}>{photo.uploaded_by}</p>
                     </div>
                     <div className={styles.menuArea}>
                         {/*三点リーダーを押したときに開いたり閉じたりする処理 */}
@@ -291,8 +296,23 @@ function Album() {
                     </div>
                 </div>
 
-                {/* 画像部分をタップしたとき、開いているメニューだけ閉じるための透明ボタンです。 */}
-                <button className={styles.imageTapLayer} onClick={() => setIsMenuOpen(false)} aria-label="メニューを閉じる" />
+                <main className={styles.postDetail}>
+                    <section className={styles.postCard}>
+                        <div className={styles.postImageWrap}>
+                            <img className={styles.postImage} src={photo.image_url} alt={photo.caption || 'アルバム写真'} />
+                        </div>
+
+                        <div className={styles.postBody}>
+                            <div className={styles.postMeta}>
+                                <span className={styles.postAuthor}>{photo.uploaded_by || '投稿者不明'}</span>
+                                <span>{photo.shot_at || '日付未設定'}</span>
+                            </div>
+
+                            {photo.caption && <p className={styles.postCaption}>{photo.caption}</p>}
+                            <p className={styles.postHashtags}>{hashtags || '#未設定'}</p>
+                        </div>
+                    </section>
+                </main>
 
                 {/* isInfoOpenがtrueのときだけ詳細情報パネルを表示します。 */}
                 {isInfoOpen && (
@@ -310,19 +330,19 @@ function Album() {
                         <dl className={styles.infoList}>
                             <div>
                                 <dt>投稿者</dt>
-                                <dd>{photo.uploader}</dd>
+                                <dd>{photo.uploaded_by || '投稿者不明'}</dd>
                             </div>
                             <div>
                                 <dt>撮影日</dt>
-                                <dd>{photo.date}</dd>
+                                <dd>{photo.shot_at || '未設定'}</dd>
                             </div>
                             <div>
-                                <dt>場所</dt>
-                                <dd>{photo.place}</dd>
+                                <dt>キャプション</dt>
+                                <dd>{photo.caption || '未設定'}</dd>
                             </div>
                             <div>
-                                <dt>メモ</dt>
-                                <dd>{photo.memo}</dd>
+                                <dt>ハッシュタグ</dt>
+                                <dd>{hashtags || '未設定'}</dd>
                             </div>
                             <div>
                                 <dt>写真ID</dt>
@@ -331,22 +351,6 @@ function Album() {
                         </dl>
                     </div>
                 )}
-
-                {/* 詳細画面下部のアクションボタンです。 */}
-                <div className={styles.detailFooter}>
-                    <button
-                        //お気に入りなら favoriteActive を追加違うなら何も追加しない
-                        className={`${styles.reactionButton} ${isFavorite ? styles.favoriteActive : ''}`}
-                        //選択された画像のお気に入りの切り替え
-                        onClick={() => toggleFavorite(photo.id)}
-                        aria-label={isFavorite ? 'お気に入りを解除' : 'お気に入りに追加'}
-                        aria-pressed={isFavorite}
-                    >
-                        {/*isFavoriteがtrueなら★ falseなら☆ */}
-                        {isFavorite ? '★' : '☆'}
-                    </button>
-                    <button className={styles.downloadButton}>↓</button>
-                </div>
             </div>
         );
     }
@@ -408,6 +412,14 @@ function Album() {
                             >
                                 <img src={photo.src} alt={photo.file.name} />
                             </button>
+                            <input
+                                className={styles.pendingHashtagInput}
+                                type="text"
+                                value={photo.hashtags}
+                                onChange={(event) => updatePendingPhotoHashtags(photo.id, event.target.value)}
+                                placeholder="#旅行 #海"
+                                aria-label={`${photo.file.name}のハッシュタグ`}
+                            />
                             {/* 追加前の写真を1枚削除します。 */}
                             <button
                                 className={styles.removePendingButton}
@@ -459,9 +471,9 @@ function Album() {
                                 if (event.key === 'Enter') handlePhotoClick(index);
                             }}
                         >
-                            <img src={photo.image_url} alt={`${photo.uploader}の写真`} />
+                            <img src={photo.image_url} alt={photo.caption || 'アルバム写真'} />
                             {/* favoriteがtrueの写真だけ、一覧右上に星を表示します。 */}
-                            {photo.favorite && <span className={styles.favoriteBadge}>★</span>}
+                            {/*photo.favorite && <span className={styles.favoriteBadge}>★</span>*/}
                         </div>
                     ))}
                 </div>
