@@ -4,8 +4,8 @@ import { Step, Stepper } from 'react-form-stepper';
 import BtmNav from '../../components/bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import styles from './Appointment.module.css';
-import transportData from './appointment.json';
-import stops from './confirmation_options.json';
+import transportData from './Appointment.json';
+import stops from './Confirmation_options.json';
 
 const appointmentSteps = ['検索', '確認', '完了'];
 

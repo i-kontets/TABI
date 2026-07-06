@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import BtmNav from '../bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import styles from '../../pages/Appointment/Appointment.module.css';
-import stops from '../../pages/Appointment/confirmation_options.json';
+import stops from '../../pages/Appointment/Confirmation_options.json';
 
 function ConfirmationComponent() {
     const navigate = useNavigate();

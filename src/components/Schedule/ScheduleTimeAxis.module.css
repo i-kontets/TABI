@@ -1,4 +1,36 @@
 .timelineSection {
+    padding: 0 8px;
+}
+
+.viewToggle {
+    display: inline-flex;
+    margin: 0 0 12px 108px;
+    padding: 3px;
+    border: 1px solid rgba(68, 85, 141, 0.16);
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 3px 10px rgba(32, 35, 50, 0.06);
+}
+
+.viewToggleButton {
+    min-width: 58px;
+    height: 30px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--sub-color);
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.viewToggleButtonActive {
+    background: var(--sub-color);
+    color: #ffffff;
+}
+
+.timelineBody {
     position: relative;
     padding: 36px 8px 0;
     display: flex;
@@ -84,6 +116,7 @@
 .cardSlot {
     min-height: 104px;
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-start;
     padding-top: 2px;
     gap: 6px;
@@ -92,15 +125,18 @@
 .cardSlotLast {
     min-height: 22px;
     display: flex;
+    flex-wrap: wrap;
     align-items: flex-start;
     padding-top: 2px;
     gap: 6px;
 }
 
 .scheduleCard {
-    flex: 1;
+    flex: 1 1 calc(50% - 3px);
     margin-top: 4px;
     padding: 8px 10px;
+    min-height: 92px;
+    box-sizing: border-box;
     background: #ffffff;
     border-radius: 12px;
     box-shadow: 0 3px 10px rgba(32, 35, 50, 0.1);
@@ -131,10 +167,4 @@
     color: var(--text-color, #333);
     font-size: 13px;
     font-weight: 700;
-}
-
-.scheduleDuration {
-    margin: 0;
-    color: #999;
-    font-size: 11px;
 }

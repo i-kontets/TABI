@@ -7,6 +7,7 @@ const GROUP_COLORS = {
     'グループA': '#FF8A65',
     'グループB': '#5B9BD5',
 };
+const MY_MEMBER_NAME = '自分';
 
 const generateHours = (overrides = {}) =>
     Array.from({ length: 24 }, (_, i) => {
@@ -17,17 +18,20 @@ const generateHours = (overrides = {}) =>
 const scheduleData = {
     day1: generateHours({
         '09:00': [
-            { group: '全員', title: 'ホテル出発', members: ['田中', '鈴木', '佐藤'], endTime: '10:00' },
+            { group: '全員', title: 'ホテル出発' },
         ],
         '10:00': [
-            { group: 'グループA', title: 'コテージ到着', members: ['田中', '鈴木'], endTime: '11:00' },
-            { group: 'グループB', title: '買い出し', members: ['佐藤'], endTime: '12:00' },
+            { group: 'グループA', title: 'コテージ到着', members: ['自分', '田中', '鈴木'] },
+            { group: 'グループB', title: '買い出し', members: ['佐藤', '自分'] },
+            { group: 'グループB', title: '買い出し', members: ['佐藤'] },
+            { group: 'グループB', title: '買い出し', members: ['佐藤'] },
+            { group: 'グループB', title: '買い出し', members: ['佐藤'] },
         ],
         '11:00': [
-            { group: '全員', title: '昼食・休憩', endTime: '13:00' },
+            { group: '全員', title: '昼食・休憩' },
         ],
         '14:00': [
-            { group: '全員', title: '昼食・休憩', endTime: '16:00' },
+            { group: '全員', title: '昼食・休憩' },
         ],
     }),
     day2: generateHours(),
@@ -39,58 +43,40 @@ const scheduleData = {
 const SLOT_HEIGHT = 104;
 const COMPACT_SLOT_HEIGHT = 22;
 const COMPACT_SLOT_MARGIN_BOTTOM = 30;
+const EVENTS_PER_ROW = 2;
 const TIMELINE_PADDING_TOP = 36;
 const TIMELINE_BULLET_CENTER = 11;
-
-function buildShadowedTimes(items) {
-    const slotsWithEvents = new Set(
-        items.filter((item) => item.events.length > 0).map((item) => item.time)
-    );
-    const shadowed = new Set();
-    items.forEach((item) => {
-        item.events.forEach((event) => {
-            if (!event.endTime) return;
-            const startH = parseInt(item.time);
-            const endH = parseInt(event.endTime);
-            for (let h = startH + 1; h < endH; h++) {
-                const t = `${String(h).padStart(2, '0')}:00`;
-                if (!slotsWithEvents.has(t)) shadowed.add(t);
-            }
-        });
-    });
-    return shadowed;
-}
-
-function getSpan(startTime, endTime, items) {
-    if (!endTime) return 1;
-    const startH = parseInt(startTime);
-    const endH = parseInt(endTime);
-    for (let h = startH + 1; h < endH; h++) {
-        const t = `${String(h).padStart(2, '0')}:00`;
-        if (items.some((item) => item.time === t && item.events.length > 0)) {
-            return h - startH;
-        }
-    }
-    return endH - startH;
-}
 
 function isCompactSlot(item) {
     return item.events.length === 0;
 }
 
-function getSlotVisualHeight(item, shadowedTimes, isLast) {
-    if (isCompactSlot(item) && !shadowedTimes.has(item.time)) {
+function getEventRows(item) {
+    return Math.max(Math.ceil(item.events.length / EVENTS_PER_ROW), 1);
+}
+
+function getSlotVisualHeight(item) {
+    if (isCompactSlot(item)) {
         return COMPACT_SLOT_HEIGHT + COMPACT_SLOT_MARGIN_BOTTOM;
     }
 
-    return isLast ? COMPACT_SLOT_HEIGHT : SLOT_HEIGHT;
+    return getEventRows(item) * SLOT_HEIGHT;
+}
+
+function getSlotStyle(item) {
+    if (isCompactSlot(item)) {
+        return { minHeight: COMPACT_SLOT_HEIGHT, marginBottom: COMPACT_SLOT_MARGIN_BOTTOM };
+    }
+
+    const slotHeight = getSlotVisualHeight(item);
+    return slotHeight > SLOT_HEIGHT ? { minHeight: slotHeight } : undefined;
 }
 
 function formatTime(date) {
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
-function getCurrentTimeTop(items, shadowedTimes, now) {
+function getCurrentTimeTop(items, now) {
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:00`;
     const currentIndex = items.findIndex((item) => item.time === currentTime);
 
@@ -100,34 +86,37 @@ function getCurrentTimeTop(items, shadowedTimes, now) {
 
     const offsetBeforeCurrent = items
         .slice(0, currentIndex)
-        .reduce((total, item, index) => (
-            total + getSlotVisualHeight(item, shadowedTimes, index === items.length - 1)
-        ), 0);
+        .reduce((total, item) => total + getSlotVisualHeight(item), 0);
     const currentItem = items[currentIndex];
-    const currentHeight = getSlotVisualHeight(currentItem, shadowedTimes, currentIndex === items.length - 1);
+    const currentHeight = getSlotVisualHeight(currentItem);
     const minuteOffset = currentHeight * (now.getMinutes() / 60);
 
     return TIMELINE_PADDING_TOP + TIMELINE_BULLET_CENTER + offsetBeforeCurrent + minuteOffset;
 }
 
 function isCurrentTimeOverEvent(items, now) {
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:00`;
+    return items.some((item) => item.time === currentTime && item.events.length > 0);
+}
 
-    return items.some((item) => {
-        const startHour = parseInt(item.time);
-        const startMinutes = startHour * 60;
+function filterItemsByView(items, viewMode) {
+    if (viewMode === 'all') {
+        return items;
+    }
 
-        return item.events.some((event) => {
-            const endHour = parseInt(event.endTime ?? item.time) || startHour + 1;
-            const endMinutes = endHour * 60;
-            return currentMinutes >= startMinutes && currentMinutes < endMinutes;
-        });
-    });
+    return items.map((item) => ({
+        ...item,
+        events: item.events.filter((event) => (
+            event.group === '全員' || event.members?.includes(MY_MEMBER_NAME)
+        )),
+    }));
 }
 
 export default function ScheduleTimeAxis({ selectedDay }) {
     const [now, setNow] = useState(() => new Date());
-    const items = scheduleData[selectedDay] ?? [];
+    const [viewMode, setViewMode] = useState('all');
+    const baseItems = scheduleData[selectedDay] ?? [];
+    const items = filterItemsByView(baseItems, viewMode);
 
     useEffect(() => {
         const timerId = window.setInterval(() => {
@@ -141,68 +130,74 @@ export default function ScheduleTimeAxis({ selectedDay }) {
         return null;
     }
 
-    const shadowedTimes = buildShadowedTimes(items);
-    const currentTimeTop = getCurrentTimeTop(items, shadowedTimes, now);
+    const currentTimeTop = getCurrentTimeTop(items, now);
     const currentTimeOverEvent = isCurrentTimeOverEvent(items, now);
 
     return (
         <section className={styles.timelineSection} aria-label="スケジュール時間軸">
-            {currentTimeTop !== null && (
-                <div
-                    className={`${styles.currentTimeLine} ${currentTimeOverEvent ? styles.currentTimeLineShort : ''}`}
-                    style={{ top: currentTimeTop }}
-                    aria-label={`現在時刻 ${formatTime(now)}`}
+            <div className={styles.viewToggle} aria-label="スケジュール表示切り替え">
+                <button
+                    type="button"
+                    className={`${styles.viewToggleButton} ${viewMode === 'all' ? styles.viewToggleButtonActive : ''}`}
+                    onClick={() => setViewMode('all')}
                 >
-                    <span className={styles.currentTimeLabel}>{formatTime(now)}</span>
-                </div>
-            )}
+                    全体
+                </button>
+                <button
+                    type="button"
+                    className={`${styles.viewToggleButton} ${viewMode === 'mine' ? styles.viewToggleButtonActive : ''}`}
+                    onClick={() => setViewMode('mine')}
+                >
+                    自分
+                </button>
+            </div>
 
-            <Timeline
-                active={items.length - 1}
-                align="right"
-                bulletSize={22}
-                color="var(--sub-color)"
-                lineWidth={4}
-                classNames={{
-                    root: styles.timeAxis,
-                    item: styles.timeItem,
-                    itemTitle: styles.timeLabel,
-                    itemBullet: styles.timeBullet,
-                }}
-            >
-                {items.map((item) => {
-                    const isCompact = isCompactSlot(item) && !shadowedTimes.has(item.time);
-                    return (
-                        <Timeline.Item
-                            key={item.time}
-                            title={item.time}
-                            style={isCompact ? { minHeight: COMPACT_SLOT_HEIGHT, marginBottom: COMPACT_SLOT_MARGIN_BOTTOM } : undefined}
-                        />
-                    );
-                })}
-            </Timeline>
+            <div className={styles.timelineBody}>
+                {currentTimeTop !== null && (
+                    <div
+                        className={`${styles.currentTimeLine} ${currentTimeOverEvent ? styles.currentTimeLineShort : ''}`}
+                        style={{ top: currentTimeTop }}
+                        aria-label={`現在時刻 ${formatTime(now)}`}
+                    >
+                        <span className={styles.currentTimeLabel}>{formatTime(now)}</span>
+                    </div>
+                )}
 
-            <div className={styles.cardsColumn}>
-                {items.map((item, index) => {
-                    const isCompact = isCompactSlot(item);
-                    if (shadowedTimes.has(item.time)) {
-                        return <div key={item.time} style={{ height: 0, minHeight: 0, padding: 0 }} />;
-                    }
-                    const isLast = index === items.length - 1;
-                    return (
-                        <div
-                            key={item.time}
-                            className={isLast ? styles.cardSlotLast : styles.cardSlot}
-                            style={isCompact ? { minHeight: COMPACT_SLOT_HEIGHT, marginBottom: COMPACT_SLOT_MARGIN_BOTTOM } : undefined}
-                        >
-                            {item.events.map((event, i) => {
-                                const span = getSpan(item.time, event.endTime, items);
-                                return (
-                                    <div
-                                        key={i}
-                                        className={styles.scheduleCard}
-                                        style={span > 1 ? { height: span * SLOT_HEIGHT - 8 } : undefined}
-                                    >
+                <Timeline
+                    active={items.length - 1}
+                    align="right"
+                    bulletSize={22}
+                    color="var(--sub-color)"
+                    lineWidth={4}
+                    classNames={{
+                        root: styles.timeAxis,
+                        item: styles.timeItem,
+                        itemTitle: styles.timeLabel,
+                        itemBullet: styles.timeBullet,
+                    }}
+                >
+                    {items.map((item) => {
+                        return (
+                            <Timeline.Item
+                                key={item.time}
+                                title={item.time}
+                                style={getSlotStyle(item)}
+                            />
+                        );
+                    })}
+                </Timeline>
+
+                <div className={styles.cardsColumn}>
+                    {items.map((item, index) => {
+                        const isLast = index === items.length - 1;
+                        return (
+                            <div
+                                key={item.time}
+                                className={isLast ? styles.cardSlotLast : styles.cardSlot}
+                                style={getSlotStyle(item)}
+                            >
+                                {item.events.map((event, i) => (
+                                    <div key={i} className={styles.scheduleCard}>
                                         {event.group && (
                                             <span
                                                 className={styles.groupBadge}
@@ -221,15 +216,12 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                                             </div>
                                         )}
                                         <p className={styles.scheduleTitle}>{event.title}</p>
-                                        {event.endTime && (
-                                            <p className={styles.scheduleDuration}>⏱ {event.endTime}まで</p>
-                                        )}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    );
-                })}
+                                ))}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         </section>
     );

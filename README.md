@@ -9,6 +9,11 @@ npm run build
 -react の静的ファイル作成  
 --作成されたフォルダの中身のみサーバーに移す
 
+npm run build:capacitor
+npx cap sync ios
+ios用のビルドコマンド
+
+
 SVG を使用する場合は SVGR で実装してください
 
 #ロリポップデプロイ手順
