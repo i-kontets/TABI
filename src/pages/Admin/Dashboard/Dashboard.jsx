@@ -27,7 +27,9 @@ export default function Dashboard() {
 
     if (!analytics) return <AdminLayout title="TABI Admin"><div /></AdminLayout>;
 
-    const { summary, activeUserTrend, userAttributes } = analytics;
+    const { summary, activeUserTrend, userAttributes, notificationPermissions } = analytics;
+    const notificationPermissionItems = notificationPermissions || userAttributes;
+    const notificationPermissionTotal = notificationPermissionItems.reduce((total, item) => total + item.value, 0);
 
     return (
         <AdminLayout title="TABI Admin">
@@ -65,11 +67,11 @@ export default function Dashboard() {
                 </ul>
             </Card>
 
-            <Card title="ユーザー属性(全体)">
+            <Card title="通知許可状況">
                 <DonutChart
-                    items={userAttributes}
+                    items={notificationPermissionItems}
                     centerLabel="合計"
-                    centerValue={`${summary.totalUsers.toLocaleString()}人`}
+                    centerValue={`${notificationPermissionTotal.toLocaleString()}人`}
                 />
             </Card>
 

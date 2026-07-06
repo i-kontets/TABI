@@ -13,7 +13,9 @@ export default function Analytics() {
 
     if (!analytics) return <AdminLayout title="分析・利用状況"><div /></AdminLayout>;
 
-    const { summary, activeUserTrend, userAttributes, usage, featureRanking } = analytics;
+    const { summary, activeUserTrend, userAttributes, notificationPermissions, usage, featureRanking } = analytics;
+    const notificationPermissionItems = notificationPermissions || userAttributes;
+    const notificationPermissionTotal = notificationPermissionItems.reduce((total, item) => total + item.value, 0);
     const maxCount = Math.max(...featureRanking.map((f) => f.count), 1);
 
     return (
@@ -33,11 +35,11 @@ export default function Analytics() {
                 <LineChart data={activeUserTrend.data} labels={activeUserTrend.labels} />
             </Card>
 
-            <Card title="ユーザー属性">
+            <Card title="通知許可状況">
                 <DonutChart
-                    items={userAttributes}
+                    items={notificationPermissionItems}
                     centerLabel="全体"
-                    centerValue={`${summary.totalUsers.toLocaleString()}人`}
+                    centerValue={`${notificationPermissionTotal.toLocaleString()}人`}
                 />
             </Card>
 
