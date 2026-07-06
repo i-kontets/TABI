@@ -1,27 +1,32 @@
-/**
- * API接続の差し替えポイント。
- * 現在はモックデータをPromiseで返している。
- * 実APIに切り替える際は、各サービス関数内の request(...) を
- * fetch / axios 呼び出しに置き換えるだけでよい。
- */
+const ADMIN_API_BASE = `${import.meta.env.BASE_URL}api/Admin/index.php`;
 
-const MOCK_DELAY_MS = 150;
+function buildUrl(resource, params = {}) {
+    const url = new URL(ADMIN_API_BASE, window.location.origin);
+    url.searchParams.set('resource', resource);
 
-// モック用:少し遅延させてAPIらしく振る舞う
-export function request(resolver) {
-    return new Promise((resolve) => {
-        setTimeout(() => resolve(resolver()), MOCK_DELAY_MS);
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+            url.searchParams.set(key, value);
+        }
     });
+
+    return url;
 }
 
-// 一覧系の共通処理:検索・フィルター・ページング
-export function paginate(list, { page = 1, perPage = 20 } = {}) {
-    const totalPages = Math.max(1, Math.ceil(list.length / perPage));
-    const p = Math.min(Math.max(1, page), totalPages);
-    return {
-        items: list.slice((p - 1) * perPage, p * perPage),
-        page: p,
-        totalPages,
-        total: list.length,
-    };
+export async function adminRequest(resource, { method = 'GET', params = {}, body } = {}) {
+    const response = await fetch(buildUrl(resource, params), {
+        method,
+        headers: body ? { 'Content-Type': 'application/json' } : undefined,
+        credentials: 'include',
+        body: body ? JSON.stringify(body) : undefined,
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+        const message = data?.message || 'Admin API request failed.';
+        throw new Error(message);
+    }
+
+    return data;
 }

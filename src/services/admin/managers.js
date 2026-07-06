@@ -1,25 +1,19 @@
-import { mockManagers } from './mockData';
-import { request } from './client';
+import { adminRequest } from './client';
 
-// 管理者一覧
 export function fetchManagers() {
-    return request(() => mockManagers);
+    return adminRequest('managers').then((result) => result.items ?? result);
 }
 
-// 管理者追加
 export function createManager(data) {
-    return request(() => {
-        const manager = { id: `m${Date.now()}`, status: '通常', lastLoginAt: '-', ...data };
-        mockManagers.push(manager);
-        return manager;
+    return adminRequest('managers', {
+        method: 'POST',
+        body: data,
     });
 }
 
-// アカウント停止 / 復旧
 export function toggleManagerStatus(managerId) {
-    return request(() => {
-        const m = mockManagers.find((x) => x.id === managerId);
-        if (m) m.status = m.status === '停止中' ? '通常' : '停止中';
-        return m;
+    return adminRequest('managers', {
+        method: 'PATCH',
+        params: { id: managerId },
     });
 }

@@ -1,45 +1,43 @@
-import { mockSpots, spotCategories, prefectures } from './mockData';
-import { request, paginate } from './client';
+import { adminRequest } from './client';
 
-export { spotCategories, prefectures };
+export const spotCategories = ['観光地・神社', '観光地・寺院', '観光地・水族館', '観光地・ビーチ', 'グルメ', '宿泊', 'その他'];
 
-// スポット一覧
+export const prefectures = [
+    '北海道', '青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県',
+    '茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県',
+    '新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県',
+    '静岡県', '愛知県', '三重県', '滋賀県', '京都府', '大阪府', '兵庫県',
+    '奈良県', '和歌山県', '鳥取県', '島根県', '岡山県', '広島県', '山口県',
+    '徳島県', '香川県', '愛媛県', '高知県', '福岡県', '佐賀県', '長崎県',
+    '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県',
+];
+
 export function fetchSpots({ query = '', page = 1 } = {}) {
-    return request(() => {
-        let list = mockSpots;
-        if (query) list = list.filter((s) => s.name.includes(query) || s.prefecture.includes(query));
-        return paginate(list, { page });
-    });
+    return adminRequest('spots', { params: { query, page } });
 }
 
-// スポット詳細
 export function fetchSpot(spotId) {
-    return request(() => mockSpots.find((s) => s.id === spotId) || null);
+    return adminRequest('spots', { params: { id: spotId } });
 }
 
-// 作成
 export function createSpot(data) {
-    return request(() => {
-        const spot = { id: `s${Date.now()}`, ...data };
-        mockSpots.unshift(spot);
-        return spot;
+    return adminRequest('spots', {
+        method: 'POST',
+        body: data,
     });
 }
 
-// 更新
 export function updateSpot(spotId, data) {
-    return request(() => {
-        const s = mockSpots.find((x) => x.id === spotId);
-        if (s) Object.assign(s, data);
-        return s;
+    return adminRequest('spots', {
+        method: 'PATCH',
+        params: { id: spotId },
+        body: data,
     });
 }
 
-// 削除
 export function deleteSpot(spotId) {
-    return request(() => {
-        const idx = mockSpots.findIndex((x) => x.id === spotId);
-        if (idx >= 0) mockSpots.splice(idx, 1);
-        return true;
+    return adminRequest('spots', {
+        method: 'DELETE',
+        params: { id: spotId },
     });
 }
