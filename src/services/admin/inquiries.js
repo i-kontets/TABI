@@ -20,10 +20,10 @@ export function updateInquiry(inquiryId, { status, memo }) {
     });
 }
 
-export function replyInquiry(inquiryId, message) {
+export function replyInquiry(inquiryId, message, { status, memo } = {}) {
     return adminRequest('inquiry-replies', {
         method: 'POST',
         params: { id: inquiryId },
-        body: { message },
+        body: { message, status, memo },
     });
 }

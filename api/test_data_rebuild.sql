@@ -88,6 +88,8 @@ CREATE TABLE `admin_inquiry_replies` (
   `inquiry_id` bigint NOT NULL COMMENT '返信対象のお問い合わせID',
   `manager_user_id` bigint DEFAULT NULL COMMENT '返信した管理者ユーザーID',
   `body` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '返信本文',
+  `delivery_status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'sent' COMMENT '返信送信状態（sent / failed）',
+  `gas_response` text COLLATE utf8mb4_unicode_ci COMMENT 'GASから返却されたレスポンス本文',
   `created_at` datetime NOT NULL COMMENT '返信日時'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理画面用お問い合わせ返信履歴テーブル';
 

@@ -1,4 +1,138 @@
 <?php
+// 管理画面向けの共通 API エンドポイントです。
+// 1 ファイルの中で、一覧取得・詳細取得・更新・削除・外部送信までをまとめて処理します。
+
+// 成功・失敗を問わず、API の返却形式を統一するための共通関数です。
+// HTTP ステータスを先に設定し、JSON にして返したあと、以降の処理を止めます。
+
+// リクエストボディを JSON として読み取るための関数です。
+// POST / PATCH のように、本文で値を送る API で使います。
+
+// 一覧データをページングするための共通処理です。
+// 返却件数、現在ページ、総ページ数、総件数をまとめて返します。
+
+// DB などの日時文字列を画面表示向けに整形します。
+// 例: 2026-07-06 12:34:56 -> 2026/07/06 12:34
+
+// users.status を管理画面表示用の日本語ラベルに変換します。
+// DB 上のコード値と UI 表示を切り離すための変換表です。
+
+// お知らせの状態を表示用ラベルに変換します。
+
+// 通報の状態を表示用ラベルに変換します。
+
+// お問い合わせの状態を表示用ラベルに変換します。
+
+// 表示ラベルから DB 保存用コードへ戻すための共通関数です。
+// 画面側の文言を使いながら、内部ではコード値で統一したいときに使います。
+
+// config/db.php で読み込んだ設定や環境変数を、ここから参照しやすくするためのラッパーです。
+// 配列の設定値を優先し、なければ環境変数、最後にデフォルト値を返します。
+
+// Google Apps Script に JSON を POST するための汎用関数です。
+// cURL が使える環境では cURL を優先し、ない場合は file_get_contents で送ります。
+
+// お問い合わせ返信を GAS 経由で送るための専用関数です。
+// 返信メールの送信処理を PHP 側に閉じ込めず、外部の GAS に委譲しています。
+
+// ユーザー一覧を取得し、管理画面でそのまま表示しやすい形に整形します。
+// プロフィール、グループ数、投稿数、最終ログインなどをまとめて取ります。
+
+// グループ一覧を取得します。
+// メンバー数、旅行日程、アイテム数、アルバム数など、管理画面で見たい指標も一緒に集計します。
+
+// 投稿一覧を取得します。
+// どのグループ・どのチャット種別に属するか、通報件数がいくつかも同時に返します。
+
+// 通報一覧を取得します。
+// 通報対象ユーザー、通報者、通報理由、管理メモなどをまとめて返します。
+
+// お問い合わせ一覧を取得します。
+// ユーザー名とメールアドレスも添えて、返信に必要な情報をそのまま扱えるようにします。
+
+// お知らせ一覧を取得します。
+// 削除済みを除外して、公開状態や配信期間が分かる形に整形します。
+
+// 観光スポット一覧を取得します。
+// 位置情報や公開状態も返し、管理画面で地図や一覧に使えるようにします。
+
+// 管理者一覧を取得します。
+// 権限レベルを役割名に変換し、最終ログイン日時も表示できるようにします。
+
+// 管理操作ログを取得します。
+// 誰が何をしたかを時系列で追えるようにする監査用データです。
+
+// クエリ文字列から対象リソースや ID を受け取ります。
+// resource で一覧種別を選び、id があれば詳細や単体更新に使います。
+
+    // GET は基本的に一覧取得か、単体取得、もしくは集計系の返却に使います。
+
+    // resource ごとに、呼ぶ取得関数を切り替えます。
+
+    // analytics は一覧ではなくダッシュボード向けの集計値を返します。
+
+    // activities は操作ログをそのまま返します。
+
+    // 通報数の内訳だけが欲しいときの専用レスポンスです。
+
+    // お問い合わせ数の内訳だけが欲しいときの専用レスポンスです。
+
+    // resource に対応する取得先がない場合は 404 相当で返します。
+
+    // id がある場合は一覧ではなく単体を返します。
+
+    // 一覧に対して、検索・絞り込み・ページングを順番に適用します。
+
+    // POST は新規作成や外部送信など、状態を増やす処理に使います。
+
+    // お知らせを新規作成します。
+
+    // 観光スポットを新規登録します。
+
+    // 管理者ユーザーを新規作成します。
+    // users と admin_users の 2 テーブルに分けて登録するため、トランザクションでまとめます。
+
+    // PATCH は既存データの状態変更に使います。
+
+    // action で削除・停止・公開切り替えなどの細かい挙動を分けています。
+
+    // ユーザーの停止または退会処理です。
+
+    // 投稿の非表示切り替え、または管理画面上の削除です。
+
+    // 通報の状態と管理メモを更新します。
+
+    // お問い合わせの状態とメモを更新します。
+
+    // お知らせの内容を更新します。
+
+    // スポット情報を更新します。
+
+    // 管理者の権限状態を切り替えます。
+
+    // DELETE は論理削除のような「見えなくする」操作に使っています。
+
+    // お知らせの削除は削除フラグを立てる方式です。
+
+    // スポットの削除も同じく論理削除です。
+
+    // お問い合わせ返信は、DB 更新だけでなく GAS への送信も伴う特別な処理です。
+
+    // 返信対象のお問い合わせを取得し、必要な送信先情報を揃えます。
+
+    // GAS にメール送信を依頼し、結果を受け取ります。
+
+    // 送信履歴を replies テーブルに保存します。
+
+    // 返信後は、お問い合わせ本体の状態や管理メモも更新します。
+
+    // どの分岐にも当てはまらない場合は、対応していない操作として返します。
+
+    // 途中で例外が起きたら、トランザクション中なら必ず巻き戻して整合性を保ちます。
+
+    // 失敗理由を JSON で返し、フロント側からも確認できるようにします。
+
+
 require_once __DIR__ . "/../config/db.php";
 
 function respond($data, int $status = 200): void
@@ -75,6 +209,96 @@ function inquiry_status_label(?string $status): string
 function to_status_code(string $label, array $map, string $default): string
 {
     return $map[$label] ?? $default;
+}
+
+function app_config(string $key, $default = null)
+{
+    global $config;
+    if (!empty($config[$key])) {
+        return $config[$key];
+    }
+    $envValue = getenv($key);
+    return $envValue !== false && $envValue !== "" ? $envValue : $default;
+}
+
+function post_json(string $url, array $payload): array
+{
+    $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
+
+    if (function_exists("curl_init")) {
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
+            CURLOPT_POSTFIELDS => $json,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_MAXREDIRS => 5,
+        ]);
+        $body = curl_exec($ch);
+        $error = curl_error($ch);
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($body === false) {
+            throw new RuntimeException("GAS送信に失敗しました: " . $error);
+        }
+
+        return ["status" => $status, "body" => $body];
+    }
+
+    $context = stream_context_create([
+        "http" => [
+            "method" => "POST",
+            "header" => "Content-Type: application/json\r\n",
+            "content" => $json,
+            "timeout" => 15,
+            "ignore_errors" => true,
+        ],
+    ]);
+    $body = file_get_contents($url, false, $context);
+    $status = 0;
+    if (isset($http_response_header[0]) && preg_match("/\s(\d{3})\s/", $http_response_header[0], $matches)) {
+        $status = (int) $matches[1];
+    }
+
+    if ($body === false) {
+        throw new RuntimeException("GAS送信に失敗しました。");
+    }
+
+    return ["status" => $status, "body" => $body];
+}
+
+function send_inquiry_reply_via_gas(array $inquiry, string $message): array
+{
+    $gasUrl = app_config("GAS_INQUIRY_REPLY_URL", "");
+    $gasToken = app_config("GAS_INQUIRY_REPLY_TOKEN", "");
+
+    if (!$gasUrl) {
+        throw new RuntimeException("GAS_INQUIRY_REPLY_URLが設定されていません。GASをWebアプリとしてデプロイし、/exec のURLを設定してください。");
+    }
+
+    $response = post_json($gasUrl, [
+        "token" => $gasToken,
+        "inquiryId" => $inquiry["public_id"],
+        "to" => $inquiry["email"],
+        "userName" => $inquiry["user_name"],
+        "title" => $inquiry["title"],
+        "category" => $inquiry["category"],
+        "originalBody" => $inquiry["body"],
+        "replyBody" => $message,
+    ]);
+    $decoded = json_decode($response["body"], true);
+
+    if ($response["status"] < 200 || $response["status"] >= 300) {
+        throw new RuntimeException("GASがHTTP " . $response["status"] . "を返しました。");
+    }
+    if (is_array($decoded) && isset($decoded["ok"]) && !$decoded["ok"]) {
+        throw new RuntimeException($decoded["message"] ?? "GAS側で送信に失敗しました。");
+    }
+
+    return $response;
 }
 
 function fetch_users(PDO $pdo): array
@@ -259,7 +483,7 @@ function fetch_reports(PDO $pdo): array
 function fetch_inquiries(PDO $pdo): array
 {
     $rows = $pdo->query("
-        SELECT i.*, u.name AS user_name
+        SELECT i.*, u.name AS user_name, u.email
         FROM admin_inquiries i
         LEFT JOIN users u ON u.user_id = i.user_id
         ORDER BY i.created_at DESC, i.inquiry_id DESC
@@ -271,6 +495,7 @@ function fetch_inquiries(PDO $pdo): array
         "status" => inquiry_status_label($row["status"]),
         "user" => $row["user_name"] ?: "-",
         "userId" => (int) $row["user_id"],
+        "userEmail" => $row["email"] ?: "",
         "category" => $row["category"],
         "body" => $row["body"],
         "hasAttachment" => (bool) $row["has_attachment"],
@@ -591,10 +816,55 @@ try {
     }
 
     if ($method === "POST" && $resource === "inquiry-replies") {
-        $stmt = $pdo->prepare("INSERT INTO admin_inquiry_replies (inquiry_id, manager_user_id, body, created_at) SELECT inquiry_id, 1, :body, NOW() FROM admin_inquiries WHERE public_id = :public_id");
-        $stmt->execute(["body" => $input["message"] ?? "", "public_id" => $id]);
-        $pdo->prepare("UPDATE admin_inquiries SET status = 'working', updated_at = NOW() WHERE public_id = :public_id")->execute(["public_id" => $id]);
-        respond(["ok" => true, "inquiryId" => $id, "message" => $input["message"] ?? ""]);
+        $message = trim($input["message"] ?? "");
+        if ($message === "") {
+            respond(["success" => false, "message" => "返信内容を入力してください。"], 400);
+        }
+
+        $inquiryStmt = $pdo->prepare("
+            SELECT i.*, u.name AS user_name, u.email
+            FROM admin_inquiries i
+            LEFT JOIN users u ON u.user_id = i.user_id
+            WHERE i.public_id = :public_id
+            LIMIT 1
+        ");
+        $inquiryStmt->execute(["public_id" => $id]);
+        $inquiry = $inquiryStmt->fetch();
+
+        if (!$inquiry) {
+            respond(["success" => false, "message" => "お問い合わせが見つかりません。"], 404);
+        }
+        if (empty($inquiry["email"])) {
+            respond(["success" => false, "message" => "返信先メールアドレスがありません。"], 400);
+        }
+
+        $gasResponse = send_inquiry_reply_via_gas($inquiry, $message);
+        $nextStatus = to_status_code($input["status"] ?? "", ["未対応" => "open", "対応中" => "working", "対応済み" => "resolved"], "working");
+
+        $stmt = $pdo->prepare("
+            INSERT INTO admin_inquiry_replies
+              (inquiry_id, manager_user_id, body, delivery_status, gas_response, created_at)
+            VALUES
+              (:inquiry_id, 1, :body, 'sent', :gas_response, NOW())
+        ");
+        $stmt->execute([
+            "inquiry_id" => $inquiry["inquiry_id"],
+            "body" => $message,
+            "gas_response" => $gasResponse["body"],
+        ]);
+
+        $updateStmt = $pdo->prepare("
+            UPDATE admin_inquiries
+            SET status = :status, admin_memo = :memo, updated_at = NOW()
+            WHERE public_id = :public_id
+        ");
+        $updateStmt->execute([
+            "status" => $nextStatus,
+            "memo" => $input["memo"] ?? $inquiry["admin_memo"],
+            "public_id" => $id,
+        ]);
+
+        respond(["ok" => true, "inquiryId" => $id, "message" => $message]);
     }
 
     respond(["success" => false, "message" => "Unsupported method."], 405);
