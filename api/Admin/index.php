@@ -1,140 +1,12 @@
 <?php
-// 管理画面向けの共通 API エンドポイントです。
-// 1 ファイルの中で、一覧取得・詳細取得・更新・削除・外部送信までをまとめて処理します。
 
-// 成功・失敗を問わず、API の返却形式を統一するための共通関数です。
-// HTTP ステータスを先に設定し、JSON にして返したあと、以降の処理を止めます。
-
-// リクエストボディを JSON として読み取るための関数です。
-// POST / PATCH のように、本文で値を送る API で使います。
-
-// 一覧データをページングするための共通処理です。
-// 返却件数、現在ページ、総ページ数、総件数をまとめて返します。
-
-// DB などの日時文字列を画面表示向けに整形します。
-// 例: 2026-07-06 12:34:56 -> 2026/07/06 12:34
-
-// users.status を管理画面表示用の日本語ラベルに変換します。
-// DB 上のコード値と UI 表示を切り離すための変換表です。
-
-// お知らせの状態を表示用ラベルに変換します。
-
-// 通報の状態を表示用ラベルに変換します。
-
-// お問い合わせの状態を表示用ラベルに変換します。
-
-// 表示ラベルから DB 保存用コードへ戻すための共通関数です。
-// 画面側の文言を使いながら、内部ではコード値で統一したいときに使います。
-
-// config/db.php で読み込んだ設定や環境変数を、ここから参照しやすくするためのラッパーです。
-// 配列の設定値を優先し、なければ環境変数、最後にデフォルト値を返します。
-
-// Google Apps Script に JSON を POST するための汎用関数です。
-// cURL が使える環境では cURL を優先し、ない場合は file_get_contents で送ります。
-
-// お問い合わせ返信を GAS 経由で送るための専用関数です。
-// 返信メールの送信処理を PHP 側に閉じ込めず、外部の GAS に委譲しています。
-
-// ユーザー一覧を取得し、管理画面でそのまま表示しやすい形に整形します。
-// プロフィール、グループ数、投稿数、最終ログインなどをまとめて取ります。
-
-// グループ一覧を取得します。
-// メンバー数、旅行日程、アイテム数、アルバム数など、管理画面で見たい指標も一緒に集計します。
-
-// 投稿一覧を取得します。
-// どのグループ・どのチャット種別に属するか、通報件数がいくつかも同時に返します。
-
-// 通報一覧を取得します。
-// 通報対象ユーザー、通報者、通報理由、管理メモなどをまとめて返します。
-
-// お問い合わせ一覧を取得します。
-// ユーザー名とメールアドレスも添えて、返信に必要な情報をそのまま扱えるようにします。
-
-// お知らせ一覧を取得します。
-// 削除済みを除外して、公開状態や配信期間が分かる形に整形します。
-
-// 観光スポット一覧を取得します。
-// 位置情報や公開状態も返し、管理画面で地図や一覧に使えるようにします。
-
-// 管理者一覧を取得します。
-// 権限レベルを役割名に変換し、最終ログイン日時も表示できるようにします。
-
-// 管理操作ログを取得します。
-// 誰が何をしたかを時系列で追えるようにする監査用データです。
-
-// クエリ文字列から対象リソースや ID を受け取ります。
-// resource で一覧種別を選び、id があれば詳細や単体更新に使います。
-
-    // GET は基本的に一覧取得か、単体取得、もしくは集計系の返却に使います。
-
-    // resource ごとに、呼ぶ取得関数を切り替えます。
-
-    // analytics は一覧ではなくダッシュボード向けの集計値を返します。
-
-    // activities は操作ログをそのまま返します。
-
-    // 通報数の内訳だけが欲しいときの専用レスポンスです。
-
-    // お問い合わせ数の内訳だけが欲しいときの専用レスポンスです。
-
-    // resource に対応する取得先がない場合は 404 相当で返します。
-
-    // id がある場合は一覧ではなく単体を返します。
-
-    // 一覧に対して、検索・絞り込み・ページングを順番に適用します。
-
-    // POST は新規作成や外部送信など、状態を増やす処理に使います。
-
-    // お知らせを新規作成します。
-
-    // 観光スポットを新規登録します。
-
-    // 管理者ユーザーを新規作成します。
-    // users と admin_users の 2 テーブルに分けて登録するため、トランザクションでまとめます。
-
-    // PATCH は既存データの状態変更に使います。
-
-    // action で削除・停止・公開切り替えなどの細かい挙動を分けています。
-
-    // ユーザーの停止または退会処理です。
-
-    // 投稿の非表示切り替え、または管理画面上の削除です。
-
-    // 通報の状態と管理メモを更新します。
-
-    // お問い合わせの状態とメモを更新します。
-
-    // お知らせの内容を更新します。
-
-    // スポット情報を更新します。
-
-    // 管理者の権限状態を切り替えます。
-
-    // DELETE は論理削除のような「見えなくする」操作に使っています。
-
-    // お知らせの削除は削除フラグを立てる方式です。
-
-    // スポットの削除も同じく論理削除です。
-
-    // お問い合わせ返信は、DB 更新だけでなく GAS への送信も伴う特別な処理です。
-
-    // 返信対象のお問い合わせを取得し、必要な送信先情報を揃えます。
-
-    // GAS にメール送信を依頼し、結果を受け取ります。
-
-    // 送信履歴を replies テーブルに保存します。
-
-    // 返信後は、お問い合わせ本体の状態や管理メモも更新します。
-
-    // どの分岐にも当てはまらない場合は、対応していない操作として返します。
-
-    // 途中で例外が起きたら、トランザクション中なら必ず巻き戻して整合性を保ちます。
-
-    // 失敗理由を JSON で返し、フロント側からも確認できるようにします。
-
+// 管理画面で使う共通 API の入口です。
+// この 1 ファイルで、一覧取得・詳細取得・作成・更新・削除・外部送信をまとめて扱います。
 
 require_once __DIR__ . "/../config/db.php";
 
+// どの処理でも共通して使う JSON 応答関数です。
+// HTTP ステータスを設定してから JSON を返し、必ず exit で処理を止めます。
 function respond($data, int $status = 200): void
 {
     http_response_code($status);
@@ -142,6 +14,8 @@ function respond($data, int $status = 200): void
     exit;
 }
 
+// リクエストボディを JSON として読み取るための関数です。
+// POST や PATCH で送られてくる本文を、配列として扱える形に整えます。
 function body(): array
 {
     $raw = file_get_contents("php://input");
@@ -152,6 +26,8 @@ function body(): array
     return is_array($data) ? $data : [];
 }
 
+// 配列データをページング付きのレスポンスにまとめる関数です。
+// 件数が多い一覧を、フロント側で扱いやすい形にします。
 function page_result(array $items, int $page, int $perPage = 20): array
 {
     $total = count($items);
@@ -166,6 +42,8 @@ function page_result(array $items, int $page, int $perPage = 20): array
     ];
 }
 
+// DB の日時文字列を画面表示向けに整形します。
+// 未設定なら "-" を返し、表示崩れを防ぎます。
 function format_dt(?string $value): string
 {
     if (!$value) {
@@ -174,6 +52,7 @@ function format_dt(?string $value): string
     return str_replace("-", "/", substr($value, 0, 16));
 }
 
+// users.status を管理画面で見やすい日本語ラベルに変換します。
 function user_status_label(?string $status): string
 {
     return [
@@ -182,6 +61,7 @@ function user_status_label(?string $status): string
     ][$status] ?? "通常";
 }
 
+// お知らせの状態コードを日本語表示に変換します。
 function notice_status_label(?string $status): string
 {
     return [
@@ -190,6 +70,7 @@ function notice_status_label(?string $status): string
     ][$status] ?? "公開中";
 }
 
+// 通報の状態コードを日本語表示に変換します。
 function report_status_label(?string $status): string
 {
     return [
@@ -198,6 +79,7 @@ function report_status_label(?string $status): string
     ][$status] ?? "未対応";
 }
 
+// お問い合わせの状態コードを日本語表示に変換します。
 function inquiry_status_label(?string $status): string
 {
     return [
@@ -206,11 +88,14 @@ function inquiry_status_label(?string $status): string
     ][$status] ?? "未対応";
 }
 
+// 表示ラベルを DB 保存用のコードに戻すための変換関数です。
 function to_status_code(string $label, array $map, string $default): string
 {
     return $map[$label] ?? $default;
 }
 
+// config/db.php で読み込んだ設定や環境変数を参照しやすくするためのラッパーです。
+// 設定配列 → 環境変数 → デフォルト値の順で値を決めます。
 function app_config(string $key, $default = null)
 {
     global $config;
@@ -221,6 +106,8 @@ function app_config(string $key, $default = null)
     return $envValue !== false && $envValue !== "" ? $envValue : $default;
 }
 
+// Google Apps Script に JSON を POST するための共通関数です。
+// cURL が使える環境では cURL を優先し、使えない場合は file_get_contents に切り替えます。
 function post_json(string $url, array $payload): array
 {
     $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
@@ -270,6 +157,8 @@ function post_json(string $url, array $payload): array
     return ["status" => $status, "body" => $body];
 }
 
+// お問い合わせ返信を GAS 経由で送るための専用処理です。
+// PHP 側では送信に必要な情報をまとめ、メール送信の実処理は GAS に任せます。
 function send_inquiry_reply_via_gas(array $inquiry, string $message): array
 {
     $gasUrl = app_config("GAS_INQUIRY_REPLY_URL", "");
@@ -301,6 +190,8 @@ function send_inquiry_reply_via_gas(array $inquiry, string $message): array
     return $response;
 }
 
+// ユーザー一覧を取得します。
+// プロフィール、最終ログイン、所属グループ数、投稿数など、管理画面で見たい情報も合わせて返します。
 function fetch_users(PDO $pdo): array
 {
     $sql = "
@@ -346,6 +237,8 @@ function fetch_users(PDO $pdo): array
     }, $rows);
 }
 
+// グループ一覧を取得します。
+// メンバー数や旅行期間、旅程数、アルバム数などを集計して返します。
 function fetch_groups(PDO $pdo): array
 {
     $groups = $pdo->query("
@@ -408,6 +301,8 @@ function fetch_groups(PDO $pdo): array
     }, $groups);
 }
 
+// 投稿一覧を取得します。
+// 投稿本文だけでなく、投稿者・所属グループ・通報件数も合わせて返します。
 function fetch_posts(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -449,6 +344,8 @@ function fetch_posts(PDO $pdo): array
     ], $rows);
 }
 
+// 通報一覧を取得します。
+// 対象ユーザー、通報者、通報理由、管理メモなど、処理に必要な情報をひとまとめにします。
 function fetch_reports(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -480,6 +377,8 @@ function fetch_reports(PDO $pdo): array
     ], $rows);
 }
 
+// お問い合わせ一覧を取得します。
+// 返信に必要なユーザー名やメールアドレスも一緒に返します。
 function fetch_inquiries(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -504,6 +403,8 @@ function fetch_inquiries(PDO $pdo): array
     ], $rows);
 }
 
+// お知らせ一覧を取得します。
+// 削除済みを除外して、公開状態や配信期間が分かる形に整えます。
 function fetch_notices(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -526,6 +427,8 @@ function fetch_notices(PDO $pdo): array
     ], $rows);
 }
 
+// 観光スポット一覧を取得します。
+// 緯度経度や公開状態を含めて返し、管理画面でそのまま使える形にします。
 function fetch_spots(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -547,6 +450,8 @@ function fetch_spots(PDO $pdo): array
     ], $rows);
 }
 
+// 管理者一覧を取得します。
+// 権限レベルを役割名に変換し、最終ログイン日時も付けて返します。
 function fetch_managers(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -568,6 +473,8 @@ function fetch_managers(PDO $pdo): array
     ], $rows);
 }
 
+// 管理操作ログを取得します。
+// 誰が何をしたかを時系列で追えるようにする監査用データです。
 function fetch_logs(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -586,13 +493,16 @@ function fetch_logs(PDO $pdo): array
     ], $rows);
 }
 
+// URL のクエリ文字列から、どの資源を扱うかと単体指定の ID を受け取ります。
 $resource = $_GET["resource"] ?? "";
 $id = $_GET["id"] ?? null;
 $method = $_SERVER["REQUEST_METHOD"];
 $input = body();
 
 try {
+    // GET は一覧取得、単体取得、集計取得に使います。
     if ($method === "GET") {
+        // resource ごとに呼ぶ取得関数を切り替えます。
         $items = [
             "users" => fn() => fetch_users($pdo),
             "groups" => fn() => fetch_groups($pdo),
@@ -606,6 +516,7 @@ try {
         ][$resource] ?? null;
         $items = $items ? $items() : null;
 
+        // analytics は一覧ではなく、ダッシュボード向けの集計データを返します。
         if ($resource === "analytics") {
             $users = fetch_users($pdo);
             $groups = fetch_groups($pdo);
@@ -633,10 +544,12 @@ try {
             ]);
         }
 
+        // activities は操作履歴をそのまま返します。
         if ($resource === "activities") {
             respond(fetch_logs($pdo));
         }
 
+        // 通報件数の状態別集計だけを返す専用エンドポイントです。
         if ($resource === "reports-counts") {
             $reports = fetch_reports($pdo);
             respond([
@@ -646,6 +559,7 @@ try {
             ]);
         }
 
+        // お問い合わせ件数の状態別集計だけを返します。
         if ($resource === "inquiries-counts") {
             $inquiries = fetch_inquiries($pdo);
             respond([
@@ -655,15 +569,18 @@ try {
             ]);
         }
 
+        // resource が既知でない場合は、対応していないとして 404 を返します。
         if (!is_array($items)) {
             respond(["success" => false, "message" => "Unknown resource."], 404);
         }
 
+        // id があれば一覧ではなく単体データを返します。
         if ($id !== null) {
             $found = current(array_filter($items, fn($item) => (string) $item["id"] === (string) $id));
             respond($found ?: null);
         }
 
+        // 一覧データに対して、検索・状態絞り込み・カテゴリ絞り込みを順番に適用します。
         $query = trim($_GET["query"] ?? "");
         $status = trim($_GET["status"] ?? "");
         $category = trim($_GET["category"] ?? "");
@@ -680,7 +597,9 @@ try {
     }
 
     if ($method === "POST") {
+        // POST は新規作成や外部送信のような、データを増やす処理に使います。
         if ($resource === "notices") {
+            // お知らせを新規登録します。
             $stmt = $pdo->prepare("INSERT INTO admin_notices (title, body, target_type, status, start_at, end_at, push_enabled, created_by, created_at, updated_at) VALUES (:title, :body, :target_type, 'published', :start_at, :end_at, :push_enabled, 1, NOW(), NOW())");
             $stmt->execute([
                 "title" => $input["title"] ?? "",
@@ -696,6 +615,7 @@ try {
         }
 
         if ($resource === "spots") {
+            // 観光スポットを新規登録します。
             $stmt = $pdo->prepare("INSERT INTO admin_spots (name, category, prefecture, address, latitude, longitude, status, created_at, updated_at) VALUES (:name, :category, :prefecture, :address, :latitude, :longitude, :status, NOW(), NOW())");
             $stmt->execute([
                 "name" => $input["name"] ?? "",
@@ -710,6 +630,8 @@ try {
         }
 
         if ($resource === "managers") {
+            // 管理者ユーザーを新規作成します。
+            // users と admin_users の 2 テーブルに分けて登録するので、トランザクションでまとめます。
             $pdo->beginTransaction();
             $stmt = $pdo->prepare("INSERT INTO users (name, email, password_hash, language_code, status, created_at, updated_at) VALUES (:name, :email, '', 'ja', 'active', NOW(), NOW())");
             $stmt->execute(["name" => $input["name"] ?? "", "email" => $input["email"] ?? ""]);
@@ -723,9 +645,11 @@ try {
     }
 
     if ($method === "PATCH") {
+        // PATCH は既存データの状態変更に使います。
         $action = $_GET["action"] ?? "";
         $numericId = (int) preg_replace("/^[a-z]+/", "", (string) $id);
 
+        // action で削除・停止・公開切り替えのような細かい振る舞いを分けます。
         if ($resource === "users") {
             $status = $action === "delete" ? "deleted" : "suspended";
             $deletedAt = $action === "delete" ? "NOW()" : "NULL";
@@ -734,6 +658,7 @@ try {
         }
 
         if ($resource === "posts") {
+            // 投稿の非表示切り替え、または管理画面上の削除を行います。
             if ($action === "delete") {
                 $pdo->exec("UPDATE messages SET admin_deleted_at = NOW() WHERE message_id = {$numericId}");
                 respond(["ok" => true]);
@@ -743,6 +668,7 @@ try {
         }
 
         if ($resource === "reports") {
+            // 通報の状態と管理メモを更新します。
             $stmt = $pdo->prepare("UPDATE admin_reports SET status = :status, admin_note = :note, resolved_at = IF(:status = 'resolved', NOW(), resolved_at), updated_at = NOW() WHERE report_id = :id");
             $stmt->execute([
                 "status" => to_status_code($input["status"] ?? "", ["未対応" => "open", "確認中" => "reviewing", "対応済み" => "resolved"], "open"),
@@ -753,6 +679,7 @@ try {
         }
 
         if ($resource === "inquiries") {
+            // お問い合わせの状態と管理メモを更新します。
             $stmt = $pdo->prepare("UPDATE admin_inquiries SET status = :status, admin_memo = :memo, updated_at = NOW() WHERE public_id = :id");
             $stmt->execute([
                 "status" => to_status_code($input["status"] ?? "", ["未対応" => "open", "対応中" => "working", "対応済み" => "resolved"], "open"),
@@ -804,23 +731,28 @@ try {
     }
 
     if ($method === "DELETE") {
+        // DELETE は論理削除のような「見えなくする」処理に使っています。
         $numericId = (int) preg_replace("/^[a-z]+/", "", (string) $id);
         if ($resource === "notices") {
+            // お知らせは削除フラグを立てる方式です。
             $pdo->exec("UPDATE admin_notices SET deleted_at = NOW() WHERE notice_id = {$numericId}");
             respond(true);
         }
         if ($resource === "spots") {
+            // スポットも同じく論理削除です。
             $pdo->exec("UPDATE admin_spots SET deleted_at = NOW() WHERE spot_id = {$numericId}");
             respond(true);
         }
     }
 
     if ($method === "POST" && $resource === "inquiry-replies") {
+        // お問い合わせ返信は、DB 更新だけでなく GAS 送信も伴う特別な処理です。
         $message = trim($input["message"] ?? "");
         if ($message === "") {
             respond(["success" => false, "message" => "返信内容を入力してください。"], 400);
         }
 
+        // 返信対象のお問い合わせを取得し、送信に必要な情報を揃えます。
         $inquiryStmt = $pdo->prepare("
             SELECT i.*, u.name AS user_name, u.email
             FROM admin_inquiries i
@@ -838,9 +770,11 @@ try {
             respond(["success" => false, "message" => "返信先メールアドレスがありません。"], 400);
         }
 
+                // GAS にメール送信を依頼し、送信結果を受け取ります。
         $gasResponse = send_inquiry_reply_via_gas($inquiry, $message);
         $nextStatus = to_status_code($input["status"] ?? "", ["未対応" => "open", "対応中" => "working", "対応済み" => "resolved"], "working");
 
+                // 送信履歴を replies テーブルに保存します。
         $stmt = $pdo->prepare("
             INSERT INTO admin_inquiry_replies
               (inquiry_id, manager_user_id, body, delivery_status, gas_response, created_at)
@@ -869,8 +803,10 @@ try {
 
     respond(["success" => false, "message" => "Unsupported method."], 405);
 } catch (Throwable $e) {
+    // 途中で例外が起きたら、トランザクション中なら必ず巻き戻して整合性を保ちます。
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    // 失敗内容を JSON で返し、フロント側からも原因を確認できるようにします。
     respond(["success" => false, "message" => "Admin API error.", "error" => $e->getMessage()], 500);
 }
