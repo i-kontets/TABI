@@ -860,6 +860,7 @@ try {
         $query = trim($_GET["query"] ?? "");
         $status = trim($_GET["status"] ?? "");
         $category = trim($_GET["category"] ?? "");
+        $prefecture = trim($_GET["prefecture"] ?? "");
         if ($query !== "") {
             $items = array_values(array_filter($items, fn($item) => strpos(json_encode($item, JSON_UNESCAPED_UNICODE), $query) !== false));
         }
@@ -868,6 +869,9 @@ try {
         }
         if ($category !== "" && $category !== "すべて") {
             $items = array_values(array_filter($items, fn($item) => ($item["category"] ?? "") === $category));
+        }
+        if ($prefecture !== "" && $prefecture !== "すべて") {
+            $items = array_values(array_filter($items, fn($item) => ($item["prefecture"] ?? "") === $prefecture));
         }
         if ($resource === "users") {
             $items = sort_admin_users($items, trim($_GET["sort"] ?? ""));
