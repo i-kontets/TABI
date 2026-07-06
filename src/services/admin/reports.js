@@ -1,37 +1,26 @@
-import { mockReports } from './mockData';
-import { request, paginate } from './client';
+import { adminRequest } from './client';
 
-// 通報一覧(ステータスタブ)
+// 通報一覧を取得します。
+// status と page を渡して、対応状況の絞り込みとページングを行います。
 export function fetchReports({ status = '', page = 1 } = {}) {
-    return request(() => {
-        let list = mockReports;
-        if (status) list = list.filter((r) => r.status === status);
-        return paginate(list, { page });
-    });
+    return adminRequest('reports', { params: { status, page } });
 }
 
-// タブ用の件数
+// 通報状態の件数を取得します。
 export function fetchReportCounts() {
-    return request(() => ({
-        '未対応': mockReports.filter((r) => r.status === '未対応').length,
-        '確認中': mockReports.filter((r) => r.status === '確認中').length,
-        '対応済み': mockReports.filter((r) => r.status === '対応済み').length,
-    }));
+    return adminRequest('reports-counts');
 }
 
-// 通報詳細
+// 通報 ID を指定して、単体の詳細を取得します。
 export function fetchReport(reportId) {
-    return request(() => mockReports.find((r) => r.id === reportId) || null);
+    return adminRequest('reports', { params: { id: reportId } });
 }
 
-// ステータス変更・メモ更新
+// 通報の状態や管理メモを更新します。
 export function updateReport(reportId, { status, note }) {
-    return request(() => {
-        const r = mockReports.find((x) => x.id === reportId);
-        if (r) {
-            if (status != null) r.status = status;
-            if (note != null) r.note = note;
-        }
-        return r;
+    return adminRequest('reports', {
+        method: 'PATCH',
+        params: { id: reportId },
+        body: { status, note },
     });
 }

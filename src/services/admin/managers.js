@@ -1,25 +1,24 @@
-import { mockManagers } from './mockData';
-import { request } from './client';
+import { adminRequest } from './client';
 
-// 管理者一覧
+// 管理者一覧を取得します。
+// 返却形式が items 包装か生配列かに揺れがあるため、必要なら items を優先して取り出します。
 export function fetchManagers() {
-    return request(() => mockManagers);
+    return adminRequest('managers').then((result) => result.items ?? result);
 }
 
-// 管理者追加
+// 管理者ユーザーを新規作成します。
 export function createManager(data) {
-    return request(() => {
-        const manager = { id: `m${Date.now()}`, status: '通常', lastLoginAt: '-', ...data };
-        mockManagers.push(manager);
-        return manager;
+    return adminRequest('managers', {
+        method: 'POST',
+        body: data,
     });
 }
 
-// アカウント停止 / 復旧
+// 管理者の状態を切り替えます。
+// 画面側では停止中と通常をトグルする用途で使います。
 export function toggleManagerStatus(managerId) {
-    return request(() => {
-        const m = mockManagers.find((x) => x.id === managerId);
-        if (m) m.status = m.status === '停止中' ? '通常' : '停止中';
-        return m;
+    return adminRequest('managers', {
+        method: 'PATCH',
+        params: { id: managerId },
     });
 }
