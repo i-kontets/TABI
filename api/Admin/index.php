@@ -493,6 +493,153 @@ function fetch_logs(PDO $pdo): array
     ], $rows);
 }
 
+function activity_type(?string $targetType): string
+{
+    return [
+        "ユーザー" => "user",
+        "user" => "user",
+        "グループ" => "group",
+        "旅行グループ" => "group",
+        "group" => "group",
+        "お問い合わせ" => "inquiry",
+        "inquiry" => "inquiry",
+        "通報" => "report",
+        "report" => "report",
+        "お知らせ" => "notice",
+        "notice" => "notice",
+        "投稿" => "post",
+        "post" => "post",
+        "スポット" => "spot",
+        "spot" => "spot",
+    ][$targetType] ?? "admin";
+}
+
+function activity_time(?string $value): string
+{
+    if (!$value) {
+        return "-";
+    }
+
+    $timestamp = strtotime($value);
+    if (!$timestamp) {
+        return "-";
+    }
+
+    return date("n/j H:i", $timestamp);
+}
+
+function fetch_recent_activities(PDO $pdo): array
+{
+    $activities = [];
+
+    $logRows = $pdo->query("
+        SELECT l.activity_log_id, l.action_text, l.target_type, l.created_at, u.name AS manager_name
+        FROM admin_activity_logs l
+        LEFT JOIN users u ON u.user_id = l.manager_user_id
+        ORDER BY l.created_at DESC, l.activity_log_id DESC
+        LIMIT 10
+    ")->fetchAll();
+    foreach ($logRows as $row) {
+        $activities[] = [
+            "id" => "log-" . $row["activity_log_id"],
+            "text" => ($row["manager_name"] ?: "管理者") . "が" . $row["action_text"],
+            "time" => activity_time($row["created_at"]),
+            "type" => activity_type($row["target_type"]),
+            "sortAt" => $row["created_at"],
+        ];
+    }
+
+    $inquiryRows = $pdo->query("
+        SELECT inquiry_id, title, created_at
+        FROM admin_inquiries
+        ORDER BY created_at DESC, inquiry_id DESC
+        LIMIT 10
+    ")->fetchAll();
+    foreach ($inquiryRows as $row) {
+        $activities[] = [
+            "id" => "inquiry-" . $row["inquiry_id"],
+            "text" => "お問い合わせ「" . $row["title"] . "」が届きました",
+            "time" => activity_time($row["created_at"]),
+            "type" => "inquiry",
+            "sortAt" => $row["created_at"],
+        ];
+    }
+
+    $reportRows = $pdo->query("
+        SELECT report_id, reason, reported_at
+        FROM admin_reports
+        ORDER BY reported_at DESC, report_id DESC
+        LIMIT 10
+    ")->fetchAll();
+    foreach ($reportRows as $row) {
+        $activities[] = [
+            "id" => "report-" . $row["report_id"],
+            "text" => "通報「" . $row["reason"] . "」が届きました",
+            "time" => activity_time($row["reported_at"]),
+            "type" => "report",
+            "sortAt" => $row["reported_at"],
+        ];
+    }
+
+    $userRows = $pdo->query("
+        SELECT user_id, name, created_at
+        FROM users
+        WHERE deleted_at IS NULL
+        ORDER BY created_at DESC, user_id DESC
+        LIMIT 10
+    ")->fetchAll();
+    foreach ($userRows as $row) {
+        $activities[] = [
+            "id" => "user-" . $row["user_id"],
+            "text" => $row["name"] . "さんが登録しました",
+            "time" => activity_time($row["created_at"]),
+            "type" => "user",
+            "sortAt" => $row["created_at"],
+        ];
+    }
+
+    $groupRows = $pdo->query("
+        SELECT group_id, group_name, created_at
+        FROM user_groups
+        ORDER BY created_at DESC, group_id DESC
+        LIMIT 10
+    ")->fetchAll();
+    foreach ($groupRows as $row) {
+        $activities[] = [
+            "id" => "group-" . $row["group_id"],
+            "text" => "旅行グループ「" . $row["group_name"] . "」が作成されました",
+            "time" => activity_time($row["created_at"]),
+            "type" => "group",
+            "sortAt" => $row["created_at"],
+        ];
+    }
+
+    $noticeRows = $pdo->query("
+        SELECT notice_id, title, created_at
+        FROM admin_notices
+        WHERE deleted_at IS NULL
+        ORDER BY created_at DESC, notice_id DESC
+        LIMIT 10
+    ")->fetchAll();
+    foreach ($noticeRows as $row) {
+        $activities[] = [
+            "id" => "notice-" . $row["notice_id"],
+            "text" => "お知らせ「" . $row["title"] . "」を公開しました",
+            "time" => activity_time($row["created_at"]),
+            "type" => "notice",
+            "sortAt" => $row["created_at"],
+        ];
+    }
+
+    usort($activities, fn($a, $b) => strcmp($b["sortAt"], $a["sortAt"]));
+    $activities = array_slice($activities, 0, 8);
+
+    return array_map(function ($activity) {
+        unset($activity["sortAt"]);
+        return $activity;
+    }, $activities);
+}
+
 // URL のクエリ文字列から、どの資源を扱うかと単体指定の ID を受け取ります。
 // 今日TABIを使ったアクティブユーザー数を取得します。
 function fetch_today_active_users(PDO $pdo): int
@@ -609,9 +756,9 @@ try {
             ]);
         }
 
-        // activities は操作履歴をそのまま返します。
+        // activities はダッシュボード向けに最近の出来事をまとめて返します。
         if ($resource === "activities") {
-            respond(fetch_logs($pdo));
+            respond(fetch_recent_activities($pdo));
         }
 
         // 通報件数の状態別集計だけを返す専用エンドポイントです。

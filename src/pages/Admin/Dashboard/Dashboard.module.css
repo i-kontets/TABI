@@ -34,6 +34,12 @@
 }
 .activityList li:last-child { border-bottom: none; }
 
+.emptyActivity {
+    padding: 12px 0;
+    color: #8a94a6;
+    font-size: 12.5px;
+}
+
 .activityLink {
     display: flex;
     justify-content: space-between;
