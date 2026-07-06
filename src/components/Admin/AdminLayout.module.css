@@ -1,0 +1,14 @@
+.wrap {
+    min-height: 100dvh;
+    max-width: 480px;
+    margin: 0 auto;
+    background: #f4f6fb;
+    display: flex;
+    flex-direction: column;
+    color: #1f2937;
+}
+
+.content {
+    flex: 1;
+    padding: 12px 16px 88px;
+}
