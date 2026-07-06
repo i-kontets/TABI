@@ -20,6 +20,7 @@ export default function SpotList() {
     return (
         <AdminLayout
             title="スポット一覧"
+            back
             headerRight={<Button variant="primary" onClick={() => navigate('/admin/spots/new')}>+ 追加</Button>}
         >
             <SearchBar value={query} onChange={(v) => { setQuery(v); setPage(1); }} placeholder="スポット名で検索" />

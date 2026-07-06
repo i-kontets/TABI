@@ -11,7 +11,7 @@ export default function Analytics() {
         fetchAnalytics().then(setAnalytics);
     }, []);
 
-    if (!analytics) return <AdminLayout title="分析・利用状況"><div /></AdminLayout>;
+    if (!analytics) return <AdminLayout title="分析・利用状況" back><div /></AdminLayout>;
 
     const { summary, activeUserTrend, userAttributes, notificationPermissions, usage, featureRanking } = analytics;
     const notificationPermissionItems = notificationPermissions || userAttributes;
@@ -19,7 +19,7 @@ export default function Analytics() {
     const maxCount = Math.max(...featureRanking.map((f) => f.count), 1);
 
     return (
-        <AdminLayout title="分析・利用状況">
+        <AdminLayout title="分析・利用状況" back>
             <div className={styles.periodBar}>2026/06/26 〜 2026/07/02</div>
 
             <div className={styles.statGrid}>
