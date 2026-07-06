@@ -856,4 +856,12 @@ body {
     .hd-logo {
         font-size: 14px;
     }
+
+    .admin-view .msg-row-me {
+    justify-content: flex-start;
+    }
+
+    .admin-view .msg-row-other {
+        justify-content: flex-end;
+    }
 }
