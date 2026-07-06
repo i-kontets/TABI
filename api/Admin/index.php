@@ -494,6 +494,62 @@ function fetch_logs(PDO $pdo): array
 }
 
 // URL のクエリ文字列から、どの資源を扱うかと単体指定の ID を受け取ります。
+// 今日TABIを使ったアクティブユーザー数を取得します。
+function fetch_today_active_users(PDO $pdo): int
+{
+    $stmt = $pdo->query("
+        SELECT COUNT(DISTINCT uda.user_id) AS active_users
+        FROM user_daily_activities uda
+        INNER JOIN users u ON u.user_id = uda.user_id
+        WHERE uda.activity_date = CURDATE()
+          AND u.status = 'active'
+          AND u.deleted_at IS NULL
+    ");
+
+    return (int) $stmt->fetchColumn();
+}
+
+// 過去7日間の日別アクティブユーザー数を取得します。
+function fetch_active_user_trend(PDO $pdo): array
+{
+    $stmt = $pdo->query("
+        SELECT
+            uda.activity_date,
+            COUNT(DISTINCT uda.user_id) AS active_users
+        FROM user_daily_activities uda
+        INNER JOIN users u ON u.user_id = uda.user_id
+        WHERE uda.activity_date >= CURDATE() - INTERVAL 6 DAY
+          AND uda.activity_date <= CURDATE()
+          AND u.status = 'active'
+          AND u.deleted_at IS NULL
+        GROUP BY uda.activity_date
+        ORDER BY uda.activity_date
+    ");
+
+    $rows = $stmt->fetchAll();
+
+    $countsByDate = [];
+    foreach ($rows as $row) {
+        $countsByDate[$row["activity_date"]] = (int) $row["active_users"];
+    }
+
+    $labels = [];
+    $data = [];
+
+    for ($i = 6; $i >= 0; $i--) {
+        $date = date("Y-m-d", strtotime("-{$i} days"));
+
+        $labels[] = $i === 0 ? "今日" : "{$i}日前";
+        $data[] = $countsByDate[$date] ?? 0;
+    }
+
+    return [
+        "labels" => $labels,
+        "data" => $data,
+    ];
+}
+
+// URL のクエリ文字列から、どの資源を扱うかと単体指定の ID を受け取ります。
 $resource = $_GET["resource"] ?? "";
 $id = $_GET["id"] ?? null;
 $method = $_SERVER["REQUEST_METHOD"];
@@ -523,19 +579,28 @@ try {
             $posts = fetch_posts($pdo);
             $reports = fetch_reports($pdo);
             $inquiries = fetch_inquiries($pdo);
+
+            $todayActiveUsers = fetch_today_active_users($pdo);
+            $activeUserTrend = fetch_active_user_trend($pdo);
+
             respond([
                 "summary" => [
                     "newUsers" => ["value" => count($users), "diff" => 0],
                     "newGroups" => ["value" => count($groups), "diff" => 0],
-                    "activeUsers" => ["value" => count(array_filter($users, fn($u) => $u["status"] === "通常")), "diff" => 0],
+                    "activeUsers" => ["value" => $todayActiveUsers, "diff" => 0],
                     "pendingInquiries" => count(array_filter($inquiries, fn($i) => $i["status"] === "未対応")),
                     "pendingReports" => count(array_filter($reports, fn($r) => $r["status"] === "未対応")),
                     "systemErrors" => 0,
                     "totalUsers" => count($users),
                 ],
-                "activeUserTrend" => ["labels" => ["7日前", "6日前", "5日前", "4日前", "3日前", "2日前", "今日"], "data" => [0, 0, 0, 0, 0, 0, count($users)]],
+                "activeUserTrend" => $activeUserTrend,
                 "userAttributes" => [["label" => "登録済み", "value" => count($users)]],
-                "usage" => ["newUsers7d" => count($users), "groupsCreated7d" => count($groups), "posts7d" => count($posts), "uploads7d" => 0],
+                "usage" => [
+                    "newUsers7d" => count($users),
+                    "groupsCreated7d" => count($groups),
+                    "posts7d" => count($posts),
+                    "uploads7d" => 0,
+                ],
                 "featureRanking" => [
                     ["name" => "話し合い", "count" => count($posts)],
                     ["name" => "グループ", "count" => count($groups)],
