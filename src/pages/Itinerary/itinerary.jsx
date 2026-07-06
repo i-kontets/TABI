@@ -248,10 +248,7 @@ export default function Itinerary() {
       >
 
         <InviteModal onClose={closeInviteModal}/>
-
       </Modal>
-
-
     </div>
   );
 }

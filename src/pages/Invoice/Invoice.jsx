@@ -334,7 +334,6 @@ export default function Invoice() {
                 {/* 画面上部のタイトルとメニュー */}
                 <section className={styles.titleArea}>
                     <h2>{title}</h2>
-                    <button className={styles.menuButton} aria-label="メニュー"></button>
                 </section>
 
                 {/* 支払い表示と徴収表示を切り替えるタブ */}
@@ -454,7 +453,7 @@ export default function Invoice() {
                             </label>
 
                             <label className={styles.form_label}>
-                                総支払金額
+                                支払金額
                                 <input
                                     name="totalAmount"
                                     type="number"
