@@ -52,6 +52,43 @@ function format_dt(?string $value): string
     return str_replace("-", "/", substr($value, 0, 16));
 }
 
+function is_cottage_manager_user(array $item): bool
+{
+    return strpos($item["name"] ?? "", "コテージ") !== false
+        || strpos($item["email"] ?? "", "cottage.manager") !== false
+        || strpos($item["bio"] ?? "", "コテージ") !== false;
+}
+
+function admin_user_time(array $item, string $key): int
+{
+    $value = $item[$key] ?? "";
+    if ($value === "" || $value === "-") {
+        return 0;
+    }
+    return strtotime(str_replace("/", "-", $value)) ?: 0;
+}
+
+function sort_admin_users(array $items, string $sort): array
+{
+    if ($sort === "cottageManager") {
+        $items = array_values(array_filter($items, fn($item) => is_cottage_manager_user($item)));
+    } elseif ($sort === "nonCottageManager") {
+        $items = array_values(array_filter($items, fn($item) => !is_cottage_manager_user($item)));
+    }
+
+    usort($items, function ($a, $b) use ($sort) {
+        if ($sort === "lastLoginAt") {
+            return admin_user_time($b, "lastLoginAt") <=> admin_user_time($a, "lastLoginAt");
+        }
+        if ($sort === "cottageManager" || $sort === "nonCottageManager") {
+            return ($a["id"] ?? 0) <=> ($b["id"] ?? 0);
+        }
+        return admin_user_time($b, "registeredAt") <=> admin_user_time($a, "registeredAt");
+    });
+
+    return $items;
+}
+
 // users.status を管理画面で見やすい日本語ラベルに変換します。
 function user_status_label(?string $status): string
 {
@@ -832,7 +869,12 @@ try {
         if ($category !== "" && $category !== "すべて") {
             $items = array_values(array_filter($items, fn($item) => ($item["category"] ?? "") === $category));
         }
-        respond(page_result($items, (int) ($_GET["page"] ?? 1), $resource === "logs" ? 10 : 20));
+        if ($resource === "users") {
+            $items = sort_admin_users($items, trim($_GET["sort"] ?? ""));
+        }
+
+        $perPage = $resource === "users" || $resource === "logs" ? 10 : 20;
+        respond(page_result($items, (int) ($_GET["page"] ?? 1), $perPage));
     }
 
     if ($method === "POST") {
