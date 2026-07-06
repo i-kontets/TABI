@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './Ui.module.css';
 
 /* ============ ステータスバッジ ============ */
@@ -209,6 +209,7 @@ export function Button({ children, variant = 'primary', onClick, type = 'button'
 
 export function LineChart({ data, labels = [], height = 120, unit = '人' }) {
     const [activeIndex, setActiveIndex] = useState(null);
+    const hideTimerRef = useRef(null);
     const w = 320;
     const h = height;
     const pad = 8;
@@ -226,7 +227,13 @@ export function LineChart({ data, labels = [], height = 120, unit = '人' }) {
     const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
     const activePoint = activeIndex == null ? null : points[activeIndex];
 
-    const handlePointerMove = (event) => {
+    useEffect(() => () => {
+        if (hideTimerRef.current) {
+            clearTimeout(hideTimerRef.current);
+        }
+    }, []);
+
+    const showNearestPoint = (event, keepVisible = false) => {
         const svg = event.currentTarget;
         const rect = svg.getBoundingClientRect();
         const x = ((event.clientX - rect.left) / rect.width) * w;
@@ -236,6 +243,34 @@ export function LineChart({ data, labels = [], height = 120, unit = '人' }) {
         }, { index: 0, distance: Infinity });
 
         setActiveIndex(nearest.index);
+
+        if (hideTimerRef.current) {
+            clearTimeout(hideTimerRef.current);
+            hideTimerRef.current = null;
+        }
+
+        if (keepVisible) {
+            hideTimerRef.current = setTimeout(() => {
+                setActiveIndex(null);
+                hideTimerRef.current = null;
+            }, 10000);
+        }
+    };
+
+    const handlePointerMove = (event) => {
+        if (event.pointerType === 'mouse') {
+            showNearestPoint(event);
+        }
+    };
+
+    const handlePointerDown = (event) => {
+        showNearestPoint(event, event.pointerType !== 'mouse');
+    };
+
+    const handlePointerLeave = (event) => {
+        if (event.pointerType === 'mouse') {
+            setActiveIndex(null);
+        }
     };
 
     return (
@@ -244,8 +279,8 @@ export function LineChart({ data, labels = [], height = 120, unit = '人' }) {
                 viewBox={`0 0 ${w} ${h + 24}`}
                 className={styles.chart}
                 onPointerMove={handlePointerMove}
-                onPointerDown={handlePointerMove}
-                onPointerLeave={() => setActiveIndex(null)}
+                onPointerDown={handlePointerDown}
+                onPointerLeave={handlePointerLeave}
             >
                 <path d={path} fill="none" stroke="#2f6ceb" strokeWidth="2" strokeLinejoin="round" />
                 {points.map((p, i) => (
