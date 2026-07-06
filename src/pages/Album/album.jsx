@@ -9,57 +9,6 @@ const assetPath = (path) => `${import.meta.env.BASE_URL}${path}`;
 
 // 最初から画面に表示しておくデモ用の写真データです。
 // 実際にDBから写真を取得するようになったら、この部分はAPIの取得結果に置き換わります。
-const demoPhotos = [
-    {
-        id: 1,
-        src: assetPath('assets/login/sunset.jpg'),
-        uploader: 'たろう',
-        date: '2026/06/18',
-        place: '夕暮れの海辺',
-        memo: '日が沈む時間に撮った写真',
-    },
-    {
-        id: 2,
-        src: assetPath('assets/login/river.jpg'),
-        uploader: 'はなこ',
-        date: '2026/06/18',
-        place: '川沿い',
-        memo: '散歩中に見つけた景色',
-    },
-    {
-
-        id: 3,
-        src: assetPath('assets/login/login_train.jpg'),
-        uploader: 'じろう',
-        date: '2026/06/18',
-        place: '駅',
-        memo: '移動中の一枚',
-    },
-    {
-        id: 4,
-        src: assetPath('assets/login/login_umi.jpg'),
-        uploader: 'たろう',
-        date: '2026/06/18',
-        place: '海',
-        memo: 'アルバム表示のデモ画像',
-    },
-    {
-        id: 5,
-        src: assetPath('assets/login/login_road.jpg'),
-        uploader: 'はなこ',
-        date: '2026/06/18',
-        place: '旅先の道',
-        memo: '目的地へ向かう途中',
-    },
-    {
-        id: 6,
-        src: assetPath('assets/login/night_sky.jpg'),
-        uploader: 'じろう',
-        date: '2026/06/18',
-        place: '夜空',
-        memo: '夜の雰囲気確認用',
-    },
-];
 
 function Album() {
     // App.jsxで管理している旅行名を、Context経由で受け取っています。
@@ -82,14 +31,39 @@ function Album() {
     // 写真の詳細情報パネルを開いているかどうかです。
     const [isInfoOpen, setIsInfoOpen] = useState(false);
 
-    // アルバムに表示する写真一覧です。最初はdemoPhotosを入れています。
-    const [photos, setPhotos] = useState(demoPhotos);
+    // アルバムに表示する写真一覧です。
+    const [photos, setPhotos] = useState([]);
 
     // 追加画面で選択済みだが、まだアルバムに追加確定していない写真です。
     const [pendingPhotos, setPendingPhotos] = useState([]);
 
     // 追加画面で大きくプレビュー表示している写真です。
     const [previewPhoto, setPreviewPhoto] = useState(null);
+
+    const albumId = 1;
+    const userId = 1;
+
+    const fetchPhotos = async() => {
+        try{
+            const response = await fetch(
+                `https://genshin.mond.jp/TABI/api/Photos/List.php?album_id=${albumId}`
+            );
+
+            const data = await response.json();
+
+            if(!data.success){
+                throw new Error(data.message || '写真の取得に失敗しました');
+            }
+
+            setPhotos(data.photos || []);
+        }catch(error){
+            console.error(error);
+        }
+    };
+
+    useEffect(()=>{
+        fetchPhotos();
+    },[]);
 
     // 追加画面に切り替わったタイミングで、ここの処理が動き、fileInputRefに保存してた
     // <input type="file">を.click();されることになるので、自動的にファイル選択を開きます。
@@ -485,7 +459,7 @@ function Album() {
                                 if (event.key === 'Enter') handlePhotoClick(index);
                             }}
                         >
-                            <img src={photo.src} alt={`${photo.uploader}の写真`} />
+                            <img src={photo.image_url} alt={`${photo.uploader}の写真`} />
                             {/* favoriteがtrueの写真だけ、一覧右上に星を表示します。 */}
                             {photo.favorite && <span className={styles.favoriteBadge}>★</span>}
                         </div>
