@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { TripContext } from '../../App';
 import BtmNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
@@ -77,14 +78,15 @@ function Album() {
     // 追加画面で大きくプレビュー表示している写真です。
     const [previewPhoto, setPreviewPhoto] = useState(null);
 
-    const albumId = 1;
+    const [searchParams] = useSearchParams();
+    const groupId = searchParams.get('groupId');
 
     // DBからアルバム写真を取得します。
     useEffect(() => {
         const timerId = window.setTimeout(async () => {
             try {
                 const response = await fetch(
-                    `https://genshin.mond.jp/TABI/api/Photos/List.php?album_id=${albumId}`
+                    `https://genshin.mond.jp/TABI/api/Photos/List.php?trip_id=${groupId}`
                 );
                 const data = await response.json();
 
@@ -99,7 +101,7 @@ function Album() {
         }, 0);
 
         return () => window.clearTimeout(timerId);
-    }, [albumId]);
+    }, [groupId]);
 
     // 追加画面に切り替わったタイミングで、自動的にファイル選択を開きます。
     useEffect(() => {
