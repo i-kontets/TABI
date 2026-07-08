@@ -1,6 +1,5 @@
 {
 	"appId": "com.example.app",
 	"appName": "tabi",
-	"webDir": "dist",
-	"packageClassList": []
+	"webDir": "dist"
 }

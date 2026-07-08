@@ -13,7 +13,6 @@ export default function InquiryDetail() {
     const [status, setStatus] = useState('未対応');
     const [memo, setMemo] = useState('');
     const [reply, setReply] = useState('');
-    const [isSending, setIsSending] = useState(false);
 
     useEffect(() => {
         fetchInquiry(inquiryId).then((i) => {
@@ -38,18 +37,12 @@ export default function InquiryDetail() {
             window.alert('返信内容を入力してください。');
             return;
         }
-        setIsSending(true);
-        try {
-            await replyInquiry(inquiry.id, reply, { status, memo });
-            const updated = await fetchInquiry(inquiry.id);
-            setInquiry({ ...updated });
-            setReply('');
-            window.alert('返信しました。');
-        } catch (error) {
-            window.alert(error.message || '返信に失敗しました。');
-        } finally {
-            setIsSending(false);
-        }
+        await replyInquiry(inquiry.id, reply);
+        await updateInquiry(inquiry.id, { status, memo });
+        const updated = await fetchInquiry(inquiry.id);
+        setInquiry({ ...updated });
+        setReply('');
+        window.alert('返信しました。');
     };
 
     const handleSaveMemo = async () => {
@@ -112,9 +105,7 @@ export default function InquiryDetail() {
                 />
             </Card>
 
-            <Button variant="primary" full onClick={handleReply} disabled={isSending}>
-                {isSending ? '送信中...' : '返信する'}
-            </Button>
+            <Button variant="primary" full onClick={handleReply}>返信する</Button>
         </AdminLayout>
     );
 }

@@ -1,28 +1,35 @@
-import { adminRequest } from './client';
+import { mockPosts } from './mockData';
+import { request, paginate } from './client';
 
-// 投稿一覧を取得します。
-// query と category を渡して、検索とカテゴリ絞り込みを行います。
+// 話し合い・投稿一覧
 export function fetchPosts({ query = '', category = '', page = 1 } = {}) {
-    return adminRequest('posts', { params: { query, category, page } });
-}
-
-// 投稿 ID を指定して、単体の詳細を取得します。
-export function fetchPost(postId) {
-    return adminRequest('posts', { params: { id: postId } });
-}
-
-// 投稿の公開状態を切り替えます。
-export function togglePostVisibility(postId) {
-    return adminRequest('posts', {
-        method: 'PATCH',
-        params: { id: postId, action: 'toggle-visibility' },
+    return request(() => {
+        let list = mockPosts;
+        if (query) list = list.filter((p) => p.body.includes(query) || p.author.includes(query));
+        if (category && category !== 'すべて') list = list.filter((p) => p.category === category);
+        return paginate(list, { page });
     });
 }
 
-// 投稿を管理画面上で削除します。
+// 投稿詳細
+export function fetchPost(postId) {
+    return request(() => mockPosts.find((p) => p.id === postId) || null);
+}
+
+// 非表示 / 再表示
+export function togglePostVisibility(postId) {
+    return request(() => {
+        const p = mockPosts.find((x) => x.id === postId);
+        if (p) p.status = p.status === '非表示' ? '公開中' : '非表示';
+        return p;
+    });
+}
+
+// 削除
 export function deletePost(postId) {
-    return adminRequest('posts', {
-        method: 'PATCH',
-        params: { id: postId, action: 'delete' },
+    return request(() => {
+        const idx = mockPosts.findIndex((x) => x.id === postId);
+        if (idx >= 0) mockPosts.splice(idx, 1);
+        return true;
     });
 }

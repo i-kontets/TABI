@@ -11,9 +11,6 @@ const ACTIVITY_LINKS = {
     inquiry: '/admin/inquiries',
     report: '/admin/reports',
     notice: '/admin/notices',
-    post: '/admin/posts',
-    spot: '/admin/spots',
-    admin: '/admin/logs',
 };
 
 export default function Dashboard() {
@@ -51,9 +48,6 @@ export default function Dashboard() {
 
             <Card title="最近のアクティビティ">
                 <ul className={styles.activityList}>
-                    {activities.length === 0 && (
-                        <li className={styles.emptyActivity}>最近のアクティビティはありません</li>
-                    )}
                     {activities.map((action) => (
                         <li key={action.id}>
                             <Link to={ACTIVITY_LINKS[action.type] || '/admin'} className={styles.activityLink}>

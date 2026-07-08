@@ -1,12 +1,17 @@
-import { adminRequest } from './client';
+import { mockGroups } from './mockData';
+import { request, paginate } from './client';
 
-// グループ一覧を取得します。
-// query と status を渡して、一覧を検索・絞り込みできるようにします。
+// 旅行グループ一覧
 export function fetchGroups({ query = '', status = '', page = 1 } = {}) {
-    return adminRequest('groups', { params: { query, status, page } });
+    return request(() => {
+        let list = mockGroups;
+        if (query) list = list.filter((g) => g.name.includes(query));
+        if (status) list = list.filter((g) => g.status === status);
+        return paginate(list, { page });
+    });
 }
 
-// グループ ID を指定して、単体のグループ詳細を取得します。
+// グループ詳細
 export function fetchGroup(groupId) {
-    return adminRequest('groups', { params: { id: groupId } });
+    return request(() => mockGroups.find((g) => g.id === groupId) || null);
 }
