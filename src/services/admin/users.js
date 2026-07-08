@@ -2,8 +2,8 @@ import { adminRequest } from './client';
 
 // ユーザー一覧を取得します。
 // query と status を渡して、検索と状態絞り込みを行います。
-export function fetchUsers({ query = '', status = '', page = 1 } = {}) {
-    return adminRequest('users', { params: { query, status, page } });
+export function fetchUsers({ query = '', status = '', page = 1, sort = '' } = {}) {
+    return adminRequest('users', { params: { query, status, page, sort } });
 }
 
 // ユーザー ID を指定して、単体の詳細を取得します。

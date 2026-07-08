@@ -4,6 +4,12 @@
     gap: 8px;
 }
 
+.total {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
 .row {
     display: flex;
     align-items: center;
@@ -91,3 +97,66 @@
 }
 
 .deleteRow { margin-top: 8px; }
+
+.filterModal {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.filterHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.filterHeader h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.filterClose {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: #f3f6fb;
+    color: #5b6472;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.prefectureGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.prefectureOption {
+    min-height: 42px;
+    padding: 0 10px;
+    border: 1px solid #e5e9f0;
+    border-radius: 10px;
+    background: #fff;
+    color: #1f2937;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.prefectureOptionActive {
+    border-color: #2f6ceb;
+    background: #f4f8ff;
+    color: #2f6ceb;
+}
