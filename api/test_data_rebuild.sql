@@ -1,5 +1,5 @@
 -- TABI データベース完全再構築・テストデータ投入SQL
--- 注意: 対象データベース内の既存35テーブルとデータを削除します。
+-- 注意: 対象データベース内の既存41テーブルとデータを削除します。
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+09:00";
 SET NAMES utf8mb4;
@@ -39,6 +39,12 @@ DROP TABLE IF EXISTS `chat_members`;
 DROP TABLE IF EXISTS `chats`;
 DROP TABLE IF EXISTS `audit_logs`;
 DROP TABLE IF EXISTS `albums`;
+DROP TABLE IF EXISTS `admin_activity_logs`;
+DROP TABLE IF EXISTS `admin_spots`;
+DROP TABLE IF EXISTS `admin_notices`;
+DROP TABLE IF EXISTS `admin_inquiry_replies`;
+DROP TABLE IF EXISTS `admin_inquiries`;
+DROP TABLE IF EXISTS `admin_reports`;
 DROP TABLE IF EXISTS `admin_users`;
 
 CREATE TABLE `admin_users` (
@@ -47,6 +53,84 @@ CREATE TABLE `admin_users` (
   `admin_level` int DEFAULT NULL COMMENT '権限レベル（例: 1=一般管理者, 9=スーパー管理者）',
   `created_at` datetime DEFAULT NULL COMMENT '登録日時'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `admin_reports` (
+  `report_id` bigint NOT NULL COMMENT '通報ID',
+  `report_type` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '通報種別（投稿/画像/迷惑行為など）',
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'open' COMMENT '対応状態（open / reviewing / resolved）',
+  `target_user_id` bigint DEFAULT NULL COMMENT '通報対象ユーザーID',
+  `target_message_id` bigint DEFAULT NULL COMMENT '通報対象メッセージID（投稿扱い）',
+  `reporter_user_id` bigint DEFAULT NULL COMMENT '通報したユーザーID',
+  `reason` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '通報理由',
+  `detail` text COLLATE utf8mb4_unicode_ci COMMENT '通報の詳細内容',
+  `admin_note` text COLLATE utf8mb4_unicode_ci COMMENT '管理者の対応メモ',
+  `reported_at` datetime NOT NULL COMMENT '通報日時',
+  `resolved_at` datetime DEFAULT NULL COMMENT '対応完了日時',
+  `updated_at` datetime DEFAULT NULL COMMENT '更新日時'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理画面用通報管理テーブル';
+
+CREATE TABLE `admin_inquiries` (
+  `inquiry_id` bigint NOT NULL COMMENT 'お問い合わせID',
+  `public_id` varchar(40) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '画面表示用お問い合わせ番号',
+  `user_id` bigint DEFAULT NULL COMMENT '問い合わせユーザーID',
+  `title` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'お問い合わせ件名',
+  `category` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'お問い合わせカテゴリ',
+  `body` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'お問い合わせ本文',
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'open' COMMENT '対応状態（open / working / resolved）',
+  `has_attachment` tinyint(1) NOT NULL DEFAULT '0' COMMENT '添付ファイル有無',
+  `admin_memo` text COLLATE utf8mb4_unicode_ci COMMENT '管理者メモ',
+  `created_at` datetime NOT NULL COMMENT 'お問い合わせ作成日時',
+  `updated_at` datetime DEFAULT NULL COMMENT '更新日時'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理画面用お問い合わせ管理テーブル';
+
+CREATE TABLE `admin_inquiry_replies` (
+  `reply_id` bigint NOT NULL COMMENT 'お問い合わせ返信ID',
+  `inquiry_id` bigint NOT NULL COMMENT '返信対象のお問い合わせID',
+  `manager_user_id` bigint DEFAULT NULL COMMENT '返信した管理者ユーザーID',
+  `body` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '返信本文',
+  `delivery_status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'sent' COMMENT '返信送信状態（sent / failed）',
+  `gas_response` text COLLATE utf8mb4_unicode_ci COMMENT 'GASから返却されたレスポンス本文',
+  `created_at` datetime NOT NULL COMMENT '返信日時'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理画面用お問い合わせ返信履歴テーブル';
+
+CREATE TABLE `admin_notices` (
+  `notice_id` bigint NOT NULL COMMENT 'お知らせID',
+  `title` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'お知らせタイトル',
+  `body` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'お知らせ本文',
+  `target_type` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '全ユーザー' COMMENT '配信対象（全ユーザー/特定ユーザー/特定グループ）',
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'published' COMMENT '公開状態（published / draft / ended）',
+  `start_at` datetime DEFAULT NULL COMMENT '公開開始日時',
+  `end_at` datetime DEFAULT NULL COMMENT '公開終了日時',
+  `push_enabled` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'プッシュ通知送信フラグ',
+  `read_rate` int NOT NULL DEFAULT '0' COMMENT '既読率（パーセント）',
+  `created_by` bigint DEFAULT NULL COMMENT '作成した管理者ユーザーID',
+  `created_at` datetime NOT NULL COMMENT '作成日時',
+  `updated_at` datetime DEFAULT NULL COMMENT '更新日時',
+  `deleted_at` datetime DEFAULT NULL COMMENT '論理削除日時'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理画面用お知らせ管理テーブル';
+
+CREATE TABLE `admin_spots` (
+  `spot_id` bigint NOT NULL COMMENT 'スポットID',
+  `name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'スポット名',
+  `category` varchar(100) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'スポットカテゴリ',
+  `prefecture` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '都道府県',
+  `address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '住所',
+  `latitude` decimal(10,7) DEFAULT NULL COMMENT '緯度',
+  `longitude` decimal(10,7) DEFAULT NULL COMMENT '経度',
+  `status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'published' COMMENT '公開状態（published / hidden）',
+  `created_at` datetime NOT NULL COMMENT '作成日時',
+  `updated_at` datetime DEFAULT NULL COMMENT '更新日時',
+  `deleted_at` datetime DEFAULT NULL COMMENT '論理削除日時'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理画面用スポットマスターテーブル';
+
+CREATE TABLE `admin_activity_logs` (
+  `activity_log_id` bigint NOT NULL COMMENT '管理操作ログID',
+  `manager_user_id` bigint DEFAULT NULL COMMENT '操作した管理者ユーザーID',
+  `action_text` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '操作内容の表示文',
+  `target_type` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '操作対象種別',
+  `target_id` bigint DEFAULT NULL COMMENT '操作対象ID',
+  `created_at` datetime NOT NULL COMMENT '操作日時'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理画面用最近の活動・操作ログテーブル';
 
 CREATE TABLE `albums` (
   `album_id` bigint NOT NULL COMMENT 'アルバムID',
@@ -163,7 +247,9 @@ CREATE TABLE `messages` (
   `sender_user_id` bigint DEFAULT NULL COMMENT '送信者',
   `body` text COLLATE utf8mb4_unicode_ci COMMENT '本文',
   `image_url` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '画像パス（画像メッセージの場合）',
-  `sent_at` datetime DEFAULT NULL COMMENT '送信日時'
+  `sent_at` datetime DEFAULT NULL COMMENT '送信日時',
+  `admin_visibility_status` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'visible' COMMENT '管理画面での表示状態（visible / hidden）',
+  `admin_deleted_at` datetime DEFAULT NULL COMMENT '管理画面から削除扱いにした日時'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `message_reads` (
@@ -358,6 +444,50 @@ CREATE TABLE `user_roles` (
 --
 ALTER TABLE `admin_users`
   ADD PRIMARY KEY (`admin_user_id`);
+
+--
+-- テーブルのインデックス `admin_reports`
+--
+ALTER TABLE `admin_reports`
+  ADD PRIMARY KEY (`report_id`),
+  ADD KEY `idx_admin_reports_status` (`status`),
+  ADD KEY `idx_admin_reports_target_message_id` (`target_message_id`);
+
+--
+-- テーブルのインデックス `admin_inquiries`
+--
+ALTER TABLE `admin_inquiries`
+  ADD PRIMARY KEY (`inquiry_id`),
+  ADD UNIQUE KEY `uk_admin_inquiries_public_id` (`public_id`),
+  ADD KEY `idx_admin_inquiries_status` (`status`);
+
+--
+-- テーブルのインデックス `admin_inquiry_replies`
+--
+ALTER TABLE `admin_inquiry_replies`
+  ADD PRIMARY KEY (`reply_id`),
+  ADD KEY `idx_admin_inquiry_replies_inquiry_id` (`inquiry_id`);
+
+--
+-- テーブルのインデックス `admin_notices`
+--
+ALTER TABLE `admin_notices`
+  ADD PRIMARY KEY (`notice_id`),
+  ADD KEY `idx_admin_notices_status` (`status`);
+
+--
+-- テーブルのインデックス `admin_spots`
+--
+ALTER TABLE `admin_spots`
+  ADD PRIMARY KEY (`spot_id`),
+  ADD KEY `idx_admin_spots_status` (`status`);
+
+--
+-- テーブルのインデックス `admin_activity_logs`
+--
+ALTER TABLE `admin_activity_logs`
+  ADD PRIMARY KEY (`activity_log_id`),
+  ADD KEY `idx_admin_activity_logs_created_at` (`created_at`);
 
 --
 -- テーブルのインデックス `albums`
@@ -572,6 +702,12 @@ ALTER TABLE `user_roles`
 
 -- 単一IDを持つテーブルをAUTO_INCREMENT化します。
 ALTER TABLE `admin_users` MODIFY `admin_user_id` bigint NOT NULL AUTO_INCREMENT COMMENT '管理者ID';
+ALTER TABLE `admin_reports` MODIFY `report_id` bigint NOT NULL AUTO_INCREMENT COMMENT '通報ID';
+ALTER TABLE `admin_inquiries` MODIFY `inquiry_id` bigint NOT NULL AUTO_INCREMENT COMMENT 'お問い合わせID';
+ALTER TABLE `admin_inquiry_replies` MODIFY `reply_id` bigint NOT NULL AUTO_INCREMENT COMMENT 'お問い合わせ返信ID';
+ALTER TABLE `admin_notices` MODIFY `notice_id` bigint NOT NULL AUTO_INCREMENT COMMENT 'お知らせID';
+ALTER TABLE `admin_spots` MODIFY `spot_id` bigint NOT NULL AUTO_INCREMENT COMMENT 'スポットID';
+ALTER TABLE `admin_activity_logs` MODIFY `activity_log_id` bigint NOT NULL AUTO_INCREMENT COMMENT '管理操作ログID';
 ALTER TABLE `albums` MODIFY `album_id` bigint NOT NULL AUTO_INCREMENT COMMENT 'アルバムID';
 ALTER TABLE `audit_logs` MODIFY `audit_log_id` bigint NOT NULL AUTO_INCREMENT COMMENT '監査ログID';
 ALTER TABLE `chats` MODIFY `chat_id` bigint NOT NULL AUTO_INCREMENT COMMENT 'チャットID';
@@ -605,6 +741,12 @@ ALTER TABLE `user_groups` MODIFY `group_id` bigint NOT NULL AUTO_INCREMENT COMME
 ALTER TABLE `users` MODIFY `user_id` int NOT NULL AUTO_INCREMENT;
 
 ALTER TABLE `admin_users` AUTO_INCREMENT = 1;
+ALTER TABLE `admin_reports` AUTO_INCREMENT = 1;
+ALTER TABLE `admin_inquiries` AUTO_INCREMENT = 1;
+ALTER TABLE `admin_inquiry_replies` AUTO_INCREMENT = 1;
+ALTER TABLE `admin_notices` AUTO_INCREMENT = 1;
+ALTER TABLE `admin_spots` AUTO_INCREMENT = 1;
+ALTER TABLE `admin_activity_logs` AUTO_INCREMENT = 1;
 ALTER TABLE `albums` AUTO_INCREMENT = 1;
 ALTER TABLE `audit_logs` AUTO_INCREMENT = 1;
 ALTER TABLE `chats` AUTO_INCREMENT = 1;
@@ -691,6 +833,29 @@ INSERT INTO `user_devices` (`user_id`, `push_token`, `platform`, `last_login_at`
 
 INSERT INTO `admin_users` (`user_id`, `admin_level`, `created_at`) VALUES
   (1, 9, '2026-06-16 17:40:00');
+
+INSERT INTO `admin_inquiries`
+  (`public_id`, `user_id`, `title`, `category`, `body`, `status`, `has_attachment`, `admin_memo`, `created_at`, `updated_at`)
+VALUES
+  ('INQ-20260702-001', 2, 'ログインできません', 'ログイン', 'パスワードは合っているはずですがログインできません。確認をお願いします。', 'open', 0, '', '2026-07-02 10:59:00', '2026-07-02 10:59:00'),
+  ('INQ-20260702-002', 3, '画像がアップロードできません', '不具合', 'アルバムに画像をアップロードしようとするとエラーになります。', 'open', 1, '', '2026-07-02 09:40:00', '2026-07-02 09:40:00'),
+  ('INQ-20260701-005', 4, 'グループに参加できません', '操作方法', '招待リンクを開いてもグループに参加できません。', 'working', 0, '招待リンクの有効期限切れを確認中。', '2026-07-01 18:20:00', '2026-07-01 18:40:00'),
+  ('INQ-20260701-003', 5, '退会方法がわかりません', '操作方法', 'アカウントを削除したいのですが方法がわかりません。', 'resolved', 0, '手順を案内済み。', '2026-07-01 11:30:00', '2026-07-01 12:10:00');
+
+INSERT INTO `admin_notices`
+  (`title`, `body`, `target_type`, `status`, `start_at`, `end_at`, `push_enabled`, `read_rate`, `created_by`, `created_at`, `updated_at`, `deleted_at`)
+VALUES
+  ('メンテナンスのお知らせ', '下記の日程でメンテナンスを実施します。ご不便をおかけしますが、よろしくお願いいたします。', '全ユーザー', 'published', '2026-07-01 00:00:00', '2026-07-07 23:59:00', 1, 72, 1, '2026-07-01 09:00:00', '2026-07-01 09:00:00', NULL),
+  ('新機能リリースのお知らせ', 'しおり共有機能をリリースしました。ぜひご利用ください。', '全ユーザー', 'published', '2026-06-20 00:00:00', '2026-07-20 23:59:00', 1, 64, 1, '2026-06-20 10:00:00', '2026-06-20 10:00:00', NULL),
+  ('利用規約改定のお知らせ', '2026年7月1日より利用規約を改定します。', '全ユーザー', 'ended', '2026-06-15 00:00:00', '2026-06-30 23:59:00', 0, 88, 1, '2026-06-15 10:00:00', '2026-06-30 23:59:00', NULL);
+
+INSERT INTO `admin_spots`
+  (`name`, `category`, `prefecture`, `address`, `latitude`, `longitude`, `status`, `created_at`, `updated_at`, `deleted_at`)
+VALUES
+  ('伊勢神宮', '観光地・神社', '三重県', '三重県伊勢市宇治館町1', 34.4893000, 136.7097000, 'published', '2026-06-18 11:20:00', '2026-06-18 11:20:00', NULL),
+  ('鳥羽水族館', '観光地・水族館', '三重県', '三重県鳥羽市鳥羽3-3-6', 34.4813000, 136.8437000, 'published', '2026-06-18 11:30:00', '2026-06-18 11:30:00', NULL),
+  ('白良浜', '観光地・ビーチ', '和歌山県', '和歌山県西牟婁郡白浜町864', 33.6851000, 135.3369000, 'hidden', '2026-06-18 11:35:00', '2026-06-18 11:35:00', NULL),
+  ('清水寺', '観光地・寺院', '京都府', '京都府京都市東山区清水1-294', 34.9949000, 135.7850000, 'published', '2026-06-18 11:40:00', '2026-06-18 11:40:00', NULL);
 
 INSERT INTO `user_groups`
   (`group_name`, `created_by`, `description`, `status`, `created_at`, `updated_at`)
@@ -823,6 +988,13 @@ INSERT INTO `message_reads` (`message_id`, `user_id`, `read_at`) VALUES
   (6, 1, '2026-06-19 18:01:00'),
   (7, 2, '2026-06-19 18:06:00');
 
+INSERT INTO `admin_reports`
+  (`report_type`, `status`, `target_user_id`, `target_message_id`, `reporter_user_id`, `reason`, `detail`, `admin_note`, `reported_at`, `resolved_at`, `updated_at`)
+VALUES
+  ('不適切な投稿', 'open', 2, 2, 1, '不適切な内容', '旅行チャット内の投稿内容について確認してください。', '', '2026-07-02 10:40:00', NULL, '2026-07-02 10:40:00'),
+  ('迷惑行為', 'reviewing', 3, NULL, 2, 'チャットでの迷惑行為', 'グループ内で同じ内容の投稿が繰り返されています。', '', '2026-07-02 08:50:00', NULL, '2026-07-02 09:10:00'),
+  ('個人情報の掲載', 'resolved', 4, 4, 5, '個人情報が含まれる投稿', '電話番号を含む投稿があったため確認しました。', '該当投稿を確認し、非表示対応済み。', '2026-07-01 07:30:00', '2026-07-01 08:30:00', '2026-07-01 08:30:00');
+
 INSERT INTO `itineraries` (`trip_id`, `itinerary_date`, `title`, `note`) VALUES
   (1, '2026-08-20', '1日目 伊勢', '伊勢神宮とおかげ横丁を巡ります。'),
   (1, '2026-08-21', '2日目 鳥羽', '鳥羽水族館と海沿いを観光します。'),
@@ -916,6 +1088,15 @@ VALUES
   (2, 'CREATE', 'trip_candidates', 3, '2026-06-18 11:20:00'),
   (1, 'UPDATE', 'trip_decisions', 1, '2026-06-20 18:00:00'),
   (3, 'CREATE', 'expenses', 3, '2026-06-22 09:30:00');
+
+INSERT INTO `admin_activity_logs`
+  (`manager_user_id`, `action_text`, `target_type`, `target_id`, `created_at`)
+VALUES
+  (1, '新規ユーザー登録を確認しました', 'ユーザー', 2, '2026-07-02 10:25:00'),
+  (1, 'お知らせを公開しました', 'お知らせ', 1, '2026-07-02 10:10:00'),
+  (1, '投稿を非表示にしました', '投稿', 4, '2026-07-02 09:58:00'),
+  (1, 'お問い合わせに返信しました', 'お問い合わせ', 3, '2026-07-02 09:30:00'),
+  (1, '通報ステータスを対応済みに変更しました', '通報', 3, '2026-07-02 08:30:00');
 
 INSERT INTO `system_settings` (`setting_key`, `setting_value`, `updated_at`) VALUES
   ('default_language', 'ja', '2026-06-22 09:00:00'),
