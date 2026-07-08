@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Tabs, Badge, Pagination, EmptyState } from '../../../components/Admin/ui/Ui';
@@ -11,10 +11,29 @@ export default function ReportList() {
     const [result, setResult] = useState(null);
     const [counts, setCounts] = useState({});
 
-    useEffect(() => {
+    const loadReports = useCallback(() => {
         fetchReports({ status: tab, page }).then(setResult);
         fetchReportCounts().then(setCounts);
     }, [tab, page]);
+
+    useEffect(() => {
+        loadReports();
+    }, [loadReports]);
+
+    useEffect(() => {
+        const handleReportCreated = (event) => {
+            if (import.meta.env.DEV) {
+                console.log('Realtime report_created received', event.detail);
+            }
+            loadReports();
+        };
+
+        window.addEventListener('admin:report_created', handleReportCreated);
+
+        return () => {
+            window.removeEventListener('admin:report_created', handleReportCreated);
+        };
+    }, [loadReports]);
 
     const tabs = ['未対応', '確認中', '対応済み'].map((k) => ({
         key: k,

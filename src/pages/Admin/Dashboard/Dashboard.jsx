@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { StatCard, Card, LineChart, DonutChart, Badge } from '../../../components/Admin/ui/Ui';
@@ -20,10 +20,31 @@ export default function Dashboard() {
     const [analytics, setAnalytics] = useState(null);
     const [activities, setActivities] = useState([]);
 
-    useEffect(() => {
+    const loadDashboard = useCallback(() => {
         fetchAnalytics().then(setAnalytics);
         fetchActivities().then(setActivities);
     }, []);
+
+    useEffect(() => {
+        loadDashboard();
+    }, [loadDashboard]);
+
+    useEffect(() => {
+        const handleRealtimeUpdate = (event) => {
+            if (import.meta.env.DEV) {
+                console.log(`${event.type} received`);
+            }
+            loadDashboard();
+        };
+
+        window.addEventListener('admin:inquiry_created', handleRealtimeUpdate);
+        window.addEventListener('admin:report_created', handleRealtimeUpdate);
+
+        return () => {
+            window.removeEventListener('admin:inquiry_created', handleRealtimeUpdate);
+            window.removeEventListener('admin:report_created', handleRealtimeUpdate);
+        };
+    }, [loadDashboard]);
 
     if (!analytics) return <AdminLayout title="TABI Admin"><div /></AdminLayout>;
 
