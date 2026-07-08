@@ -74,3 +74,73 @@
     margin-top: 4px;
 }
 .actionRow > * { flex: 1; }
+
+.sortModal {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.sortHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.sortHeader h2 {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.sortClose {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    background: #f3f6fb;
+    color: #5b6472;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.sortOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sortOption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 46px;
+    padding: 0 14px;
+    border: 1px solid #e5e9f0;
+    border-radius: 10px;
+    background: #fff;
+    color: #1f2937;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.sortOptionActive {
+    border-color: #2f6ceb;
+    background: #f4f8ff;
+    color: #2f6ceb;
+}
+
+.sortCheck {
+    flex-shrink: 0;
+    font-size: 14px;
+    font-weight: 700;
+}

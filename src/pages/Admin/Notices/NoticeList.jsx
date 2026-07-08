@@ -25,6 +25,7 @@ export default function NoticeList() {
     return (
         <AdminLayout
             title="お知らせ管理"
+            back
             headerRight={<Button variant="primary" onClick={() => navigate('/admin/notices/new')}>+ 作成</Button>}
         >
             <Tabs tabs={TABS} active={tab} onChange={(t) => { setTab(t); setPage(1); }} />

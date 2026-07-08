@@ -52,6 +52,43 @@ function format_dt(?string $value): string
     return str_replace("-", "/", substr($value, 0, 16));
 }
 
+function is_cottage_manager_user(array $item): bool
+{
+    return strpos($item["name"] ?? "", "コテージ") !== false
+        || strpos($item["email"] ?? "", "cottage.manager") !== false
+        || strpos($item["bio"] ?? "", "コテージ") !== false;
+}
+
+function admin_user_time(array $item, string $key): int
+{
+    $value = $item[$key] ?? "";
+    if ($value === "" || $value === "-") {
+        return 0;
+    }
+    return strtotime(str_replace("/", "-", $value)) ?: 0;
+}
+
+function sort_admin_users(array $items, string $sort): array
+{
+    if ($sort === "cottageManager") {
+        $items = array_values(array_filter($items, fn($item) => is_cottage_manager_user($item)));
+    } elseif ($sort === "nonCottageManager") {
+        $items = array_values(array_filter($items, fn($item) => !is_cottage_manager_user($item)));
+    }
+
+    usort($items, function ($a, $b) use ($sort) {
+        if ($sort === "lastLoginAt") {
+            return admin_user_time($b, "lastLoginAt") <=> admin_user_time($a, "lastLoginAt");
+        }
+        if ($sort === "cottageManager" || $sort === "nonCottageManager") {
+            return ($a["id"] ?? 0) <=> ($b["id"] ?? 0);
+        }
+        return admin_user_time($b, "registeredAt") <=> admin_user_time($a, "registeredAt");
+    });
+
+    return $items;
+}
+
 // users.status を管理画面で見やすい日本語ラベルに変換します。
 function user_status_label(?string $status): string
 {
@@ -696,6 +733,31 @@ function fetch_active_user_trend(PDO $pdo): array
     ];
 }
 
+// PWAプッシュ通知の許可状況を、push_token の有無で集計します。
+function fetch_notification_permissions(PDO $pdo): array
+{
+    $row = $pdo->query("
+        SELECT
+            COUNT(DISTINCT u.user_id) AS total_users,
+            COUNT(DISTINCT CASE
+                WHEN d.push_token IS NOT NULL AND TRIM(d.push_token) <> '' THEN u.user_id
+            END) AS enabled_users
+        FROM users u
+        LEFT JOIN user_devices d ON d.user_id = u.user_id
+        WHERE u.deleted_at IS NULL
+          AND COALESCE(u.status, 'active') <> 'deleted'
+    ")->fetch();
+
+    $totalUsers = (int) ($row["total_users"] ?? 0);
+    $enabledUsers = (int) ($row["enabled_users"] ?? 0);
+    $disabledUsers = max(0, $totalUsers - $enabledUsers);
+
+    return [
+        ["label" => "許可済み", "value" => $enabledUsers],
+        ["label" => "未許可", "value" => $disabledUsers],
+    ];
+}
+
 // URL のクエリ文字列から、どの資源を扱うかと単体指定の ID を受け取ります。
 $resource = $_GET["resource"] ?? "";
 $id = $_GET["id"] ?? null;
@@ -729,6 +791,7 @@ try {
 
             $todayActiveUsers = fetch_today_active_users($pdo);
             $activeUserTrend = fetch_active_user_trend($pdo);
+            $notificationPermissions = fetch_notification_permissions($pdo);
 
             respond([
                 "summary" => [
@@ -741,7 +804,8 @@ try {
                     "totalUsers" => count($users),
                 ],
                 "activeUserTrend" => $activeUserTrend,
-                "userAttributes" => [["label" => "登録済み", "value" => count($users)]],
+                "notificationPermissions" => $notificationPermissions,
+                "userAttributes" => $notificationPermissions,
                 "usage" => [
                     "newUsers7d" => count($users),
                     "groupsCreated7d" => count($groups),
@@ -796,6 +860,7 @@ try {
         $query = trim($_GET["query"] ?? "");
         $status = trim($_GET["status"] ?? "");
         $category = trim($_GET["category"] ?? "");
+        $prefecture = trim($_GET["prefecture"] ?? "");
         if ($query !== "") {
             $items = array_values(array_filter($items, fn($item) => strpos(json_encode($item, JSON_UNESCAPED_UNICODE), $query) !== false));
         }
@@ -805,7 +870,15 @@ try {
         if ($category !== "" && $category !== "すべて") {
             $items = array_values(array_filter($items, fn($item) => ($item["category"] ?? "") === $category));
         }
-        respond(page_result($items, (int) ($_GET["page"] ?? 1), $resource === "logs" ? 10 : 20));
+        if ($prefecture !== "" && $prefecture !== "すべて") {
+            $items = array_values(array_filter($items, fn($item) => ($item["prefecture"] ?? "") === $prefecture));
+        }
+        if ($resource === "users") {
+            $items = sort_admin_users($items, trim($_GET["sort"] ?? ""));
+        }
+
+        $perPage = $resource === "users" || $resource === "logs" ? 10 : 20;
+        respond(page_result($items, (int) ($_GET["page"] ?? 1), $perPage));
     }
 
     if ($method === "POST") {

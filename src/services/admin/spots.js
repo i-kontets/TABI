@@ -18,8 +18,8 @@ export const prefectures = [
 
 // スポット一覧を取得します。
 // query と page を渡して、検索とページングを行います。
-export function fetchSpots({ query = '', page = 1 } = {}) {
-    return adminRequest('spots', { params: { query, page } });
+export function fetchSpots({ query = '', page = 1, prefecture = '' } = {}) {
+    return adminRequest('spots', { params: { query, page, prefecture } });
 }
 
 // スポット ID を指定して、単体の詳細を取得します。

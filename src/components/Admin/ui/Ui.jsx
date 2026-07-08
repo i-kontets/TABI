@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './Ui.module.css';
 
 /* ============ ステータスバッジ ============ */
@@ -209,6 +209,7 @@ export function Button({ children, variant = 'primary', onClick, type = 'button'
 
 export function LineChart({ data, labels = [], height = 120, unit = '人' }) {
     const [activeIndex, setActiveIndex] = useState(null);
+    const hideTimerRef = useRef(null);
     const w = 320;
     const h = height;
     const pad = 8;
@@ -226,7 +227,13 @@ export function LineChart({ data, labels = [], height = 120, unit = '人' }) {
     const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
     const activePoint = activeIndex == null ? null : points[activeIndex];
 
-    const handlePointerMove = (event) => {
+    useEffect(() => () => {
+        if (hideTimerRef.current) {
+            clearTimeout(hideTimerRef.current);
+        }
+    }, []);
+
+    const showNearestPoint = (event, keepVisible = false) => {
         const svg = event.currentTarget;
         const rect = svg.getBoundingClientRect();
         const x = ((event.clientX - rect.left) / rect.width) * w;
@@ -236,6 +243,34 @@ export function LineChart({ data, labels = [], height = 120, unit = '人' }) {
         }, { index: 0, distance: Infinity });
 
         setActiveIndex(nearest.index);
+
+        if (hideTimerRef.current) {
+            clearTimeout(hideTimerRef.current);
+            hideTimerRef.current = null;
+        }
+
+        if (keepVisible) {
+            hideTimerRef.current = setTimeout(() => {
+                setActiveIndex(null);
+                hideTimerRef.current = null;
+            }, 10000);
+        }
+    };
+
+    const handlePointerMove = (event) => {
+        if (event.pointerType === 'mouse') {
+            showNearestPoint(event);
+        }
+    };
+
+    const handlePointerDown = (event) => {
+        showNearestPoint(event, event.pointerType !== 'mouse');
+    };
+
+    const handlePointerLeave = (event) => {
+        if (event.pointerType === 'mouse') {
+            setActiveIndex(null);
+        }
     };
 
     return (
@@ -244,8 +279,8 @@ export function LineChart({ data, labels = [], height = 120, unit = '人' }) {
                 viewBox={`0 0 ${w} ${h + 24}`}
                 className={styles.chart}
                 onPointerMove={handlePointerMove}
-                onPointerDown={handlePointerMove}
-                onPointerLeave={() => setActiveIndex(null)}
+                onPointerDown={handlePointerDown}
+                onPointerLeave={handlePointerLeave}
             >
                 <path d={path} fill="none" stroke="#2f6ceb" strokeWidth="2" strokeLinejoin="round" />
                 {points.map((p, i) => (
@@ -288,7 +323,9 @@ export function LineChart({ data, labels = [], height = 120, unit = '人' }) {
 
 const DONUT_COLORS = ['#2f6ceb', '#5b8def', '#8fb3f5', '#c3d5fa', '#e8f0fe'];
 
-export function DonutChart({ items, centerLabel, centerValue }) {
+export function DonutChart({ items, centerLabel, centerValue, unit = '人' }) {
+    const [activeIndex, setActiveIndex] = useState(null);
+    const hideTimerRef = useRef(null);
     const total = items.reduce((a, it) => a + it.value, 0) || 1;
     const r = 40;
     const c = 2 * Math.PI * r;
@@ -303,6 +340,57 @@ export function DonutChart({ items, centerLabel, centerValue }) {
         });
         return acc;
     }, []);
+    const activeSegment = activeIndex == null ? null : segments[activeIndex];
+
+    useEffect(() => () => {
+        if (hideTimerRef.current) {
+            clearTimeout(hideTimerRef.current);
+        }
+    }, []);
+
+    const showSegment = (index, keepVisible = false) => {
+        setActiveIndex(index);
+
+        if (hideTimerRef.current) {
+            clearTimeout(hideTimerRef.current);
+            hideTimerRef.current = null;
+        }
+
+        if (keepVisible) {
+            hideTimerRef.current = setTimeout(() => {
+                setActiveIndex(null);
+                hideTimerRef.current = null;
+            }, 10000);
+        }
+    };
+
+    const handleSegmentMove = (event, index) => {
+        if (event.pointerType === 'mouse') {
+            showSegment(index);
+        }
+    };
+
+    const handleSegmentDown = (event, index) => {
+        showSegment(index, event.pointerType !== 'mouse');
+    };
+
+    const handleSegmentLeave = (event) => {
+        if (event.pointerType === 'mouse') {
+            setActiveIndex(null);
+        }
+    };
+
+    const tooltipPosition = activeSegment
+        ? (() => {
+            const angle = (activeSegment.offset + activeSegment.frac / 2) * 2 * Math.PI - Math.PI / 2;
+            const anchorX = 60 + Math.cos(angle) * 34;
+            const anchorY = 60 + Math.sin(angle) * 34;
+            return {
+                x: Math.min(Math.max(anchorX - 28, 4), 60),
+                y: Math.min(Math.max(anchorY - 42, 4), 82),
+            };
+        })()
+        : null;
 
     return (
         <div className={styles.donutRow}>
@@ -317,10 +405,25 @@ export function DonutChart({ items, centerLabel, centerValue }) {
                         strokeDasharray={`${frac * c} ${c}`}
                         strokeDashoffset={-offset * c}
                         transform="rotate(-90 60 60)"
+                        onPointerMove={(event) => handleSegmentMove(event, i)}
+                        onPointerDown={(event) => handleSegmentDown(event, i)}
+                        onPointerLeave={handleSegmentLeave}
+                        style={{ cursor: 'pointer' }}
                     />
                 ))}
                 <text x="60" y="56" textAnchor="middle" fontSize="9" fill="#8a94a6">{centerLabel}</text>
                 <text x="60" y="72" textAnchor="middle" fontSize="13" fontWeight="700" fill="#1f2937">{centerValue}</text>
+                {activeSegment && tooltipPosition && (
+                    <g pointerEvents="none" transform={`translate(${tooltipPosition.x}, ${tooltipPosition.y})`}>
+                        <rect width="56" height="34" rx="5" fill="#1f2937" opacity="0.96" />
+                        <text x="8" y="13" fontSize="9" fontWeight="700" fill="#ffffff">
+                            {activeSegment.item.label}
+                        </text>
+                        <text x="8" y="27" fontSize="11" fontWeight="700" fill="#ffffff">
+                            {activeSegment.item.value}{unit}
+                        </text>
+                    </g>
+                )}
             </svg>
             <ul className={styles.donutLegend}>
                 {items.map((it, i) => (
