@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TripContext } from "../../App";
 import TravelGroupCard from '../../components/TravelGroupCard/TravelGroupCard';
@@ -7,40 +7,18 @@ import styles from './Home.module.css';
 
 const assetPath = (fileName) => `${import.meta.env.BASE_URL}assets/login/${fileName}`;
 
-const initialTravelGroups = [
-    {
-        id: "1",
-        name: "沖縄旅行 🌺",
-        date: "2025/07/20 - 2025/07/23",
-        members: 5,
-        status: "進行中",
-        image: assetPath("login_umi.jpg"),
-    },
-    {
-        id: "2",
-        name: "北海道ドライブ旅 🚙",
-        date: "2025/08/10 - 2025/08/14",
-        members: 4,
-        status: "計画中",
-        image: assetPath("river.jpg"),
-    },
-    {
-        id: "3",
-        name: "東京観光＆グルメ旅 🍣",
-        date: "2025/09/05 - 2025/09/07",
-        members: 3,
-        status: "計画中",
-        image: assetPath("night_sky.jpg"),
-    },
-    {
-        id: "4",
-        name: "軽井沢のんびり旅 ☕",
-        date: "2025/05/01 - 2025/05/03",
-        members: 4,
-        status: "終了",
-        image: assetPath("login_road.jpg"),
-    },
+// グループにはDB上の画像がないため、カード画像はローカルアセットを順番に割り当てる
+const cardImages = [
+    "login_umi.jpg",
+    "river.jpg",
+    "night_sky.jpg",
+    "login_road.jpg",
+    "sunset.jpg",
+    "login_train.jpg",
+    "cloudy_ocean.jpeg",
 ];
+
+const imageForIndex = (index) => assetPath(cardImages[index % cardImages.length]);
 
 function PlusIcon({ className }) {
     return (
@@ -88,17 +66,71 @@ function UserIcon({ className }) {
     );
 }
 
-const toDisplayDate = (value) => value.replaceAll("-", "/");
-
 function Home() {
     const navigate = useNavigate();
     const { setTrip } = useContext(TripContext);
 
-    const [travelGroups, setTravelGroups] = useState(initialTravelGroups);
+    const [travelGroups, setTravelGroups] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [newName, setNewName] = useState("");
     const [newStartDate, setNewStartDate] = useState("");
     const [newEndDate, setNewEndDate] = useState("");
+
+    // ログイン中ユーザーが参加している旅行グループをDBから取得する
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchGroups = async () => {
+            try {
+                const response = await fetch(
+                    "/TABI/api/Groups/List.php",
+                    {
+                        method: "GET",
+                        credentials: "include"
+                    }
+                );
+
+                // 未ログインならログインフォームへ強制移動する
+                if (response.status === 401) {
+                    localStorage.removeItem("loginUser");
+                    navigate("/");
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (!isMounted) {
+                    return;
+                }
+
+                if (data.success && Array.isArray(data.groups)) {
+                    setTravelGroups(
+                        data.groups.map((group, index) => ({
+                            ...group,
+                            image: imageForIndex(index),
+                        }))
+                    );
+                } else {
+                    setTravelGroups([]);
+                }
+            } catch {
+                if (isMounted) {
+                    setTravelGroups([]);
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        fetchGroups();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [navigate]);
 
     const handleGroupClick = (trip) => {
         setTrip({
@@ -133,7 +165,8 @@ function Home() {
         setNewEndDate("");
     };
 
-    const handleCreateGroup = (event) => {
+    // 新しい旅行グループをDBに登録し、成功したら一覧の先頭に追加する
+    const handleCreateGroup = async (event) => {
         event.preventDefault();
 
         const name = newName.trim();
@@ -141,21 +174,45 @@ function Home() {
             return;
         }
 
-        const date = newStartDate && newEndDate
-            ? `${toDisplayDate(newStartDate)} - ${toDisplayDate(newEndDate)}`
-            : "日程未定";
+        try {
+            const response = await fetch(
+                "/TABI/api/Groups/Create.php",
+                {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        group_name: name,
+                        start_date: newStartDate || null,
+                        end_date: newEndDate || null
+                    })
+                }
+            );
 
-        const newGroup = {
-            id: String(Date.now()),
-            name,
-            date,
-            members: 1,
-            status: "計画中",
-            image: assetPath("cloudy_ocean.jpeg"),
-        };
+            // 未ログインならログインフォームへ強制移動する
+            if (response.status === 401) {
+                localStorage.removeItem("loginUser");
+                navigate("/");
+                return;
+            }
 
-        setTravelGroups((prev) => [newGroup, ...prev]);
-        closeCreateModal();
+            const data = await response.json();
+
+            if (data.success && data.group) {
+                setTravelGroups((prev) => [
+                    { ...data.group, image: imageForIndex(prev.length) },
+                    ...prev
+                ]);
+                closeCreateModal();
+                return;
+            }
+
+            alert(data.message ?? "旅行グループの作成に失敗しました。");
+        } catch {
+            alert("旅行グループの作成に失敗しました。通信環境を確認してください。");
+        }
     };
 
     return (
@@ -183,13 +240,22 @@ function Home() {
             </header>
 
             <main className={styles.content}>
-                {travelGroups.map((group) => (
-                    <TravelGroupCard
-                        key={group.id}
-                        group={group}
-                        onClick={handleGroupClick}
-                    />
-                ))}
+                {isLoading ? (
+                    <p className={styles.stateMessage}>読み込み中...</p>
+                ) : travelGroups.length === 0 ? (
+                    <p className={styles.stateMessage}>
+                        参加中の旅行グループはありません。<br />
+                        右下の＋ボタンから作成できます。
+                    </p>
+                ) : (
+                    travelGroups.map((group) => (
+                        <TravelGroupCard
+                            key={group.id}
+                            group={group}
+                            onClick={handleGroupClick}
+                        />
+                    ))
+                )}
             </main>
 
             <button
