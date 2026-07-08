@@ -5,21 +5,6 @@ import TravelGroupCard from '../../components/TravelGroupCard/TravelGroupCard';
 import Modal from '../../components/Modal/Modal';
 import styles from './Home.module.css';
 
-const assetPath = (fileName) => `${import.meta.env.BASE_URL}assets/login/${fileName}`;
-
-// グループにはDB上の画像がないため、カード画像はローカルアセットを順番に割り当てる
-const cardImages = [
-    "login_umi.jpg",
-    "river.jpg",
-    "night_sky.jpg",
-    "login_road.jpg",
-    "sunset.jpg",
-    "login_train.jpg",
-    "cloudy_ocean.jpeg",
-];
-
-const imageForIndex = (index) => assetPath(cardImages[index % cardImages.length]);
-
 // トリミング画像の出力サイズ（px）
 const CROPPED_IMAGE_SIZE = 600;
 
@@ -150,8 +135,7 @@ function Home() {
                     setTravelGroups(
                         data.groups.map((group, index) => ({
                             ...group,
-                            // S3の署名付きURLがあれば優先し、無ければローカルアセットを割り当てる
-                            image: group.image_url ?? imageForIndex(index),
+                            image: group.image_url ?? null,
                         }))
                     );
                 } else {
@@ -482,7 +466,7 @@ function Home() {
                 setTravelGroups((prev) => [
                     {
                         ...data.group,
-                        image: cardImage ?? imageForIndex(prev.length)
+                        image: cardImage ?? null
                     },
                     ...prev
                 ]);
