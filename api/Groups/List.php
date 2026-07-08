@@ -61,7 +61,8 @@ try {
             t.trip_id,
             t.title AS trip_title,
             t.start_date,
-            t.end_date
+            t.end_date,
+            t.group_icon
         FROM group_members gm_self
         INNER JOIN user_groups g ON g.group_id = gm_self.group_id
         LEFT JOIN group_members gm_all
@@ -83,7 +84,8 @@ try {
             t.trip_id,
             t.title,
             t.start_date,
-            t.end_date
+            t.end_date,
+            t.group_icon
         ORDER BY (t.start_date IS NULL) ASC, t.start_date ASC, g.group_id DESC
     ");
     $stmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
@@ -96,6 +98,12 @@ try {
     $groups = [];
 
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $imageUrl = null;
+
+        if (!empty($row["group_icon"]) && $s3 && $bucket) {
+            $imageUrl = presignS3Url($s3, $bucket, $row["group_icon"]);
+        }
+
         $groups[] = [
             "id" => (string) $row["group_id"],
             "trip_id" => $row["trip_id"] !== null ? (int) $row["trip_id"] : null,
@@ -103,7 +111,7 @@ try {
             "date" => formatDateRange($row["start_date"], $row["end_date"]),
             "members" => (int) $row["member_count"],
             "status" => resolveStatus($row["start_date"], $row["end_date"]),
-            "image_url" => null,
+            "image_url" => $imageUrl,
         ];
     }
 

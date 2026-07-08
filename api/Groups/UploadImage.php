@@ -107,11 +107,25 @@ try {
     }
 
     // 差し替え時に古い画像を消すため、現在のS3キーを取得しておく
-    $stmt = $pdo->prepare("SELECT image_url FROM user_groups WHERE group_id = :group_id LIMIT 1");
+    $stmt = $pdo->prepare("
+        SELECT trip_id, group_icon
+        FROM trips
+        WHERE group_id = :group_id
+        ORDER BY (start_date IS NULL) ASC, start_date DESC, trip_id DESC
+        LIMIT 1
+    ");
     $stmt->bindValue(":group_id", $groupId, PDO::PARAM_INT);
     $stmt->execute();
     $current = $stmt->fetch(PDO::FETCH_ASSOC);
-    $oldKey = $current["image_url"] ?? null;
+    if (!$current) {
+        respond([
+            "success" => false,
+            "message" => "画像を保存する旅行レコードが見つかりません。"
+        ], 404);
+    }
+
+    $tripId = (int) $current["trip_id"];
+    $oldKey = $current["group_icon"] ?? null;
 
     // S3クライアントを準備する
     $aws = loadAwsConfig();
@@ -143,14 +157,14 @@ try {
 
     // DBにはS3キーだけを保存する（署名付きURLは保存しない）
     $stmt = $pdo->prepare("
-        UPDATE user_groups
-        SET image_url = :image_url,
+        UPDATE trips
+        SET group_icon = :group_icon,
             updated_at = :updated_at
-        WHERE group_id = :group_id
+        WHERE trip_id = :trip_id
     ");
-    $stmt->bindValue(":image_url", $s3Key);
+    $stmt->bindValue(":group_icon", $s3Key);
     $stmt->bindValue(":updated_at", (new DateTimeImmutable("now"))->format("Y-m-d H:i:s"));
-    $stmt->bindValue(":group_id", $groupId, PDO::PARAM_INT);
+    $stmt->bindValue(":trip_id", $tripId, PDO::PARAM_INT);
     $stmt->execute();
 
     // 古い画像がS3キーなら削除する（外部URLは対象外）
