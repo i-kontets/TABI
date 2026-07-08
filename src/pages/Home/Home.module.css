@@ -21,7 +21,78 @@
 
 .title {
     font-size: 18px;
-    font-weight: 600;
-    color: var(--main-color);
-    margin: 4px 0 0;
+    font-weight: 800;
+    color: #111827;
+}
+
+.createLabel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #374151;
+}
+
+.createInput {
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 15px;
+    box-sizing: border-box;
+    background: #fff;
+    color: #111827;
+}
+
+.createInput:focus {
+    outline: 2px solid var(--sub-color);
+    outline-offset: 0;
+    border-color: var(--sub-color);
+}
+
+.createDates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.createActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.cancelButton,
+.submitButton {
+    height: 42px;
+    padding: 0 18px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.cancelButton {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+}
+
+.submitButton {
+    border: 0;
+    background: var(--fab-color);
+    color: #fff;
+}
+
+@media screen and (max-width: 430px) {
+    .page {
+        max-width: none;
+    }
+
+    .createButton {
+        left: auto;
+        right: 20px;
+    }
 }
