@@ -91,27 +91,36 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
         respond($found ?: null);
     }
 
-    // 一覧データに対して、検索・状態絞り込み・カテゴリ絞り込みを順番に適用します。
+    // ここから下は、一覧データを画面表示用に整える後処理です。
+    // まず検索条件を読み取り、その後に必要な絞り込みや並び替えを順番にかけます。
     $query = trim($_GET["query"] ?? "");
     $status = trim($_GET["status"] ?? "");
     $category = trim($_GET["category"] ?? "");
     $prefecture = trim($_GET["prefecture"] ?? "");
+    // キーワード検索は、各項目を JSON にして文字列として部分一致を確認します。
+    // 複数の項目を横断して探したいときに、個別のカラムを意識せず絞り込めます。
     if ($query !== "") {
         $items = array_values(array_filter($items, fn($item) => strpos(json_encode($item, JSON_UNESCAPED_UNICODE), $query) !== false));
     }
+    // status が指定されたときは、一覧の状態ラベルが一致するものだけ残します。
     if ($status !== "") {
         $items = array_values(array_filter($items, fn($item) => ($item["status"] ?? "") === $status));
     }
+    // category は「すべて」を除外して、実際に選ばれた分類だけを残します。
     if ($category !== "" && $category !== "すべて") {
         $items = array_values(array_filter($items, fn($item) => ($item["category"] ?? "") === $category));
     }
+    // prefecture も同じ考え方で、観光スポットなどの都道府県絞り込みに使います。
     if ($prefecture !== "" && $prefecture !== "すべて") {
         $items = array_values(array_filter($items, fn($item) => ($item["prefecture"] ?? "") === $prefecture));
     }
+    // users 一覧だけは、通常の新しい順ではなく、管理画面用の独自ルールで並び替えます。
     if ($resource === "users") {
         $items = sort_admin_users($items, trim($_GET["sort"] ?? ""));
     }
 
+    // 一覧ごとに 1 ページあたりの件数を決めて、フロントが受け取りやすい形に整えます。
     $perPage = $resource === "users" || $resource === "logs" ? 10 : 20;
+    // page_result で現在ページのスライス、総ページ数、総件数をまとめて返します。
     respond(page_result($items, (int) ($_GET["page"] ?? 1), $perPage));
 }

@@ -27,11 +27,12 @@ function handle_admin_post(PDO $pdo, string $resource, $id, array $input): void
             respond(["success" => false, "message" => "返信先メールアドレスがありません。"], 400);
         }
 
-                // GAS にメール送信を依頼し、送信結果を受け取ります。
+            // GAS にメール送信を依頼し、送信結果を受け取ります。
         $gasResponse = send_inquiry_reply_via_gas($inquiry, $message);
+            // フォーム上で選ばれた表示状態を、DB 保存用のステータスコードに変換します。
         $nextStatus = to_status_code($input["status"] ?? "", ["未対応" => "open", "対応中" => "working", "対応済み" => "resolved"], "working");
 
-                // 送信履歴を replies テーブルに保存します。
+            // 送信履歴を replies テーブルに保存します。
         $stmt = $pdo->prepare("
             INSERT INTO admin_inquiry_replies
               (inquiry_id, manager_user_id, body, delivery_status, gas_response, created_at)
@@ -55,6 +56,7 @@ function handle_admin_post(PDO $pdo, string $resource, $id, array $input): void
             "public_id" => $id,
         ]);
 
+            // 画面側に返信完了を返し、対象問い合わせの ID と本文を返却します。
         respond(["ok" => true, "inquiryId" => $id, "message" => $message]);
         return;
     }

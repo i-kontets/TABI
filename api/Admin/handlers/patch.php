@@ -3,6 +3,7 @@
 function handle_admin_patch(PDO $pdo, string $resource, $id, array $input): void
 {
     // PATCH は既存データの状態変更に使います。
+    // resource ごとに、停止・非表示・公開切り替えなどの更新内容を分けます。
     $action = $_GET["action"] ?? "";
     $numericId = (int) preg_replace("/^[a-z]+/", "", (string) $id);
 
@@ -76,6 +77,7 @@ function handle_admin_patch(PDO $pdo, string $resource, $id, array $input): void
     }
 
     if ($resource === "managers") {
+        // 管理者の現状を読み出して、停止中なら有効化、通常なら停止に切り替えます。
         $manager = current(array_filter(fetch_managers($pdo), fn($m) => $m["id"] === "m" . $numericId));
         if (!$manager) {
             respond(null, 404);

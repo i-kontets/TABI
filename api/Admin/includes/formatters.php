@@ -2,6 +2,7 @@
 
 function format_dt(?string $value): string
 {
+    // DB から来る日時文字列を、管理画面で見やすい形式へ変換します。
     if (!$value) {
         return "-";
     }
@@ -10,6 +11,7 @@ function format_dt(?string $value): string
 
 function is_cottage_manager_user(array $item): bool
 {
+    // コテージ運営向けの特定ユーザーかどうかを、名前やメールのキーワードで判定します。
     return strpos($item["name"] ?? "", "コテージ") !== false
         || strpos($item["email"] ?? "", "cottage.manager") !== false
         || strpos($item["bio"] ?? "", "コテージ") !== false;
@@ -17,6 +19,7 @@ function is_cottage_manager_user(array $item): bool
 
 function admin_user_time(array $item, string $key): int
 {
+    // 文字列日時を比較しやすい Unix 時刻へ変換します。
     $value = $item[$key] ?? "";
     if ($value === "" || $value === "-") {
         return 0;
@@ -26,6 +29,7 @@ function admin_user_time(array $item, string $key): int
 
 function sort_admin_users(array $items, string $sort): array
 {
+    // 管理画面の一覧で、並び順や対象抽出を切り替えるための共通ソート処理です。
     if ($sort === "cottageManager") {
         $items = array_values(array_filter($items, fn($item) => is_cottage_manager_user($item)));
     } elseif ($sort === "nonCottageManager") {

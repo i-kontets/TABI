@@ -1,5 +1,6 @@
 <?php
 
+// users 一覧は、プロフィールや利用状況の補助情報をまとめて管理画面向けに整形します。
 function fetch_users(PDO $pdo): array
 {
     $sql = "
@@ -301,6 +302,7 @@ function fetch_logs(PDO $pdo): array
     ], $rows);
 }
 
+// activity_type は、ログやタイムライン上で使う種別キーへ変換します。
 function activity_type(?string $targetType): string
 {
     return [
@@ -322,6 +324,7 @@ function activity_type(?string $targetType): string
     ][$targetType] ?? "admin";
 }
 
+// activity_time は、履歴表示用に mm/dd HH:ii 相当の短い表記へ丸めます。
 function activity_time(?string $value): string
 {
     if (!$value) {
@@ -336,6 +339,7 @@ function activity_time(?string $value): string
     return date("n/j H:i", $timestamp);
 }
 
+// 最近の管理アクティビティを、種類ごとに集めて 1 つのタイムラインにまとめます。
 function fetch_recent_activities(PDO $pdo): array
 {
     $activities = [];
@@ -448,8 +452,7 @@ function fetch_recent_activities(PDO $pdo): array
     }, $activities);
 }
 
-// URL のクエリ文字列から、どの資源を扱うかと単体指定の ID を受け取ります。
-// 今日TABIを使ったアクティブユーザー数を取得します。
+// 今日のアクティブユーザー数を取得します。
 function fetch_today_active_users(PDO $pdo): int
 {
     $stmt = $pdo->query("

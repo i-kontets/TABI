@@ -2,6 +2,7 @@
 
 function handle_admin_request(PDO $pdo, string $method, string $resource, $id, array $input): void
 {
+    // HTTP メソッドごとに、呼び出す処理を 1 つだけ選びます。
     if ($method === "GET") {
         handle_admin_get($pdo, $resource, $id);
     }
@@ -18,5 +19,6 @@ function handle_admin_request(PDO $pdo, string $method, string $resource, $id, a
         handle_admin_delete($pdo, $resource, $id);
     }
 
+    // どの分岐にも入らなかった場合は、想定外のメソッドとして 405 を返します。
     respond(["success" => false, "message" => "Unsupported method."], 405);
 }
