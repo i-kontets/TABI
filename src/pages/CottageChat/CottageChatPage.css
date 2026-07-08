@@ -531,7 +531,7 @@ body {
     align-items: flex-end;
     gap: 8px;
     max-width: 100%;
-    margin-bottom: 3px;
+    margin-bottom: 8px;
 }
 
 .msg-row-me {
@@ -610,7 +610,7 @@ body {
 }
 
 .msg-row-other .bubble-wrap {
-    flex-direction: row-reverse;
+    flex-direction: row;
 }
 
 .bubble {
@@ -648,16 +648,25 @@ body {
     flex-direction: column;
     align-items: flex-end;
     gap: 2px;
-    flex-shrink: 0;
-    margin-bottom: 2px;
+}
+
+.meta-other {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-width: 36px;
+    color: var(--sub);
+    font-size: 10px;
+    line-height: 1;
+    white-space: nowrap;
 }
 
 .msg-time {
+    display: block;
     font-size: 10px;
     color: var(--sub);
+    line-height: 1;
     white-space: nowrap;
-    flex-shrink: 0;
-    margin-bottom: 2px;
 }
 
 .sending-lbl {
@@ -666,9 +675,11 @@ body {
 }
 
 .read-lbl {
+    display: block;
     font-size: 10px;
     color: var(--sub);
-    margin-right: 2px;
+    line-height: 1;
+    white-space: nowrap;
 }
 
 .failed-lbl {

@@ -155,7 +155,7 @@ export default function CottageChatPage({ active, isAdmin = false }) {
             const maxId = data.messages.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
             if (maxId > lastMessageIdRef.current) lastMessageIdRef.current = maxId;
 
-            await markMessagesAsRead(chatId).catch(() => {});
+            await markMessagesAsRead(chatId).catch(() => { });
         } catch {
             // silent
         }
@@ -389,45 +389,46 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                                                     </div>
                                                 )}
                                                 <div className="bubble-wrap">
-                                                    {isMine ? (
-                                                        <>
-                                                            <div className="meta-me">
-                                                                {msg.readCount > 0 && (
-                                                                    <span className="read-lbl">既読 {msg.readCount}</span>
-                                                                )}
-                                                                <span className="msg-time">{msg.time}</span>
-                                                            </div>
-                                                            <div className="bubble bubble-me">
-                                                                {msg.image_url ? (
-                                                                    <img
-                                                                        src={msg.image_url}
-                                                                        alt="送信画像"
-                                                                        className="chat-img"
-                                                                        loading="lazy"
-                                                                        onClick={() => window.open(msg.image_url, '_blank')}
-                                                                    />
-                                                                ) : (
-                                                                    msg.text || msg.body
-                                                                )}
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <div className="bubble bubble-other">
-                                                                {msg.image_url ? (
-                                                                    <img
-                                                                        src={msg.image_url}
-                                                                        alt="送信画像"
-                                                                        className="chat-img"
-                                                                        loading="lazy"
-                                                                        onClick={() => window.open(msg.image_url, '_blank')}
-                                                                    />
-                                                                ) : (
-                                                                    msg.text || msg.body
-                                                                )}
-                                                            </div>
-                                                            <span className="msg-time">{msg.time}</span>
-                                                        </>
+                                                    {isMine && (
+                                                        <div className="meta-me">
+                                                            {msg.readCount > 0 && (
+                                                                <span className="read-lbl">
+                                                                    既読 {msg.readCount}
+                                                                </span>
+                                                            )}
+
+                                                            <span className="msg-time">
+                                                                {msg.time}
+                                                            </span>
+                                                        </div>
+                                                    )}
+
+                                                    <div
+                                                        className={
+                                                            isMine
+                                                                ? "bubble bubble-me"
+                                                                : "bubble bubble-other"
+                                                        }
+                                                    >
+                                                        {msg.image_url ? (
+                                                            <img
+                                                                src={msg.image_url}
+                                                                alt="送信画像"
+                                                                className="chat-img"
+                                                                loading="lazy"
+                                                                onClick={() => window.open(msg.image_url, "_blank")}
+                                                            />
+                                                        ) : (
+                                                            msg.text || msg.body
+                                                        )}
+                                                    </div>
+
+                                                    {!isMine && (
+                                                        <div className="meta-other">
+                                                            <span className="msg-time">
+                                                                {msg.time}
+                                                            </span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
