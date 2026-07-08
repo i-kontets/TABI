@@ -148,6 +148,8 @@
 .closeButton::after {
     content: "";
     position: absolute;
+    top: 50%;
+    left: 50%;
     width: 20px;
     height: 2.5px;
     border-radius: 999px;
@@ -155,11 +157,11 @@
 }
 
 .closeButton::before {
-    transform: rotate(45deg);
+    transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .closeButton::after {
-    transform: rotate(-45deg);
+    transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .menuPanel {
@@ -389,6 +391,8 @@
 .addCancelButton::after {
     content: "";
     position: absolute;
+    top: 50%;
+    left: 50%;
     width: 17px;
     height: 2.5px;
     border-radius: 999px;
@@ -396,11 +400,11 @@
 }
 
 .addCancelButton::before {
-    transform: rotate(45deg);
+    transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .addCancelButton::after {
-    transform: rotate(-45deg);
+    transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .addActionGroup {
@@ -674,6 +678,8 @@
 .pendingPreviewCloseButton::after {
     content: "";
     position: absolute;
+    top: 50%;
+    left: 50%;
     width: 20px;
     height: 2.5px;
     border-radius: 999px;
@@ -681,9 +687,9 @@
 }
 
 .pendingPreviewCloseButton::before {
-    transform: rotate(45deg);
+    transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .pendingPreviewCloseButton::after {
-    transform: rotate(-45deg);
+    transform: translate(-50%, -50%) rotate(-45deg);
 }
