@@ -21,14 +21,21 @@ const scheduleData = {
             { group: '全員', title: 'ホテル出発' },
         ],
         '10:00': [
-            { group: 'グループA', title: 'コテージ到着', members: ['自分', '田中', '鈴木'] },
-            { group: 'グループB', title: '買い出し', members: ['佐藤', '自分'] },
-            { group: 'グループB', title: '買い出し', members: ['佐藤'] },
-            { group: 'グループB', title: '買い出し', members: ['佐藤'] },
-            { group: 'グループB', title: '買い出し', members: ['佐藤'] },
+            { group: 'グループA', title: 'コテージ到着', endTime: '10:20', members: ['自分', '田中', '鈴木'] },
+            { group: 'グループB', title: '買い出し', endTime: '10:40', members: ['佐藤', '自分'] },
+            { group: 'グループB', title: '買い出し', endTime: '10:50', members: ['佐藤'] },
+            { group: 'グループB', title: '買い出し', endTime: '11:00', members: ['佐藤'] },
+            { group: 'グループB', title: '買い出し', endTime: '11:20', members: ['佐藤'] },
         ],
         '11:00': [
-            { group: '全員', title: '昼食・休憩' },
+            { group: '全員', title: '昼食・休憩', endTime: '11:10' },
+            { group: '全員', title: '昼食・休憩', endTime: '12:00' },
+            { group: '全員', title: '昼食・休憩', endTime: '12:00' },
+        ],
+        '12:00': [
+            { group: '全員', title: '昼食・休憩', endTime: '13:00' },
+            { group: '全員', title: '昼食・休憩', endTime: '13:00' },
+            { group: '全員', title: '昼食・休憩', endTime: '12:300' },
         ],
         '14:00': [
             { group: '全員', title: '昼食・休憩' },

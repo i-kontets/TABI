@@ -47,7 +47,7 @@ export default function AdminRoutes() {
             <Route path="spots/:spotId/edit" element={<SpotForm />} />
             <Route path="analytics" element={<Analytics />} />
             <Route path="managers" element={<Managers />} />
-            <Route path="logs" element={<Logs />} />
+            {/* <Route path="logs" element={<Logs />} /> */}
             <Route path="settings" element={<Settings />} />
         </Routes>
     );
