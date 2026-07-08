@@ -62,30 +62,13 @@
     position: fixed;
     inset: 0;
     z-index: 1000;
-    overflow: hidden;
-    background-color: #000;
-}
-
-.fullscreenImage {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.imageTapLayer {
-    position: absolute;
-    inset: 0;
-    z-index: 2;
-    border: none;
-    background: transparent;
-    cursor: default;
+    overflow-y: auto;
+    background-color: #070b0f;
+    color: white;
 }
 
 .detailHeader {
-    position: absolute;
+    position: sticky;
     top: 0;
     left: 0;
     right: 0;
@@ -93,35 +76,38 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: max(12px, env(safe-area-inset-top)) 15px 30px;
+    min-height: 76px;
+    padding: max(12px, env(safe-area-inset-top)) 16px 12px;
     color: white;
-    background: linear-gradient(180deg, rgba(0,0,0,0.72), rgba(0,0,0,0));
+    background-color: rgba(7,11,15,0.96);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .headerCenter {
     min-width: 0;
+    flex: 1;
     text-align: center;
 }
 
 .albumTitle {
     margin: 0;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 700;
 }
 
 .uploaderName {
-    margin: 3px 0 0;
-    font-size: 12px;
-    opacity: 0.82;
+    margin: 4px 0 0;
+    font-size: 14px;
+    opacity: 0.9;
 }
 
 .closeButton,
 .menuButton {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
     border: none;
     border-radius: 50%;
-    background-color: rgba(0,0,0,0.28);
+    background-color: rgba(255,255,255,0.08);
     color: white;
     font-size: 26px;
     line-height: 1;
@@ -132,12 +118,12 @@
     position: relative;
     display: flex;
     justify-content: flex-end;
-    min-width: 38px;
+    min-width: 44px;
 }
 
 .menuPanel {
     position: absolute;
-    top: 46px;
+    top: 52px;
     right: 0;
     z-index: 5;
     width: 170px;
@@ -172,96 +158,127 @@
     background-color: #f5f5f5;
 }
 
-.infoPanel {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 72px;
-    z-index: 4;
-    max-height: 52vh;
-    padding: 18px 20px 22px;
-    overflow-y: auto;
-    border-radius: 8px 8px 0 0;
-    background-color: white;
-    color: #222;
-    box-shadow: 0 -10px 28px rgba(0,0,0,0.32);
+.detailContent {
+    max-width: 680px;
+    margin: 0 auto;
+    padding-bottom: max(30px, env(safe-area-inset-bottom));
 }
 
-.infoHeader {
+.postOwner {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
+    gap: 12px;
+    padding: 14px 16px;
 }
 
-.infoHeader h2 {
-    margin: 0;
-    font-size: 18px;
-}
-
-.infoCloseButton {
-    width: 32px;
-    height: 32px;
-    border: none;
+.ownerAvatar {
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
-    background-color: #f0f0f0;
-    color: #222;
-    font-size: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background-color: var(--sub-color);
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.ownerText {
+    min-width: 0;
+}
+
+.ownerName,
+.ownerLocation {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ownerName {
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.ownerLocation {
+    margin-top: 3px;
+    color: rgba(255,255,255,0.78);
+    font-size: 14px;
+}
+
+.postImageFrame {
+    position: relative;
+    background-color: #000;
+}
+
+.postImage {
+    width: 100%;
+    max-height: 64vh;
+    display: block;
+    object-fit: contain;
+    background-color: #000;
+}
+
+.postInfo {
+    padding: 16px 18px 22px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.favoriteButton {
+    width: 42px;
+    height: 42px;
+    margin: 0 0 10px -8px;
+    border: none;
+    background: transparent;
+    color: white;
+    font-size: 32px;
     line-height: 1;
     cursor: pointer;
 }
 
-.infoList {
+.caption,
+.hashtags,
+.postDate {
     margin: 0;
-}
-
-.infoList div {
-    display: grid;
-    grid-template-columns: 86px 1fr;
-    gap: 12px;
-    padding: 10px 0;
-    border-top: 1px solid #eee;
-}
-
-.infoList dt {
-    color: #666;
-    font-size: 13px;
-}
-
-.infoList dd {
-    margin: 0;
-    color: #222;
-    font-size: 14px;
     overflow-wrap: anywhere;
 }
 
-.detailFooter {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 3;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 26px 20px max(18px, env(safe-area-inset-bottom));
-    background: linear-gradient(0deg, rgba(0,0,0,0.72), rgba(0,0,0,0));
+.caption {
+    color: white;
+    font-size: 16px;
+    line-height: 1.55;
 }
 
-.reactionButton,
-.downloadButton {
-    width: 42px;
-    height: 42px;
-    border: none;
-    border-radius: 50%;
-    background-color: rgba(0,0,0,0.28);
-    color: white;
-    font-size: 22px;
-    cursor: pointer;
+.caption span {
+    margin-right: 8px;
+    font-weight: 700;
+}
+
+.hashtags {
+    margin-top: 4px;
+    color: #7f9cff;
+    font-size: 16px;
+    line-height: 1.45;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+}
+
+.hashtags span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.postDate {
+    margin-top: 12px;
+    color: rgba(255,255,255,0.54);
+    font-size: 14px;
 }
 
 .favoriteActive {
-    color: #ffd447;
+    color: #ff5f7e;
 }
 
 .addView {
@@ -269,8 +286,9 @@
     inset: 0;
     z-index: 1000;
     box-sizing: border-box;
-    padding: 0 16px 24px;
-    background-color: #f7f7f7;
+    padding: 0 0 24px;
+    background-color: #ffffff;
+    color: #202124;
     overflow-y: auto;
 }
 
@@ -282,10 +300,10 @@
     grid-template-columns: 56px 1fr 112px;
     align-items: center;
     gap: 8px;
-    margin: 0 -16px 18px;
+    margin: 0 0 18px;
     padding: max(12px, env(safe-area-inset-top)) 16px 12px;
-    background-color: rgba(247,247,247,0.96);
-    border-bottom: 1px solid #e8e8e8;
+    background-color: rgba(255,255,255,0.96);
+    border-bottom: 1px solid #e8eaed;
 }
 
 .addTitleGroup {
@@ -295,7 +313,7 @@
 
 .addTitleGroup p {
     margin: 0 0 2px;
-    color: #666;
+    color: #6b7280;
     font-size: 12px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -304,7 +322,7 @@
 
 .addTitleGroup h1 {
     margin: 0;
-    color: #222;
+    color: #202124;
     font-size: 17px;
     font-weight: 700;
 }
@@ -314,8 +332,8 @@
     height: 36px;
     border: none;
     border-radius: 50%;
-    background-color: #e9e9e9;
-    color: #222;
+    background-color: #f1f3f4;
+    color: #202124;
     font-size: 24px;
     line-height: 1;
     cursor: pointer;
@@ -365,58 +383,176 @@
     display: none;
 }
 
-.addPhotoGrid {
+.addPostArea {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.pendingCarousel {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(190px, 46vw);
+    gap: 12px;
+    overflow-x: auto;
+    padding: 0 24px 10px;
+    scroll-padding-inline: 24px;
+    scroll-snap-type: x mandatory;
+    scrollbar-color: rgba(60,64,67,0.35) transparent;
+    scrollbar-width: thin;
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 34px), transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 34px), transparent 100%);
 }
 
-.addPhotoTile,
-.pendingPhotoCard {
+.pendingCarousel::-webkit-scrollbar {
+    height: 6px;
+}
+
+.pendingCarousel::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background-color: rgba(60,64,67,0.35);
+}
+
+.pendingSlide,
+.addMoreSlide {
     position: relative;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 4 / 5;
     overflow: hidden;
-    border-radius: 8px;
-    background-color: white;
-}
-
-.addPhotoTile {
-    border: 2px dashed #cfcfcf;
-    color: #777;
-    font-size: 34px;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.pendingPhotoPreviewButton {
-    width: 100%;
-    height: 100%;
     border: none;
-    padding: 0;
-    background: transparent;
+    border-radius: 10px;
+    background-color: #f1f3f4;
+    color: #202124;
+    scroll-snap-align: start;
     cursor: pointer;
 }
 
-.pendingPhotoPreviewButton img {
+.pendingSlide {
+    padding: 0;
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+}
+
+.pendingSlideActive {
+    outline-color: var(--sub-color);
+}
+
+.pendingSlide img {
     width: 100%;
     height: 100%;
     display: block;
     object-fit: cover;
 }
 
-.removePendingButton {
+.pendingSlide span {
     position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 28px;
-    height: 28px;
-    border: none;
+    top: 10px;
+    right: 10px;
+    min-width: 26px;
+    height: 26px;
     border-radius: 50%;
-    background-color: rgba(0,0,0,0.62);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0,0,0,0.58);
     color: white;
-    font-size: 20px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.addMoreSlide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #cbd5e1;
+    font-size: 38px;
     line-height: 1;
+}
+
+.carouselHint {
+    margin: -8px 24px 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.addEditPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 18px;
+}
+
+.activePreview {
+    display: none;
+}
+
+.addField {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.addField span {
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.addField input,
+.addField textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: #f9fafb;
+    color: #202124;
+    padding: 12px 13px;
+    font: inherit;
+    line-height: 1.5;
+    outline: none;
+}
+
+.addField textarea {
+    min-height: 96px;
+    resize: vertical;
+}
+
+.addField input::placeholder,
+.addField textarea::placeholder {
+    color: #9ca3af;
+}
+
+.fieldHelp {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.fieldWarning {
+    color: #d97706;
+    font-size: 12px;
+}
+
+.removeActiveButton,
+.emptyAddPicker {
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    padding: 13px 14px;
+    font-size: 15px;
+    font-weight: 700;
     cursor: pointer;
+}
+
+.removeActiveButton {
+    background-color: #fff1f2;
+    color: #e11d48;
+}
+
+.emptyAddPicker {
+    box-sizing: border-box;
+    width: calc(100% - 36px);
+    margin: 16px 18px 0;
+    background-color: var(--sub-color);
+    color: white;
 }
 
 .pendingPreviewOverlay {

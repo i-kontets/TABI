@@ -4,19 +4,56 @@ import BtmNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 import styles from './album.module.css';
 
-// publicフォルダ配下の画像を、Viteのbase URL込みで参照するための関数です。
-const assetPath = (path) => `${import.meta.env.BASE_URL}${path}`;
+const MAX_HASHTAG_COUNT = 5;
+const MAX_HASHTAG_LENGTH = 20;
 
-// 最初から画面に表示しておくデモ用の写真データです。
-// 実際にDBから写真を取得するようになったら、この部分はAPIの取得結果に置き換わります。
+const parseHashtags = (value) =>
+    String(value || '')
+        .replace(/＃/g, '#')
+        .replace(/\u3000/g, ' ')
+        .split(/\s+/)
+        .map((tag) => tag.replace(/^[#＃]+/, '').trim())
+        .filter(Boolean);
+
+const formatHashtags = (value) => {
+    const uniqueTags = [];
+
+    parseHashtags(value).forEach((tag) => {
+        const normalizedTag = tag.slice(0, MAX_HASHTAG_LENGTH);
+        if (!uniqueTags.includes(normalizedTag) && uniqueTags.length < MAX_HASHTAG_COUNT) {
+            uniqueTags.push(normalizedTag);
+        }
+    });
+
+    return uniqueTags.map((tag) => `#${tag}`).join(' ');
+};
+
+const getHashtagNotice = (value) => {
+    const tags = parseHashtags(value);
+
+    if (tags.some((tag) => tag.length > MAX_HASHTAG_LENGTH)) {
+        return `1タグ${MAX_HASHTAG_LENGTH}文字までです`;
+    }
+
+    if (tags.length > MAX_HASHTAG_COUNT) {
+        return `タグは${MAX_HASHTAG_COUNT}個までです`;
+    }
+
+    return '';
+};
+
+const truncateHashtagPreview = (value) => {
+    const text = String(value || '');
+    return text.length > MAX_HASHTAG_LENGTH
+        ? `${text.slice(0, MAX_HASHTAG_LENGTH)}...`
+        : text;
+};
 
 function Album() {
     // App.jsxで管理している旅行名を、Context経由で受け取っています。
     const { tripName } = useContext(TripContext);
 
-    
-
-    //「後で隠れているファイル選択ボタンを見つけるためのメモ帳を作る」
+    // 後で隠れているファイル選択inputを操作するための参照です。
     const fileInputRef = useRef(null);
 
     // 現在表示している画面を管理します。list: 一覧、detail: 詳細、add: 写真追加。
@@ -28,45 +65,43 @@ function Album() {
     // 詳細画面右上のメニューを開いているかどうかです。
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    // 写真の詳細情報パネルを開いているかどうかです。
-    const [isInfoOpen, setIsInfoOpen] = useState(false);
-
     // アルバムに表示する写真一覧です。
     const [photos, setPhotos] = useState([]);
 
     // 追加画面で選択済みだが、まだアルバムに追加確定していない写真です。
     const [pendingPhotos, setPendingPhotos] = useState([]);
 
+    // 追加画面でキャプションやハッシュタグを編集している写真のIDです。
+    const [activePendingPhotoId, setActivePendingPhotoId] = useState(null);
+
     // 追加画面で大きくプレビュー表示している写真です。
     const [previewPhoto, setPreviewPhoto] = useState(null);
 
     const albumId = 1;
-    const userId = 1;
 
-    const fetchPhotos = async() => {
-        try{
-            const response = await fetch(
-                `https://genshin.mond.jp/TABI/api/Photos/List.php?album_id=${albumId}`
-            );
+    // DBからアルバム写真を取得します。
+    useEffect(() => {
+        const timerId = window.setTimeout(async () => {
+            try {
+                const response = await fetch(
+                    `https://genshin.mond.jp/TABI/api/Photos/List.php?album_id=${albumId}`
+                );
+                const data = await response.json();
 
-            const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.message || '写真の取得に失敗しました');
+                }
 
-            if(!data.success){
-                throw new Error(data.message || '写真の取得に失敗しました');
+                setPhotos(data.photos || []);
+            } catch (error) {
+                console.error(error);
             }
+        }, 0);
 
-            setPhotos(data.photos || []);
-        }catch(error){
-            console.error(error);
-        }
-    };
+        return () => window.clearTimeout(timerId);
+    }, [albumId]);
 
-    useEffect(()=>{
-        fetchPhotos();
-    },[]);
-
-    // 追加画面に切り替わったタイミングで、ここの処理が動き、fileInputRefに保存してた
-    // <input type="file">を.click();されることになるので、自動的にファイル選択を開きます。
+    // 追加画面に切り替わったタイミングで、自動的にファイル選択を開きます。
     useEffect(() => {
         if (view !== 'add') return;
 
@@ -77,9 +112,7 @@ function Album() {
         return () => window.clearTimeout(timerId);
     }, [view]);
 
-    // 追加画面の「+」ボタンから、手動でファイル選択を開く処理
-    //プラスボタンをおすことで、inputがあるかを見に行く、なければ処理終了
-    //ある場合は,input内のvalueをリセットし、inputを開く処理
+    // 追加画面の「+」ボタンから、手動でファイル選択を開く処理です。
     const openFilePicker = () => {
         if (!fileInputRef.current) return;
         fileInputRef.current.value = '';
@@ -87,45 +120,52 @@ function Album() {
     };
 
     // ファイル選択で画像が選ばれたときに呼ばれる処理です。
-    //選択されたファイルを配列に変換している　もし選択されたファイルがなければ処理はなし
     const handleFileSelect = (event) => {
         const files = Array.from(event.target.files || []);
         if (files.length === 0) return;
 
         // 選ばれたFileオブジェクトを、画面表示しやすい写真データの形に変換します。
-        //fileを含んだ新しいオブジェクトの作成
         const selectedPhotos = files.map((file, index) => ({
             id: `${file.name}-${file.lastModified}-${Date.now()}-${index}-${Math.random()}`,
-            //画像データからURLを作成
             src: URL.createObjectURL(file),
+            caption: '',
             hashtags: '',
+            place: '',
             file,
         }));
 
-        // 既に選んでいる写真を残したまま、新しく選んだ写真を後ろに追加します。
-        setPendingPhotos((currentPhotos) => [...currentPhotos, ...selectedPhotos]);
+        // 新しく選んだ写真を左側に追加して、追加した順番が分かりやすいようにします。
+        setPendingPhotos((currentPhotos) => [...selectedPhotos, ...currentPhotos]);
+        setActivePendingPhotoId(selectedPhotos[0]?.id || null);
     };
 
     // 追加前の写真を1枚削除する処理です。
-    //376行目でphoto.idを引数として持ってきています。
     const removePendingPhoto = (photoId) => {
-        //setPedingphotosの中身を更新
         setPendingPhotos((currentPhotos) => {
-            //追加予定の画像たち(currentPhotos)から削除予定のやつと同じidのものを探し出し、targetphotoに入れる
             const targetPhoto = currentPhotos.find((photo) => photo.id === photoId);
-
-            // 124行目のcreateObjectURLで作ったtargetPhotoのURLを開放する
             if (targetPhoto) URL.revokeObjectURL(targetPhoto.src);
-            //filterを使い追加予定の画像たち(currentPhoto)から削除予定のやつとidが異なったものだけを
-            //新しい配列に入れることで実質削除になる returnすることでsetPendingPhotosに自動的に新しく作った配列が入る
-            return currentPhotos.filter((photo) => photo.id !== photoId);
+
+            const nextPhotos = currentPhotos.filter((photo) => photo.id !== photoId);
+            setActivePendingPhotoId((currentId) =>
+                currentId === photoId ? nextPhotos[0]?.id || null : currentId
+            );
+
+            return nextPhotos;
         });
 
-        // setPreviewの更新　削除予定の画像のプレビューを開いている場合プレビューから削除する(ほぼ機能しないと思っていい)
-        //プレビューを開いている画像のidと削除予定のidが一緒ならnullを返し、違うのであればそのままプレビュー中の画像を返す
         setPreviewPhoto((currentPhoto) => (currentPhoto?.id === photoId ? null : currentPhoto));
     };
 
+    // 追加予定写真のキャプション入力を更新します。
+    const updatePendingPhotoCaption = (photoId, caption) => {
+        setPendingPhotos((currentPhotos) =>
+            currentPhotos.map((photo) =>
+                photo.id === photoId ? { ...photo, caption } : photo
+            )
+        );
+    };
+
+    // 追加予定写真のハッシュタグ入力を更新します。入力中はIMEを壊さないよう整形しません。
     const updatePendingPhotoHashtags = (photoId, hashtags) => {
         setPendingPhotos((currentPhotos) =>
             currentPhotos.map((photo) =>
@@ -134,74 +174,69 @@ function Album() {
         );
     };
 
+    // 入力欄を離れたタイミングで、検索しやすいハッシュタグ形式に整えます。
+    const normalizePendingPhotoHashtags = (photoId) => {
+        setPendingPhotos((currentPhotos) =>
+            currentPhotos.map((photo) =>
+                photo.id === photoId ? { ...photo, hashtags: formatHashtags(photo.hashtags) } : photo
+            )
+        );
+    };
+
+    // 追加予定写真の場所入力を更新します。
+    const updatePendingPhotoPlace = (photoId, place) => {
+        setPendingPhotos((currentPhotos) =>
+            currentPhotos.map((photo) =>
+                photo.id === photoId ? { ...photo, place } : photo
+            )
+        );
+    };
+
     // 写真追加をキャンセルして一覧画面に戻る処理です。
     const cancelAddPhotos = () => {
-        //追加予定の画像(pendingPhotos)をforEachで画像すべてのURLを開放
         pendingPhotos.forEach((photo) => URL.revokeObjectURL(photo.src));
-        //追加予定の画像用の配列をリセット
         setPendingPhotos([]);
-        //プレビューもリセット
+        setActivePendingPhotoId(null);
         setPreviewPhoto(null);
-        //Viewをaddからlistに変更し、画像一覧に戻る
         setView('list');
     };
 
     // 選択中の写真をアルバムに追加確定する処理です。
     const addPendingPhotos = () => {
-        //追加する画像がなければ何もなしで終了
         if (pendingPhotos.length === 0) return;
 
-        //今日の日付を取得
         const today = new Date().toLocaleDateString('ja-JP');
-        //今登録されている写真の一番大きいIDを取得
-        //maxIdを初手に後ろに書いてある0で初期化
-        //photos配列を一つずつ出していきMath.maxでmaxIdとphoto.idを比べて大きいほうの数値を返し、
-        //reduceは返された値でmaxIdを上書きしてループを行うため最大値を持ってくることができる
-        const maxPhotoId = photos.reduce((maxId, photo) => Math.max(maxId, photo.id), 0);
+        const maxPhotoId = photos.reduce((maxId, photo) => Math.max(maxId, Number(photo.id) || 0), 0);
 
-        // 追加する画像のデータをさらに変更
-        //idをすでにある画像からのつづきの番号にするためにmaxPhotoId + index + 1にしている
+        // DB取得後の写真データと同じキー名にそろえて、一覧と詳細でそのまま扱えるようにします。
         const newPhotos = pendingPhotos.map((photo, index) => ({
             id: maxPhotoId + index + 1,
             image_url: photo.src,
             uploaded_by: '自分',
             shot_at: today,
-            caption: photo.file.name,
-            hashtags: photo.hashtags,
+            caption: photo.caption || photo.file.name,
+            hashtags: formatHashtags(photo.hashtags),
+            place: photo.place || '場所未設定',
         }));
 
-        // 新しく追加した写真を、一覧の先頭に表示します。
-        //setphotosに選択した画像を追加　追加した画像のほうを先に出すために newPhotosのほうが先に入れる
         setPhotos((currentPhotos) => [...newPhotos, ...currentPhotos]);
-        //追加予定用の配列をリセット
         setPendingPhotos([]);
-        //追加画像用のプレビューをリセット
+        setActivePendingPhotoId(null);
         setPreviewPhoto(null);
-        //Viewをaddからlistに変更し、画像一覧に画面変更
         setView('list');
     };
 
     // 一覧の写真を押したとき、詳細画面を開く処理です。
     const handlePhotoClick = (index) => {
-        //選択された画像のphoto配列内の要素番号を保存
         setSelectedIndex(index);
-        //一覧から画像を押したときに出る三点リーダーを閉じる
         setIsMenuOpen(false);
-        //三点リーダー内の詳細情報を閉じる
-        setIsInfoOpen(false);
-        //viewをaddからdetailに変える 画像詳細に(詳細情報とはべつ)
         setView('detail');
     };
 
     // 写真のお気に入り状態を切り替える処理です。
-    //引数で選択した画像のIdを持ってくる
     const toggleFavorite = (photoId) => {
-        //photosを更新します
         setPhotos((currentPhotos) =>
-            // mapで新しい配列を作り、対象の写真だけfavoriteを反転します。
             currentPhotos.map((photo) =>
-                //お気に入り登録する画像のidとcurrentPhotoのidを見比べて同じIdのものの
-                //photoのfovoriteの値を反転させる 違うやつはphotoを返す(そのまま返すってこと)
                 photo.id === photoId ? { ...photo, favorite: !photo.favorite } : photo
             )
         );
@@ -209,63 +244,47 @@ function Album() {
 
     // 詳細画面を閉じて、一覧画面へ戻る処理です。
     const closeDetail = () => {
-        //三点リーダーを閉じる
         setIsMenuOpen(false);
-        //詳細情報を閉じる
-        setIsInfoOpen(false);
-        //Viewをdetailからlistに変更
         setView('list');
     };
 
     // 詳細表示中の写真をアルバムから削除する処理です。
     const removeSelectedPhoto = () => {
-        //現状ほぼ動くことのないもの 選択された画像の要素数がnullなら終了
         if (selectedIndex === null) return;
 
-        //selectedPhotoに選択された写真の情報を入れる
         const selectedPhoto = photos[selectedIndex];
+        if (selectedPhoto?.image_url?.startsWith('blob:')) {
+            URL.revokeObjectURL(selectedPhoto.image_url);
+        }
 
-        // ユーザーが追加した画像の場合は、不要になったURLを解放します。
-        //selectedPhotoがNULlじゃなくて、blob:から始まるURLならURLを開放
-        if (selectedPhoto?.image_url.startsWith('blob:')) URL.revokeObjectURL(selectedPhoto.image_url);
-
-        //削除予定の写真の要素番号とPhotosの写真すべての要素番号を比べ、違ったものだけを集めて新しいPhotosを作る
         setPhotos((currentPhotos) => currentPhotos.filter((_, index) => index !== selectedIndex));
-        //削除後はすべてリセットし、写真一覧に戻る
         setSelectedIndex(null);
         setIsMenuOpen(false);
-        setIsInfoOpen(false);
         setView('list');
     };
 
-    // viewがdetail()かつ選択されてる画像がNULLじゃないなら
+    // viewがdetailかつ選択されている画像があるなら、投稿詳細風の画面を表示します。
     if (view === 'detail' && selectedIndex !== null) {
-        //photoに選択されてる画像の情報を補完
         const photo = photos[selectedIndex];
-
-        // 選択中の写真の要素番号が見つからないなら何もしない
         if (!photo) return null;
 
-        const hashtags = photo.hashtags || '';
+        const hashtags = String(photo.hashtags || '');
+        const hashtagList = hashtags.split(/\s+/).filter(Boolean);
+        const isFavorite = Boolean(photo.favorite);
+        const uploaderName = String(photo.uploaded_by || photo.uploader || '投稿者不明');
+        const locationName = String(photo.place || photo.location || photo.spot_name || '場所未設定');
 
         return (
             <div className={styles.detailOverlay}>
-                {/* 詳細画面上部の戻るボタン、タイトル、メニューです。 */}
                 <div className={styles.detailHeader}>
-                    {/*/Closeボタンが押されたら226行目のcloseDetail関数を実行*/}
                     <button className={styles.closeButton} onClick={closeDetail} aria-label="閉じる">
                         ×
                     </button>
                     <div className={styles.headerCenter}>
-                        <p className={styles.albumTitle}>
-                            {/*tripNameがあればtripNameをなければアルバム表示 selectedIndexとphotos.lengthで何枚目/画像数 を表示*/}
-                            {tripName || 'アルバム'} {selectedIndex + 1} / {photos.length}
-                        </p>
-                        {/*画像を上げた人の名前 */}
-                        <p className={styles.uploaderName}>{photo.uploaded_by}</p>
+                        <p className={styles.albumTitle}>投稿</p>
+                        <p className={styles.uploaderName}>{uploaderName}</p>
                     </div>
                     <div className={styles.menuArea}>
-                        {/*三点リーダーを押したときに開いたり閉じたりする処理 */}
                         <button
                             className={styles.menuButton}
                             onClick={() => setIsMenuOpen((current) => !current)}
@@ -274,20 +293,8 @@ function Album() {
                         >
                             ⋯
                         </button>
-                        {/* isMenuOpenがtrueのときだけメニューを表示します。 */}
                         {isMenuOpen && (
                             <div className={styles.menuPanel}>
-                                <button
-                                    className={styles.menuItem}
-                                    //詳細情報を押したときの処理
-                                    onClick={() => {
-                                        setIsMenuOpen(false);
-                                        setIsInfoOpen(true);
-                                    }}
-                                >
-                                    詳細情報
-                                </button>
-                                    {/* アルバムから削除を押したときの処理  removeSelectedPhoto関数を呼ぶ */}
                                 <button className={styles.deleteMenuItem} onClick={removeSelectedPhoto}>
                                     アルバムから削除
                                 </button>
@@ -296,72 +303,61 @@ function Album() {
                     </div>
                 </div>
 
-                <main className={styles.postDetail}>
-                    <section className={styles.postCard}>
-                        <div className={styles.postImageWrap}>
-                            <img className={styles.postImage} src={photo.image_url} alt={photo.caption || 'アルバム写真'} />
+                <main className={styles.detailContent}>
+                    <div className={styles.postOwner}>
+                        <div className={styles.ownerAvatar}>{uploaderName.slice(0, 1)}</div>
+                        <div className={styles.ownerText}>
+                            <p className={styles.ownerName}>{uploaderName}</p>
+                            <p className={styles.ownerLocation}>{locationName}</p>
                         </div>
-
-                        <div className={styles.postBody}>
-                            <div className={styles.postMeta}>
-                                <span className={styles.postAuthor}>{photo.uploaded_by || '投稿者不明'}</span>
-                                <span>{photo.shot_at || '日付未設定'}</span>
-                            </div>
-
-                            {photo.caption && <p className={styles.postCaption}>{photo.caption}</p>}
-                            <p className={styles.postHashtags}>{hashtags || '#未設定'}</p>
-                        </div>
-                    </section>
-                </main>
-
-                {/* isInfoOpenがtrueのときだけ詳細情報パネルを表示します。 */}
-                {isInfoOpen && (
-                    <div className={styles.infoPanel}>
-                        <div className={styles.infoHeader}>
-                            <h2>詳細情報</h2>
-                            <button
-                                className={styles.infoCloseButton}
-                                onClick={() => setIsInfoOpen(false)}
-                                aria-label="詳細情報を閉じる"
-                            >
-                                ×
-                            </button>
-                        </div>
-                        <dl className={styles.infoList}>
-                            <div>
-                                <dt>投稿者</dt>
-                                <dd>{photo.uploaded_by || '投稿者不明'}</dd>
-                            </div>
-                            <div>
-                                <dt>撮影日</dt>
-                                <dd>{photo.shot_at || '未設定'}</dd>
-                            </div>
-                            <div>
-                                <dt>キャプション</dt>
-                                <dd>{photo.caption || '未設定'}</dd>
-                            </div>
-                            <div>
-                                <dt>ハッシュタグ</dt>
-                                <dd>{hashtags || '未設定'}</dd>
-                            </div>
-                            <div>
-                                <dt>写真ID</dt>
-                                <dd>{photo.id}</dd>
-                            </div>
-                        </dl>
                     </div>
-                )}
+
+                    <div className={styles.postImageFrame}>
+                        <img
+                            className={styles.postImage}
+                            src={photo.image_url}
+                            alt={photo.caption || 'アルバム写真'}
+                        />
+                    </div>
+
+                    <div className={styles.postInfo}>
+                        <button
+                            className={`${styles.favoriteButton} ${isFavorite ? styles.favoriteActive : ''}`}
+                            onClick={() => toggleFavorite(photo.id)}
+                            aria-label={isFavorite ? 'お気に入りを解除' : 'お気に入りに追加'}
+                            aria-pressed={isFavorite}
+                        >
+                            {isFavorite ? '★' : '☆'}
+                        </button>
+                        <p className={styles.caption}>
+                            <span>{uploaderName}</span>
+                            {photo.caption || 'キャプション未設定'}
+                        </p>
+                        <div className={styles.hashtags}>
+                            {hashtagList.length > 0 ? (
+                                hashtagList.map((tag) => (
+                                    <span key={tag} title={tag}>{truncateHashtagPreview(tag)}</span>
+                                ))
+                            ) : (
+                                <span>#未設定</span>
+                            )}
+                        </div>
+                        <p className={styles.postDate}>{photo.shot_at || '日付未設定'}</p>
+                    </div>
+                </main>
             </div>
         );
     }
 
     // viewがaddのときは、写真追加画面を表示します。
     if (view === 'add') {
+        const activePendingPhoto =
+            pendingPhotos.find((photo) => photo.id === activePendingPhotoId) || pendingPhotos[0] || null;
+        const hashtagNotice = activePendingPhoto ? getHashtagNotice(activePendingPhoto.hashtags) : '';
+
         return (
             <div className={styles.addView}>
-                {/* 追加画面のヘッダーです。キャンセル、タイトル、追加ボタンがあります。 */}
                 <div className={styles.addHeader}>
-                    {/*153行目の追加をキャンセルする機能を実行*/}
                     <button className={styles.addCancelButton} onClick={cancelAddPhotos} aria-label="追加をキャンセル">
                         ×
                     </button>
@@ -370,13 +366,10 @@ function Album() {
                         <h1>写真を追加</h1>
                     </div>
                     <div className={styles.addActionGroup}>
-                        {/*現在追加される予定の写真の枚数の表示 */}
                         <span className={styles.addCount}>{pendingPhotos.length}</span>
                         <button
                             className={styles.addSubmitButton}
-                            /*ボタンが押されたら165行目のaddPendingPhotosを実行*/
                             onClick={addPendingPhotos}
-                            /*もし追加予定の画像が一つも選択されていない場合ボタンを押せなくする*/
                             disabled={pendingPhotos.length === 0}
                         >
                             追加
@@ -384,9 +377,7 @@ function Album() {
                     </div>
                 </div>
 
-                {/* 実際のファイル選択inputです。画面には出さず、ボタンからクリックします。 */}
                 <input
-                    /*ここでこれを宣言することでこのinputをfileInputRefで操作できるようにする*/
                     ref={fileInputRef}
                     className={styles.hiddenFileInput}
                     type="file"
@@ -395,51 +386,85 @@ function Album() {
                     onChange={handleFileSelect}
                 />
 
-                {/* 追加前の写真一覧です。先頭の+からさらに写真を選べます。 */}
-                <div className={styles.addPhotoGrid}>
-                    {/*openFilePickerを実行し、ファイル選択画面を開く */}
-                    <button className={styles.addPhotoTile} onClick={openFilePicker} aria-label="写真を選択">
-                        +
-                    </button>
-                    {/*追加予定も画像を一枚ずつ表示する */}
-                    {pendingPhotos.map((photo) => (
-                        <div className={styles.pendingPhotoCard} key={photo.id}>
-                            {/* サムネイルを押すと、その写真を大きくプレビューします。 */}
+                <div className={styles.addPostArea}>
+                    {pendingPhotos.length > 0 && (
+                        <>
+                            <div className={styles.pendingCarousel} aria-label="選択した写真">
+                                <button className={styles.addMoreSlide} onClick={openFilePicker} type="button" aria-label="写真を追加で選択">
+                                    +
+                                </button>
+                                {pendingPhotos.map((photo) => (
+                                    <button
+                                        className={`${styles.pendingSlide} ${photo.id === activePendingPhoto?.id ? styles.pendingSlideActive : ''}`}
+                                        key={photo.id}
+                                        onClick={() => setActivePendingPhotoId(photo.id)}
+                                        type="button"
+                                        aria-label={`${photo.file.name}を編集`}
+                                    >
+                                        <img src={photo.src} alt={photo.file.name} />
+                                        <span>{pendingPhotos.findIndex((item) => item.id === photo.id) + 1}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <p className={styles.carouselHint}>横にスライドして写真を選択</p>
+                        </>
+                    )}
+
+                    {activePendingPhoto ? (
+                        <div className={styles.addEditPanel}>
+                            <div className={styles.activePreview}>
+                                <img src={activePendingPhoto.src} alt={activePendingPhoto.file.name} />
+                            </div>
+                            <label className={styles.addField}>
+                                <span>キャプション</span>
+                                <textarea
+                                    value={activePendingPhoto.caption}
+                                    onChange={(event) => updatePendingPhotoCaption(activePendingPhoto.id, event.target.value)}
+                                    placeholder="写真の説明を書く"
+                                    rows={3}
+                                />
+                            </label>
+                            <label className={styles.addField}>
+                                <span>ハッシュタグ</span>
+                                <input
+                                    type="text"
+                                    value={activePendingPhoto.hashtags}
+                                    onChange={(event) => updatePendingPhotoHashtags(activePendingPhoto.id, event.target.value)}
+                                    onBlur={() => normalizePendingPhotoHashtags(activePendingPhoto.id)}
+                                    placeholder="#旅行 #海"
+                                />
+                                <small className={styles.fieldHelp}>5個まで、1タグ20文字まで</small>
+                                {hashtagNotice && <small className={styles.fieldWarning}>{hashtagNotice}</small>}
+                            </label>
+                            <label className={styles.addField}>
+                                <span>場所</span>
+                                <input
+                                    type="text"
+                                    value={activePendingPhoto.place}
+                                    onChange={(event) => updatePendingPhotoPlace(activePendingPhoto.id, event.target.value)}
+                                    placeholder="場所を追加"
+                                />
+                            </label>
                             <button
-                                className={styles.pendingPhotoPreviewButton}
-                                onClick={() => setPreviewPhoto(photo)}
-                                aria-label={`${photo.file.name}を全体表示`}
+                                className={styles.removeActiveButton}
+                                onClick={() => removePendingPhoto(activePendingPhoto.id)}
+                                type="button"
                             >
-                                <img src={photo.src} alt={photo.file.name} />
-                            </button>
-                            <input
-                                className={styles.pendingHashtagInput}
-                                type="text"
-                                value={photo.hashtags}
-                                onChange={(event) => updatePendingPhotoHashtags(photo.id, event.target.value)}
-                                placeholder="#旅行 #海"
-                                aria-label={`${photo.file.name}のハッシュタグ`}
-                            />
-                            {/* 追加前の写真を1枚削除します。 */}
-                            <button
-                                className={styles.removePendingButton}
-                                //追加画像の写真を消すためにremovePendingPhotoを使う 
-                                onClick={() => removePendingPhoto(photo.id)}
-                                aria-label={`${photo.file.name}を削除`}
-                            >
-                                ×
+                                この写真を削除
                             </button>
                         </div>
-                    ))}
+                    ) : (
+                        <button className={styles.emptyAddPicker} onClick={openFilePicker} type="button">
+                            写真を選択
+                        </button>
+                    )}
                 </div>
 
-                {/* previewPhotoがあるときだけ、追加前写真の大きいプレビューを表示します。 */}
                 {previewPhoto && (
                     <div className={styles.pendingPreviewOverlay}>
                         <img className={styles.pendingPreviewImage} src={previewPhoto.src} alt={previewPhoto.file.name} />
                         <button
                             className={styles.pendingPreviewCloseButton}
-                            //プレビューを閉じるためにプレビューにnullを代入 
                             onClick={() => setPreviewPhoto(null)}
                             aria-label="プレビューを閉じる"
                         >
@@ -458,12 +483,10 @@ function Album() {
 
             <div className={styles.container}>
                 <div className={styles.photoGrid}>
-                    {/* photos配列をmapで回して、写真カードを1枚ずつ表示します。 */}
                     {photos.map((photo, index) => (
                         <div
                             key={photo.id}
                             className={styles.photoCard}
-                            //画像をクリックしたらhandlePhotoClickが機能し、画像詳細画面に切り替わる
                             onClick={() => handlePhotoClick(index)}
                             role="button"
                             tabIndex={0}
@@ -472,14 +495,12 @@ function Album() {
                             }}
                         >
                             <img src={photo.image_url} alt={photo.caption || 'アルバム写真'} />
-                            {/* favoriteがtrueの写真だけ、一覧右上に星を表示します。 */}
-                            {/*photo.favorite && <span className={styles.favoriteBadge}>★</span>*/}
+                            {photo.favorite && <span className={styles.favoriteBadge}>★</span>}
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* 一覧右下の写真追加ボタンです。押すとviewをaddに切り替えます。 */}
             <button className={styles.addButton} onClick={() => setView('add')} aria-label="写真を追加">
                 +
             </button>
