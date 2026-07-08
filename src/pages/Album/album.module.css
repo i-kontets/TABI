@@ -53,9 +53,27 @@
     background-color: var(--sub-color);
     color: white;
     box-shadow: 0 4px 12px rgba(0,0,0,0.28);
-    font-size: 32px;
+    font-size: 0;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
     cursor: pointer;
+}
+
+.addButton::before,
+.addButton::after {
+    content: "";
+    position: absolute;
+    width: 22px;
+    height: 3px;
+    border-radius: 999px;
+    background-color: currentColor;
+}
+
+.addButton::after {
+    transform: rotate(90deg);
 }
 
 .detailOverlay {
@@ -103,6 +121,7 @@
 
 .closeButton,
 .menuButton {
+    position: relative;
     width: 44px;
     height: 44px;
     border: none;
@@ -119,6 +138,28 @@
     display: flex;
     justify-content: flex-end;
     min-width: 44px;
+}
+
+.closeButton {
+    font-size: 0;
+}
+
+.closeButton::before,
+.closeButton::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 2.5px;
+    border-radius: 999px;
+    background-color: currentColor;
+}
+
+.closeButton::before {
+    transform: rotate(45deg);
+}
+
+.closeButton::after {
+    transform: rotate(-45deg);
 }
 
 .menuPanel {
@@ -328,15 +369,38 @@
 }
 
 .addCancelButton {
+    position: relative;
     width: 36px;
     height: 36px;
     border: none;
     border-radius: 50%;
     background-color: #f1f3f4;
     color: #202124;
-    font-size: 24px;
+    font-size: 0;
     line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
     cursor: pointer;
+}
+
+.addCancelButton::before,
+.addCancelButton::after {
+    content: "";
+    position: absolute;
+    width: 17px;
+    height: 2.5px;
+    border-radius: 999px;
+    background-color: currentColor;
+}
+
+.addCancelButton::before {
+    transform: rotate(45deg);
+}
+
+.addCancelButton::after {
+    transform: rotate(-45deg);
 }
 
 .addActionGroup {
@@ -464,8 +528,23 @@
     align-items: center;
     justify-content: center;
     border: 2px dashed #cbd5e1;
-    font-size: 38px;
+    font-size: 0;
     line-height: 1;
+    padding: 0;
+}
+
+.addMoreSlide::before,
+.addMoreSlide::after {
+    content: "";
+    position: absolute;
+    width: 30px;
+    height: 3px;
+    border-radius: 999px;
+    background-color: currentColor;
+}
+
+.addMoreSlide::after {
+    transform: rotate(90deg);
 }
 
 .carouselHint {
@@ -586,7 +665,25 @@
     border-radius: 50%;
     background-color: rgba(0,0,0,0.45);
     color: white;
-    font-size: 26px;
+    font-size: 0;
     line-height: 1;
     cursor: pointer;
+}
+
+.pendingPreviewCloseButton::before,
+.pendingPreviewCloseButton::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 2.5px;
+    border-radius: 999px;
+    background-color: currentColor;
+}
+
+.pendingPreviewCloseButton::before {
+    transform: rotate(45deg);
+}
+
+.pendingPreviewCloseButton::after {
+    transform: rotate(-45deg);
 }
