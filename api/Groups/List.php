@@ -2,10 +2,9 @@
 session_start();
 header("Content-Type: application/json; charset=UTF-8");
 
-// データベース接続設定を読み込む（$pdo を使用）
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/S3Common.php";
 
-// レスポンスをJSONで返して終了する共通関数（Chat/List.php と同じ形式）
 function respond(array $payload, int $status = 200): void
 {
     http_response_code($status);
@@ -13,10 +12,6 @@ function respond(array $payload, int $status = 200): void
     exit;
 }
 
-// 旅行の開始日・終了日から表示用ステータスを判定する
-// 終了日が過去      → 終了
-// 今日が期間内      → 進行中
-// それ以外（未来・日程未定） → 計画中
 function resolveStatus(?string $startDate, ?string $endDate): string
 {
     $today = (new DateTimeImmutable("today"))->format("Y-m-d");
@@ -32,47 +27,39 @@ function resolveStatus(?string $startDate, ?string $endDate): string
     return "計画中";
 }
 
-// 開始日・終了日を「YYYY/MM/DD - YYYY/MM/DD」形式の表示文字列にする
 function formatDateRange(?string $startDate, ?string $endDate): string
 {
     if (!$startDate || !$endDate) {
         return "日程未定";
     }
 
-    $start = str_replace("-", "/", $startDate);
-    $end = str_replace("-", "/", $endDate);
-
-    return "{$start} - {$end}";
+    return str_replace("-", "/", $startDate) . " - " . str_replace("-", "/", $endDate);
 }
 
-// GET 以外は受け付けない
 if ($_SERVER["REQUEST_METHOD"] !== "GET") {
     respond([
         "success" => false,
-        "message" => "GETで送信してください。"
+        "message" => "GET method is required",
     ], 405);
 }
 
-// 未ログインなら401
 if (!isset($_SESSION["user_id"])) {
     respond([
         "success" => false,
-        "message" => "ログインが必要です。"
+        "message" => "Login is required",
     ], 401);
 }
 
 $userId = (int) $_SESSION["user_id"];
 
 try {
-    // ログイン中ユーザーが参加している（招待承認済みの）グループ一覧を取得する。
-    // - member_count : 承認済みメンバー数
-    // - trips        : グループに紐づく最新の旅行（日程・ステータス表示用）
     $stmt = $pdo->prepare("
         SELECT
             g.group_id,
             g.group_name,
             COUNT(DISTINCT gm_all.user_id) AS member_count,
             t.trip_id,
+            t.title AS trip_title,
             t.start_date,
             t.end_date
         FROM group_members gm_self
@@ -94,6 +81,7 @@ try {
             g.group_id,
             g.group_name,
             t.trip_id,
+            t.title,
             t.start_date,
             t.end_date
         ORDER BY (t.start_date IS NULL) ASC, t.start_date ASC, g.group_id DESC
@@ -101,27 +89,32 @@ try {
     $stmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
     $stmt->execute();
 
+    $aws = loadAwsConfig();
+    $s3 = $aws ? createS3Client($aws) : null;
+    $bucket = $aws ? $aws["bucket"] : null;
+
     $groups = [];
 
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $groups[] = [
-            // Home画面のカード表示に合わせた形で返す
             "id" => (string) $row["group_id"],
             "trip_id" => $row["trip_id"] !== null ? (int) $row["trip_id"] : null,
-            "name" => $row["group_name"],
+            "name" => $row["trip_title"] ?: $row["group_name"],
             "date" => formatDateRange($row["start_date"], $row["end_date"]),
             "members" => (int) $row["member_count"],
-            "status" => resolveStatus($row["start_date"], $row["end_date"])
+            "status" => resolveStatus($row["start_date"], $row["end_date"]),
+            "image_url" => null,
         ];
     }
 
     respond([
         "success" => true,
-        "groups" => $groups
+        "groups" => $groups,
     ]);
 } catch (Throwable $error) {
     respond([
         "success" => false,
-        "message" => "旅行グループ一覧の取得に失敗しました。"
+        "message" => "Failed to fetch groups",
+        "error" => $error->getMessage(),
     ], 500);
 }
