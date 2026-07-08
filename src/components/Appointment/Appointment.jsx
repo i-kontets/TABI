@@ -2,8 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import BtmNav from '../bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
-import styles from '../../pages/Appointment/appointment.module.css';
-import transportData from '../../pages/Appointment/appointment.json';
+import styles from '../../pages/Appointment/Appointment.module.css';
+import transportData from '../../pages/Appointment/Appointment.json';
 
 function AppointmentComponent() {
     const navigate = useNavigate();

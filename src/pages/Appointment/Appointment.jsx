@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Step, Stepper } from 'react-form-stepper';
 import BtmNav from '../../components/bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
-import styles from './appointment.module.css';
-import transportData from './appointment.json';
-import stops from './confirmation_options.json';
+import styles from './Appointment.module.css';
+import transportData from './Appointment.json';
+import stops from './Confirmation_options.json';
 
 const appointmentSteps = ['検索', '確認', '完了'];
 
@@ -34,6 +34,7 @@ const connectorStyleConfig = {
 
 const initialRoute = transportData.transports?.[0]?.carriers?.[0]?.routes?.[0] || {};
 const latestBookingStorageKey = 'tabiLatestBooking';
+const savedRoutesStorageKey = 'tabiMyRoutes';
 
 function ProgressTracker({ step, setStep }) {
     return (
@@ -84,6 +85,7 @@ function AppointmentStep({ onProceed }) {
         const d = new Date();
         return d.toISOString().slice(0,10);
     });
+    const [hour, setHour] = useState('');
     const [people, setPeople] = useState(1);
     const [formError, setFormError] = useState('');
     const [results, setResults] = useState(null);
@@ -149,8 +151,8 @@ function AppointmentStep({ onProceed }) {
 
     function handleSearch(e) {
         e && e.preventDefault && e.preventDefault();
-        if (!type || !from || !to || !date || !people || Number(people) < 1) {
-            setFormError('種類・出発地・到着地・人数・出発日を正しく入力してください。');
+        if (!type || !from || !to || !date || hour === '' || !people || Number(people) < 1) {
+            setFormError('種類・出発地・到着地・出発日・出発時間・人数を正しく入力してください。');
             setResults(null);
             return;
         }
@@ -163,9 +165,19 @@ function AppointmentStep({ onProceed }) {
                 (c.routes || []).forEach(r => {
                     if (from && r.from !== from) return;
                     if (to && r.to !== to) return;
-                    const times = r.times.slice();
-                    if (!times || times.length === 0) return;
-                    matches.push({ type: t.type, carrier: c.name, from: r.from, to: r.to, times });
+                    const times = r.times?.slice() || [];
+                    times.forEach(time => {
+                        if (Number(time.split(':')[0]) !== Number(hour)) return;
+                        matches.push({
+                            type: t.type,
+                            carrier: c.name,
+                            from: r.from,
+                            to: r.to,
+                            time,
+                            times: [time],
+                            price: r.price,
+                        });
+                    });
                 });
             });
         });
@@ -226,6 +238,16 @@ function AppointmentStep({ onProceed }) {
                     </label>
 
                     <label className={styles.label}>
+                        出発時間（時）
+                        <select value={hour} onChange={e => setHour(e.target.value)} className={styles.select} required>
+                            <option value="">選択してください</option>
+                            {Array.from({ length: 24 }, (_, value) => (
+                                <option key={value} value={value}>{value}時</option>
+                            ))}
+                        </select>
+                    </label>
+
+                    <label className={styles.label}>
                         人数
                         <input type="number" min="1" step="1" value={people} onChange={e => setPeople(e.target.value === '' ? '' : Number(e.target.value))} className={styles.input} required />
                     </label>
@@ -249,11 +271,11 @@ function AppointmentStep({ onProceed }) {
                         {results.items.length === 0 ? (
                             <div>該当する便はありませんでした。</div>
                         ) : (
-                            results.items.map((it, idx) => (
-                                <div key={`${it.carrier}-${it.from}-${it.to}-${idx}`} className={styles.card}>
+                            results.items.map(it => (
+                                <div key={`${it.carrier}-${it.from}-${it.to}-${it.time}`} className={styles.card}>
                                     <div style={{ fontWeight: 700 }}>{it.carrier} • {it.type}</div>
                                     <div>{it.from} → {it.to}</div>
-                                    <div>時刻候補: {it.times.join('、')}</div>
+                                    <div>出発時刻: {it.time}</div>
                                     <div style={{ marginTop: 8 }}>
                                         <button className={styles.proceedButton} onClick={() => proceedBooking(it)}>予約に進む</button>
                                     </div>
@@ -289,8 +311,8 @@ function ConfirmationStep({ item, date, people, onConfirm }) {
         };
     }, []);
 
-    const fareMap = { 'バス': 1500, '新幹線': 8000, 'レンタカー': 10000 };
-    const pricePerPerson = item?.type ? (fareMap[item.type] || 0) : 0;
+    const fareMap = { '飛行機': 20000, '電車': 0, 'バス': 1500, '新幹線': 8000, 'レンタカー': 10000 };
+    const pricePerPerson = item?.price ?? (item?.type ? (fareMap[item.type] || 0) : 0);
     const totalPrice = pricePerPerson * (people || 1);
 
     const confirm = () => {
@@ -351,7 +373,9 @@ function ConfirmationStep({ item, date, people, onConfirm }) {
                 </label>
 
                 <div className={styles.actions}>
-                    <button className={styles.buttonPrimary} onClick={confirm} disabled={isLoading}>{isLoading ? '読み込み中...' : '支払いに進む'}</button>
+                    <button className={styles.buttonPrimary} onClick={confirm} disabled={isLoading}>
+                        {isLoading ? '読み込み中...' : item?.type === '電車' ? 'ルートを保存' : '支払いに進む'}
+                    </button>
                 </div>
             </div>
         </div>
@@ -412,8 +436,11 @@ function DecisionStep({ booking }) {
 }
 
 export default function AppointmentPage() {
-    const [step, setStep] = useState(0); // 0: search, 1: confirm, 2: decision
-    const [bookingDraft, setBookingDraft] = useState(null);
+    const location = useLocation();
+    const navigate = useNavigate();
+    const routeDraft = location.state?.bookingDraft || null;
+    const [step, setStep] = useState(() => routeDraft ? 1 : 0); // 0: search, 1: confirm, 2: decision
+    const [bookingDraft, setBookingDraft] = useState(routeDraft);
 
     const handleProceedFromSearch = ({ item, date, people }) => {
         setBookingDraft({ item, date, people });
@@ -421,6 +448,19 @@ export default function AppointmentPage() {
     };
 
     const handleConfirm = (booking) => {
+        if (booking.item?.type === '電車') {
+            const savedRoutes = JSON.parse(localStorage.getItem(savedRoutesStorageKey) || '[]');
+            const savedRoute = {
+                ...booking,
+                id: `route-${Date.now()}`,
+                savedAt: new Date().toISOString(),
+            };
+
+            localStorage.setItem(savedRoutesStorageKey, JSON.stringify([...savedRoutes, savedRoute]));
+            navigate('/Itinerary', { state: { savedRoute } });
+            return;
+        }
+
         // attach a generated booking number
         const bookingWithNum = { ...booking, number: 'R' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 9000 + 1000) };
         setBookingDraft(bookingWithNum);

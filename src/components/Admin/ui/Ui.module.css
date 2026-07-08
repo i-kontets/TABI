@@ -1,0 +1,206 @@
+/* ===== バッジ ===== */
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.badgeBlue { background: #e8f0fe; color: #2f6ceb; }
+.badgeRed { background: #fdecec; color: #d93025; }
+.badgeGreen { background: #e6f6ec; color: #1e8e3e; }
+.badgeOrange { background: #fef3e2; color: #ea8600; }
+.badgeGray { background: #eef1f6; color: #6b7280; }
+
+/* ===== 検索バー ===== */
+.searchRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.searchBox {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1px solid #e5e9f0;
+    border-radius: 12px;
+    padding: 9px 12px;
+}
+.searchBox input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    background: none;
+    color: #1f2937;
+    min-width: 0;
+}
+.searchBox input::placeholder { color: #a3adbd; }
+.filterBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    background: #fff;
+    border: 1px solid #e5e9f0;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+/* ===== タブ ===== */
+.tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #e5e9f0;
+    margin-bottom: 12px;
+    overflow-x: auto;
+}
+.tab {
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 13px;
+    color: #6b7280;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.tabActive {
+    color: #2f6ceb;
+    font-weight: 700;
+    border-bottom-color: #2f6ceb;
+}
+
+/* ===== ページネーション ===== */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    margin: 16px 0 4px;
+}
+.pagination button {
+    min-width: 30px;
+    height: 30px;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #5b6472;
+    cursor: pointer;
+}
+.pagination button:disabled { color: #c3cad6; cursor: default; }
+.pageActive {
+    background: #2f6ceb !important;
+    color: #fff !important;
+    font-weight: 700;
+}
+.pageDots { color: #8a94a6; font-size: 13px; }
+
+/* ===== アバター ===== */
+.avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #fff;
+    font-weight: 700;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+/* ===== 統計カード ===== */
+.statCard {
+    background: #fff;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(20, 40, 80, 0.06);
+}
+.statLabel { font-size: 11px; color: #6b7280; margin-bottom: 4px; }
+.statValueRow { display: flex; align-items: baseline; gap: 4px; }
+.statValue { font-size: 22px; font-weight: 800; color: #1f2937; }
+.statWarn { color: #d93025; }
+.statUnit { font-size: 12px; color: #6b7280; }
+.statDiff { font-size: 11px; font-weight: 700; margin-left: 4px; }
+.diffUp { color: #1e8e3e; }
+.diffDown { color: #d93025; }
+
+/* ===== カード ===== */
+.card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 14px;
+    box-shadow: 0 1px 3px rgba(20, 40, 80, 0.06);
+    margin-bottom: 12px;
+}
+.cardHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.cardTitle { margin: 0; font-size: 14px; font-weight: 700; }
+
+/* ===== 詳細行 ===== */
+.detailRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f2f4f8;
+    font-size: 13px;
+}
+.detailRow:last-child { border-bottom: none; }
+.detailLabel { color: #6b7280; flex-shrink: 0; }
+.detailValue { color: #1f2937; text-align: right; word-break: break-all; }
+
+/* ===== ボタン ===== */
+.btn {
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btnFull { width: 100%; }
+.btnPrimary { background: #2f6ceb; color: #fff; }
+.btnDanger { background: #d93025; color: #fff; }
+.btnOutline { background: #fff; color: #2f6ceb; border-color: #2f6ceb; }
+.btnDangerOutline { background: #fff; color: #d93025; border-color: #d93025; }
+
+/* ===== グラフ ===== */
+.chartWrap { width: 100%; }
+.chart { width: 100%; height: auto; display: block; }
+
+.donutRow { display: flex; align-items: center; gap: 12px; }
+.donut { width: 120px; height: 120px; flex-shrink: 0; }
+.donutLegend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: #1f2937;
+}
+.donutLegend li { display: flex; align-items: center; gap: 6px; }
+.legendDot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.legendVal { margin-left: auto; color: #6b7280; }
+
+/* ===== 空状態 ===== */
+.empty {
+    text-align: center;
+    color: #8a94a6;
+    font-size: 13px;
+    padding: 32px 0;
+}

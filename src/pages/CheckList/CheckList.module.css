@@ -1,0 +1,73 @@
+.page {
+    width: min(100%, 430px);
+    min-height: calc(100vh - 120px);
+    margin: 0 auto;
+    padding: 16px 20px 104px;
+    box-sizing: border-box;
+}
+
+.toolbar {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.tabs {
+    width: fit-content;
+    padding: 3px;
+    display: inline-grid;
+    grid-template-columns: auto auto;
+    gap: 3px;
+    border: 1px solid #d9deea;
+    border-radius: 8px;
+    background-color: #f4f6fb;
+}
+
+.tabButton {
+    min-width: 78px;
+    min-height: 30px;
+    padding: 0 10px;
+    border: none;
+    border-radius: 6px;
+    background-color: transparent;
+    color: #596171;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.tabButton:hover,
+.tabButton:focus-visible {
+    background-color: #e8ecf5;
+}
+
+.activeTab {
+    background-color: #fff;
+    color: var(--sub-color);
+    box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+}
+
+.progress {
+    min-width: 48px;
+    padding: 5px 9px;
+    border-radius: 14px;
+    background-color: var(--other-color);
+    color: #29365f;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.sections {
+    display: grid;
+    gap: 14px;
+}
+
+@media (max-width: 360px) {
+    .page {
+        padding-right: 14px;
+        padding-left: 14px;
+    }
+}
