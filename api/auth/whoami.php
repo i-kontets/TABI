@@ -8,6 +8,20 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // データベース接続設定を読み込む（$pdo を使用）
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Groups/S3Common.php";
+
+function resolveUserIconUrl(?string $iconUrl): ?string
+{
+    if (!$iconUrl) {
+        return null;
+    }
+    if (strpos($iconUrl, "http://") === 0 || strpos($iconUrl, "https://") === 0) {
+        return $iconUrl;
+    }
+    $aws = loadAwsConfig();
+    $s3 = $aws ? createS3Client($aws) : null;
+    return ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $iconUrl) : null;
+}
 
 // セッションにユーザーIDが無ければ未ログイン扱いで401を返す
 if (!isset($_SESSION["user_id"])) {
@@ -46,10 +60,13 @@ try {
     }
 
     // 正常時はユーザー情報を含むJSONを返す
+    $user["icon_key"] = $user["icon_url"];
+    $user["icon_url"] = resolveUserIconUrl($user["icon_url"]);
+
     echo json_encode([
         "success" => true,
         "user" => $user
-    ]);
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
     exit;
 

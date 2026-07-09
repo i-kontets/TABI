@@ -316,7 +316,7 @@ function Home() {
     return (
         <div className={styles.page}>
             <header className={styles.header}>
-                <button
+                {/* <button
                     type="button"
                     className={styles.logoutButton}
                     onClick={handleLogout}
@@ -324,7 +324,7 @@ function Home() {
                 >
                     <LogoutIcon className={styles.headerIcon} />
                     <span>ログアウト</span>
-                </button>
+                </button> */}
 
                 <h1 className={styles.headerTitle}>TABI</h1>
 
