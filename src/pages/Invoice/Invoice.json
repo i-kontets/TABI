@@ -3,54 +3,6 @@
     "1": {
       "pay": [
         {
-          "id": 1783505588285,
-          "storeName": "お酒代",
-          "members": [
-            {
-              "id": 1,
-              "amount": 0
-            },
-            {
-              "id": 2,
-              "amount": 0
-            },
-            {
-              "id": 3,
-              "amount": 0
-            },
-            {
-              "id": 4,
-              "amount": 0
-            },
-            {
-              "id": 5,
-              "amount": 0
-            }
-          ],
-          "participantCount": 5,
-          "totalAmount": 0
-        },
-        {
-          "id": 1783505752909,
-          "storeName": "お酒代",
-          "members": [
-            {
-              "id": 1,
-              "amount": 0
-            },
-            {
-              "id": 2,
-              "amount": 0
-            },
-            {
-              "id": 3,
-              "amount": 0
-            }
-          ],
-          "participantCount": 3,
-          "totalAmount": 0
-        },
-        {
           "id": 1783505961870,
           "storeName": "お酒代",
           "members": [
@@ -102,7 +54,9 @@
         {
           "id": 3,
           "name": "田中",
-          "paidPayIds": []
+          "paidPayIds": [
+            1783505961870
+          ]
         },
         {
           "id": 4,
