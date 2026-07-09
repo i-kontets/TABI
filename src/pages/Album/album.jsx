@@ -1,4 +1,5 @@
 import { useState, useContext, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { TripContext } from '../../App';
 import BtmNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
@@ -77,10 +78,43 @@ function Album() {
     // 追加画面で大きくプレビュー表示している写真です。
     const [previewPhoto, setPreviewPhoto] = useState(null);
 
-    const albumId = 1;
+    const [searchParams] = useSearchParams();
+    const groupId = searchParams.get('groupId');
+
+    const [albumId,setAlbumId] = useState(null);
+
+    const [uploading, setUploading] = useState(false);
+
+
+
+    useEffect(() => {
+        if (!groupId) return;
+
+        const fetchAlbum = async () => {
+            try {
+                const response = await fetch(
+                    `https://genshin.mond.jp/TABI/api/Photos/GetAlbum.php?group_id=${groupId}`
+                );
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'アルバムの取得に失敗しました');
+                }
+
+                setAlbumId(data.album.album_id);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchAlbum();
+    }, [groupId]);
+    
 
     // DBからアルバム写真を取得します。
     useEffect(() => {
+        if (!albumId) return;
         const timerId = window.setTimeout(async () => {
             try {
                 const response = await fetch(
@@ -130,7 +164,6 @@ function Album() {
             src: URL.createObjectURL(file),
             caption: '',
             hashtags: '',
-            place: '',
             file,
         }));
 
@@ -183,15 +216,6 @@ function Album() {
         );
     };
 
-    // 追加予定写真の場所入力を更新します。
-    const updatePendingPhotoPlace = (photoId, place) => {
-        setPendingPhotos((currentPhotos) =>
-            currentPhotos.map((photo) =>
-                photo.id === photoId ? { ...photo, place } : photo
-            )
-        );
-    };
-
     // 写真追加をキャンセルして一覧画面に戻る処理です。
     const cancelAddPhotos = () => {
         pendingPhotos.forEach((photo) => URL.revokeObjectURL(photo.src));
@@ -202,28 +226,59 @@ function Album() {
     };
 
     // 選択中の写真をアルバムに追加確定する処理です。
-    const addPendingPhotos = () => {
+    const addPendingPhotos = async() => {
         if (pendingPhotos.length === 0) return;
 
-        const today = new Date().toLocaleDateString('ja-JP');
-        const maxPhotoId = photos.reduce((maxId, photo) => Math.max(maxId, Number(photo.id) || 0), 0);
+        if(!albumId){
+            alert("アルバムIdが取得できていません")
+            return;
+        }
 
-        // DB取得後の写真データと同じキー名にそろえて、一覧と詳細でそのまま扱えるようにします。
-        const newPhotos = pendingPhotos.map((photo, index) => ({
-            id: maxPhotoId + index + 1,
-            image_url: photo.src,
-            uploaded_by: '自分',
-            shot_at: today,
-            caption: photo.caption || photo.file.name,
-            hashtags: formatHashtags(photo.hashtags),
-            place: photo.place || '場所未設定',
-        }));
+        //のちにuserIdとる予定
+        const userId = 1;
+        
+        try{
+            setUploading(true);
 
-        setPhotos((currentPhotos) => [...newPhotos, ...currentPhotos]);
-        setPendingPhotos([]);
-        setActivePendingPhotoId(null);
-        setPreviewPhoto(null);
-        setView('list');
+            for(const photo of pendingPhotos){
+                const formData = new FormData();
+
+                formData.append('image',photo.file);
+                formData.append('album_id', albumId);
+                formData.append('user_id', userId);
+                formData.append('caption', photo.caption || '');
+                formData.append('shot_at', '');
+
+                const response = await fetch (
+                    'https://genshin.mond.jp/TABI/api/Photos/Upload.php',
+                    {
+                        method: 'POST',
+                        body: formData,
+                    }
+                );
+
+                const data = await response.json();
+
+                if(!response.ok || !data.success){
+                    throw new Error(data.message || '画像アップロードに失敗しました');
+                }
+            }
+
+                pendingPhotos.forEach((photo) => URL.revokeObjectURL(photo.src));
+
+                setPendingPhotos([]);
+                setActivePendingPhotoId(null);
+                setPreviewPhoto(null);
+                setView('list');
+
+                window.location.reload();
+            
+            }catch (error){
+                console.error(error);
+                alert(error.message || '画像アップロードに失敗しました');
+            }finally{
+                setUploading(false)
+            } 
     };
 
     // 一覧の写真を押したとき、詳細画面を開く処理です。
@@ -435,15 +490,6 @@ function Album() {
                                 />
                                 <small className={styles.fieldHelp}>5個まで、1タグ20文字まで</small>
                                 {hashtagNotice && <small className={styles.fieldWarning}>{hashtagNotice}</small>}
-                            </label>
-                            <label className={styles.addField}>
-                                <span>場所</span>
-                                <input
-                                    type="text"
-                                    value={activePendingPhoto.place}
-                                    onChange={(event) => updatePendingPhotoPlace(activePendingPhoto.id, event.target.value)}
-                                    placeholder="場所を追加"
-                                />
                             </label>
                             <button
                                 className={styles.removeActiveButton}
