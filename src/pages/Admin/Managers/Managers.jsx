@@ -41,7 +41,6 @@ export default function Managers() {
     return (
         <AdminLayout
             title="管理者一覧"
-            back
             headerRight={<Button variant="primary" onClick={() => setShowForm((v) => !v)}>+ 追加</Button>}
         >
             {showForm && (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Tabs, Badge, Avatar, Pagination, EmptyState } from '../../../components/Admin/ui/Ui';
@@ -11,10 +11,29 @@ export default function InquiryList() {
     const [result, setResult] = useState(null);
     const [counts, setCounts] = useState({});
 
-    useEffect(() => {
+    const loadInquiries = useCallback(() => {
         fetchInquiries({ status: tab, page }).then(setResult);
         fetchInquiryCounts().then(setCounts);
     }, [tab, page]);
+
+    useEffect(() => {
+        loadInquiries();
+    }, [loadInquiries]);
+
+    useEffect(() => {
+        const handleInquiryCreated = (event) => {
+            if (import.meta.env.DEV) {
+                console.log('Realtime inquiry_created received', event.detail);
+            }
+            loadInquiries();
+        };
+
+        window.addEventListener('admin:inquiry_created', handleInquiryCreated);
+
+        return () => {
+            window.removeEventListener('admin:inquiry_created', handleInquiryCreated);
+        };
+    }, [loadInquiries]);
 
     const tabs = ['未対応', '対応中', '対応済み'].map((k) => ({
         key: k,

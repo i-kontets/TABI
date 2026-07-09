@@ -1,4 +1,3 @@
-import { useEffect, useRef, useState } from 'react';
 import styles from './Ui.module.css';
 
 /* ============ ステータスバッジ ============ */
@@ -207,110 +206,29 @@ export function Button({ children, variant = 'primary', onClick, type = 'button'
 
 /* ============ 折れ線グラフ (SVG) ============ */
 
-export function LineChart({ data, labels = [], height = 120, unit = '人' }) {
-    const [activeIndex, setActiveIndex] = useState(null);
-    const hideTimerRef = useRef(null);
+export function LineChart({ data, labels = [], height = 120 }) {
     const w = 320;
     const h = height;
     const pad = 8;
-    const values = data.length > 0 ? data : [0];
-    const max = Math.max(...values, 1);
-    const min = Math.min(...values, 0);
+    const max = Math.max(...data, 1);
+    const min = Math.min(...data, 0);
     const range = max - min || 1;
-    const step = (w - pad * 2) / (values.length - 1 || 1);
-    const points = values.map((v, i) => ({
+    const step = (w - pad * 2) / (data.length - 1 || 1);
+    const points = data.map((v, i) => ({
         x: pad + i * step,
         y: pad + (h - pad * 2) * (1 - (v - min) / range),
-        value: v,
-        label: labels[i] || '',
     }));
     const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
-    const activePoint = activeIndex == null ? null : points[activeIndex];
-
-    useEffect(() => () => {
-        if (hideTimerRef.current) {
-            clearTimeout(hideTimerRef.current);
-        }
-    }, []);
-
-    const showNearestPoint = (event, keepVisible = false) => {
-        const svg = event.currentTarget;
-        const rect = svg.getBoundingClientRect();
-        const x = ((event.clientX - rect.left) / rect.width) * w;
-        const nearest = points.reduce((best, point, index) => {
-            const distance = Math.abs(point.x - x);
-            return distance < best.distance ? { index, distance } : best;
-        }, { index: 0, distance: Infinity });
-
-        setActiveIndex(nearest.index);
-
-        if (hideTimerRef.current) {
-            clearTimeout(hideTimerRef.current);
-            hideTimerRef.current = null;
-        }
-
-        if (keepVisible) {
-            hideTimerRef.current = setTimeout(() => {
-                setActiveIndex(null);
-                hideTimerRef.current = null;
-            }, 10000);
-        }
-    };
-
-    const handlePointerMove = (event) => {
-        if (event.pointerType === 'mouse') {
-            showNearestPoint(event);
-        }
-    };
-
-    const handlePointerDown = (event) => {
-        showNearestPoint(event, event.pointerType !== 'mouse');
-    };
-
-    const handlePointerLeave = (event) => {
-        if (event.pointerType === 'mouse') {
-            setActiveIndex(null);
-        }
-    };
 
     return (
         <div className={styles.chartWrap}>
-            <svg
-                viewBox={`0 0 ${w} ${h + 24}`}
-                className={styles.chart}
-                onPointerMove={handlePointerMove}
-                onPointerDown={handlePointerDown}
-                onPointerLeave={handlePointerLeave}
-            >
+            <svg viewBox={`0 0 ${w} ${h + 16}`} className={styles.chart}>
                 <path d={path} fill="none" stroke="#2f6ceb" strokeWidth="2" strokeLinejoin="round" />
                 {points.map((p, i) => (
                     <circle key={i} cx={p.x} cy={p.y} r="3" fill="#2f6ceb" />
                 ))}
-                {activePoint && (
-                    <g pointerEvents="none">
-                        <line
-                            x1={activePoint.x}
-                            y1={pad}
-                            x2={activePoint.x}
-                            y2={h - pad}
-                            stroke="#c8d2e2"
-                            strokeWidth="1"
-                            strokeDasharray="3 3"
-                        />
-                        <circle cx={activePoint.x} cy={activePoint.y} r="5" fill="#fff" stroke="#2f6ceb" strokeWidth="2" />
-                        <g transform={`translate(${Math.min(Math.max(activePoint.x - 28, 4), w - 60)}, ${Math.max(activePoint.y - 44, 4)})`}>
-                            <rect width="56" height="34" rx="5" fill="#1f2937" opacity="0.96" />
-                            <text x="8" y="13" fontSize="9" fontWeight="700" fill="#ffffff">
-                                {activePoint.label || '人数'}
-                            </text>
-                            <text x="8" y="27" fontSize="11" fontWeight="700" fill="#ffffff">
-                                {activePoint.value}{unit}
-                            </text>
-                        </g>
-                    </g>
-                )}
                 {labels.map((l, i) => (
-                    <text key={i} x={pad + i * step} y={h + 16} textAnchor="middle" fontSize="9" fill="#8a94a6">
+                    <text key={i} x={pad + i * step} y={h + 12} textAnchor="middle" fontSize="9" fill="#8a94a6">
                         {l}
                     </text>
                 ))}
@@ -323,107 +241,34 @@ export function LineChart({ data, labels = [], height = 120, unit = '人' }) {
 
 const DONUT_COLORS = ['#2f6ceb', '#5b8def', '#8fb3f5', '#c3d5fa', '#e8f0fe'];
 
-export function DonutChart({ items, centerLabel, centerValue, unit = '人' }) {
-    const [activeIndex, setActiveIndex] = useState(null);
-    const hideTimerRef = useRef(null);
+export function DonutChart({ items, centerLabel, centerValue }) {
     const total = items.reduce((a, it) => a + it.value, 0) || 1;
     const r = 40;
     const c = 2 * Math.PI * r;
-    const segments = items.reduce((acc, item, index) => {
-        const previousOffset = acc[index - 1]?.nextOffset || 0;
-        const frac = item.value / total;
-        acc.push({
-            item,
-            frac,
-            offset: previousOffset,
-            nextOffset: previousOffset + frac,
-        });
-        return acc;
-    }, []);
-    const activeSegment = activeIndex == null ? null : segments[activeIndex];
-
-    useEffect(() => () => {
-        if (hideTimerRef.current) {
-            clearTimeout(hideTimerRef.current);
-        }
-    }, []);
-
-    const showSegment = (index, keepVisible = false) => {
-        setActiveIndex(index);
-
-        if (hideTimerRef.current) {
-            clearTimeout(hideTimerRef.current);
-            hideTimerRef.current = null;
-        }
-
-        if (keepVisible) {
-            hideTimerRef.current = setTimeout(() => {
-                setActiveIndex(null);
-                hideTimerRef.current = null;
-            }, 10000);
-        }
-    };
-
-    const handleSegmentMove = (event, index) => {
-        if (event.pointerType === 'mouse') {
-            showSegment(index);
-        }
-    };
-
-    const handleSegmentDown = (event, index) => {
-        showSegment(index, event.pointerType !== 'mouse');
-    };
-
-    const handleSegmentLeave = (event) => {
-        if (event.pointerType === 'mouse') {
-            setActiveIndex(null);
-        }
-    };
-
-    const tooltipPosition = activeSegment
-        ? (() => {
-            const angle = (activeSegment.offset + activeSegment.frac / 2) * 2 * Math.PI - Math.PI / 2;
-            const anchorX = 60 + Math.cos(angle) * 34;
-            const anchorY = 60 + Math.sin(angle) * 34;
-            return {
-                x: Math.min(Math.max(anchorX - 28, 4), 60),
-                y: Math.min(Math.max(anchorY - 42, 4), 82),
-            };
-        })()
-        : null;
+    let offset = 0;
 
     return (
         <div className={styles.donutRow}>
             <svg viewBox="0 0 120 120" className={styles.donut}>
-                {segments.map(({ item, frac, offset }, i) => (
-                    <circle
-                        key={item.label}
-                        cx="60" cy="60" r={r}
-                        fill="none"
-                        stroke={DONUT_COLORS[i % DONUT_COLORS.length]}
-                        strokeWidth="16"
-                        strokeDasharray={`${frac * c} ${c}`}
-                        strokeDashoffset={-offset * c}
-                        transform="rotate(-90 60 60)"
-                        onPointerMove={(event) => handleSegmentMove(event, i)}
-                        onPointerDown={(event) => handleSegmentDown(event, i)}
-                        onPointerLeave={handleSegmentLeave}
-                        style={{ cursor: 'pointer' }}
-                    />
-                ))}
+                {items.map((it, i) => {
+                    const frac = it.value / total;
+                    const el = (
+                        <circle
+                            key={it.label}
+                            cx="60" cy="60" r={r}
+                            fill="none"
+                            stroke={DONUT_COLORS[i % DONUT_COLORS.length]}
+                            strokeWidth="16"
+                            strokeDasharray={`${frac * c} ${c}`}
+                            strokeDashoffset={-offset * c}
+                            transform="rotate(-90 60 60)"
+                        />
+                    );
+                    offset += frac;
+                    return el;
+                })}
                 <text x="60" y="56" textAnchor="middle" fontSize="9" fill="#8a94a6">{centerLabel}</text>
                 <text x="60" y="72" textAnchor="middle" fontSize="13" fontWeight="700" fill="#1f2937">{centerValue}</text>
-                {activeSegment && tooltipPosition && (
-                    <g pointerEvents="none" transform={`translate(${tooltipPosition.x}, ${tooltipPosition.y})`}>
-                        <rect width="56" height="34" rx="5" fill="#1f2937" opacity="0.96" />
-                        <text x="8" y="13" fontSize="9" fontWeight="700" fill="#ffffff">
-                            {activeSegment.item.label}
-                        </text>
-                        <text x="8" y="27" fontSize="11" fontWeight="700" fill="#ffffff">
-                            {activeSegment.item.value}{unit}
-                        </text>
-                    </g>
-                )}
             </svg>
             <ul className={styles.donutLegend}>
                 {items.map((it, i) => (

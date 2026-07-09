@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { StatCard, Card, LineChart, DonutChart } from '../../../components/Admin/ui/Ui';
 import { fetchAnalytics } from '../../../services/admin';
@@ -7,19 +7,38 @@ import styles from './Analytics.module.css';
 export default function Analytics() {
     const [analytics, setAnalytics] = useState(null);
 
-    useEffect(() => {
+    const loadAnalytics = useCallback(() => {
         fetchAnalytics().then(setAnalytics);
     }, []);
 
+    useEffect(() => {
+        loadAnalytics();
+    }, [loadAnalytics]);
+
+    useEffect(() => {
+        const handleRealtimeUpdate = (event) => {
+            if (import.meta.env.DEV) {
+                console.log(`${event.type} received`);
+            }
+            loadAnalytics();
+        };
+
+        window.addEventListener('admin:inquiry_created', handleRealtimeUpdate);
+        window.addEventListener('admin:report_created', handleRealtimeUpdate);
+
+        return () => {
+            window.removeEventListener('admin:inquiry_created', handleRealtimeUpdate);
+            window.removeEventListener('admin:report_created', handleRealtimeUpdate);
+        };
+    }, [loadAnalytics]);
+
     if (!analytics) return <AdminLayout title="分析・利用状況" back><div /></AdminLayout>;
 
-    const { summary, activeUserTrend, userAttributes, notificationPermissions, usage, featureRanking } = analytics;
-    const notificationPermissionItems = notificationPermissions || userAttributes;
-    const notificationPermissionTotal = notificationPermissionItems.reduce((total, item) => total + item.value, 0);
+    const { summary, activeUserTrend, userAttributes, usage, featureRanking } = analytics;
     const maxCount = Math.max(...featureRanking.map((f) => f.count), 1);
 
     return (
-        <AdminLayout title="分析・利用状況" back>
+        <AdminLayout title="分析・利用状況">
             <div className={styles.periodBar}>2026/06/26 〜 2026/07/02</div>
 
             <div className={styles.statGrid}>
@@ -35,11 +54,11 @@ export default function Analytics() {
                 <LineChart data={activeUserTrend.data} labels={activeUserTrend.labels} />
             </Card>
 
-            <Card title="通知許可状況">
+            <Card title="ユーザー属性">
                 <DonutChart
-                    items={notificationPermissionItems}
+                    items={userAttributes}
                     centerLabel="全体"
-                    centerValue={`${notificationPermissionTotal.toLocaleString()}人`}
+                    centerValue={`${summary.totalUsers.toLocaleString()}人`}
                 />
             </Card>
 

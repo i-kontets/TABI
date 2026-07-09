@@ -1,37 +1,43 @@
-import { adminRequest } from './client';
+import { mockNotices } from './mockData';
+import { request, paginate } from './client';
 
-// お知らせ一覧を取得します。
-// status と page を指定して、公開状態の絞り込みとページングを行います。
+// お知らせ一覧
 export function fetchNotices({ status = '', page = 1 } = {}) {
-    return adminRequest('notices', { params: { status, page } });
+    return request(() => {
+        let list = mockNotices;
+        if (status) list = list.filter((n) => n.status === status);
+        return paginate(list, { page });
+    });
 }
 
-// お知らせ ID を指定して、単体の詳細を取得します。
+// お知らせ詳細
 export function fetchNotice(noticeId) {
-    return adminRequest('notices', { params: { id: noticeId } });
+    return request(() => mockNotices.find((n) => n.id === noticeId) || null);
 }
 
-// お知らせを新規作成します。
+// 作成
 export function createNotice(data) {
-    return adminRequest('notices', {
-        method: 'POST',
-        body: data,
+    return request(() => {
+        const notice = { id: `n${Date.now()}`, readRate: 0, status: '公開中', ...data };
+        mockNotices.unshift(notice);
+        return notice;
     });
 }
 
-// 既存のお知らせを更新します。
+// 更新
 export function updateNotice(noticeId, data) {
-    return adminRequest('notices', {
-        method: 'PATCH',
-        params: { id: noticeId },
-        body: data,
+    return request(() => {
+        const n = mockNotices.find((x) => x.id === noticeId);
+        if (n) Object.assign(n, data);
+        return n;
     });
 }
 
-// お知らせを論理削除します。
+// 削除
 export function deleteNotice(noticeId) {
-    return adminRequest('notices', {
-        method: 'DELETE',
-        params: { id: noticeId },
+    return request(() => {
+        const idx = mockNotices.findIndex((x) => x.id === noticeId);
+        if (idx >= 0) mockNotices.splice(idx, 1);
+        return true;
     });
 }

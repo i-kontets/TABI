@@ -62,7 +62,7 @@ function invoiceJsonApi() {
   }
 }
 
-export default defineConfig(({ mode })=>({
+export default defineConfig({
   plugins: [
     react(),
     svgr(),
@@ -82,8 +82,5 @@ export default defineConfig(({ mode })=>({
     },
   },
 
-  base: mode === 'capacitor'
-    ? '/'
-    : '/TABI/',
-  // base: '/TABI/',
-}))
+  base: '/TABI/',
+})

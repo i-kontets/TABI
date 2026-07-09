@@ -1,11 +1,12 @@
-import { adminRequest } from './client';
+import { mockAnalytics, mockActivities } from './mockData';
+import { request } from './client';
 
-// 管理ダッシュボード用の集計データを取得します。
+// ダッシュボード・分析画面用の統計データ
 export function fetchAnalytics() {
-    return adminRequest('analytics');
+    return request(() => mockAnalytics);
 }
 
-// 管理画面の操作履歴を取得します。
+// 最近のアクティビティ
 export function fetchActivities() {
-    return adminRequest('activities');
+    return request(() => mockActivities);
 }

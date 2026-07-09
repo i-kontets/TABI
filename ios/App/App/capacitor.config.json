@@ -1,6 +1,6 @@
 {
-	"appId": "com.iseifu.TABI",
-	"appName": "TABI",
+	"appId": "com.example.app",
+	"appName": "tabi",
 	"webDir": "dist",
 	"packageClassList": []
 }

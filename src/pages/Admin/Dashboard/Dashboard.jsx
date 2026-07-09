@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { StatCard, Card, LineChart, DonutChart, Badge } from '../../../components/Admin/ui/Ui';
@@ -11,25 +11,41 @@ const ACTIVITY_LINKS = {
     inquiry: '/admin/inquiries',
     report: '/admin/reports',
     notice: '/admin/notices',
-    post: '/admin/posts',
-    spot: '/admin/spots',
-    admin: '/admin/logs',
 };
 
 export default function Dashboard() {
     const [analytics, setAnalytics] = useState(null);
     const [activities, setActivities] = useState([]);
 
-    useEffect(() => {
+    const loadDashboard = useCallback(() => {
         fetchAnalytics().then(setAnalytics);
         fetchActivities().then(setActivities);
     }, []);
 
+    useEffect(() => {
+        loadDashboard();
+    }, [loadDashboard]);
+
+    useEffect(() => {
+        const handleRealtimeUpdate = (event) => {
+            if (import.meta.env.DEV) {
+                console.log(`${event.type} received`);
+            }
+            loadDashboard();
+        };
+
+        window.addEventListener('admin:inquiry_created', handleRealtimeUpdate);
+        window.addEventListener('admin:report_created', handleRealtimeUpdate);
+
+        return () => {
+            window.removeEventListener('admin:inquiry_created', handleRealtimeUpdate);
+            window.removeEventListener('admin:report_created', handleRealtimeUpdate);
+        };
+    }, [loadDashboard]);
+
     if (!analytics) return <AdminLayout title="TABI Admin"><div /></AdminLayout>;
 
-    const { summary, activeUserTrend, userAttributes, notificationPermissions } = analytics;
-    const notificationPermissionItems = notificationPermissions || userAttributes;
-    const notificationPermissionTotal = notificationPermissionItems.reduce((total, item) => total + item.value, 0);
+    const { summary, activeUserTrend, userAttributes } = analytics;
 
     return (
         <AdminLayout title="TABI Admin">
@@ -53,9 +69,6 @@ export default function Dashboard() {
 
             <Card title="最近のアクティビティ">
                 <ul className={styles.activityList}>
-                    {activities.length === 0 && (
-                        <li className={styles.emptyActivity}>最近のアクティビティはありません</li>
-                    )}
                     {activities.map((action) => (
                         <li key={action.id}>
                             <Link to={ACTIVITY_LINKS[action.type] || '/admin'} className={styles.activityLink}>
@@ -67,11 +80,11 @@ export default function Dashboard() {
                 </ul>
             </Card>
 
-            <Card title="通知許可状況">
+            <Card title="ユーザー属性(全体)">
                 <DonutChart
-                    items={notificationPermissionItems}
+                    items={userAttributes}
                     centerLabel="合計"
-                    centerValue={`${notificationPermissionTotal.toLocaleString()}人`}
+                    centerValue={`${summary.totalUsers.toLocaleString()}人`}
                 />
             </Card>
 

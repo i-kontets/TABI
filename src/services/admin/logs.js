@@ -1,7 +1,11 @@
-import { adminRequest } from './client';
+import { mockLogs } from './mockData';
+import { request, paginate } from './client';
 
-// 管理操作ログを一覧取得します。
-// query と page を渡して検索とページングに対応します。
+// 操作ログ一覧
 export function fetchLogs({ query = '', page = 1 } = {}) {
-    return adminRequest('logs', { params: { query, page } });
+    return request(() => {
+        let list = mockLogs;
+        if (query) list = list.filter((l) => l.action.includes(query) || l.manager.includes(query));
+        return paginate(list, { page, perPage: 10 });
+    });
 }
