@@ -694,7 +694,7 @@ export default function Invoice() {
 
                                 return (
                                     <div className={styles.payItem} key={item.id}>
-                                        <p className={syules.storeName}>{item.id}</p>
+                                        <p className={styles.storeName}>{item.storeName}</p>
                                         <p className={styles.perPersonAmount}>
                                             総額{formatYen(item.totalAmount)}
                                         </p>
