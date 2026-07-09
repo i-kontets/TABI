@@ -7,7 +7,7 @@ session_start();
 
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once __DIR__ . "/../../config/db.php";
+require_once __DIR__ . "/../config/db.php";
 
 // S3Common.php が api/Groups/S3Common.php にある場合
 require_once __DIR__ . "/S3Common.php";
