@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { StatCard, Card, LineChart, DonutChart } from '../../../components/Admin/ui/Ui';
 import { fetchAnalytics } from '../../../services/admin';
@@ -7,11 +7,32 @@ import styles from './Analytics.module.css';
 export default function Analytics() {
     const [analytics, setAnalytics] = useState(null);
 
-    useEffect(() => {
+    const loadAnalytics = useCallback(() => {
         fetchAnalytics().then(setAnalytics);
     }, []);
 
-    if (!analytics) return <AdminLayout title="分析・利用状況"><div /></AdminLayout>;
+    useEffect(() => {
+        loadAnalytics();
+    }, [loadAnalytics]);
+
+    useEffect(() => {
+        const handleRealtimeUpdate = (event) => {
+            if (import.meta.env.DEV) {
+                console.log(`${event.type} received`);
+            }
+            loadAnalytics();
+        };
+
+        window.addEventListener('admin:inquiry_created', handleRealtimeUpdate);
+        window.addEventListener('admin:report_created', handleRealtimeUpdate);
+
+        return () => {
+            window.removeEventListener('admin:inquiry_created', handleRealtimeUpdate);
+            window.removeEventListener('admin:report_created', handleRealtimeUpdate);
+        };
+    }, [loadAnalytics]);
+
+    if (!analytics) return <AdminLayout title="分析・利用状況" back><div /></AdminLayout>;
 
     const { summary, activeUserTrend, userAttributes, usage, featureRanking } = analytics;
     const maxCount = Math.max(...featureRanking.map((f) => f.count), 1);

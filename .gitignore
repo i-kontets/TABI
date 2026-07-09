@@ -38,7 +38,9 @@ composer.phar
 *.njsproj
 *.sln
 *.sw?
-*env.php
+
+api/config/env.php
+api/api/config/env.php
 
 # Android / Gradle
 android/.gradle/

@@ -75,6 +75,15 @@
     padding: 24px 16px 170px;
 }
 
+.stateMessage {
+    margin: 40px 0 0;
+    text-align: center;
+    color: #6b7280;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.8;
+}
+
 .createButton {
     position: fixed;
     left: calc(50% + 126px);

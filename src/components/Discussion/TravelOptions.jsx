@@ -1,9 +1,10 @@
 // React Hooks と React Router のインポート
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 // モーダル表示用コンポーネント
 import Modal from "../Modal/Modal";
 import "./TravelOptions.css";
+import Minimap from "../minimap/Minimap";
 
 // 候補カテゴリーの日本語ラベルマッピング
 // 「旅行先」「スポット」「宿泊先」「食べたい物」のカテゴリーを定義
@@ -84,6 +85,7 @@ async function requestCandidates(groupId) {
 function TravelOptions({ active }) {
     // URL パラメータから groupId を取得（デフォルト値は "1"）
     const { groupId = "1" } = useParams();
+    const navigate = useNavigate();
     
     // 状態管理
     // activeCategory: 現在選択されているカテゴリー（destination, spot, hotel, restaurant）
@@ -167,6 +169,10 @@ function TravelOptions({ active }) {
         setNotice("");
     };
 
+    const openCandidateSearch = () => {
+        navigate(`/Candidates?groupId=${encodeURIComponent(groupId)}`);
+    };
+
     return (
         // メインコンテナ：候補パネル
         // hidden={!active} により、active が false の場合は非表示になる
@@ -180,9 +186,9 @@ function TravelOptions({ active }) {
                     {tripTitle && <p>{tripTitle}</p>}
                 </div>
                 {/* 候補追加ボタン */}
-                <a className="addCandidateButton" href="#">
+                <button className="addCandidateButton" type="button" onClick={openCandidateSearch}>
                     候補に追加
-                </a>
+                </button>
             </header>
 
             {/* カテゴリータブ：destination, spot, hotel, restaurant を切り替えるボタングループ */}
@@ -297,6 +303,8 @@ function TravelOptions({ active }) {
                             <strong>詳細</strong>
                             {/* 説明がある場合は表示、ない場合はプレースホルダーテキストを表示 */}
                             <p>{selectedCandidate.description || "詳細情報はまだありません。"}</p>
+                            <strong>地図</strong>
+                            <Minimap place={selectedCandidate.candidate_name} />
                         </div>
                     </div>
                 )}
