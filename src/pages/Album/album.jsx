@@ -204,8 +204,10 @@ function Album() {
     };
 
     // 選択中の写真をアルバムに追加確定する処理です。
-    const addPendingPhotos = () => {
+    const addPendingPhotos = async() => {
         if (pendingPhotos.length === 0) return;
+
+        
 
         const today = new Date().toLocaleDateString('ja-JP');
         const maxPhotoId = photos.reduce((maxId, photo) => Math.max(maxId, Number(photo.id) || 0), 0);
