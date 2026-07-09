@@ -19,6 +19,7 @@ import CheckList from './pages/CheckList/CheckList';
 import Other from './pages/Other/Other.jsx';
 // import TouristRanking from './pages/TouristRanking/TouristRanking';
 import Candidates from './pages/Candidates/Candidates';
+import CandidateDetail from './pages/Candidates/CandidateDetail.jsx';
 import Tourist from './pages/Tourist/Tourist';
 import AdminRoutes from './pages/Admin/AdminRoutes.jsx';
 
@@ -50,6 +51,7 @@ function App() {
                     <Route path="/Other" element={<Other />} />
                     {/* <Route path="/TouristRanking" element={<TouristRanking />} /> */}
                     <Route path="/Candidates" element={<Candidates />} />
+                    <Route path="/Candidates/:candidateId" element={<CandidateDetail />} />
                     <Route path="/Tourist" element={<Tourist />} />
                     <Route path="/TouristRanking" element={<Tourist />} />
                     <Route path="/CheckList" element={<CheckList /> }/>
