@@ -6,7 +6,7 @@ import './App.css'
 import Newreg from './pages/newreg/Newreg';
 import Login from './pages/Login/Login';
 import Home from './pages/Home/Home';
-import Itinerary from './pages/Itinerary/Itinerary.jsx';
+import Itinerary from './pages/Itinerary/itinerary.jsx';
 import ItineraryEdit from './pages/Itinerary/ItineraryEdit.jsx';
 import Tripmap from './pages/Tripmap/Tripmap';
 import Schedule from './pages/Schedule/Schedule.jsx';

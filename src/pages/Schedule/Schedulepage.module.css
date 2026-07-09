@@ -48,3 +48,34 @@
   outline: 2px solid var(--sub-color);
   outline-offset: -2px;
 }
+
+.createButton {
+  position: fixed;
+  left: calc(50% + 126px);
+  bottom: 96px;
+  width: 64px;
+  height: 64px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fab-color);
+  color: #fff;
+  box-shadow: 0 7px 18px rgba(68, 85, 141, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 120;
+}
+
+.plusIcon {
+  width: 32px;
+  height: 32px;
+  filter: brightness(0) invert(1);
+}
+
+@media screen and (max-width: 430px) {
+  .createButton {
+    left: auto;
+    right: 20px;
+  }
+}

@@ -1,6 +1,17 @@
 import { useEffect } from "react";
 import styles from "./Modal.module.css";
 
+export function InviteActions({ onCancel }) {
+    return (
+        <div className={styles.actions}>
+            <button className={styles.cancel} type="button" onClick={onCancel}>
+                閉じる
+            </button>
+        </div>
+    );
+}
+
+
 function Modal({ isOpen, onClose, children }) {
     useEffect(() => {
         if (!isOpen) {
@@ -19,6 +30,8 @@ function Modal({ isOpen, onClose, children }) {
         return null;
     }
 
+    
+
     return (
         <div className={styles.modalOverlay} onClick={onClose}>
             <div
@@ -28,6 +41,7 @@ function Modal({ isOpen, onClose, children }) {
                 onClick={(event) => event.stopPropagation()}
             >
                 {children}
+            <InviteActions onCancel={onClose} />
             </div>
         </div>
     );

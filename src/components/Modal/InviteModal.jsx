@@ -13,16 +13,6 @@ export function InviteHeader({ title }) {
     );
 }
 
-export function InviteActions({ onCancel }) {
-    return (
-        <div className={styles.actions}>
-            <button className={styles.cancel} type="button" onClick={onCancel}>
-                閉じる
-            </button>
-        </div>
-    );
-}
-
 // コンポジション用の Invite コンテンツ。Modal の子として使う想定
 export default function InviteModalContent({ onClose }) {
     const [copyStatus, setCopyStatus] = useState("");
@@ -76,7 +66,6 @@ export default function InviteModalContent({ onClose }) {
                     <QRCodeComponent value={inviteLink} size={160} className={styles.qrCode} />
                 </div>
             </div>
-            <InviteActions onCancel={onClose} />
         </div>
     );
 }

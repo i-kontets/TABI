@@ -4,6 +4,8 @@ import { TripContext } from '../../App';
 import ScheduleTimeAxis from '../../components/Schedule/ScheduleTimeAxis';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
+import Modal from '../../components/Modal/Modal';
+import addIcon from '../../assets/icons/add.svg';
 import styles from './Schedulepage.module.css';
 
 const days = [
@@ -17,6 +19,7 @@ const days = [
 export default function SchedulePage() {
     const { tripName } = useContext(TripContext);
     const [selectedDay, setSelectedDay] = useState('day1');
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const selectedDayIndex = days.findIndex((day) => day.id === selectedDay);
     const rootStyles = getComputedStyle(document.documentElement);
     const subColor = rootStyles.getPropertyValue('--sub-color').trim();
@@ -72,6 +75,17 @@ export default function SchedulePage() {
             </main>
 
             <BottomNav />
+
+            <button
+                type="button"
+                className={styles.createButton}
+                onClick={() => setIsAddModalOpen(true)}
+                aria-label="予定を追加"
+            >
+                <img src={addIcon} alt="" className={styles.plusIcon} />
+            </button>
+
+            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
         </div>
     );
 }
