@@ -43,11 +43,31 @@ try {
             c.trip_id,
             c.chat_type,
             t.title AS trip_title,
+            t.start_date,
+            t.end_date,
             tc.candidate_name,
             tc.img_url AS candidate_img_url,
+            (
+                SELECT u.name
+                FROM trip_members tm
+                INNER JOIN user_roles ur
+                    ON ur.user_id = tm.user_id
+                INNER JOIN roles r
+                    ON r.role_id = ur.role_id
+                INNER JOIN users u
+                    ON u.user_id = tm.user_id
+                WHERE tm.trip_id = c.trip_id
+                    AND r.role_name = 'admin'
+                LIMIT 1
+            ) AS representative_name,
             latest.body AS last_message,
             latest.sent_at AS last_sent_at,
             COUNT(DISTINCT cm_all.user_id) AS member_count,
+            (
+                SELECT COUNT(*)
+                FROM trip_members tm
+                WHERE tm.trip_id = c.trip_id
+            ) AS people_count,
             COUNT(DISTINCT unread.message_id) AS unread_count
         FROM chats c
         INNER JOIN chat_members cm_self
@@ -94,19 +114,35 @@ try {
 
     while ($chat = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $chatId = (int) $chat["chat_id"];
-        $name = $chat["candidate_name"] ?: ($chat["trip_title"] ?: "コテージ #" . $chatId);
-        $avatar = $chat["candidate_img_url"] ?: firstCharacter($name);
+
+        $representativeName = $chat["representative_name"] ?: "代表者";
+
+        $avatar = $chat["candidate_img_url"] ?: firstCharacter($representativeName);
+
+        $stayPeriod = "";
+
+        if (!empty($chat["start_date"]) && !empty($chat["end_date"])) {
+            $stayPeriod =
+                (new DateTimeImmutable($chat["start_date"]))->format("n/j")
+                . "～"
+                . (new DateTimeImmutable($chat["end_date"]))->format("n/j");
+        }
 
         $contacts[] = [
             "id" => $chatId,
             "chat_id" => $chatId,
-            "name" => $name,
+
+            "representative_name" => $representativeName,
+            "people_count" => (int)$chat["people_count"],
+            "stay_period" => $stayPeriod,
+
             "category" => "hotel",
             "avatar" => $avatar,
+
             "lastMessage" => $chat["last_message"] ?: "",
             "time" => formatTime($chat["last_sent_at"]),
-            "unread" => (int) $chat["unread_count"],
-            "memberCount" => (int) $chat["member_count"],
+            "unread" => (int)$chat["unread_count"],
+
             "trip_title" => $chat["trip_title"] ?: "",
         ];
     }

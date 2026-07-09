@@ -40,6 +40,7 @@ export default function CottageChatPage({ active, isAdmin = false }) {
     const location = useLocation();
     const pollingRef = useRef(false);
     const lastMessageIdRef = useRef(0);
+    const msgAreaRef = useRef(null);
     const [activeContactId, setActiveContactId] = useState(null);
     const [contacts, setContacts] = useState([]);
     const [messages, setMessages] = useState([]);
@@ -174,6 +175,12 @@ export default function CottageChatPage({ active, isAdmin = false }) {
 
             setActiveContactId(firstChatId);
             await loadMessages(firstChatId, controller.signal, { showLoading: false });
+            if (!requestedId) {
+                setIsMobileChatView(false);
+            } else {
+                setIsMobileChatView(true);
+            }
+            // ─────────────────────────────────────
 
             if (!controller.signal.aborted) setLoading(false);
         };
@@ -283,6 +290,12 @@ export default function CottageChatPage({ active, isAdmin = false }) {
         window.history.back();
     };
 
+    useEffect(() => {
+        if (msgAreaRef.current) {
+            msgAreaRef.current.scrollTop = msgAreaRef.current.scrollHeight;
+        }
+    }, [messages]);
+
     const groupedMessages = useMemo(() => (
         messages.map((msg, index) => ({
             msg,
@@ -318,7 +331,6 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                             <div className="loading-txt">チャットがありません</div>
                         ) : (
                             contacts.map((contact) => {
-                                console.log("ADMIN CLASS:", isAdmin);
                                 const isActive = contact.id === activeContactId;
                                 const preview = contact.lastMessage || 'まだメッセージはありません';
 
@@ -331,14 +343,31 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                                     >
                                         <span className="ci-avatar">{contact.avatar}</span>
                                         <span className="ci-body">
-                                            <span className="ci-top">
-                                                <span className="ci-title">{contact.name}</span>
-                                                <span className="ci-time">{contact.time}</span>
-                                            </span>
-                                            <span className="ci-bot">
-                                                <span className="ci-last">{preview}</span>
-                                                <span className="ci-badge">{contact.unread || 0}</span>
-                                            </span>
+                                            <div className="ci-top">
+                                                <span className="ci-user">
+                                                    {contact.representative_name}
+                                                </span>
+
+                                                <span className="ci-time">
+                                                    {contact.time}
+                                                </span>
+                                            </div>
+
+                                            <div className="ci-info">
+                                                {contact.stay_period} ・ {contact.people_count}名
+                                            </div>
+
+                                            <div className="ci-bottom">
+                                                <span className="ci-last">
+                                                    {preview}
+                                                </span>
+
+                                                {contact.unread > 0 && (
+                                                    <span className="ci-badge">
+                                                        {contact.unread}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </span>
                                     </button>
                                 );
@@ -347,19 +376,17 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                     </div>
                 </aside>
 
-                <main className="chat-pane open">
+                <main className="chat-pane">
                     <div className="chat-header">
                         <button type="button" className="back-btn" onClick={() => setIsMobileChatView(false)}>
-                            一覧
+                            戻る
                         </button>
                         <div className="chat-title-block">
                             <h3 className="chat-title">{activeContact?.name || 'コテージチャット'}</h3>
-                            <span className="chat-sub">{activeContact?.trip_title || ''}</span>
                         </div>
-                        <span className="conn-badge conn-ok">接続中</span>
                     </div>
 
-                    <div className="msg-area">
+                    <div className="msg-area" ref={msgAreaRef}>
                         {loading ? (
                             <div className="date-divider">
                                 <span className="date-badge">読み込み中...</span>

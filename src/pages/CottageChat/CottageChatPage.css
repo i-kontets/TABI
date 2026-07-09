@@ -506,7 +506,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    scroll-behavior: smooth;
 }
 
 /* 日付区切り */
@@ -821,10 +820,10 @@ body {
         --list-w: 100%;
     }
 
-    /* list-pane と chat-pane を重ねて配置 */
     .app-body {
         position: relative;
         overflow: hidden;
+        height: calc(100vh - var(--hd-h));
     }
 
     .list-pane {
@@ -832,36 +831,32 @@ body {
         inset: 0;
         width: 100%;
         z-index: 1;
-        transform: translateX(0);
-        transition: transform .25s ease;
+        display: flex; /* リストを表示 */
     }
-
+    
     .chat-pane {
         position: absolute;
         inset: 0;
+        width: 100%;
         z-index: 2;
-        transform: translateX(100%);
-        transition: transform .25s ease;
+        display: none; /* 最初は非表示 */
     }
 
-    /* チャット開いたとき: chat-pane を前面に */
-    .chat-pane.open {
-        transform: translateX(0);
+    #appScreen.mobileChatActive .list-pane {
+        display: none !important;
     }
 
-    /* list-pane をスライドアウト */
-    .app-body:has(.chat-pane.open) .list-pane {
-        transform: translateX(-30%);
+    #appScreen.mobileChatActive .chat-pane {
+        display: flex !important;
     }
 
-    /* バックボタンを表示 */
     .back-btn {
         display: flex !important;
     }
 
-    /* ヘッダーを少しコンパクトに */
     .app-header {
         padding: 0 12px;
+        justify-content: space-between;
     }
 
     .hd-logo {
@@ -869,7 +864,7 @@ body {
     }
 
     .admin-view .msg-row-me {
-    justify-content: flex-start;
+        justify-content: flex-start;
     }
 
     .admin-view .msg-row-other {
