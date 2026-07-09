@@ -3,13 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import Modal from '../../components/Modal/Modal';
 import styles from './MyPage.module.css';
 
-const FALLBACK_USER = {
-    name: '山田 太郎',
-    email: 'yamada.taro@example.com',
-    role: '一般ユーザー',
-    icon_url: '',
-};
-
 function BellIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -146,18 +139,9 @@ function SectionCard({ title, children }) {
     );
 }
 
-function getStoredUser() {
-    try {
-        const raw = localStorage.getItem('loginUser');
-        return raw ? JSON.parse(raw) : null;
-    } catch {
-        return null;
-    }
-}
-
 function MyPage() {
     const navigate = useNavigate();
-    const [user, setUser] = useState(() => ({ ...FALLBACK_USER, ...getStoredUser() }));
+    const [user, setUser] = useState(null);
     const [isPasswordOpen, setIsPasswordOpen] = useState(false);
     const [isLogoutOpen, setIsLogoutOpen] = useState(false);
     const [passwordMessage, setPasswordMessage] = useState('');
@@ -174,7 +158,6 @@ function MyPage() {
                 });
 
                 if (response.status === 401) {
-                    localStorage.removeItem('loginUser');
                     navigate('/');
                     return;
                 }
@@ -182,17 +165,14 @@ function MyPage() {
                 const data = await response.json();
                 if (isMounted && data.success && data.user) {
                     const nextUser = {
-                        ...FALLBACK_USER,
                         ...data.user,
                         role: '一般ユーザー',
                     };
-                    localStorage.setItem('loginUser', JSON.stringify(nextUser));
                     setUser(nextUser);
                 }
             } catch {
-                const storedUser = getStoredUser();
-                if (isMounted && storedUser) {
-                    setUser({ ...FALLBACK_USER, ...storedUser });
+                if (isMounted) {
+                    setUser(null);
                 }
             }
         };
@@ -205,9 +185,9 @@ function MyPage() {
     }, [navigate]);
 
     const initials = useMemo(() => {
-        const name = user.name || FALLBACK_USER.name;
+        const name = user?.name || '';
         return name.trim().slice(0, 1).toUpperCase();
-    }, [user.name]);
+    }, [user?.name]);
 
     const handlePasswordReset = async () => {
         setIsSendingPasswordMail(true);
@@ -230,7 +210,6 @@ function MyPage() {
                 credentials: 'include',
             });
         } finally {
-            localStorage.removeItem('loginUser');
             navigate('/');
         }
     };
@@ -253,16 +232,16 @@ function MyPage() {
                 <section className={styles.profileCard} aria-label="プロフィール">
                     <div className={styles.profileTop}>
                         <div className={styles.avatar}>
-                            {user.icon_url ? (
+                            {user?.icon_url ? (
                                 <img src={user.icon_url} alt="" className={styles.avatarImage} />
                             ) : (
-                                <span>{initials}</span>
+                                <span>{initials || '未'}</span>
                             )}
                         </div>
                         <div className={styles.profileBody}>
-                            <h2 className={styles.userName}>{user.name || FALLBACK_USER.name}</h2>
-                            <p className={styles.userEmail}>{user.email || FALLBACK_USER.email}</p>
-                            <span className={styles.roleBadge}>{user.role || FALLBACK_USER.role}</span>
+                            <h2 className={styles.userName}>{user?.name || '未設定'}</h2>
+                            <p className={styles.userEmail}>{user?.email || '未設定'}</p>
+                            <span className={styles.roleBadge}>{user?.role || '一般ユーザー'}</span>
                         </div>
                         <ChevronRightIcon className={styles.profileChevron} />
                     </div>
@@ -270,7 +249,7 @@ function MyPage() {
                     <button
                         type="button"
                         className={styles.editProfileButton}
-                        onClick={() => handleComingSoon('プロフィール編集')}
+                        onClick={() => navigate('/mypage/profile-edit')}
                     >
                         <PencilIcon className={styles.editIcon} />
                         プロフィールを編集
@@ -282,13 +261,13 @@ function MyPage() {
                         icon={UserIcon}
                         title="ユーザー情報の編集"
                         description="名前・アイコン・自己紹介など"
-                        onClick={() => handleComingSoon('ユーザー情報の編集')}
+                        onClick={() => navigate('/mypage/user-edit')}
                     />
                     <ItemRow
                         icon={MailIcon}
                         title="メールアドレスの変更"
                         description="登録メールアドレスを変更します"
-                        onClick={() => handleComingSoon('メールアドレスの変更')}
+                        onClick={() => navigate('/mypage/email-change')}
                     />
                     <ItemRow
                         icon={LockIcon}
@@ -306,13 +285,13 @@ function MyPage() {
                         icon={NoticeIcon}
                         title="通知設定"
                         description="各種通知の受信設定を変更します"
-                        onClick={() => handleComingSoon('通知設定')}
+                        onClick={() => navigate('/mypage/notification-settings')}
                     />
                     <ItemRow
                         icon={ShieldIcon}
                         title="通知許可状況"
                         description="プッシュ通知の許可状態を確認します"
-                        onClick={() => handleComingSoon('通知許可状況')}
+                        onClick={() => navigate('/mypage/notification-permission')}
                     />
                 </SectionCard>
 
@@ -321,13 +300,13 @@ function MyPage() {
                         icon={HelpIcon}
                         title="お問い合わせ"
                         description="管理者にお問い合わせできます"
-                        onClick={() => handleComingSoon('お問い合わせ')}
+                        onClick={() => navigate('/mypage/contact')}
                     />
                     <ItemRow
                         icon={HelpIcon}
                         title="よくある質問"
                         description="困ったときはこちら"
-                        onClick={() => handleComingSoon('よくある質問')}
+                        onClick={() => navigate('/mypage/faq')}
                     />
                     <ItemRow
                         icon={DocumentIcon}
@@ -376,7 +355,7 @@ function MyPage() {
 
                     <label className={styles.emailLabel}>
                         登録メールアドレス
-                        <input className={styles.emailInput} value={user.email || FALLBACK_USER.email} readOnly />
+                        <input className={styles.emailInput} value={user?.email || '未設定'} readOnly />
                     </label>
 
                     {passwordMessage && <p className={styles.successMessage}>{passwordMessage}</p>}
