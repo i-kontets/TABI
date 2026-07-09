@@ -6,14 +6,14 @@ $config = file_exists($configPath) ? require $configPath : [];
 
 // DB access is fixed to the AWS RDS connection profile.
 // Secrets stay in env.php or server environment variables.
-$appEnv = "aws";
-$awsConfig = $config["connections"]["aws"] ?? [];
+$appEnv = "local";
+$Config = $config["connections"]["local"] ?? [];
 
-$host = $awsConfig["DB_HOST"] ?? "";
-$dbname = $awsConfig["DB_NAME"] ?? "";
-$user = $awsConfig["DB_USER"] ?? "";
-$password = $awsConfig["DB_PASSWORD"] ?? "";
-$charset = $awsConfig["DB_CHARSET"] ?? "utf8mb4";
+$host = $Config["DB_HOST"] ?? "";
+$dbname = $Config["DB_NAME"] ?? "";
+$user = $Config["DB_USER"] ?? "";
+$password = $Config["DB_PASSWORD"] ?? "";
+$charset = $Config["DB_CHARSET"] ?? "utf8mb4";
 
 if ($host === "" || $dbname === "" || $user === "") {
     http_response_code(500);
