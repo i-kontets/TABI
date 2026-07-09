@@ -1,9 +1,19 @@
 <?php
+ini_set("display_errors", 1);
+ini_set("display_startup_errors", 1);
+error_reporting(E_ALL);
+
 session_start();
+
 header("Content-Type: application/json; charset=UTF-8");
 
-require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../../config/db.php";
+
+// S3Common.php が api/Groups/S3Common.php にある場合
 require_once __DIR__ . "/S3Common.php";
+
+// S3Common.php が api/S3Common.php にある場合は上ではなくこっち
+// require_once __DIR__ . "/../S3Common.php";
 
 function respond(array $payload, int $status = 200): void
 {
