@@ -2,100 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import styles from './Candidates.module.css';
-
-const categories = [
-    { id: 'all', label: 'すべて' },
-    { id: 'spot', label: '観光スポット' },
-    { id: 'hotel', label: '宿泊先' },
-    { id: 'food', label: '飲食店' },
-];
-
-const candidatePlaces = [
-    {
-        id: 1,
-        type: 'spot',
-        name: '清水寺',
-        area: '京都・東山',
-        city: '京都',
-        rating: 4.6,
-        reviews: '12,480',
-        price: '拝観料 500円〜',
-        tag: '歴史・景色',
-        image: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=760&q=80',
-        description: '京都らしい街並みと舞台からの眺めを楽しめる定番スポット。',
-    },
-    {
-        id: 2,
-        type: 'hotel',
-        name: '京都ステイ 四条',
-        area: '京都・四条',
-        city: '京都',
-        rating: 4.4,
-        reviews: '2,103',
-        price: '1泊 8,800円〜',
-        tag: '駅近・朝食あり',
-        image: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=760&q=80',
-        description: '観光にも食事にも動きやすい中心エリアのホテル。',
-    },
-    {
-        id: 3,
-        type: 'food',
-        name: '京だし茶漬け ことのは',
-        area: '京都・祇園',
-        city: '京都',
-        rating: 4.5,
-        reviews: '864',
-        price: '昼 1,600円〜',
-        tag: '和食・予約可',
-        image: 'https://images.unsplash.com/photo-1519984388953-d2406bc725e1?auto=format&fit=crop&w=760&q=80',
-        description: '歩き疲れた日にも入りやすい、やさしい味の和食店。',
-    },
-    {
-        id: 4,
-        type: 'spot',
-        name: '浅草寺',
-        area: '東京・浅草',
-        city: '東京',
-        rating: 4.5,
-        reviews: '18,920',
-        price: '入場無料',
-        tag: '街歩き・写真',
-        image: 'https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?auto=format&fit=crop&w=760&q=80',
-        description: '仲見世通りと合わせて楽しめる、東京観光の人気エリア。',
-    },
-    {
-        id: 5,
-        type: 'hotel',
-        name: 'ベイサイドホテル 東京',
-        area: '東京・湾岸',
-        city: '東京',
-        rating: 4.3,
-        reviews: '1,582',
-        price: '1泊 11,200円〜',
-        tag: '夜景・大浴場',
-        image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=760&q=80',
-        description: '夜景を見ながらゆっくり過ごせる旅行向けホテル。',
-    },
-    {
-        id: 6,
-        type: 'food',
-        name: '築地 海鮮小路',
-        area: '東京・築地',
-        city: '東京',
-        rating: 4.4,
-        reviews: '2,776',
-        price: '朝食 1,900円〜',
-        tag: '海鮮・朝営業',
-        image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=760&q=80',
-        description: '朝から旅行気分を上げられる海鮮メニューが人気。',
-    },
-];
-
-const typeLabels = {
-    spot: '観光',
-    hotel: '宿泊',
-    food: '食事',
-};
+import { candidatePlaces, categories, typeLabels } from './candidateData';
 
 function SearchIcon() {
     return (
@@ -138,6 +45,10 @@ function Candidates() {
     const handleSubmit = (event) => {
         event.preventDefault();
         setSubmittedArea(keyword);
+    };
+
+    const openDetail = (place) => {
+        navigate(`/Candidates/${place.id}`, { state: { place } });
     };
 
     return (
@@ -207,7 +118,7 @@ function Candidates() {
                                             <h3>{place.name}</h3>
                                             <p>{place.area}</p>
                                         </div>
-                                        <button type="button" aria-label={`${place.name}を候補に追加`}>＋</button>
+                                        <button type="button" aria-label={`${place.name}の詳細を見る`} onClick={() => openDetail(place)}>＋</button>
                                     </div>
 
                                     <p className={styles.description}>{place.description}</p>
@@ -221,6 +132,10 @@ function Candidates() {
                                         <span>{place.tag}</span>
                                         <strong>{place.price}</strong>
                                     </div>
+
+                                    <button className={styles.detailButton} type="button" onClick={() => openDetail(place)}>
+                                        詳細を見る
+                                    </button>
                                 </div>
                             </article>
                         ))}

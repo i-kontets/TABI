@@ -326,6 +326,18 @@
     font-weight: 900;
 }
 
+.detailButton {
+    width: 100%;
+    min-height: 42px;
+    margin-top: 12px;
+    color: #003b95;
+    background: #eef4ff;
+    border: 0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 900;
+}
+
 .empty {
     margin-top: 18px;
     padding: 28px 18px;

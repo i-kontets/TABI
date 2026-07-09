@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 // モーダル表示用コンポーネント
 import Modal from "../Modal/Modal";
 import "./TravelOptions.css";
-import Minimap from "../minimap/Minimap";
+import Minimap from "../Minimap/Minimap";
 
 // 候補カテゴリーの日本語ラベルマッピング
 // 「旅行先」「スポット」「宿泊先」「食べたい物」のカテゴリーを定義

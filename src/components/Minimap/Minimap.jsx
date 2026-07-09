@@ -5,33 +5,36 @@ import styles from "./Minimap.module.css";
 
 mapboxgl.accessToken = "pk.eyJ1IjoibWFoaTYyIiwiYSI6ImNtb3c3bXBsZTAzdnkycHB2bnlpc3V0bmcifQ.GYUUwH-J7E4wU9yX4snLfg";
 
-function MiniMap({ place }) {
+function MiniMap({ place, center = [135.4983, 34.7025], zoom = 12 }) {
 
     const mapContainer = useRef(null);
     const map = useRef(null);
 
     useEffect(() => {
+        if (!mapContainer.current) {
+            return undefined;
+        }
 
-        if (map.current) return;
+        if (!map.current) {
+            map.current = new mapboxgl.Map({
+                container: mapContainer.current,
+                style: "mapbox://styles/mapbox/streets-v12",
+                center,
+                zoom,
+            });
+        } else {
+            map.current.setCenter(center);
+            map.current.setZoom(zoom);
+        }
 
-        console.log("Map作成開始");
-
-        map.current = new mapboxgl.Map({
-            container: mapContainer.current,
-            style: "mapbox://styles/mapbox/streets-v12",
-            center: [135.4983, 34.7025],
-            zoom: 12,
-        });
-
-        console.log("Map作成完了");
-
-    }, []);
+        return () => {
+            map.current?.remove();
+            map.current = null;
+        };
+    }, [center, zoom]);
 
 return (
-    <>
-        <p>MiniMapです</p>
-        <div className={styles.miniMap} ref={mapContainer} />
-    </>
+    <div className={styles.miniMap} ref={mapContainer} aria-label={place ? `${place}の地図` : '地図'} />
 );
 }
 
