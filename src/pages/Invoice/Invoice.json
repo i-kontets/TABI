@@ -24,6 +24,48 @@
           ],
           "participantCount": 3,
           "perPersonAmount": 2000
+        },
+        {
+          "id": 1782975725497,
+          "storeName": "コテージ代",
+          "totalAmount": 50000,
+          "participantIds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "participantCount": 5,
+          "perPersonAmount": 10000
+        },
+        {
+          "id": 1783306631532,
+          "storeName": "レンタカー代",
+          "totalAmount": 500000,
+          "participantIds": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "participantCount": 5,
+          "perPersonAmount": 100000
+        },
+        {
+          "id": 1783312491480,
+          "storeName": "コテージ代",
+          "totalAmount": 5000,
+          "participantIds": [
+            2,
+            1,
+            3,
+            4,
+            5
+          ],
+          "participantCount": 5,
+          "perPersonAmount": 1000
         }
       ],
       "collect": [],
@@ -32,32 +74,46 @@
           "id": 1,
           "name": "志田",
           "paidPayIds": [
-            1781751984142
+            1781751984142,
+            1782975725497,
+            1783306631532
           ]
         },
         {
           "id": 2,
           "name": "石垣",
           "paidPayIds": [
-            1780296326253
+            1780296326253,
+            1782975725497,
+            1783306631532
           ]
         },
         {
           "id": 3,
           "name": "田中",
-          "paidPayIds": []
+          "paidPayIds": [
+            1781751984142,
+            1782975725497,
+            1783306631532
+          ]
         },
         {
           "id": 4,
           "name": "寺川",
           "paidPayIds": [
-            1780296326253
+            1780296326253,
+            1781751984142,
+            1782975725497,
+            1783306631532
           ]
         },
         {
           "id": 5,
           "name": "岩井",
-          "paidPayIds": []
+          "paidPayIds": [
+            1782975725497,
+            1783306631532
+          ]
         }
       ]
     },
