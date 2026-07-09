@@ -21,7 +21,6 @@ import Other from './pages/Other/Other.jsx';
 import Candidates from './pages/Candidates/Candidates';
 import Tourist from './pages/Tourist/Tourist';
 
-
 export const TripContext = createContext();
 
 function App() {
