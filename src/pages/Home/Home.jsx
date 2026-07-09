@@ -1,17 +1,13 @@
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TripContext } from "../../App";
 import TravelGroupCard from '../../components/TravelGroupCard/TravelGroupCard';
 import Modal from '../../components/Modal/Modal';
+import ImagePicker from '../../components/ImagePicker/ImagePicker';
 import styles from './Home.module.css';
 
-// トリミング画像の出力サイズ（px）
-const CROPPED_IMAGE_SIZE = 600;
-
-// 画像のオフセットをトリミング枠の範囲内に収める
-const clampOffset = (value, cropSize, dispSize) =>
-    Math.min(0, Math.max(cropSize - dispSize, value));
-
+// ここから下は、画面内で使うアイコンを SVG で直接定義しています。
+// 画像素材を別ファイルに分けず、必要な見た目をこのコンポーネント内で完結させます。
 function PlusIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -58,58 +54,37 @@ function UserIcon({ className }) {
     );
 }
 
-function CameraIcon({ className }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 8h3l2-2h6l2 2h3v11H4V8Z" />
-            <circle cx="12" cy="13" r="3.5" />
-        </svg>
-    );
-}
-
-function ChevronLeftIcon({ className }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="m15 5-7 7 7 7" />
-        </svg>
-    );
-}
-
+// Home 画面の本体です。
+// 参加中の旅行グループ一覧を表示し、グループ作成と画像編集までを担当します。
 function Home() {
     const navigate = useNavigate();
+    // TripContext には、選択中の旅行グループ情報を入れて次画面へ渡します。
     const { setTrip } = useContext(TripContext);
 
+    // 画面に表示する旅行グループ一覧です。
     const [travelGroups, setTravelGroups] = useState([]);
+    // データ取得中かどうかを表します。true の間は「読み込み中...」を表示します。
     const [isLoading, setIsLoading] = useState(true);
+    // 新しい旅行グループを作るモーダルの開閉状態です。
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    // 作成フォームの入力値です。
     const [newName, setNewName] = useState("");
     const [newStartDate, setNewStartDate] = useState("");
     const [newEndDate, setNewEndDate] = useState("");
 
-    // グループ画像関連
-    // newImagePreview : 作成フォームに表示するトリミング済み画像のURL
-    // editorSrc       : 編集画面で表示中の元画像URL
-    // editorLayout    : 編集画面での画像の位置（tx, ty）と拡大率（zoom）
-    const [newImagePreview, setNewImagePreview] = useState(null);
-    const [editorSrc, setEditorSrc] = useState(null);
-    const [editorLayout, setEditorLayout] = useState({ tx: 0, ty: 0, zoom: 1 });
-    // 編集中画像のメタ情報 { natW, natH, baseScale, cropSize }（表示計算に使うためstateで持つ）
-    const [editorMeta, setEditorMeta] = useState(null);
+    // ImagePicker で確定した画像情報を保持します。
+    // previewUrl は画面に出すプレビュー、file はサーバーへ送る実ファイルです。
+    const [selectedImage, setSelectedImage] = useState(null);
 
-    const fileInputRef = useRef(null);
-    const editorImgRef = useRef(null);
-    const editorCropRef = useRef(null);
-    // ピンチ・ドラッグ用のアクティブなポインタ一覧
-    const pointersRef = useRef(new Map());
-    // トリミング済み画像（File）。グループ作成時の送信用に保持する
-    const croppedImageFileRef = useRef(null);
-
-    // ログイン中ユーザーが参加している旅行グループをDBから取得する
+    // 画面表示時に、ログイン中ユーザーが参加している旅行グループを API から取得します。
+    // 取得結果は一覧表示に使い、認証切れならログイン画面へ戻します。
     useEffect(() => {
         let isMounted = true;
 
         const fetchGroups = async () => {
             try {
+                // 自分が参加している旅行グループ一覧を取得します。
+                // credentials: include を付けることで、ログイン中のセッション情報も一緒に送ります。
                 const response = await fetch(
                     "/TABI/api/Groups/List.php",
                     {
@@ -118,19 +93,26 @@ function Home() {
                     }
                 );
 
-                // 未ログインならログインフォームへ強制移動する
+                // セッションが切れている場合は、ログイン画面へ戻します。
+                // ローカル保存のログイン情報も消して、見た目だけログイン済みの状態が残らないようにします。
                 if (response.status === 401) {
                     localStorage.removeItem("loginUser");
                     navigate("/");
                     return;
                 }
 
+                // レスポンス JSON を読み込みます。
+                // 期待するのは success と groups を持つオブジェクトです。
                 const data = await response.json();
 
                 if (!isMounted) {
+                    // 画面が閉じた後の state 更新は避けます。
                     return;
                 }
 
+                // 正常な形式なら、カード表示に使える形へ整えて state に保存します。
+                // image_url が無い場合は null にして、カード側の既定画像表示に任せます。
+                // ここでやっているのは表示用の整形だけで、DB の内容は変更しません。
                 if (data.success && Array.isArray(data.groups)) {
                     setTravelGroups(
                         data.groups.map((group, index) => ({
@@ -139,13 +121,19 @@ function Home() {
                         }))
                     );
                 } else {
+                    // 想定外のレスポンスなら、一覧は空として扱います。
+                    // 画面が壊れないことを優先し、エラー表示ではなく空一覧にします。
                     setTravelGroups([]);
                 }
             } catch {
+                // 通信エラー時も画面を壊さず、空一覧として処理します。
+                // 利用者からは「参加中の旅行グループがない」状態に見せます。
                 if (isMounted) {
                     setTravelGroups([]);
                 }
             } finally {
+                // 取得が終わったので、読み込み中表示を解除します。
+                // ここで false にすることで、ローディング表示を止めます。
                 if (isMounted) {
                     setIsLoading(false);
                 }
@@ -155,19 +143,24 @@ function Home() {
         fetchGroups();
 
         return () => {
+            // コンポーネント破棄後に state を更新しないためのフラグです。
             isMounted = false;
         };
     }, [navigate]);
 
+    // 一覧カードをクリックしたとき、そのグループを選択中として次画面へ渡します。
     const handleGroupClick = (trip) => {
         setTrip({
             id: trip.id,
             name: trip.name
         });
 
+        // 旅程画面へは groupId を付けて遷移します。
+        // これにより Itinerary 側が、どのグループを表示すべきか判断できます。
         navigate(`/Itinerary?groupId=${trip.id}`);
     };
 
+    // ログアウト API を呼び、成功したらローカルのログイン情報も消してログイン画面へ戻します。
     const handleLogout = async () => {
         const response = await fetch(
             "/TABI/api/auth/logout.php",
@@ -180,21 +173,30 @@ function Home() {
         const data = await response.json();
 
         if (data.success) {
+            // サーバー側のログアウトに加えて、端末側のログイン情報も消します。
             localStorage.removeItem("loginUser");
             navigate("/");
         }
     };
 
-    // フォームの画像状態をリセットする
-    // revokePreview=false の場合、プレビューURLはカード表示に使うため解放しない
-    const resetNewImage = (revokePreview) => {
-        if (revokePreview && newImagePreview) {
-            URL.revokeObjectURL(newImagePreview);
+    const resetSelectedImage = (revokePreview) => {
+        if (revokePreview && selectedImage?.previewUrl) {
+            // previewUrl はブラウザが持つ一時的なローカル URL なので、不要になったら解放します。
+            URL.revokeObjectURL(selectedImage.previewUrl);
         }
-        setNewImagePreview(null);
-        croppedImageFileRef.current = null;
+        setSelectedImage(null);
     };
 
+    // ImagePicker から新しい画像が返ってきたときの受け口です。
+    // 以前のプレビューURLを解放してから、最新の画像情報に差し替えます。
+    const handleImageChange = (nextImage) => {
+        if (selectedImage?.previewUrl) {
+            URL.revokeObjectURL(selectedImage.previewUrl);
+        }
+        setSelectedImage(nextImage);
+    };
+
+    // 作成フォームの入力値を初期状態に戻します。
     const resetCreateForm = () => {
         setIsCreateOpen(false);
         setNewName("");
@@ -202,211 +204,26 @@ function Home() {
         setNewEndDate("");
     };
 
+    // モーダルを閉じるときは、入力欄と画像の両方をまとめて片付けます。
     const closeCreateModal = () => {
         resetCreateForm();
-        resetNewImage(true);
+        resetSelectedImage(true);
     };
 
-    // ---- グループ画像の選択・編集 ----
-
-    // ファイル選択後、すぐ確定せず編集画面を開く
-    const handleFileChange = (event) => {
-        const file = event.target.files?.[0];
-        // 同じファイルを選び直せるように毎回リセットする
-        event.target.value = "";
-
-        if (!file || !file.type.startsWith("image/")) {
-            return;
-        }
-
-        if (editorSrc) {
-            URL.revokeObjectURL(editorSrc);
-        }
-
-        setEditorMeta(null);
-        setEditorLayout({ tx: 0, ty: 0, zoom: 1 });
-        setEditorSrc(URL.createObjectURL(file));
-    };
-
-    // 画像読み込み後、トリミング枠いっぱいに収まる倍率を基準にして中央配置する
-    const handleEditorImageLoad = () => {
-        const img = editorImgRef.current;
-        const crop = editorCropRef.current;
-
-        if (!img || !crop) {
-            return;
-        }
-
-        const cropSize = crop.getBoundingClientRect().width;
-        const natW = img.naturalWidth;
-        const natH = img.naturalHeight;
-        const baseScale = cropSize / Math.min(natW, natH);
-
-        setEditorMeta({ natW, natH, baseScale, cropSize });
-
-        setEditorLayout({
-            tx: (cropSize - natW * baseScale) / 2,
-            ty: (cropSize - natH * baseScale) / 2,
-            zoom: 1,
-        });
-    };
-
-    // トリミング枠の中心を基準に拡大縮小する
-    const applyZoom = (getNextZoom) => {
-        const meta = editorMeta;
-
-        if (!meta) {
-            return;
-        }
-
-        setEditorLayout((prev) => {
-            const zoom = Math.min(4, Math.max(1, getNextZoom(prev.zoom)));
-            const k1 = meta.baseScale * prev.zoom;
-            const k2 = meta.baseScale * zoom;
-            const half = meta.cropSize / 2;
-            const cx = (half - prev.tx) / k1;
-            const cy = (half - prev.ty) / k1;
-
-            return {
-                zoom,
-                tx: clampOffset(half - cx * k2, meta.cropSize, meta.natW * k2),
-                ty: clampOffset(half - cy * k2, meta.cropSize, meta.natH * k2),
-            };
-        });
-    };
-
-    const handleEditorPointerDown = (event) => {
-        event.currentTarget.setPointerCapture(event.pointerId);
-        pointersRef.current.set(event.pointerId, {
-            x: event.clientX,
-            y: event.clientY
-        });
-    };
-
-    const handleEditorPointerMove = (event) => {
-        const pointers = pointersRef.current;
-        const meta = editorMeta;
-
-        if (!meta || !pointers.has(event.pointerId)) {
-            return;
-        }
-
-        const prevPoint = pointers.get(event.pointerId);
-        const nextPoint = { x: event.clientX, y: event.clientY };
-        pointers.set(event.pointerId, nextPoint);
-
-        // 2本指ならピンチで拡大縮小
-        if (pointers.size === 2) {
-            let other = null;
-
-            for (const [id, point] of pointers) {
-                if (id !== event.pointerId) {
-                    other = point;
-                }
-            }
-
-            const prevDist = Math.hypot(prevPoint.x - other.x, prevPoint.y - other.y);
-            const nextDist = Math.hypot(nextPoint.x - other.x, nextPoint.y - other.y);
-
-            if (prevDist > 0) {
-                applyZoom((prevZoom) => prevZoom * (nextDist / prevDist));
-            }
-
-            return;
-        }
-
-        // 1本指ならドラッグで位置調整
-        const dx = nextPoint.x - prevPoint.x;
-        const dy = nextPoint.y - prevPoint.y;
-
-        setEditorLayout((prev) => {
-            const k = meta.baseScale * prev.zoom;
-
-            return {
-                ...prev,
-                tx: clampOffset(prev.tx + dx, meta.cropSize, meta.natW * k),
-                ty: clampOffset(prev.ty + dy, meta.cropSize, meta.natH * k),
-            };
-        });
-    };
-
-    const handleEditorPointerUp = (event) => {
-        pointersRef.current.delete(event.pointerId);
-    };
-
-    // 戻るボタン：編集をキャンセルして作成画面に戻る
-    const closeEditor = () => {
-        if (editorSrc) {
-            URL.revokeObjectURL(editorSrc);
-        }
-
-        setEditorSrc(null);
-        setEditorMeta(null);
-        pointersRef.current.clear();
-    };
-
-    // 完了ボタン：表示中の範囲を canvas で切り抜いて File 化する
-    const handleEditorConfirm = () => {
-        const img = editorImgRef.current;
-        const meta = editorMeta;
-
-        if (!img || !meta) {
-            return;
-        }
-
-        const { tx, ty, zoom } = editorLayout;
-        const k = meta.baseScale * zoom;
-
-        const canvas = document.createElement("canvas");
-        canvas.width = CROPPED_IMAGE_SIZE;
-        canvas.height = CROPPED_IMAGE_SIZE;
-
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(
-            img,
-            -tx / k,
-            -ty / k,
-            meta.cropSize / k,
-            meta.cropSize / k,
-            0,
-            0,
-            CROPPED_IMAGE_SIZE,
-            CROPPED_IMAGE_SIZE
-        );
-
-        canvas.toBlob(
-            (blob) => {
-                if (!blob) {
-                    return;
-                }
-
-                if (newImagePreview) {
-                    URL.revokeObjectURL(newImagePreview);
-                }
-
-                croppedImageFileRef.current = new File(
-                    [blob],
-                    "group_image.jpg",
-                    { type: "image/jpeg" }
-                );
-                setNewImagePreview(URL.createObjectURL(blob));
-                closeEditor();
-            },
-            "image/jpeg",
-            0.9
-        );
-    };
-
-    // 新しい旅行グループをDBに登録し、成功したら一覧の先頭に追加する
+    // 新しい旅行グループを作成します。
+    // まずグループ本体を登録し、画像があればそのあとにアップロードします。
     const handleCreateGroup = async (event) => {
         event.preventDefault();
 
         const name = newName.trim();
         if (!name) {
+            // グループ名が空なら送信しません。
             return;
         }
 
         try {
+            // グループ名と日付を API へ送り、新しい旅行グループを作成します。
+            // start_date / end_date は未入力なら null にして、空値として扱えるようにします。
             const response = await fetch(
                 "/TABI/api/Groups/Create.php",
                 {
@@ -423,22 +240,26 @@ function Home() {
                 }
             );
 
-            // 未ログインならログインフォームへ強制移動する
+            // セッションが切れている場合は、ログイン画面へ戻します。
             if (response.status === 401) {
                 localStorage.removeItem("loginUser");
                 navigate("/");
                 return;
             }
 
+            // API の返却 JSON を読み込みます。
             const data = await response.json();
 
             if (data.success && data.group) {
-                // トリミング済み画像があればS3へアップロードする（Photos/Upload.php と同じ FormData 方式）
-                let cardImage = newImagePreview;
-                const imageFile = croppedImageFileRef.current;
+                // トリミング済み画像がある場合だけ、追加で画像アップロードを行います。
+                // 画像が無いときは、そのままカードの既定画像を使います。
+                let cardImage = selectedImage?.previewUrl ?? null;
+                const imageFile = selectedImage?.file ?? null;
 
                 if (imageFile) {
                     try {
+                        // 画像ファイルとグループ ID を一緒に送って、保存先を紐づけます。
+                        // FormData を使うことで、画像ファイルを multipart 形式で送れます。
                         const formData = new FormData();
                         formData.append("image", imageFile);
                         formData.append("group_id", data.group.id);
@@ -455,14 +276,17 @@ function Home() {
                         const uploadData = await uploadResponse.json();
 
                         if (uploadData.success && uploadData.image_url) {
+                            // アップロード成功時は、S3 の URL をカード画像として使います。
                             cardImage = uploadData.image_url;
                         }
                     } catch {
-                        // アップロード失敗時はローカルプレビューをそのまま表示する
-                        // （次回一覧取得時にS3画像が無ければデフォルト画像になる）
+                        // アップロード失敗時でも、作成直後の一覧表示は崩さずプレビュー画像を残します。
+                        // 次回読み込み時に画像が無ければ、カード側の既定表示に任せます。
                     }
                 }
 
+                // 新しく作ったグループを一覧の先頭に追加します。
+                // 画面再取得を待たずに見せることで、作成結果がすぐ分かるようにしています。
                 setTravelGroups((prev) => [
                     {
                         ...data.group,
@@ -471,26 +295,24 @@ function Home() {
                     ...prev
                 ]);
 
+                // 入力欄を空に戻し、作成モーダルを閉じます。
                 resetCreateForm();
-                // プレビューURLはカード表示に使うため解放しない
-                resetNewImage(false);
+                // プレビュー画像はカード表示に使うので、ここでは解放しません。
+                resetSelectedImage(false);
                 return;
             }
 
+            // 作成失敗なら、API が返したメッセージを優先して表示します。
             alert(data.message ?? "旅行グループの作成に失敗しました。");
         } catch {
+            // 通信失敗や予期しない例外が起きた場合のメッセージです。
             alert("旅行グループの作成に失敗しました。通信環境を確認してください。");
         }
     };
 
-    // 編集画面の画像表示スタイル（メタ情報が揃うまでは非表示）
-    const editorImgStyle = editorMeta
-        ? {
-            width: `${editorMeta.natW * editorMeta.baseScale * editorLayout.zoom}px`,
-            transform: `translate(${editorLayout.tx}px, ${editorLayout.ty}px)`,
-        }
-        : { opacity: 0 };
 
+    // ここから下は画面描画です。
+    // 上で準備した状態を使って、ヘッダー、一覧、作成モーダル、フッターを表示します。
     return (
         <div className={styles.page}>
             <header className={styles.header}>
@@ -519,11 +341,13 @@ function Home() {
                 {isLoading ? (
                     <p className={styles.stateMessage}>読み込み中...</p>
                 ) : travelGroups.length === 0 ? (
+                    // 参加中の旅行グループがないときは、作成を促す空状態メッセージを出します。
                     <p className={styles.stateMessage}>
                         参加中の旅行グループはありません。<br />
                         右下の＋ボタンから作成できます。
                     </p>
                 ) : (
+                    // グループがあるときは、1 件ずつカードとして並べます。
                     travelGroups.map((group) => (
                         <TravelGroupCard
                             key={group.id}
@@ -543,47 +367,23 @@ function Home() {
                 <PlusIcon className={styles.plusIcon} />
             </button>
 
-            <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className={styles.hiddenFileInput}
-                onChange={handleFileChange}
-                aria-hidden="true"
-                tabIndex={-1}
-            />
-
+            {/* 新しい旅行グループを作成するためのモーダルです。 */}
             <Modal isOpen={isCreateOpen} onClose={closeCreateModal}>
                 <form className={styles.createForm} onSubmit={handleCreateGroup}>
                     <h2 className={styles.createTitle}>新しい旅行グループ</h2>
 
-                    <div className={styles.imageField}>
-                        <span className={styles.imageFieldLabel}>グループ画像</span>
-
-                        <div className={styles.imageRow}>
-                            <div className={styles.imagePreview}>
-                                {newImagePreview ? (
-                                    <img
-                                        src={newImagePreview}
-                                        alt="グループ画像プレビュー"
-                                        className={styles.imagePreviewImg}
-                                    />
-                                ) : (
-                                    <CameraIcon className={styles.imagePlaceholderIcon} />
-                                )}
-                            </div>
-
-                            <button
-                                type="button"
-                                className={styles.imageButton}
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                {newImagePreview ? "画像を変更" : "画像を追加"}
-                            </button>
-                        </div>
-                    </div>
+                    {/* 画像の追加・編集は ImagePicker に任せます。 */}
+                    <ImagePicker
+                        label="グループ画像"
+                        value={selectedImage}
+                        onChange={handleImageChange}
+                        fileName="group_image.jpg"
+                        editorTitle="グループ画像"
+                        previewAlt="グループ画像プレビュー"
+                    />
 
                     <label className={styles.createLabel}>
+                        {/* グループ名は一覧表示や識別に使います。 */}
                         グループ名
                         <input
                             type="text"
@@ -597,6 +397,7 @@ function Home() {
 
                     <div className={styles.createDates}>
                         <label className={styles.createLabel}>
+                            {/* 開始日は旅行期間の目安として入力します。 */}
                             開始日
                             <input
                                 type="date"
@@ -607,6 +408,7 @@ function Home() {
                         </label>
 
                         <label className={styles.createLabel}>
+                            {/* 終了日も同じく、旅行期間の目安として使います。 */}
                             終了日
                             <input
                                 type="date"
@@ -624,94 +426,18 @@ function Home() {
                             className={styles.cancelButton}
                             onClick={closeCreateModal}
                         >
+                            {/* 入力を破棄してモーダルを閉じます。 */}
                             キャンセル
                         </button>
                         <button type="submit" className={styles.submitButton}>
+                            {/* 入力内容を送信してグループを作成します。 */}
                             作成する
                         </button>
                     </div>
                 </form>
             </Modal>
 
-            {editorSrc && (
-                <div
-                    className={styles.editorOverlay}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="グループ画像を編集"
-                >
-                    <div className={styles.editorHeader}>
-                        <button
-                            type="button"
-                            className={styles.editorBackButton}
-                            onClick={closeEditor}
-                            aria-label="編集をキャンセルして戻る"
-                        >
-                            <ChevronLeftIcon className={styles.editorBackIcon} />
-                        </button>
-
-                        <h2 className={styles.editorTitle}>グループ画像</h2>
-
-                        <span className={styles.editorHeaderSpacer} />
-                    </div>
-
-                    <div className={styles.editorStage}>
-                        <div
-                            className={styles.editorCrop}
-                            ref={editorCropRef}
-                            onPointerDown={handleEditorPointerDown}
-                            onPointerMove={handleEditorPointerMove}
-                            onPointerUp={handleEditorPointerUp}
-                            onPointerCancel={handleEditorPointerUp}
-                        >
-                            <img
-                                ref={editorImgRef}
-                                src={editorSrc}
-                                alt=""
-                                className={styles.editorImg}
-                                style={editorImgStyle}
-                                onLoad={handleEditorImageLoad}
-                                draggable={false}
-                            />
-                        </div>
-                    </div>
-
-                    <div className={styles.editorSliderRow}>
-                        <input
-                            type="range"
-                            className={styles.editorSlider}
-                            min="1"
-                            max="4"
-                            step="0.01"
-                            value={editorLayout.zoom}
-                            onChange={(event) => {
-                                const nextZoom = Number(event.target.value);
-                                applyZoom(() => nextZoom);
-                            }}
-                            aria-label="拡大縮小"
-                        />
-                    </div>
-
-                    <div className={styles.editorFooter}>
-                        <button
-                            type="button"
-                            className={styles.editorChangeButton}
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            画像を変更
-                        </button>
-
-                        <button
-                            type="button"
-                            className={styles.editorDoneButton}
-                            onClick={handleEditorConfirm}
-                        >
-                            完了
-                        </button>
-                    </div>
-                </div>
-            )}
-
+            {/* 画面下部のナビゲーションです。ホームとマイページを切り替えます。 */}
             <footer className={styles.footer}>
                 <button
                     type="button"
