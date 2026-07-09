@@ -525,7 +525,7 @@ CREATE TABLE `trips` (
   `trip_id` bigint NOT NULL COMMENT '旅行ID',
   `group_id` bigint NOT NULL COMMENT '紐づくグループID',
   `title` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '旅行タイトル',
-  `description` text COLLATE utf8mb4_unicode_ci COMMENT '旅行の説明',
+  `group_icon` TEXT COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'グループアイコンURL',
   `start_date` date DEFAULT NULL COMMENT '開始日（確定後に使用）',
   `end_date` date DEFAULT NULL COMMENT '終了日',
   `destination_summary` text COLLATE utf8mb4_unicode_ci COMMENT '行き先概要',
@@ -539,13 +539,12 @@ CREATE TABLE `trips` (
 -- テーブルのデータのダンプ `trips`
 --
 
-INSERT INTO `trips` (`trip_id`, `group_id`, `title`, `description`, `start_date`, `end_date`, `destination_summary`, `status`, `created_by`, `created_at`, `updated_at`) VALUES
-(1, 1, '大阪・京都2泊3日旅行', '大阪のグルメと京都観光を中心にした卒業旅行プランです。', '2026-08-01', '2026-08-03', '大阪城、道頓堀、清水寺、嵐山を巡る予定です。', 'confirmed', 1, '2026-04-06 09:00:00', '2026-04-21 18:00:00'),
-(2, 2, '有馬温泉リラックス旅行', '温泉旅館と神戸観光を組み合わせた夏休み旅行案です。', '2026-09-12', '2026-09-13', '有馬温泉、神戸三宮、北野異人館を候補にしています。', 'voting', 2, '2026-04-13 14:00:00', '2026-04-22 11:30:00');
+INSERT INTO `trips` (`trip_id`, `group_id`, `title`, `group_icon`, `start_date`, `end_date`, `destination_summary`, `status`, `created_by`, `created_at`, `updated_at`) VALUES
+(1, 1, '大阪・京都2泊3日旅行', NULL, '2026-08-01', '2026-08-03', '大阪城、道頓堀、清水寺、嵐山を巡る予定です。', 'confirmed', 1, '2026-04-06 09:00:00', '2026-04-21 18:00:00'),
+(2, 2, '有馬温泉リラックス旅行', NULL, '2026-09-12', '2026-09-13', '有馬温泉、神戸三宮、北野異人館を候補にしています。', 'voting', 2, '2026-04-13 14:00:00', '2026-04-22 11:30:00');
 
 -- --------------------------------------------------------
 
---
 -- テーブルの構造 `trip_candidates`
 --
 
