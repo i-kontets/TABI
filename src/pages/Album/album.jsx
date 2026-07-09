@@ -81,12 +81,44 @@ function Album() {
     const [searchParams] = useSearchParams();
     const groupId = searchParams.get('groupId');
 
+    const [albumId,setAlbumId] = useState(null);
+
+    const [uploading, setUploading] = useState(false);
+
+
+
+    useEffect(() => {
+        if (!groupId) return;
+
+        const fetchAlbum = async () => {
+            try {
+                const response = await fetch(
+                    `https://genshin.mond.jp/TABI/api/Photos/GetAlbum.php?group_id=${groupId}`
+                );
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'アルバムの取得に失敗しました');
+                }
+
+                setAlbumId(data.album.album_id);
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        fetchAlbum();
+    }, [groupId]);
+    
+
     // DBからアルバム写真を取得します。
     useEffect(() => {
+        if (!albumId) return;
         const timerId = window.setTimeout(async () => {
             try {
                 const response = await fetch(
-                    `https://genshin.mond.jp/TABI/api/Photos/List.php?trip_id=${groupId}`
+                    `https://genshin.mond.jp/TABI/api/Photos/List.php?album_id=${albumId}`
                 );
                 const data = await response.json();
 
@@ -101,7 +133,7 @@ function Album() {
         }, 0);
 
         return () => window.clearTimeout(timerId);
-    }, [groupId]);
+    }, [albumId]);
 
     // 追加画面に切り替わったタイミングで、自動的にファイル選択を開きます。
     useEffect(() => {
@@ -207,27 +239,56 @@ function Album() {
     const addPendingPhotos = async() => {
         if (pendingPhotos.length === 0) return;
 
+        if(!albumId){
+            alert("アルバムIdが取得できていません")
+            return;
+        }
+
+        //のちにuserIdとる予定
+        const userId = 1;
         
+        try{
+            setUploading(true);
 
-        const today = new Date().toLocaleDateString('ja-JP');
-        const maxPhotoId = photos.reduce((maxId, photo) => Math.max(maxId, Number(photo.id) || 0), 0);
+            for(const photo of pendingPhotos){
+                const formData = new FormData();
 
-        // DB取得後の写真データと同じキー名にそろえて、一覧と詳細でそのまま扱えるようにします。
-        const newPhotos = pendingPhotos.map((photo, index) => ({
-            id: maxPhotoId + index + 1,
-            image_url: photo.src,
-            uploaded_by: '自分',
-            shot_at: today,
-            caption: photo.caption || photo.file.name,
-            hashtags: formatHashtags(photo.hashtags),
-            place: photo.place || '場所未設定',
-        }));
+                formData.append('image',photo.file);
+                formData.append('album_id', albumId);
+                formData.append('user_id', userId);
+                formData.append('caption', photo.caption || '');
+                formData.append('shot_at', '');
 
-        setPhotos((currentPhotos) => [...newPhotos, ...currentPhotos]);
-        setPendingPhotos([]);
-        setActivePendingPhotoId(null);
-        setPreviewPhoto(null);
-        setView('list');
+                const response = await fetch (
+                    'https://genshin.mond.jp/TABI/api/Photos/Upload.php',
+                    {
+                        method: 'POST',
+                        body: formData,
+                    }
+                );
+
+                const data = await response.json();
+
+                if(!response.ok || !data.success){
+                    throw new Error(data.message || '画像アップロードに失敗しました');
+                }
+            }
+
+                pendingPhotos.forEach((photo) => URL.revokeObjectURL(photo.src));
+
+                setPendingPhotos([]);
+                setActivePendingPhotoId(null);
+                setPreviewPhoto(null);
+                setView('list');
+
+                window.location.reload();
+            
+            }catch (error){
+                console.error(error);
+                alert(error.message || '画像アップロードに失敗しました');
+            }finally{
+                setUploading(false)
+            } 
     };
 
     // 一覧の写真を押したとき、詳細画面を開く処理です。
