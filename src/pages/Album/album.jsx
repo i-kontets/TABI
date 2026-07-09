@@ -164,7 +164,6 @@ function Album() {
             src: URL.createObjectURL(file),
             caption: '',
             hashtags: '',
-            place: '',
             file,
         }));
 
@@ -213,15 +212,6 @@ function Album() {
         setPendingPhotos((currentPhotos) =>
             currentPhotos.map((photo) =>
                 photo.id === photoId ? { ...photo, hashtags: formatHashtags(photo.hashtags) } : photo
-            )
-        );
-    };
-
-    // 追加予定写真の場所入力を更新します。
-    const updatePendingPhotoPlace = (photoId, place) => {
-        setPendingPhotos((currentPhotos) =>
-            currentPhotos.map((photo) =>
-                photo.id === photoId ? { ...photo, place } : photo
             )
         );
     };
@@ -500,15 +490,6 @@ function Album() {
                                 />
                                 <small className={styles.fieldHelp}>5個まで、1タグ20文字まで</small>
                                 {hashtagNotice && <small className={styles.fieldWarning}>{hashtagNotice}</small>}
-                            </label>
-                            <label className={styles.addField}>
-                                <span>場所</span>
-                                <input
-                                    type="text"
-                                    value={activePendingPhoto.place}
-                                    onChange={(event) => updatePendingPhotoPlace(activePendingPhoto.id, event.target.value)}
-                                    placeholder="場所を追加"
-                                />
                             </label>
                             <button
                                 className={styles.removeActiveButton}
