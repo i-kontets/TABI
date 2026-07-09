@@ -24,15 +24,12 @@
 ;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */
 ;
-SET @MYSQLDUMP_TEMP_LOG_BIN = @@SESSION.SQL_LOG_BIN;
 
-SET @@SESSION.SQL_LOG_BIN = 0;
 
 --
 -- GTID state at the beginning of the backup
 --
 
-SET @@GLOBAL.GTID_PURGED = '';
 
 --
 -- Table structure for table `admin_activity_logs`
@@ -3148,7 +3145,6 @@ UNLOCK TABLES;
 --
 -- Dumping routines for database 'tabidb'
 --
-SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */
 ;
 
