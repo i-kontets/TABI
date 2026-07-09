@@ -6,6 +6,8 @@ import './App.css'
 import Newreg from './pages/newreg/Newreg';
 import Login from './pages/Login/Login';
 import Home from './pages/Home/Home';
+import MyPage from './pages/MyPage/MyPage';
+import { ProfileEditPage, UserEditPage, EmailChangePage, NotificationSettingsPage, NotificationPermissionPage, ContactPage, FaqPage } from './pages/MyPage/MyPageSubPages';
 import Itinerary from './pages/Itinerary/Itinerary.jsx';
 import ItineraryEdit from './pages/Itinerary/ItineraryEdit.jsx';
 import Tripmap from './pages/Tripmap/Tripmap';
@@ -38,6 +40,15 @@ function App() {
                     <Route path="/" element={<Login />} />
                     <Route path="/Newreg" element={<Newreg />} />
                     <Route path="/Home" element={<Home />} />
+                    <Route path="/MyPage" element={<MyPage />} />
+                    <Route path="/mypage" element={<MyPage />} />
+                    <Route path="/mypage/profile-edit" element={<ProfileEditPage />} />
+                    <Route path="/mypage/user-edit" element={<UserEditPage />} />
+                    <Route path="/mypage/email-change" element={<EmailChangePage />} />
+                    <Route path="/mypage/notification-settings" element={<NotificationSettingsPage />} />
+                    <Route path="/mypage/notification-permission" element={<NotificationPermissionPage />} />
+                    <Route path="/mypage/contact" element={<ContactPage />} />
+                    <Route path="/mypage/faq" element={<FaqPage />} />
                     <Route path="/Itinerary" element={<Itinerary />} />
                     <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
                     <Route path="/Tripmap" element={<Tripmap />} />
