@@ -1,0 +1,695 @@
+.container {
+    min-height: calc(100vh - 80px);
+    padding: 10px;
+    padding-bottom: 80px;
+    background-color: #f6f6f6;
+}
+
+.photoGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+}
+
+.photoCard {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 4px;
+    background-color: #e0e0e0;
+    cursor: pointer;
+}
+
+.photoCard img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.favoriteBadge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0.58);
+    color: #ffd447;
+    font-size: 15px;
+    line-height: 24px;
+    text-align: center;
+}
+
+.addButton {
+    position: fixed;
+    right: 20px;
+    bottom: 80px;
+    z-index: 100;
+    width: 56px;
+    height: 56px;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--sub-color);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.28);
+    font-size: 0;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+}
+
+.addButton::before,
+.addButton::after {
+    content: "";
+    position: absolute;
+    width: 22px;
+    height: 3px;
+    border-radius: 999px;
+    background-color: currentColor;
+}
+
+.addButton::after {
+    transform: rotate(90deg);
+}
+
+.detailOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    overflow-y: auto;
+    background-color: #070b0f;
+    color: white;
+}
+
+.detailHeader {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 76px;
+    padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+    color: white;
+    background-color: rgba(7,11,15,0.96);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.headerCenter {
+    min-width: 0;
+    flex: 1;
+    text-align: center;
+}
+
+.albumTitle {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.uploaderName {
+    margin: 4px 0 0;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.closeButton,
+.menuButton {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.08);
+    color: white;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.menuArea {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    min-width: 44px;
+}
+
+.closeButton {
+    font-size: 0;
+}
+
+.closeButton::before,
+.closeButton::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 2.5px;
+    border-radius: 999px;
+    background-color: currentColor;
+}
+
+.closeButton::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.closeButton::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.menuPanel {
+    position: absolute;
+    top: 52px;
+    right: 0;
+    z-index: 5;
+    width: 170px;
+    overflow: hidden;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.34);
+}
+
+.menuItem,
+.deleteMenuItem {
+    width: 100%;
+    border: none;
+    background: white;
+    padding: 13px 14px;
+    color: #222;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.menuItem {
+    border-bottom: 1px solid #eee;
+}
+
+.deleteMenuItem {
+    color: #d93025;
+}
+
+.menuItem:hover,
+.deleteMenuItem:hover {
+    background-color: #f5f5f5;
+}
+
+.detailContent {
+    max-width: 680px;
+    margin: 0 auto;
+    padding-bottom: max(30px, env(safe-area-inset-bottom));
+}
+
+.postOwner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+}
+
+.ownerAvatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background-color: var(--sub-color);
+    color: white;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.ownerText {
+    min-width: 0;
+}
+
+.ownerName,
+.ownerLocation {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ownerName {
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.ownerLocation {
+    margin-top: 3px;
+    color: rgba(255,255,255,0.78);
+    font-size: 14px;
+}
+
+.postImageFrame {
+    position: relative;
+    background-color: #000;
+}
+
+.postImage {
+    width: 100%;
+    max-height: 64vh;
+    display: block;
+    object-fit: contain;
+    background-color: #000;
+}
+
+.postInfo {
+    padding: 16px 18px 22px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.favoriteButton {
+    width: 42px;
+    height: 42px;
+    margin: 0 0 10px -8px;
+    border: none;
+    background: transparent;
+    color: white;
+    font-size: 32px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.caption,
+.hashtags,
+.postDate {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.caption {
+    color: white;
+    font-size: 16px;
+    line-height: 1.55;
+}
+
+.caption span {
+    margin-right: 8px;
+    font-weight: 700;
+}
+
+.hashtags {
+    margin-top: 4px;
+    color: #7f9cff;
+    font-size: 16px;
+    line-height: 1.45;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+}
+
+.hashtags span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.postDate {
+    margin-top: 12px;
+    color: rgba(255,255,255,0.54);
+    font-size: 14px;
+}
+
+.favoriteActive {
+    color: #ff5f7e;
+}
+
+.addView {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    box-sizing: border-box;
+    padding: 0 0 24px;
+    background-color: #ffffff;
+    color: #202124;
+    overflow-y: auto;
+}
+
+.addHeader {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 56px 1fr 112px;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 18px;
+    padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+    background-color: rgba(255,255,255,0.96);
+    border-bottom: 1px solid #e8eaed;
+}
+
+.addTitleGroup {
+    min-width: 0;
+    text-align: center;
+}
+
+.addTitleGroup p {
+    margin: 0 0 2px;
+    color: #6b7280;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.addTitleGroup h1 {
+    margin: 0;
+    color: #202124;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.addCancelButton {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 50%;
+    background-color: #f1f3f4;
+    color: #202124;
+    font-size: 0;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+}
+
+.addCancelButton::before,
+.addCancelButton::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 17px;
+    height: 2.5px;
+    border-radius: 999px;
+    background-color: currentColor;
+}
+
+.addCancelButton::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.addCancelButton::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.addActionGroup {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+}
+
+.addCount {
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--sub-color);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.addSubmitButton {
+    border: none;
+    border-radius: 8px;
+    background-color: var(--sub-color);
+    color: white;
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.addSubmitButton:disabled {
+    background-color: #d1d1d1;
+    color: #777;
+    cursor: default;
+}
+
+.hiddenFileInput {
+    display: none;
+}
+
+.addPostArea {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.pendingCarousel {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(190px, 46vw);
+    gap: 12px;
+    overflow-x: auto;
+    padding: 0 24px 10px;
+    scroll-padding-inline: 24px;
+    scroll-snap-type: x mandatory;
+    scrollbar-color: rgba(60,64,67,0.35) transparent;
+    scrollbar-width: thin;
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 34px), transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 34px), transparent 100%);
+}
+
+.pendingCarousel::-webkit-scrollbar {
+    height: 6px;
+}
+
+.pendingCarousel::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background-color: rgba(60,64,67,0.35);
+}
+
+.pendingSlide,
+.addMoreSlide {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    border: none;
+    border-radius: 10px;
+    background-color: #f1f3f4;
+    color: #202124;
+    scroll-snap-align: start;
+    cursor: pointer;
+}
+
+.pendingSlide {
+    padding: 0;
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+}
+
+.pendingSlideActive {
+    outline-color: var(--sub-color);
+}
+
+.pendingSlide img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.pendingSlide span {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    min-width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0,0,0,0.58);
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.addMoreSlide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed #cbd5e1;
+    font-size: 0;
+    line-height: 1;
+    padding: 0;
+}
+
+.addMoreSlide::before,
+.addMoreSlide::after {
+    content: "";
+    position: absolute;
+    width: 30px;
+    height: 3px;
+    border-radius: 999px;
+    background-color: currentColor;
+}
+
+.addMoreSlide::after {
+    transform: rotate(90deg);
+}
+
+.carouselHint {
+    margin: -8px 24px 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+
+.addEditPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 18px;
+}
+
+.activePreview {
+    display: none;
+}
+
+.addField {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.addField span {
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.addField input,
+.addField textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: #f9fafb;
+    color: #202124;
+    padding: 12px 13px;
+    font: inherit;
+    line-height: 1.5;
+    outline: none;
+}
+
+.addField textarea {
+    min-height: 96px;
+    resize: vertical;
+}
+
+.addField input::placeholder,
+.addField textarea::placeholder {
+    color: #9ca3af;
+}
+
+.fieldHelp {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.fieldWarning {
+    color: #d97706;
+    font-size: 12px;
+}
+
+.removeActiveButton,
+.emptyAddPicker {
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    padding: 13px 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.removeActiveButton {
+    background-color: #fff1f2;
+    color: #e11d48;
+}
+
+.emptyAddPicker {
+    box-sizing: border-box;
+    width: calc(100% - 36px);
+    margin: 16px 18px 0;
+    background-color: var(--sub-color);
+    color: white;
+}
+
+.pendingPreviewOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: max(72px, env(safe-area-inset-top)) 18px max(36px, env(safe-area-inset-bottom));
+    box-sizing: border-box;
+    background-color: #000;
+}
+
+.pendingPreviewImage {
+    max-width: min(100%, 560px);
+    max-height: 78vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.pendingPreviewCloseButton {
+    position: absolute;
+    top: max(14px, env(safe-area-inset-top));
+    left: 14px;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgba(0,0,0,0.45);
+    color: white;
+    font-size: 0;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.pendingPreviewCloseButton::before,
+.pendingPreviewCloseButton::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 2.5px;
+    border-radius: 999px;
+    background-color: currentColor;
+}
+
+.pendingPreviewCloseButton::before {
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.pendingPreviewCloseButton::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+}

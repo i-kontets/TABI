@@ -6,8 +6,8 @@ import TrainIcon from '../../assets/icons/train.svg?react';
 import AirplaneIcon from '../../assets/icons/airplane.svg?react';
 import CarIcon from '../../assets/icons/car.svg?react';
 import styles from './Appointment.module.css';
-import transportData from './appointment.json';
-import stops from './confirmation_options.json';
+import transportData from './Appointment.json';
+import stops from './Confirmation_options.json';
 
 const latestBookingStorageKey = 'tabiLatestBooking';
 const savedRoutesStorageKey = 'tabiMyRoutes';

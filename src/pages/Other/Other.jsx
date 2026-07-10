@@ -12,11 +12,12 @@ const supportItems = [
         tone: 'sky',
     },
     {
-        id: 'exchange',
-        title: '為替レート',
-        description: '円から現地通貨のレートを確認',
+        id: 'Invoice',
+        title: '割り勘',
+        description: '建て替えた分を管理',
         icon: '¥',
         tone: 'gold',
+        path: '/Invoice',
     },
     {
         id: 'translate',
@@ -41,6 +42,7 @@ const supportItems = [
         tone: 'green',
         path: '/Tourist',
     },
+
 ];
 
 function ArrowIcon() {
