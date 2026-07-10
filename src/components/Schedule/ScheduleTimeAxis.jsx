@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Tabs, Timeline } from '@mantine/core';
 import groupIcon from '../../assets/icons/groups.svg';
 import personIcon from '../../assets/icons/person.svg';
@@ -6,8 +6,6 @@ import styles from './ScheduleTimeAxis.module.css';
 
 const GROUP_COLORS = {
     '全員': 'var(--sub-color)',
-    'グループA': '#FF8A65',
-    'グループB': '#5B9BD5',
 };
 const MY_MEMBER_NAME = '自分';
 
@@ -96,11 +94,11 @@ const scheduleData = {
             { group: '全員', title: 'ホテル出発', endTime: '10:30' },
         ],
         '10:00': [
-            { group: 'グループA', title: 'コテージ到着', endTime: '10:20', members: ['自分', '田中', '鈴木'] },
-            { group: 'グループB', title: '買い出し', endTime: '10:40', members: ['佐藤', '自分'] },
-            { group: 'グループB', title: '買い出し', endTime: '10:50', members: ['佐藤'] },
-            { group: 'グループB', title: '買い出し', endTime: '11:00', members: ['佐藤'] },
-            { group: 'グループB', title: '買い出し', endTime: '11:20', members: ['佐藤'] },
+            { group: null,title: 'コテージ到着', endTime: '10:20', members: ['自分', '田中', '鈴木', '山本', '中村', '高橋'] },
+            { title: '買い出し', endTime: '10:40', members: ['佐藤', '自分'] },
+            { title: '買い出し', endTime: '10:50', members: ['佐藤'] },
+            { title: '買い出し', endTime: '11:00', members: ['佐藤'] },
+            { title: '買い出し', endTime: '11:20', members: ['佐藤'] },
         ],
         '11:00': [
             { group: '全員', title: '昼食・休憩', endTime: '11:10' },
@@ -110,7 +108,7 @@ const scheduleData = {
         '12:00': [
             { group: '全員', title: '昼食・休憩', endTime: '13:00' },
             { group: '全員', title: '昼食・休憩', endTime: '13:00' },
-            { group: '全員', title: '昼食・休憩', endTime: '12:300' },
+            { group: '全員', title: '昼食・休憩', endTime: '12:30' },
         ],
         '14:00': [
             { group: '全員', title: '昼食・休憩', endTime: '14:20' },
@@ -133,6 +131,9 @@ const COMPACT_SLOT_HEIGHT = 22;
 const COMPACT_SLOT_MARGIN_BOTTOM = 30;
 const EVENTS_PER_ROW = 2;
 const SUB_TIME_LABEL_HEIGHT = 22;
+const MEMBER_AVATAR_SIZE = 24;
+const MEMBER_AVATAR_OVERLAP = 6;
+const MEMBER_AVATAR_STEP = MEMBER_AVATAR_SIZE - MEMBER_AVATAR_OVERLAP;
 
 function isCompactSlot(item) {
     return item.events.length === 0;
@@ -166,6 +167,37 @@ function formatEventTimeRange(event) {
     return event.endTime ? `${event.time} - ${event.endTime}` : `${event.time} - 未定`;
 }
 
+function getMemberInitial(memberName) {
+    return memberName.slice(0, 1);
+}
+
+function getMemberAvatarsWidth(visibleCount, hasMore) {
+    if (visibleCount === 0) {
+        return hasMore ? MEMBER_AVATAR_SIZE : 0;
+    }
+
+    const visibleWidth = MEMBER_AVATAR_SIZE + ((visibleCount - 1) * MEMBER_AVATAR_STEP);
+    return hasMore ? visibleWidth + MEMBER_AVATAR_STEP : visibleWidth;
+}
+
+function getVisibleMemberCount(memberCount, availableWidth) {
+    if (memberCount === 0 || availableWidth === null) {
+        return memberCount;
+    }
+
+    if (getMemberAvatarsWidth(memberCount, false) <= availableWidth) {
+        return memberCount;
+    }
+
+    for (let count = memberCount - 1; count >= 1; count -= 1) {
+        if (getMemberAvatarsWidth(count, true) <= availableWidth) {
+            return count;
+        }
+    }
+
+    return 0;
+}
+
 function filterItemsByView(items, viewMode) {
     if (viewMode === 'all') {
         return items;
@@ -189,6 +221,61 @@ function filterVisibleItems(items) {
     return items.filter((item, index) => (
         item.events.length > 0 || index === lastEventIndex + 1
     ));
+}
+
+function MemberAvatars({ members = [] }) {
+    const containerRef = useRef(null);
+    const [availableWidth, setAvailableWidth] = useState(null);
+
+    useEffect(() => {
+        const target = containerRef.current;
+
+        if (!target) {
+            return undefined;
+        }
+
+        const updateWidth = () => {
+            setAvailableWidth(target.getBoundingClientRect().width);
+        };
+
+        updateWidth();
+
+        if (!window.ResizeObserver) {
+            return undefined;
+        }
+
+        const observer = new ResizeObserver((entries) => {
+            const [entry] = entries;
+            setAvailableWidth(entry.contentRect.width);
+        });
+
+        observer.observe(target);
+
+        return () => observer.disconnect();
+    }, []);
+
+    if (members.length === 0) {
+        return null;
+    }
+
+    const visibleCount = getVisibleMemberCount(members.length, availableWidth);
+    const visibleMembers = members.slice(0, visibleCount);
+    const hiddenCount = members.length - visibleCount;
+
+    return (
+        <span ref={containerRef} className={styles.memberAvatars} aria-label={`参加メンバー: ${members.join('、')}`}>
+            {visibleMembers.map((member, index) => (
+                <span key={`${member}-${index}`} className={styles.memberAvatar} title={member}>
+                    {getMemberInitial(member)}
+                </span>
+            ))}
+            {hiddenCount > 0 && (
+                <span className={styles.memberMore}>
+                    +{hiddenCount}
+                </span>
+            )}
+        </span>
+    );
 }
 
 export default function ScheduleTimeAxis({ selectedDay }) {
@@ -296,6 +383,9 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                                                             >
                                                                 {event.group}
                                                             </span>
+                                                        )}
+                                                        {event.group !== '全員' && (
+                                                            <MemberAvatars members={event.members} />
                                                         )}
                                                     </div>
                                                     <p className={styles.timeRange}>{formatEventTimeRange(event)}</p>

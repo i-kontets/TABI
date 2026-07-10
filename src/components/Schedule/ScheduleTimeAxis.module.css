@@ -217,6 +217,44 @@
     white-space: nowrap;
 }
 
+.memberAvatars {
+    display: inline-flex;
+    align-items: center;
+    flex: 1 1 24px;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.memberAvatar,
+.memberMore {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--sub-color) 12%, #ffffff);
+    color: var(--sub-color);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(32, 35, 50, 0.12);
+    flex: 0 0 auto;
+}
+
+.memberAvatar:not(:first-child),
+.memberMore {
+    margin-left: -6px;
+}
+
+.memberMore {
+    background: color-mix(in srgb, var(--sub-color) 88%, #ffffff);
+    color: #ffffff;
+    font-size: 10px;
+}
+
 .runningStatus {
     display: inline-flex;
     align-items: center;
