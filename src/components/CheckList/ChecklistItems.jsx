@@ -11,10 +11,25 @@ export default function ChecklistItems({
     onDelete,
 }) {
     const [openMenuId, setOpenMenuId] = useState(null);
+    const sortedItems = items
+        .map((item, index) => ({ item, index }))
+        .sort((current, next) => {
+            const currentKey = createItemKey(sectionId, current.item.id);
+            const nextKey = createItemKey(sectionId, next.item.id);
+            const currentChecked = Boolean(checks[currentKey]);
+            const nextChecked = Boolean(checks[nextKey]);
+
+            if (currentChecked === nextChecked) {
+                return current.index - next.index;
+            }
+
+            return currentChecked ? 1 : -1;
+        })
+        .map(({ item }) => item);
 
     return (
         <div className={styles.itemList}>
-            {items.map((item) => {
+            {sortedItems.map((item) => {
                 const itemKey = createItemKey(sectionId, item.id);
 
                 return (

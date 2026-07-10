@@ -28,7 +28,7 @@ const supportItems = [
     {
         id: 'transport',
         title: '交通手段の予約',
-        description: '電車・バス・フライトの予約を確認',
+        description: '飛行機・新幹線・レンタカーの予約を確認',
         icon: '↔',
         tone: 'blue',
         path: '/Appointment',

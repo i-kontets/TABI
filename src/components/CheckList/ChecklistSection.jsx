@@ -2,6 +2,7 @@ import ChecklistDeleteActions from "./ChecklistDeleteActions";
 import ChecklistItemForm from "./ChecklistItemForm";
 import ChecklistItems from "./ChecklistItems";
 import { createItemKey } from "./checkListUtils";
+import AddButtonIcon from "../../assets/icons/add_button.svg?react";
 import styles from "./CheckListComponents.module.css";
 
 export default function ChecklistSection({
@@ -37,7 +38,7 @@ export default function ChecklistSection({
                         aria-label={`${section.title}に持ちものを追加`}
                         onClick={() => onStartAdd(section.id)}
                     >
-                        +
+                        <AddButtonIcon className={styles.addHeaderIcon} aria-hidden="true" />
                     </button>
                 ) : null}
             </div>

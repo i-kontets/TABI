@@ -1,68 +1,21 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Step, Stepper } from 'react-form-stepper';
 import BtmNav from '../../components/bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
+import TrainIcon from '../../assets/icons/train.svg?react';
+import AirplaneIcon from '../../assets/icons/airplane.svg?react';
+import CarIcon from '../../assets/icons/car.svg?react';
 import styles from './Appointment.module.css';
 import transportData from './appointment.json';
 import stops from './confirmation_options.json';
 
-const appointmentSteps = ['検索', '確認', '完了'];
-
-const stepStyleConfig = {
-    activeBgColor: '#CDD4E3',
-    activeTextColor: '#000',
-    completedBgColor: '#CDD4E3',
-    completedTextColor: '#000',
-    inactiveBgColor: '#f2f2f2',
-    inactiveTextColor: '#000',
-    size: '44px',
-    circleFontSize: '14px',
-    labelFontSize: '12px',
-    borderRadius: '50%',
-    fontWeight: 600,
-};
-
-const connectorStyleConfig = {
-    activeColor: '#CDD4E3',
-    completedColor: '#CDD4E3',
-    disabledColor: '#e6e6e6',
-    size: 2,
-    stepSize: '44px',
-    style: 'solid',
-};
-
-const initialRoute = transportData.transports?.[0]?.carriers?.[0]?.routes?.[0] || {};
 const latestBookingStorageKey = 'tabiLatestBooking';
 const savedRoutesStorageKey = 'tabiMyRoutes';
-
-function ProgressTracker({ step, setStep }) {
-    return (
-        <div className={styles.progressTracker}>
-            <Stepper
-                activeStep={step}
-                className={styles.stepper}
-                connectorStateColors
-                styleConfig={stepStyleConfig}
-                connectorStyleConfig={connectorStyleConfig}
-            >
-                {appointmentSteps.map((label, index) => (
-                    <Step
-                        key={label}
-                        label={label}
-                        onClick={() => {
-                            if (index <= step) setStep(index);
-                        }}
-                        aria-current={step === index ? 'step' : undefined}
-                        aria-label={`${label}ステップへ移動`}
-                    >
-                        {index + 1}
-                    </Step>
-                ))}
-            </Stepper>
-        </div>
-    );
-}
+const typeIcons = {
+    '新幹線': TrainIcon,
+    '飛行機': AirplaneIcon,
+    'レンタカー': CarIcon,
+};
 
 function AppointmentHeader({ title, onBack }) {
     return (
@@ -79,32 +32,56 @@ function AppointmentHeader({ title, onBack }) {
 function AppointmentStep({ onProceed }) {
     const [type, setType] = useState(() => transportData.transports?.[0]?.type || '');
     const [carrier, setCarrier] = useState('');
-    const [from, setFrom] = useState(() => initialRoute.from || '');
-    const [to, setTo] = useState(() => initialRoute.to || '');
+    const [from, setFrom] = useState('');
+    const [to, setTo] = useState('');
     const [date, setDate] = useState(() => {
         const d = new Date();
         return d.toISOString().slice(0,10);
     });
+    const [returnDate, setReturnDate] = useState(() => {
+        const d = new Date();
+        return d.toISOString().slice(0,10);
+    });
     const [hour, setHour] = useState('');
+    const [returnHour, setReturnHour] = useState('');
     const [people, setPeople] = useState(1);
     const [formError, setFormError] = useState('');
     const [results, setResults] = useState(null);
+    const transportTypes = useMemo(() => (
+        Array.from(new Set(transportData.transports.map(t => t.type)))
+    ), []);
+    const isRentalCar = type === 'レンタカー';
+    const labels = isRentalCar
+        ? {
+            date: '利用開始日',
+            hour: '利用開始時間',
+            people: '乗車人数',
+        }
+        : type === '飛行機'
+            ? {
+                from: '出発地（空港）',
+                to: '到着地（空港）',
+                date: '出発日',
+                hour: '出発時間',
+                people: '人数',
+                fromPlaceholder: '例: 羽田',
+                toPlaceholder: '例: 福岡',
+            }
+            : {
+                from: '出発地（駅）',
+                to: '到着地（駅）',
+                date: '出発日',
+                hour: '出発時間',
+                people: '人数',
+                fromPlaceholder: '例: 東京',
+                toPlaceholder: '例: 新大阪',
+            };
+    const hourOptions = useMemo(() => (
+        Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'))
+    ), []);
 
     const transportsOfType = useMemo(() => {
-        if (type) return transportData.transports.find(t => t.type === type) || { carriers: [] };
-        const map = new Map();
-        transportData.transports.forEach(t => {
-            (t.carriers || []).forEach(c => {
-                if (!map.has(c.name)) {
-                    map.set(c.name, { ...c });
-                } else {
-                    const existing = map.get(c.name);
-                    existing.routes = Array.from(new Set([...(existing.routes || []), ...(c.routes || [])].map(r => JSON.stringify(r)))).map(s => JSON.parse(s));
-                    map.set(c.name, existing);
-                }
-            });
-        });
-        return { carriers: Array.from(map.values()) };
+        return transportData.transports.find(t => t.type === type) || { carriers: [] };
     }, [type]);
 
     const carriers = useMemo(() => transportsOfType.carriers || [], [transportsOfType]);
@@ -112,33 +89,23 @@ function AppointmentStep({ onProceed }) {
     const routePool = useMemo(() => {
         const pool = [];
         carriers.forEach(c => {
-            if (carrier && c.name !== carrier) return;
             (c.routes || []).forEach(r => pool.push({ ...r, carrier: c.name }));
         });
         return pool;
-    }, [carriers, carrier]);
+    }, [carriers]);
 
     const fromOptions = useMemo(() => Array.from(new Set(routePool.map(r => r.from))), [routePool]);
-    const toOptions = useMemo(() => Array.from(new Set(routePool.filter(r => (from ? r.from === from : true)).map(r => r.to))), [routePool, from]);
+    const toOptions = useMemo(() => Array.from(new Set(routePool.map(r => r.to))), [routePool]);
 
     // Prefer synchronous updates on user interactions to avoid mobile picker race conditions
     function handleTypeChange(value) {
         setType(value);
-        const t = transportData.transports.find(tt => tt.type === value) || { carriers: [] };
-        const firstCarrierName = t.carriers?.[0]?.name || '';
-        setCarrier(firstCarrierName);
-        const firstRoute = t.carriers?.[0]?.routes?.[0] || {};
-        setFrom(firstRoute.from || '');
-        setTo(firstRoute.to || '');
-    }
-
-    function handleCarrierChange(value) {
-        setCarrier(value);
-        const t = transportData.transports.find(tt => tt.type === type) || { carriers: [] };
-        const c = (t.carriers || []).find(cc => cc.name === value) || { routes: [] };
-        const firstRoute = c.routes?.[0] || {};
-        setFrom(firstRoute.from || '');
-        setTo(firstRoute.to || '');
+        setCarrier('');
+        setFrom('');
+        setTo('');
+        setHour('');
+        setReturnHour('');
+        setResults(null);
     }
 
     useEffect(() => {
@@ -147,27 +114,39 @@ function AppointmentStep({ onProceed }) {
             const d = new Date();
             setDate(d.toISOString().slice(0,10));
         }
-    }, [type]);
+        if (!returnDate) {
+            const d = new Date();
+            setReturnDate(d.toISOString().slice(0,10));
+        }
+    }, [type, date, returnDate]);
 
     function handleSearch(e) {
         e && e.preventDefault && e.preventDefault();
-        if (!type || !from || !to || !date || hour === '' || !people || Number(people) < 1) {
-            setFormError('種類・出発地・到着地・出発日・出発時間・人数を正しく入力してください。');
+        if (!type || !date || !hour || !people || Number(people) < 1 || (isRentalCar && (!returnDate || !returnHour))) {
+            setFormError(isRentalCar
+                ? '種類・利用開始日・返却日・利用開始時間・返却時間・乗車人数を正しく入力してください。'
+                : '種類・出発日・出発時間・人数を正しく入力してください。'
+            );
             setResults(null);
             return;
         }
         setFormError('');
         const matches = [];
+        const fromQuery = isRentalCar ? '' : from.trim();
+        const toQuery = isRentalCar ? '' : to.trim();
+        const timeQuery = hour.trim().replace('時', '');
+
         transportData.transports.forEach(t => {
             if (t.type !== type) return;
             (t.carriers || []).forEach(c => {
-                if (carrier && c.name !== carrier) return;
+                if (isRentalCar && carrier && c.name !== carrier) return;
                 (c.routes || []).forEach(r => {
-                    if (from && r.from !== from) return;
-                    if (to && r.to !== to) return;
+                    if (fromQuery && !r.from.includes(fromQuery)) return;
+                    if (toQuery && !r.to.includes(toQuery)) return;
                     const times = r.times?.slice() || [];
                     times.forEach(time => {
-                        if (Number(time.split(':')[0]) !== Number(hour)) return;
+                        const paddedHour = time.split(':')[0];
+                        if (timeQuery && paddedHour !== timeQuery.padStart(2, '0')) return;
                         matches.push({
                             type: t.type,
                             carrier: c.name,
@@ -191,64 +170,130 @@ function AppointmentStep({ onProceed }) {
     return (
         <div>
             <div className={styles.container}>
+                <div className={styles.typeField}>
+                    <div className={styles.typeLabel}>種類</div>
+                    <div className={styles.typeTabs} role="tablist" aria-label="交通手段の種類">
+                        {transportTypes.map(tt => {
+                            const TypeIcon = typeIcons[tt];
+
+                            return (
+                                <button
+                                    key={tt}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={type === tt}
+                                    className={`${styles.typeTab} ${type === tt ? styles.typeTabActive : ''}`}
+                                    onClick={() => handleTypeChange(tt)}
+                                >
+                                    {TypeIcon && <TypeIcon className={styles.typeTabIcon} aria-hidden="true" />}
+                                    <span>{tt}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
                 <form className={styles.form} onSubmit={handleSearch}>
-                    <label className={styles.label}>
-                        事業者
-                        <select value={carrier} onChange={e => handleCarrierChange(e.target.value)} className={styles.select}>
-                            <option value="">すべて</option>
-                            {carriers.map(c => (
-                                <option key={c.name} value={c.name}>{c.name}</option>
-                            ))}
-                        </select>
-                    </label>
+                    {isRentalCar && (
+                        <label className={styles.label}>
+                            事業者
+                            <select value={carrier} onChange={e => setCarrier(e.target.value)} className={styles.select}>
+                                <option value="">すべて</option>
+                                {carriers.map(c => (
+                                    <option key={c.name} value={c.name}>{c.name}</option>
+                                ))}
+                            </select>
+                        </label>
+                    )}
+
+                    {!isRentalCar && (
+                        <>
+                            <label className={styles.label}>
+                                {labels.from}
+                                <input
+                                    type="search"
+                                    value={from}
+                                    onChange={e => setFrom(e.target.value)}
+                                    className={styles.input}
+                                    list="appointment-from-options"
+                                    placeholder={labels.fromPlaceholder}
+                                />
+                                <datalist id="appointment-from-options">
+                                    {fromOptions.map(f => (
+                                        <option key={f} value={f} />
+                                    ))}
+                                </datalist>
+                            </label>
+
+                            <label className={styles.label}>
+                                {labels.to}
+                                <input
+                                    type="search"
+                                    value={to}
+                                    onChange={e => setTo(e.target.value)}
+                                    className={styles.input}
+                                    list="appointment-to-options"
+                                    placeholder={labels.toPlaceholder}
+                                />
+                                <datalist id="appointment-to-options">
+                                    {toOptions.map(option => (
+                                        <option key={option} value={option} />
+                                    ))}
+                                </datalist>
+                            </label>
+                        </>
+                    )}
+
+                    {isRentalCar ? (
+                        <div className={styles.dateTimeTable}>
+                            <label className={styles.dateTimeCell}>
+                                利用開始日
+                                <input type="date" value={date} onChange={e => setDate(e.target.value)} className={styles.input} required />
+                            </label>
+                            <label className={styles.dateTimeCell}>
+                                利用開始時間
+                                <select value={hour} onChange={e => setHour(e.target.value)} className={styles.select} required>
+                                    <option value="">選択してください</option>
+                                    {hourOptions.map(value => (
+                                        <option key={value} value={value}>{Number(value)}時</option>
+                                    ))}
+                                </select>
+                            </label>
+                            <label className={styles.dateTimeCell}>
+                                返却日
+                                <input type="date" value={returnDate} onChange={e => setReturnDate(e.target.value)} className={styles.input} required />
+                            </label>
+                            <label className={styles.dateTimeCell}>
+                                返却時間
+                                <select value={returnHour} onChange={e => setReturnHour(e.target.value)} className={styles.select} required>
+                                    <option value="">選択してください</option>
+                                    {hourOptions.map(value => (
+                                        <option key={value} value={value}>{Number(value)}時</option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
+                    ) : (
+                        <>
+                            <label className={styles.label}>
+                                {labels.date}
+                                <input type="date" value={date} onChange={e => setDate(e.target.value)} className={styles.input} required />
+                            </label>
+
+                            <label className={styles.label}>
+                                {labels.hour}
+                                <select value={hour} onChange={e => setHour(e.target.value)} className={styles.select} required>
+                                    <option value="">選択してください</option>
+                                    {hourOptions.map(value => (
+                                        <option key={value} value={value}>{Number(value)}時</option>
+                                    ))}
+                                </select>
+                            </label>
+                        </>
+                    )}
 
                     <label className={styles.label}>
-                        種類
-                        <select value={type} onChange={e => handleTypeChange(e.target.value)} className={styles.select} required>
-                            <option value="">選択してください</option>
-                            {Array.from(new Set(transportData.transports.map(t => t.type))).map(tt => (
-                                <option key={tt} value={tt}>{tt}</option>
-                            ))}
-                        </select>
-                    </label>
-
-                    <label className={styles.label}>
-                        出発地
-                        <select value={from} onChange={e => setFrom(e.target.value)} className={styles.select} required>
-                            <option value="">選択してください</option>
-                            {fromOptions.map(f => (
-                                <option key={f} value={f}>{f}</option>
-                            ))}
-                        </select>
-                    </label>
-
-                    <label className={styles.label}>
-                        到着地
-                        <select value={to} onChange={e => setTo(e.target.value)} className={styles.select} required>
-                            <option value="">選択してください</option>
-                            {toOptions.map(t => (
-                                <option key={t} value={t}>{t}</option>
-                            ))}
-                        </select>
-                    </label>
-
-                    <label className={styles.label}>
-                        出発日
-                        <input type="date" value={date} onChange={e => setDate(e.target.value)} className={styles.input} required />
-                    </label>
-
-                    <label className={styles.label}>
-                        出発時間（時）
-                        <select value={hour} onChange={e => setHour(e.target.value)} className={styles.select} required>
-                            <option value="">選択してください</option>
-                            {Array.from({ length: 24 }, (_, value) => (
-                                <option key={value} value={value}>{value}時</option>
-                            ))}
-                        </select>
-                    </label>
-
-                    <label className={styles.label}>
-                        人数
+                        {labels.people}
                         <input type="number" min="1" step="1" value={people} onChange={e => setPeople(e.target.value === '' ? '' : Number(e.target.value))} className={styles.input} required />
                     </label>
 
@@ -277,7 +322,9 @@ function AppointmentStep({ onProceed }) {
                                     <div>{it.from} → {it.to}</div>
                                     <div>出発時刻: {it.time}</div>
                                     <div style={{ marginTop: 8 }}>
-                                        <button className={styles.proceedButton} onClick={() => proceedBooking(it)}>予約に進む</button>
+                                        <button className={styles.proceedButton} onClick={() => proceedBooking(it)}>
+                                            {it.type === '電車' ? '保存に進む' : '予約に進む'}
+                                        </button>
                                     </div>
                                 </div>
                             ))
@@ -300,10 +347,21 @@ function ConfirmationStep({ item, date, people, onConfirm }) {
     const [selectedTime, setSelectedTime] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const timeoutRef = useRef(null);
+    const usesStationStops = item?.type === '電車' || item?.type === '新幹線';
+    const peopleLabel = item?.type === 'レンタカー' ? '乗車人数' : '人数';
+    const boardingOptions = usesStationStops ? [item.from] : stops.boarding;
+    const alightingOptions = usesStationStops ? [item.to] : stops.alighting;
 
     useEffect(() => {
         if (item?.times && item.times.length > 0) setSelectedTime(item.times[0]);
-    }, [item]);
+        if (usesStationStops) {
+            setBoarding(item.from);
+            setAlighting(item.to);
+        } else {
+            setBoarding(stops.boarding?.[0] || '');
+            setAlighting(stops.alighting?.[0] || '');
+        }
+    }, [item, usesStationStops]);
 
     useEffect(() => {
         return () => {
@@ -338,25 +396,25 @@ function ConfirmationStep({ item, date, people, onConfirm }) {
                         <div className={styles.card} style={{ marginTop: 8 }}>
                             <div style={{ fontWeight: 700 }}>料金</div>
                             <div>{pricePerPerson.toLocaleString()} 円 / 人</div>
-                            <div>人数: {people || 1} 名</div>
+                            <div>{peopleLabel}: {people || 1} 名</div>
                             <div style={{ marginTop: 6, fontWeight: 700 }}>合計: {totalPrice.toLocaleString()} 円</div>
                         </div>
                     </>
                 )}
 
                 <label className={styles.label}>
-                    乗車地
+                    {usesStationStops ? '乗車駅' : '乗車地'}
                     <select value={boarding} onChange={e => setBoarding(e.target.value)} className={styles.select}>
-                        {stops.boarding.map(s => (
+                        {boardingOptions.map(s => (
                             <option key={s} value={s}>{s}</option>
                         ))}
                     </select>
                 </label>
 
                 <label className={styles.label}>
-                    降車地
+                    {usesStationStops ? '降車駅' : '降車地'}
                     <select value={alighting} onChange={e => setAlighting(e.target.value)} className={styles.select}>
-                        {stops.alighting.map(s => (
+                        {alightingOptions.map(s => (
                             <option key={s} value={s}>{s}</option>
                         ))}
                     </select>
@@ -386,6 +444,7 @@ function ConfirmationStep({ item, date, people, onConfirm }) {
 function DecisionStep({ booking }) {
     const bookingNumber = booking?.number || ('R' + Date.now().toString(36).toUpperCase());
     const navigate = useNavigate();
+    const peopleLabel = booking?.item?.type === 'レンタカー' ? '乗車人数' : '人数';
 
     const completeBooking = () => {
         localStorage.setItem(latestBookingStorageKey, JSON.stringify(booking));
@@ -415,7 +474,7 @@ function DecisionStep({ booking }) {
 
                 <div className={styles.card} style={{ marginTop: 8 }}>
                     <div style={{ fontWeight: 700 }}>人数・料金</div>
-                    <div>人数: {booking.people} 名</div>
+                    <div>{peopleLabel}: {booking.people} 名</div>
                     <div>{(booking.pricePerPerson || 0).toLocaleString()} 円 / 人</div>
                     <div style={{ marginTop: 6, fontWeight: 700 }}>合計: {(booking.totalPrice || 0).toLocaleString()} 円</div>
                 </div>
@@ -467,10 +526,6 @@ export default function AppointmentPage() {
         setStep(2);
     };
 
-    const handleJump = (i) => {
-        if (i <= step) setStep(i);
-    };
-
     const stepTitles = ['予約画面', '乗降地を選択', '予約内容の確認'];
 
     const handleBack = () => {
@@ -484,7 +539,6 @@ export default function AppointmentPage() {
     return (
         <div>
             <AppointmentHeader title={stepTitles[step]} onBack={handleBack} />
-            <ProgressTracker step={step} setStep={handleJump} />
 
             <div style={{ paddingBottom: 24 }}>
                 {step === 0 && <AppointmentStep onProceed={handleProceedFromSearch} />}
