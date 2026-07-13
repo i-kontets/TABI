@@ -7,3 +7,7 @@ export function fetchAnalytics() {
 export function fetchActivities() {
     return fetchResource('activities');
 }
+
+export function fetchPendingSupportItems() {
+    return fetchResource('support-pending');
+}

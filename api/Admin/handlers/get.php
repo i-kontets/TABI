@@ -78,6 +78,10 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
     }
 
     // 通報件数の状態別集計だけを返す専用エンドポイントです。
+    if ($resource === "support-pending") {
+        respond(fetch_pending_support_items($pdo));
+    }
+
     if ($resource === "reports-counts") {
         $reports = fetch_reports($pdo);
         respond([

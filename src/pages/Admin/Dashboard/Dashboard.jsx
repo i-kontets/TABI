@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { StatCard, Card, LineChart, DonutChart, Badge } from '../../../components/Admin/ui/Ui';
-import { fetchAnalytics, fetchActivities } from '../../../services/admin';
+import { fetchAnalytics, fetchActivities, fetchPendingSupportItems } from '../../../services/admin';
 import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Dashboard.module.css';
 
@@ -44,10 +44,12 @@ const REALTIME_EVENTS = [
 export default function Dashboard() {
     const [analytics, setAnalytics] = useState(null);
     const [activities, setActivities] = useState([]);
+    const [pendingSupportItems, setPendingSupportItems] = useState([]);
 
     const loadDashboard = useCallback(() => {
         fetchAnalytics().then(setAnalytics);
         fetchActivities().then(setActivities);
+        fetchPendingSupportItems().then(setPendingSupportItems);
     }, []);
 
     useEffect(() => {
@@ -102,13 +104,17 @@ export default function Dashboard() {
             </Card>
 
             <Card title="要対応の一覧">
-                <div className={styles.todoRow}>
-                    <Badge label="未対応" />
-                    <Link to="/admin/support?type=inquiries" className={styles.todoLink}>ログインできないお問い合わせ</Link>
-                </div>
-                <div className={styles.todoRow}>
-                    <Badge label="未対応" />
-                    <Link to="/admin/support?type=reports" className={styles.todoLink}>不適切投稿の通報</Link>
+                <div className={styles.todoList}>
+                    {pendingSupportItems.map((item) => (
+                        <div key={item.id} className={styles.todoRow}>
+                            <Badge label={item.status} />
+                            <Link to={item.to} className={styles.todoLink}>{item.title}</Link>
+                            <span className={styles.todoTime}>{item.createdAt}</span>
+                        </div>
+                    ))}
+                    {pendingSupportItems.length === 0 && (
+                        <p className={styles.todoEmpty}>未対応の項目はありません</p>
+                    )}
                 </div>
             </Card>
         </AdminLayout>
