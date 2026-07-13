@@ -9,8 +9,8 @@ import styles from './Dashboard.module.css';
 const ACTIVITY_LINKS = {
     user: '/admin/users',
     group: '/admin/groups',
-    inquiry: '/admin/inquiries',
-    report: '/admin/reports',
+    inquiry: '/admin/support?type=inquiries',
+    report: '/admin/support?type=reports',
     notice: '/admin/notices',
 };
 
@@ -104,11 +104,11 @@ export default function Dashboard() {
             <Card title="要対応の一覧">
                 <div className={styles.todoRow}>
                     <Badge label="未対応" />
-                    <Link to="/admin/inquiries" className={styles.todoLink}>ログインできないお問い合わせ</Link>
+                    <Link to="/admin/support?type=inquiries" className={styles.todoLink}>ログインできないお問い合わせ</Link>
                 </div>
                 <div className={styles.todoRow}>
                     <Badge label="未対応" />
-                    <Link to="/admin/reports" className={styles.todoLink}>不適切投稿の通報</Link>
+                    <Link to="/admin/support?type=reports" className={styles.todoLink}>不適切投稿の通報</Link>
                 </div>
             </Card>
         </AdminLayout>

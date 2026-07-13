@@ -33,7 +33,7 @@ export default function InquiryDetail() {
 
     if (!inquiry) {
         return (
-            <AdminLayout title="お問い合わせ詳細" back>
+            <AdminLayout title="お問い合わせ詳細" back backTo="/admin/support?type=inquiries">
                 <EmptyState message="お問い合わせが見つかりません" />
             </AdminLayout>
         );
@@ -59,7 +59,7 @@ export default function InquiryDetail() {
     };
 
     return (
-        <AdminLayout title="お問い合わせ詳細" back>
+        <AdminLayout title="お問い合わせ詳細" back backTo="/admin/support?type=inquiries">
             <div className={styles.detailHead}>
                 <Badge label={inquiry.status} />
                 <span className={styles.detailTitle}>{inquiry.title}</span>
