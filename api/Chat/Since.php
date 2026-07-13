@@ -5,12 +5,44 @@ session_start();
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Groups/S3Common.php";
 
 function respond(array $payload, int $status = 200): void
 {
     http_response_code($status);
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
+}
+
+// users.icon_url のS3キーを署名付きURLへ変換（Messages.phpと同じ処理）
+function resolveIconUrl(?string $iconValue): ?string
+{
+    static $initialized = false, $s3 = null, $aws = null, $cache = [];
+
+    $iconValue = trim((string) $iconValue);
+    if ($iconValue === "") return null;
+
+    if (strpos($iconValue, "http://") === 0 || strpos($iconValue, "https://") === 0) {
+        $path = parse_url($iconValue, PHP_URL_PATH);
+        if (!$path) return null;
+        $iconValue = rawurldecode($path);
+    }
+
+    $key = ltrim($iconValue, "/");
+    if ($key === "") return null;
+    if (array_key_exists($key, $cache)) return $cache[$key];
+
+    if (!$initialized) {
+        $initialized = true;
+        try {
+            $aws = loadAwsConfig();
+            $s3 = $aws ? createS3Client($aws) : null;
+        } catch (Throwable $error) {
+            $s3 = null;
+        }
+    }
+
+    return $cache[$key] = ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $key) : null;
 }
 
 function firstCharacter(string $value): string
@@ -104,6 +136,7 @@ try {
     while ($row = $msgStmt->fetch(PDO::FETCH_ASSOC)) {
         $mid        = (int) $row["message_id"];
         $senderName = $row["sender_name"] ?? "Unknown user";
+        $senderIconUrl = resolveIconUrl($row["sender_icon_url"]);
         if ($mid > $lastId) $lastId = $mid;
 
         $messages[] = [
@@ -114,8 +147,8 @@ try {
             "sender"          => $senderName,
             "sender_name"     => $senderName,
             "senderName"      => $senderName,
-            "avatar"          => $row["sender_icon_url"] ?: firstCharacter($senderName),
-            "sender_icon_url" => $row["sender_icon_url"],
+            "avatar"          => $senderIconUrl ?: firstCharacter($senderName),
+            "sender_icon_url" => $senderIconUrl,
             "text"            => $row["body"],
             "body"            => $row["body"],
             "image_url"       => $row["image_url"],

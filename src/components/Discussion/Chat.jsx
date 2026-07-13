@@ -5,6 +5,11 @@ import "./Chat.css";
 const chatApiBase = `${import.meta.env.BASE_URL}api/Chat`;
 const pollingIntervalMs = 3000;
 
+// avatarが画像URLかどうか判定（URLでなければ頭文字テキストとして表示）
+function isImageAvatar(value) {
+    return typeof value === "string" && (/^(https?:)?\/\//.test(value) || value.startsWith("/"));
+}
+
 async function parseApiResponse(response) {
     const data = await response.json().catch(() => null);
 
@@ -49,10 +54,10 @@ function Chat({ active }) {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [notice, setNotice] = useState("");
-    const messageListRef    = useRef(null);
-    const textareaRef       = useRef(null);
-    const pollingRef        = useRef(false);
-    const lastMessageIdRef  = useRef(0);   // 差分ポーリング用
+    const messageListRef = useRef(null);
+    const textareaRef = useRef(null);
+    const pollingRef = useRef(false);
+    const lastMessageIdRef = useRef(0);   // 差分ポーリング用
 
     const applyReadStatuses = useCallback((reads) => {
         setMessages((currentMessages) => applyReadStatusesToMessages(currentMessages, reads));
@@ -151,7 +156,7 @@ function Chat({ active }) {
             const newMax = data.messages.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
             if (newMax > lastMessageIdRef.current) lastMessageIdRef.current = newMax;
 
-            await markMessagesAsRead(chatId).catch(() => {});
+            await markMessagesAsRead(chatId).catch(() => { });
         } catch {
             // silent
         }
@@ -199,7 +204,16 @@ function Chat({ active }) {
                             {!message.isMine && (
                                 <div className="userHeader">
                                     <div className="avatar">
-                                        {message.avatar}
+                                        {isImageAvatar(message.avatar) ? (
+                                            <img
+                                                src={message.avatar}
+                                                alt={message.sender}
+                                                className="avatarImage"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            message.avatar
+                                        )}
                                     </div>
                                     <span className="senderName">
                                         {message.sender}
