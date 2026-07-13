@@ -89,9 +89,10 @@ function Chat({ active }) {
         }
 
         try {
-            const query = chatId
-                ? `chat_id=${encodeURIComponent(chatId)}`
-                : `group_id=${encodeURIComponent(groupId)}`;
+            // 初回表示はgroup_idからチャットを取得する。
+            // chatIdの更新でloadMessagesが作り直されることを防ぐ。
+            const query = `group_id=${encodeURIComponent(groupId)}`;
+            
             const response = await fetch(`${chatApiBase}/Messages.php?${query}`, {
                 credentials: "include",
                 signal,
@@ -122,7 +123,7 @@ function Chat({ active }) {
                 setLoading(false);
             }
         }
-    }, [chatId, groupId, markMessagesAsRead]);
+    }, [groupId, markMessagesAsRead]);
 
     useEffect(() => {
         if (!active) {

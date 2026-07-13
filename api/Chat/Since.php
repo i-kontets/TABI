@@ -7,6 +7,25 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once __DIR__ . "/../config/db.php";
 require_once __DIR__ . "/../Groups/S3Common.php";
 
+if (!isset($_SESSION["user_id"])) {
+    http_response_code(401);
+
+    echo json_encode([
+        "success" => false,
+        "message" => "ログインが必要です"
+    ]);
+
+    exit;
+}
+
+// 必要なセッション値をローカル変数へコピー
+$userId = (int) $_SESSION["user_id"];
+
+// この先でセッションを書き換えないため、すぐにロックを解除
+session_write_close();
+
+// ここから新着待機やDB処理を行う
+
 function respond(array $payload, int $status = 200): void
 {
     http_response_code($status);
@@ -70,11 +89,6 @@ if ($_SERVER["REQUEST_METHOD"] !== "GET") {
     respond(["success" => false, "message" => "Use GET."], 405);
 }
 
-if (!isset($_SESSION["user_id"])) {
-    respond(["success" => false, "message" => "Login required."], 401);
-}
-
-$userId  = (int) $_SESSION["user_id"];
 $chatId  = filter_var($_GET["chat_id"]  ?? null, FILTER_VALIDATE_INT);
 $afterId = filter_var($_GET["after_id"] ?? 0,    FILTER_VALIDATE_INT);
 
