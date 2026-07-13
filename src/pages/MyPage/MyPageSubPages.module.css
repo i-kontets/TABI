@@ -180,12 +180,6 @@
     padding: 2px 0;
 }
 
-.avatarPicker :global(.preview),
-.avatarPicker :global(.editorCrop) {
-    aspect-ratio: 1 / 1;
-    border-radius: 50%;
-}
-
 .divider {
     height: 1px;
     background: #eef1f6;
@@ -562,16 +556,9 @@
 .userEditAvatarRow :global(.preview) {
     width: 78px;
     height: 78px;
-    aspect-ratio: 1 / 1;
-    border-radius: 50%;
     border: 0;
     background: #eef2ff;
     box-shadow: inset 0 0 0 1px #e3e8f4;
-}
-
-.userEditAvatarRow :global(.editorCrop) {
-    aspect-ratio: 1 / 1;
-    border-radius: 50%;
 }
 
 .userEditAvatarRow :global(.button) {

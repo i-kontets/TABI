@@ -34,6 +34,12 @@
     overflow: hidden;
 }
 
+.previewCircle {
+    width: 78px;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+}
+
 .previewImg {
     width: 100%;
     height: 100%;
@@ -137,6 +143,11 @@
     background: #000;
     touch-action: none;
     cursor: grab;
+}
+
+.editorCropCircle {
+    aspect-ratio: 1 / 1 !important;
+    border-radius: 50%;
 }
 
 .editorImg {
