@@ -1,18 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { SearchBar, Badge, Avatar, Pagination, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchUsers } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Users.module.css';
+
+const REALTIME_EVENTS = ['admin:user_created', 'admin:user_updated', 'admin:user_deleted'];
 
 export default function UserList() {
     const [query, setQuery] = useState('');
     const [page, setPage] = useState(1);
     const [result, setResult] = useState(null);
 
-    useEffect(() => {
+    const loadUsers = useCallback(() => {
         fetchUsers({ query, page }).then(setResult);
     }, [query, page]);
+
+    useEffect(() => {
+        loadUsers();
+    }, [loadUsers]);
+
+    useAdminRealtimeRefresh(REALTIME_EVENTS, loadUsers);
 
     return (
         <AdminLayout title="ユーザー一覧">

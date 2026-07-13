@@ -8,11 +8,17 @@ function handle_admin_delete(PDO $pdo, string $resource, $id): void
     if ($resource === "notices") {
         // お知らせは削除フラグを立てる方式です。
         $pdo->exec("UPDATE admin_notices SET deleted_at = NOW() WHERE notice_id = {$numericId}");
+        sendRealtimeEvent("admin:global", "notice_deleted", [
+            "notice_id" => $numericId,
+        ]);
         respond(true);
     }
     if ($resource === "spots") {
         // スポットも同じく論理削除です。
         $pdo->exec("UPDATE admin_spots SET deleted_at = NOW() WHERE spot_id = {$numericId}");
+        sendRealtimeEvent("admin:global", "spot_deleted", [
+            "spot_id" => $numericId,
+        ]);
         respond(true);
     }
 }

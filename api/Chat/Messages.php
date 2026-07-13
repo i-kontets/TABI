@@ -297,7 +297,14 @@ function fetchMessages(PDO $pdo, int $chatId, int $userId): array
 
     while ($message = $messageStmt->fetch(PDO::FETCH_ASSOC)) {
         $senderName = $message["sender_name"] ?? "Unknown user";
-        $senderIconUrl = resolveIconUrl($message["sender_icon_url"]);
+
+        // DBに保存されている元のS3オブジェクトキー
+        $senderIconKey = trim(
+            (string) ($message["sender_icon_url"] ?? "")
+        );
+
+        // S3署名付きURLへ変換
+        $senderIconUrl = resolveIconUrl($senderIconKey);
 
         $messages[] = [
             "id" => (int) $message["message_id"],
@@ -307,8 +314,13 @@ function fetchMessages(PDO $pdo, int $chatId, int $userId): array
             "sender" => $senderName,
             "sender_name" => $senderName,
             "senderName" => $senderName,
+
             "avatar" => $senderIconUrl ?: firstCharacter($senderName),
             "sender_icon_url" => $senderIconUrl,
+
+            // 原因確認用
+            "sender_icon_key_debug" => $senderIconKey,
+
             "text" => $message["body"],
             "body" => $message["body"],
             "image_url" => $message["image_url"],
@@ -342,13 +354,55 @@ if (!isset($_SESSION["user_id"])) {
 $userId = (int) $_SESSION["user_id"];
 
 try {
-    $chatId = resolveChatId($pdo, $userId, $_GET["chat_id"] ?? null, $_GET["group_id"] ?? null);
+    $chatId = resolveChatId(
+        $pdo,
+        $userId,
+        $_GET["chat_id"] ?? null,
+        $_GET["group_id"] ?? null
+    );
+
     ensureMember($pdo, $chatId, $userId);
 
     $contact = fetchContact($pdo, $chatId);
 
+    /*
+     * 原因調査用
+     * Webアプリが実際に接続しているDBの情報を取得する
+     */
+    $debugDbInfo = $pdo->query("
+        SELECT
+            DATABASE() AS database_name,
+            @@hostname AS database_hostname,
+            @@port AS database_port
+    ")->fetch(PDO::FETCH_ASSOC);
+
+    /*
+     * Webアプリが参照しているusersテーブルから、
+     * user_id = 3 のデータを直接取得する
+     */
+    $debugUserStmt = $pdo->prepare("
+        SELECT
+            user_id,
+            name,
+            icon_url,
+            HEX(icon_url) AS icon_url_hex
+        FROM users
+        WHERE user_id = :user_id
+        LIMIT 1
+    ");
+
+    $debugUserStmt->bindValue(":user_id", 3, PDO::PARAM_INT);
+    $debugUserStmt->execute();
+
+    $debugUser3 = $debugUserStmt->fetch(PDO::FETCH_ASSOC);
+
     respond([
         "success" => true,
+
+        // 原因調査用：確認が終わったら削除する
+        "debug_db_info" => $debugDbInfo,
+        "debug_user_3" => $debugUser3,
+
         "chat_id" => $chatId,
         "member_count" => (int) ($contact["memberCount"] ?? 0),
         "contact" => $contact,

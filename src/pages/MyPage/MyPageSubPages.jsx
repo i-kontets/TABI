@@ -81,6 +81,24 @@ function emptyUser() {
     };
 }
 
+function formatPhoneNumber(value) {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+
+    if (digits.length <= 3) {
+        return digits;
+    }
+
+    if (digits.length <= 7) {
+        return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    }
+
+    if (digits.length <= 11) {
+        return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
+    }
+
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
+}
+
 async function parseJson(response) {
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.success === false) {
@@ -291,10 +309,14 @@ export function UserEditPage() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        setForm(currentUser);
+        setForm({
+            ...currentUser,
+            phone_number: formatPhoneNumber(currentUser.phone_number || ''),
+        });
     }, [user]);
 
     const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+    const updatePhoneNumber = (value) => update('phone_number', formatPhoneNumber(value));
 
     const handleSave = async () => {
         setSaving(true);
@@ -305,7 +327,7 @@ export function UserEditPage() {
             if (selectedIcon?.file) {
                 iconUrl = await uploadUserIcon(selectedIcon.file);
             }
-            const payload = { ...form, icon_url: iconUrl };
+            const payload = { ...form, icon_url: iconUrl, phone_number: formatPhoneNumber(form.phone_number || '') };
             const data = await saveProfile(payload);
             const next = normalizeUser(data.user || payload);
             setUser(next);
@@ -348,7 +370,7 @@ export function UserEditPage() {
                             type="tel"
                             inputMode="tel"
                             value={form.phone_number || ''}
-                            onChange={(event) => update('phone_number', event.target.value)}
+                            onChange={(event) => updatePhoneNumber(event.target.value)}
                             placeholder="例）09012345678"
                         />
                     </Field>

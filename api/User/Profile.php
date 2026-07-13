@@ -72,6 +72,30 @@ function fetchUserProfile(PDO $pdo, int $userId): array
     $user["icon_url"] = resolveUserIconUrl($user["icon_url"]);
     return $user;
 }
+
+function formatPhoneNumber(?string $value): string
+{
+    $digits = substr(preg_replace("/\D/", "", (string) $value) ?? "", 0, 11);
+
+    if ($digits === null || $digits === "") {
+        return "";
+    }
+
+    if (strlen($digits) <= 3) {
+        return $digits;
+    }
+
+    if (strlen($digits) <= 7) {
+        return substr($digits, 0, 3) . "-" . substr($digits, 3);
+    }
+
+    if (strlen($digits) <= 11) {
+        return substr($digits, 0, 3) . "-" . substr($digits, 3, 4) . "-" . substr($digits, 7, 4);
+    }
+
+    return substr($digits, 0, 3) . "-" . substr($digits, 3, 4) . "-" . substr($digits, 7, 4);
+}
+
 try {
     if ($_SERVER["REQUEST_METHOD"] === "GET") {
         respond(["success" => true, "user" => fetchUserProfile($pdo, $userId)]);
@@ -98,7 +122,7 @@ try {
     $gender = trim((string) ($input["gender"] ?? ""));
     $country = trim((string) ($input["country_code"] ?? ""));
     $timezone = trim((string) ($input["timezone"] ?? "Asia/Tokyo"));
-    $phoneNumber = trim((string) ($input["phone_number"] ?? ""));
+    $phoneNumber = formatPhoneNumber($input["phone_number"] ?? "");
     $hasPhoneNumber = userColumnExists($pdo, "phone_number");
     $now = (new DateTimeImmutable("now"))->format("Y-m-d H:i:s");
 

@@ -3,6 +3,8 @@ session_start();
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Admin/includes/config.php";
+require_once __DIR__ . "/../Admin/services/realtime.php";
 
 function respond(array $payload, int $status = 200): void
 {
@@ -14,6 +16,7 @@ function respond(array $payload, int $status = 200): void
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     respond(["success" => false, "message" => "POSTで送信してください。"], 405);
 }
+
 if (!isset($_SESSION["user_id"])) {
     respond(["success" => false, "message" => "ログインが必要です。"], 401);
 }
@@ -46,7 +49,17 @@ try {
     $stmt->bindValue(":updated_at", $now);
     $stmt->execute();
 
-    respond(["success" => true, "message" => "お問い合わせを送信しました。", "public_id" => $publicId]);
+    $inquiryId = (int) $pdo->lastInsertId();
+    sendRealtimeEvent("admin:global", "inquiry_created", [
+        "id" => $inquiryId,
+        "public_id" => $publicId,
+    ]);
+
+    respond([
+        "success" => true,
+        "message" => "お問い合わせを送信しました。",
+        "public_id" => $publicId,
+    ]);
 } catch (Throwable $error) {
     respond(["success" => false, "message" => "お問い合わせの保存に失敗しました。"], 500);
 }
