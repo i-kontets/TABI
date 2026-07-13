@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import styles from './Ui.module.css';
 
 /* ============ ステータスバッジ ============ */
@@ -206,29 +207,83 @@ export function Button({ children, variant = 'primary', onClick, type = 'button'
 
 /* ============ 折れ線グラフ (SVG) ============ */
 
-export function LineChart({ data, labels = [], height = 120 }) {
+export function LineChart({ data, labels = [], height = 120, padding }) {
+    const [activeIndex, setActiveIndex] = useState(null);
     const w = 320;
     const h = height;
-    const pad = 8;
+    const pad = {
+        top: padding?.top ?? 8,
+        right: padding?.right ?? 8,
+        bottom: padding?.bottom ?? 8,
+        left: padding?.left ?? 8,
+    };
     const max = Math.max(...data, 1);
     const min = Math.min(...data, 0);
     const range = max - min || 1;
-    const step = (w - pad * 2) / (data.length - 1 || 1);
+    const step = (w - pad.left - pad.right) / (data.length - 1 || 1);
     const points = data.map((v, i) => ({
-        x: pad + i * step,
-        y: pad + (h - pad * 2) * (1 - (v - min) / range),
+        x: pad.left + i * step,
+        y: pad.top + (h - pad.top - pad.bottom) * (1 - (v - min) / range),
     }));
     const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+    const activePoint = activeIndex == null ? null : points[activeIndex];
+    const activeValue = activeIndex == null ? null : data[activeIndex];
+    const activeLabel = activeValue == null ? '' : `${activeValue.toLocaleString()}人`;
+    const tooltipX = activePoint ? Math.min(Math.max(activePoint.x, 24), w - 24) : 0;
+    const tooltipTextY = activePoint ? Math.max(18, activePoint.y - 14) : 0;
 
     return (
         <div className={styles.chartWrap}>
             <svg viewBox={`0 0 ${w} ${h + 16}`} className={styles.chart}>
                 <path d={path} fill="none" stroke="#2f6ceb" strokeWidth="2" strokeLinejoin="round" />
                 {points.map((p, i) => (
-                    <circle key={i} cx={p.x} cy={p.y} r="3" fill="#2f6ceb" />
+                    <g key={i}>
+                        <circle cx={p.x} cy={p.y} r={activeIndex === i ? 4 : 3} fill="#2f6ceb" />
+                        <circle
+                            cx={p.x}
+                            cy={p.y}
+                            r="12"
+                            fill="transparent"
+                            className={styles.chartPointHit}
+                            role="button"
+                            tabIndex="0"
+                            aria-label={`${labels[i] ?? ''} ${data[i]}人`}
+                            onClick={() => setActiveIndex(i)}
+                            onPointerEnter={() => setActiveIndex(i)}
+                            onFocus={() => setActiveIndex(i)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    setActiveIndex(i);
+                                }
+                            }}
+                        />
+                    </g>
                 ))}
+                {activePoint && (
+                    <g pointerEvents="none">
+                        <rect
+                            x={tooltipX - 18}
+                            y={tooltipTextY - 16}
+                            width="36"
+                            height="18"
+                            rx="5"
+                            fill="#1f2937"
+                        />
+                        <text
+                            x={tooltipX}
+                            y={tooltipTextY - 3}
+                            textAnchor="middle"
+                            fontSize="10"
+                            fontWeight="700"
+                            fill="#fff"
+                        >
+                            {activeLabel}
+                        </text>
+                    </g>
+                )}
                 {labels.map((l, i) => (
-                    <text key={i} x={pad + i * step} y={h + 12} textAnchor="middle" fontSize="9" fill="#8a94a6">
+                    <text key={i} x={pad.left + i * step} y={h + 12} textAnchor="middle" fontSize="9" fill="#8a94a6">
                         {l}
                     </text>
                 ))}
@@ -242,10 +297,21 @@ export function LineChart({ data, labels = [], height = 120 }) {
 const DONUT_COLORS = ['#2f6ceb', '#5b8def', '#8fb3f5', '#c3d5fa', '#e8f0fe'];
 
 export function DonutChart({ items, centerLabel, centerValue }) {
+    const [activeIndex, setActiveIndex] = useState(null);
     const total = items.reduce((a, it) => a + it.value, 0) || 1;
     const r = 40;
     const c = 2 * Math.PI * r;
     let offset = 0;
+    const activeItem = activeIndex == null ? null : items[activeIndex];
+    const activeStart = activeIndex == null ? 0 : items.slice(0, activeIndex).reduce((sum, item) => sum + item.value / total, 0);
+    const activeFrac = activeItem ? activeItem.value / total : 0;
+    const activeAngle = -Math.PI / 2 + (activeStart + activeFrac / 2) * Math.PI * 2;
+    const tooltipX = activeItem ? Math.min(Math.max(60 + Math.cos(activeAngle) * 44, 22), 98) : 60;
+    const tooltipY = activeItem ? Math.min(Math.max(60 + Math.sin(activeAngle) * 44, 24), 96) : 24;
+    const activeLabel = activeItem ? `${activeItem.value.toLocaleString()}人` : "";
+    const activePercent = activeItem ? Math.round((activeItem.value / total) * 100) : null;
+    const displayLabel = activeItem ? activeItem.label : centerLabel;
+    const displayValue = activeItem ? `${activeItem.value.toLocaleString()}人 / ${activePercent}%` : centerValue;
 
     return (
         <div className={styles.donutRow}>
@@ -258,21 +324,47 @@ export function DonutChart({ items, centerLabel, centerValue }) {
                             cx="60" cy="60" r={r}
                             fill="none"
                             stroke={DONUT_COLORS[i % DONUT_COLORS.length]}
-                            strokeWidth="16"
+                            strokeWidth={activeIndex === i ? 18 : 16}
                             strokeDasharray={`${frac * c} ${c}`}
                             strokeDashoffset={-offset * c}
                             transform="rotate(-90 60 60)"
+                            className={styles.donutSegment}
+                            role="button"
+                            tabIndex="0"
+                            aria-label={`${it.label} ${it.value}人 ${Math.round(frac * 100)}%`}
+                            onClick={() => setActiveIndex(i)}
+                            onPointerEnter={() => setActiveIndex(i)}
+                            onFocus={() => setActiveIndex(i)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    setActiveIndex(i);
+                                }
+                            }}
                         />
                     );
                     offset += frac;
                     return el;
                 })}
+                {activeItem && (
+                    <g pointerEvents="none">
+                        <rect x={tooltipX - 18} y={tooltipY - 16} width="36" height="18" rx="5" fill="#1f2937" />
+                        <text x={tooltipX} y={tooltipY - 3} textAnchor="middle" fontSize="10" fontWeight="700" fill="#fff">
+                            {activeLabel}
+                        </text>
+                    </g>
+                )}
                 <text x="60" y="56" textAnchor="middle" fontSize="9" fill="#8a94a6">{centerLabel}</text>
                 <text x="60" y="72" textAnchor="middle" fontSize="13" fontWeight="700" fill="#1f2937">{centerValue}</text>
             </svg>
             <ul className={styles.donutLegend}>
                 {items.map((it, i) => (
-                    <li key={it.label}>
+                    <li
+                        key={it.label}
+                        className={styles.donutLegendItem}
+                        onClick={() => setActiveIndex(i)}
+                        onPointerEnter={() => setActiveIndex(i)}
+                    >
                         <span className={styles.legendDot} style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }} />
                         {it.label}
                         <span className={styles.legendVal}>{Math.round((it.value / total) * 100)}%</span>

@@ -194,33 +194,56 @@ function Chat({ active }) {
 
     const chatContent = useMemo(() => {
         return messages.map((message, index) => {
-            const showDate = index === 0 || message.date !== messages[index - 1].date;
-            const readLabel = memberCount > 2 ? `既読 ${message.readCount}` : "既読";
+            const showDate =
+                index === 0 ||
+                message.date !== messages[index - 1].date;
+
+            const readLabel =
+                memberCount > 2
+                    ? `既読 ${message.readCount}`
+                    : "既読";
+
+            // APIから署名付きURLが返っていれば優先する
+            // URLがなければavatar、さらに無ければ名前の先頭文字を使う
+            const avatarValue =
+                message.sender_icon_url ||
+                message.avatar ||
+                message.sender?.slice(0, 1) ||
+                "?";
 
             return (
                 <div className="chatBlock" key={message.id}>
-                    {showDate && <div className="dateChip">{message.date}</div>}
-                    <article className={`messageRow ${message.isMine ? "mine" : ""}`}>
+                    {showDate && (
+                        <div className="dateChip">
+                            {message.date}
+                        </div>
+                    )}
+
+                    <article
+                        className={`messageRow ${message.isMine ? "mine" : ""}`}
+                    >
                         <div className="messageStack">
                             {!message.isMine && (
                                 <div className="userHeader">
                                     <div className="avatar">
-                                        {isImageAvatar(message.avatar) ? (
+                                        {isImageAvatar(avatarValue) ? (
                                             <img
-                                                src={message.avatar}
-                                                alt={message.sender}
+                                                src={avatarValue}
+                                                alt={`${message.sender}のアイコン`}
                                                 className="avatarImage"
                                                 loading="lazy"
                                             />
                                         ) : (
-                                            message.avatar
+                                            avatarValue
                                         )}
                                     </div>
+
                                     <span className="senderName">
                                         {message.sender}
                                     </span>
                                 </div>
                             )}
+
                             <div className="bubbleLine">
                                 {message.isMine && (
                                     <div className="messageMeta mineMeta">
@@ -230,19 +253,32 @@ function Chat({ active }) {
                                         <time>{message.time}</time>
                                     </div>
                                 )}
+
                                 <div className="bubble">
                                     {message.image_url ? (
                                         <img
                                             src={message.image_url}
                                             alt="送信画像"
-                                            style={{ maxWidth: '200px', maxHeight: '260px', borderRadius: '8px', display: 'block', cursor: 'pointer' }}
+                                            style={{
+                                                maxWidth: "200px",
+                                                maxHeight: "260px",
+                                                borderRadius: "8px",
+                                                display: "block",
+                                                cursor: "pointer",
+                                            }}
                                             loading="lazy"
-                                            onClick={() => window.open(message.image_url, '_blank')}
+                                            onClick={() =>
+                                                window.open(
+                                                    message.image_url,
+                                                    "_blank",
+                                                )
+                                            }
                                         />
                                     ) : (
                                         message.text
                                     )}
                                 </div>
+
                                 {!message.isMine && (
                                     <div className="messageMeta">
                                         <time>{message.time}</time>

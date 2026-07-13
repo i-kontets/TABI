@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { SearchBar, Tabs, Avatar, Badge, Pagination, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchPosts } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Posts.module.css';
 
 const TABS = ['すべて', '旅行先候補', '宿泊先候補', 'その他'];
@@ -13,9 +14,15 @@ export default function PostList() {
     const [page, setPage] = useState(1);
     const [result, setResult] = useState(null);
 
-    useEffect(() => {
+    const loadPosts = useCallback(() => {
         fetchPosts({ query, category: tab, page }).then(setResult);
     }, [query, tab, page]);
+
+    useEffect(() => {
+        loadPosts();
+    }, [loadPosts]);
+
+    useAdminRealtimeRefresh(['admin:post_created', 'admin:post_updated', 'admin:post_deleted'], loadPosts);
 
     return (
         <AdminLayout title="話し合い・投稿一覧">

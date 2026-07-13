@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { SearchBar, Badge, Pagination, EmptyState, Button } from '../../../components/Admin/ui/Ui';
 import { fetchSpots } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Spots.module.css';
 
 const THUMB_COLORS = ['#8fb3f5', '#7fc9a8', '#e8c97f', '#b79fe0'];
+const REALTIME_EVENTS = ['admin:spot_created', 'admin:spot_updated', 'admin:spot_deleted'];
 
 export default function SpotList() {
     const navigate = useNavigate();
@@ -13,9 +15,15 @@ export default function SpotList() {
     const [page, setPage] = useState(1);
     const [result, setResult] = useState(null);
 
-    useEffect(() => {
+    const loadSpots = useCallback(() => {
         fetchSpots({ query, page }).then(setResult);
     }, [query, page]);
+
+    useEffect(() => {
+        loadSpots();
+    }, [loadSpots]);
+
+    useAdminRealtimeRefresh(REALTIME_EVENTS, loadSpots);
 
     return (
         <AdminLayout

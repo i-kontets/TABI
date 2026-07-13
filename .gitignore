@@ -40,6 +40,7 @@ composer.phar
 *.sw?
 
 api/config/env.php
+*env.php
 api/config/realtime.php
 
 # Android / Gradle

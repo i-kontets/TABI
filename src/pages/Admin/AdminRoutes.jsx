@@ -17,7 +17,7 @@ import SpotList from './Spots/SpotList';
 import SpotForm from './Spots/SpotForm';
 import Analytics from './Analytics/Analytics';
 import Managers from './Managers/Managers';
-// import Logs from './Logs/Logs';
+import Logs from './Logs/Logs';
 import Settings from './Settings/Settings';
 import AdminRealtimeListener from "./Realtime/AdminRealtimeListener";
 
