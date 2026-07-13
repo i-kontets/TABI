@@ -7,7 +7,19 @@ import styles from './ScheduleTimeAxis.module.css';
 const GROUP_COLORS = {
     '全員': 'var(--sub-color)',
 };
-const MY_MEMBER_NAME = '自分';
+const MY_USER_ID = 1;
+
+// これはローカルで作成する際に使用するtestデータです。
+// もしDB接続後も残っている場合は一応小野に確認取ってくれると嬉しいです。
+const users = [
+    { userId: 1, name: '自分' },
+    { userId: 2, name: '田中' },
+    { userId: 3, name: '鈴木' },
+    { userId: 4, name: '山本' },
+    { userId: 5, name: '中村' },
+    { userId: 6, name: '高橋' },
+    { userId: 7, name: '佐藤' },
+];
 
 function getHourSlot(time) {
     return `${time.slice(0, 2)}:00`;
@@ -83,47 +95,48 @@ const generateHours = (overrides = {}) => {
 const scheduleData = {
     day1: generateHours({
         '09:00': [
-            { group: '全員', title: 'ホテル出発', endTime: '09:30' },
+            { id: 1, group: '全員', title: 'ホテル出発', endTime: '09:30', userIds: null },
         ],
         '10:10': [
-            { group: '全員', title: 'ホテル出発', endTime: '10:30' },
-            { group: '全員', title: 'ホテル出発', endTime: '10:30' },
-            { group: '全員', title: 'ホテル出発', endTime: '10:30' },
+            { id: 2, group: '全員', title: 'ホテル出発', endTime: '10:30', userIds: null },
+            { id: 3, group: '全員', title: 'ホテル出発', endTime: '10:30', userIds: null },
+            { id: 4, group: '全員', title: 'ホテル出発', endTime: '10:30', userIds: null },
         ],
         '10:20': [
-            { group: '全員', title: 'ホテル出発', endTime: '10:30' },
+            { id: 5, group: '全員', title: 'ホテル出発', endTime: '10:30', userIds: null },
         ],
         '10:00': [
-            { group: null,title: 'コテージ到着', endTime: '10:20', members: ['自分', '田中', '鈴木', '山本', '中村', '高橋'] },
-            { title: '買い出し', endTime: '10:40', members: ['佐藤', '自分'] },
-            { title: '買い出し', endTime: '10:50', members: ['佐藤'] },
-            { title: '買い出し', endTime: '11:00', members: ['佐藤'] },
-            { title: '買い出し', endTime: '11:20', members: ['佐藤'] },
+            { id: 6, group: null, title: 'コテージ到着', endTime: '10:20', userIds: [1, 2, 3, 4, 5, 6] },
+            { id: 7, group: null, title: '買い出し', endTime: '10:40', userIds: [7, 1] },
+            { id: 8, group: null, title: '買い出し', endTime: '10:50', userIds: [7] },
+            { id: 9, group: null, title: '買い出し', endTime: '11:00', userIds: [7] },
+            { id: 10, group: null, title: '買い出し', endTime: '11:20', userIds: [7] },
         ],
         '11:00': [
-            { group: '全員', title: '昼食・休憩', endTime: '11:10' },
-            { group: '全員', title: '昼食・休憩', endTime: '12:00' },
-            { group: '全員', title: '昼食・休憩', endTime: '12:00' },
+            { id: 11, group: '全員', title: '昼食・休憩', endTime: '11:10', userIds: null },
+            { id: 12, group: '全員', title: '昼食・休憩', endTime: '12:00', userIds: null },
+            { id: 13, group: '全員', title: '昼食・休憩', endTime: '12:00', userIds: null },
         ],
         '12:00': [
-            { group: '全員', title: '昼食・休憩', endTime: '13:00' },
-            { group: '全員', title: '昼食・休憩', endTime: '13:00' },
-            { group: '全員', title: '昼食・休憩', endTime: '12:30' },
+            { id: 14, group: '全員', title: '昼食・休憩', endTime: '13:00', userIds: null },
+            { id: 15, group: '全員', title: '昼食・休憩', endTime: '13:00', userIds: null },
+            { id: 16, group: '全員', title: '昼食・休憩', endTime: '12:30', userIds: null },
         ],
         '14:00': [
-            { group: '全員', title: '昼食・休憩', endTime: '14:20' },
+            { id: 17, group: '全員', title: '昼食・休憩', endTime: '14:20', userIds: null },
         ],
         '14:20': [
-            { group: '全員', title: '昼食・休憩', endTime: '15:00' },
+            { id: 18, group: '全員', title: '昼食・休憩', endTime: '15:00', userIds: null },
         ],
         '15:20': [
-            { group: '全員', title: '昼食・休憩', endTime: '16:00' },
+            { id: 19, group: '全員', title: '昼食・休憩', endTime: '16:00', userIds: null },
         ],
     }),
     day2: generateHours(),
     day3: generateHours(),
     day4: generateHours(),
     day5: generateHours(),
+    day6: generateHours(),
 };
 
 const SLOT_HEIGHT = 104;
@@ -171,6 +184,10 @@ function getMemberInitial(memberName) {
     return memberName.slice(0, 1);
 }
 
+function getUserName(userId) {
+    return users.find((user) => user.userId === userId)?.name ?? `ユーザー${userId}`;
+}
+
 function getMemberAvatarsWidth(visibleCount, hasMore) {
     if (visibleCount === 0) {
         return hasMore ? MEMBER_AVATAR_SIZE : 0;
@@ -206,7 +223,7 @@ function filterItemsByView(items, viewMode) {
     return items.map((item) => ({
         ...item,
         events: item.events.filter((event) => (
-            event.group === '全員' || event.members?.includes(MY_MEMBER_NAME)
+            event.group === '全員' || event.userIds?.includes(MY_USER_ID)
         )),
     }));
 }
@@ -223,7 +240,7 @@ function filterVisibleItems(items) {
     ));
 }
 
-function MemberAvatars({ members = [] }) {
+function MemberAvatars({ userIds = [] }) {
     const containerRef = useRef(null);
     const [availableWidth, setAvailableWidth] = useState(null);
 
@@ -254,21 +271,26 @@ function MemberAvatars({ members = [] }) {
         return () => observer.disconnect();
     }, []);
 
-    if (members.length === 0) {
+    if (userIds.length === 0) {
         return null;
     }
 
-    const visibleCount = getVisibleMemberCount(members.length, availableWidth);
-    const visibleMembers = members.slice(0, visibleCount);
-    const hiddenCount = members.length - visibleCount;
+    const visibleCount = getVisibleMemberCount(userIds.length, availableWidth);
+    const visibleUserIds = userIds.slice(0, visibleCount);
+    const hiddenCount = userIds.length - visibleCount;
+    const memberNames = userIds.map(getUserName);
 
     return (
-        <span ref={containerRef} className={styles.memberAvatars} aria-label={`参加メンバー: ${members.join('、')}`}>
-            {visibleMembers.map((member, index) => (
-                <span key={`${member}-${index}`} className={styles.memberAvatar} title={member}>
-                    {getMemberInitial(member)}
-                </span>
-            ))}
+        <span ref={containerRef} className={styles.memberAvatars} aria-label={`参加メンバー: ${memberNames.join('、')}`}>
+            {visibleUserIds.map((userId) => {
+                const memberName = getUserName(userId);
+
+                return (
+                    <span key={userId} className={styles.memberAvatar} title={memberName}>
+                        {getMemberInitial(memberName)}
+                    </span>
+                );
+            })}
             {hiddenCount > 0 && (
                 <span className={styles.memberMore}>
                     +{hiddenCount}
@@ -368,7 +390,7 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                                             const eventRunning = isEventRunning(event, now);
 
                                             return (
-                                                <div key={`${event.time}-${i}`} className={styles.scheduleCard}>
+                                                <div key={event.id ?? `${event.time}-${i}`} className={styles.scheduleCard}>
                                                     <div className={styles.cardMeta}>
                                                         {eventRunning && (
                                                             <span className={styles.runningStatus} aria-label="実行中">
@@ -385,7 +407,7 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                                                             </span>
                                                         )}
                                                         {event.group !== '全員' && (
-                                                            <MemberAvatars members={event.members} />
+                                                            <MemberAvatars userIds={event.userIds} />
                                                         )}
                                                     </div>
                                                     <p className={styles.timeRange}>{formatEventTimeRange(event)}</p>

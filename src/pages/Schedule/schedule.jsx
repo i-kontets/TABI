@@ -43,8 +43,8 @@ export default function SchedulePage() {
                             completedTextColor: '#ffffff',
                             inactiveBgColor: otherColor,
                             inactiveTextColor: subColor,
-                            size: '30px',
-                            circleFontSize: '13px',
+                            size: '38px',
+                            circleFontSize: '0',
                             labelFontSize: '12px',
                             borderRadius: '999px',
                             fontWeight: 700,
@@ -54,9 +54,25 @@ export default function SchedulePage() {
                             completedColor: subColor,
                             disabledColor: otherColor,
                             size: 2,
-                            stepSize: '30px',
+                            stepSize: '38px',
                         }}
                     />
+
+                    <div className={styles.stepperDayLayer} style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }} aria-hidden="true">
+                        {days.map((day, index) => {
+                            const isActive = selectedDay === day.id;
+
+                            return (
+                                <span
+                                    key={day.id}
+                                    className={`${styles.stepperDayText} ${isActive ? styles.stepperDayTextActive : ''}`}
+                                >
+                                    <span className={styles.stepperDayLabel}>day</span>
+                                    <span className={styles.stepperDayNumber}>{index + 1}</span>
+                                </span>
+                            );
+                        })}
+                    </div>
 
                     <div className={styles.stepperClickLayer} style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }} aria-label="日付を切り替え">
                         {days.map((day) => (
