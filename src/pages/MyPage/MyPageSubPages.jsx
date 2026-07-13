@@ -268,6 +268,7 @@ export function ProfileEditPage() {
                         value={profilePreviewValue(currentUser, selectedIcon)}
                         onChange={setSelectedIcon}
                         fileName="user-icon.jpg"
+                        circular
                         editorTitle="アイコンを変更"
                         previewAlt="ユーザーアイコン"
                         addLabel="アイコンを変更"
@@ -350,6 +351,7 @@ export function UserEditPage() {
                         value={profilePreviewValue(form, selectedIcon)}
                         onChange={setSelectedIcon}
                         fileName="user-icon.jpg"
+                        circular
                         editorTitle="アイコンを変更"
                         previewAlt="ユーザーアイコン"
                         addLabel="アイコンを変更"
