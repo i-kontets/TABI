@@ -1,50 +1,51 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useContext, useState, useEffect } from "react";
 import { TripContext } from "../../App";
-import BottomNav from '../../components/BottomNav/BottomNav';
-import BtmNav from '../../components/bottomNav/BottomNav';
-import Header from '../../components/header/Header';
-import Modal from '../../components/Modal/Modal';
-import InviteModal from '../../components/Modal/InviteModal';
-import styles from './itinerary.module.css';
-import Edit from '../../assets/icons/edit.svg?react';
-import Group from '../../assets/icons/group.svg?react';
+import BottomNav from "../../components/BottomNav/BottomNav";
+import BtmNav from "../../components/bottomNav/BottomNav";
+import Header from "../../components/header/Header";
+import Modal from "../../components/Modal/Modal";
+import InviteModal from "../../components/Modal/InviteModal";
+import styles from "./itinerary.module.css";
+import Edit from "../../assets/icons/edit.svg?react";
+import Group from "../../assets/icons/group.svg?react";
 
 export default function Itinerary() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const {trip} = useContext(TripContext);
+  const [tripPeriod, setTripPeriod] = useState(null);
+  const { trip } = useContext(TripContext);
 
-  const groupId = searchParams.get("groupId")
+  const groupId = searchParams.get("groupId");
 
   // 招待モーダルの管理状態
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isLiquidationOpen, setIsLiquidationOpen] = useState(false);  
+  const [isLiquidationOpen, setIsLiquidationOpen] = useState(false);
 
   // メンバー情報
   const [members, setMembers] = useState([]);
 
-  // User取得処理
+  // 旅行グループにはいっているメンバーの取得
   useEffect(() => {
     if (!groupId) return;
 
     const fetchMembers = async () => {
       try {
-        const response = await fetch("/TABI/api/Groups/Members.php", {
-  method: "POST",
-  credentials: "include",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    group_id: groupId,
-  }),
-});
+        const response = await fetch("/TABI/api/Auth/Members.php", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            group_id: groupId,
+          }),
+        });
 
-const text = await response.text();
-console.log(text);
+        const text = await response.text();
+        console.log(text);
 
-const data = JSON.parse(text);
+        const data = JSON.parse(text);
 
         if (data.success && Array.isArray(data.members)) {
           setMembers(
@@ -64,7 +65,40 @@ const data = JSON.parse(text);
       }
     };
 
+
     fetchMembers();
+  }, [groupId]);
+
+  useEffect(() => {
+    if (!groupId) return;
+
+    const fetchTripPeriod = async () => {
+      try {
+        const response = await fetch("/TABI/api/Groups/TripPeriod.php", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            group_id: groupId,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setTripPeriod({
+            startDate: data.start_date,
+            endDate: data.end_date,
+          });
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchTripPeriod();
   }, [groupId]);
 
   // 移動手段のデータ
@@ -88,62 +122,78 @@ const data = JSON.parse(text);
   ];
 
   // 未清算のデータ
-  const liquidationList = [
-
-  ];
+  const liquidationList = [];
 
   const closeInviteModal = () => {
-  setIsInviteModalOpen(false);
+    setIsInviteModalOpen(false);
   };
 
   const handleAppointmentClick = () => {
-    // データがない　→　Appointment.jsxへ
-     navigate('/Appointment')
-  }
-  
+    // データがない → Appointment.jsxへ
+    navigate("/Appointment");
+  };
+
+  // 日付表示用の関数
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+
+    const date = new Date(dateString);
+    const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} (${weekDays[date.getDay()]})`;
+  };
+
+  const getRemainingDays = (startDate) => {
+    if (!startDate) return "";
+
+    const today = new Date();
+    const start = new Date(startDate);
+
+    today.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+
+    const diffTime = start - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    return diffDays;
+  };
+
   return (
     <div>
       <Header />
 
       {/* カバー画像ヘッダー */}
       <div className={styles.coverHeader}>
-
         <div className={styles.coverOverlay}></div>
 
         <div className={styles.coverMainInfo}>
-
           <div className={styles.titleRow}>
-
-            <h1 className={styles.mainTitle}>
-              {trip.name}
-            </h1>
+            <h1 className={styles.mainTitle}>{trip.name}</h1>
 
             <span className={styles.daysBadge}>
-              あと 24 日
+              {tripPeriod?.startDate
+                ? `あと ${getRemainingDays(tripPeriod.startDate)} 日`
+                : "日付未設定"}
             </span>
-
           </div>
 
           <p className={styles.subDate}>
-            出発：2026/05/14 (木)<br/>
-            帰宅：2026/05/16 (土)
+            出発：{formatDate(tripPeriod?.startDate)}<br />
+            帰宅：{formatDate(tripPeriod?.endDate)}
           </p>
 
           <div className={styles.memberRow}>
-
             <div className={styles.avatarGroup}>
-
-              {members.map((member)=>(
+              {members.map((member) => (
                 <span
                   key={member.id}
                   className={styles.avatar}
-                  style={{backgroundColor:member.color}}
+                  style={{ backgroundColor: member.color }}
                   title={member.name}
                 >
                   {member.initial}
                 </span>
               ))}
-
 
               <button
                 className={styles.inviteBtn}
@@ -172,8 +222,11 @@ const data = JSON.parse(text);
 
       {/* 旅行期間ウィジェット */}
       <div className={styles.WidgetFrame}>
-        <div className={styles.WidgetTitle}>旅行期間</div>
-        <div className={styles.WidgetText}>2026年5/14(木) - 2026年5月16日(土)</div>
+        <div className={styles.WidgetText}>
+          {tripPeriod?.startDate && tripPeriod?.endDate
+            ? `${formatDate(tripPeriod.startDate)} - ${formatDate(tripPeriod.endDate)}`
+            : "旅行期間未設定"}
+        </div>
       </div>
 
       {/* メンバー数ウィジェット */}
@@ -182,13 +235,17 @@ const data = JSON.parse(text);
         <div className={styles.WidgetText}>4人</div>
       </div>
 
-      <div className={styles.WidgetFrame} >
-        {appointmentList.length == 0 ? (
-          <div className={styles.WidgetText} onClick={handleAppointmentClick}>
+      {/* 移動手段ウィジェット */}
+      <div className={styles.WidgetFrame}>
+        {appointmentList.length === 0 ? (
+          <div
+            className={styles.WidgetText}
+            onClick={handleAppointmentClick}
+          >
             移動手段の予約に進む
           </div>
-          ) : (
-            <div className={styles.WidgetTitle}>
+        ) : (
+          <div className={styles.WidgetTitle}>
             <div className={styles.WidgetText}>
               {appointmentList[0].type}
             </div>
@@ -204,22 +261,29 @@ const data = JSON.parse(text);
         {/* 清算ウィジェット */}
         <div className={styles.liquidationWidget}>
           <div className={styles.WidgetTitle}>清算</div>
-          {liquidationList.length == 0 ? (
+
+          {liquidationList.length === 0 ? (
             <div className={styles.WidgetText}>
               請求はありません
             </div>
           ) : (
-             <>
+            <>
               {/* 合計金額 */}
               <div className={styles.WidgetText}>
                 合計：￥
-                {liquidationList.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}
+                {liquidationList
+                  .reduce((sum, item) => sum + item.amount, 0)
+                  .toLocaleString()}
               </div>
 
               {/* 各請求 */}
               {liquidationList.map((item, index) => (
-                <div key={index} className={styles.WidgetText}>
-                  {item.from}さんへ：￥{item.amount.toLocaleString()}
+                <div
+                  key={index}
+                  className={styles.WidgetText}
+                >
+                  {item.from}さんへ：￥
+                  {item.amount.toLocaleString()}
                 </div>
               ))}
             </>
@@ -239,12 +303,11 @@ const data = JSON.parse(text);
       </div>
 
       {/* 招待モーダル */}
-      <Modal 
+      <Modal
         isOpen={isInviteModalOpen}
         onClose={closeInviteModal}
       >
-
-        <InviteModal onClose={closeInviteModal}/>
+        <InviteModal onClose={closeInviteModal} />
       </Modal>
     </div>
   );

@@ -17,7 +17,7 @@ import SpotList from './Spots/SpotList';
 import SpotForm from './Spots/SpotForm';
 import Analytics from './Analytics/Analytics';
 import Managers from './Managers/Managers';
-import Logs from './Logs/Logs';
+// import Logs from './Logs/Logs';
 import Settings from './Settings/Settings';
 import AdminRealtimeListener from "./Realtime/AdminRealtimeListener";
 
@@ -50,7 +50,7 @@ export default function AdminRoutes() {
                 <Route path="spots/:spotId/edit" element={<SpotForm />} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="managers" element={<Managers />} />
-                <Route path="logs" element={<Logs />} />
+                {/* <Route path="logs" element={<Logs />} /> */}
                 <Route path="settings" element={<Settings />} />
             </Routes>
         </>
