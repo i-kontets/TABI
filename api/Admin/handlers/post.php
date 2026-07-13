@@ -56,6 +56,11 @@ function handle_admin_post(PDO $pdo, string $resource, $id, array $input): void
             "public_id" => $id,
         ]);
 
+        sendRealtimeEvent("admin:global", "inquiry_updated", [
+            "id" => (int) $inquiry["inquiry_id"],
+            "public_id" => $id,
+        ]);
+
             // 画面側に返信完了を返し、対象問い合わせの ID と本文を返却します。
         respond(["ok" => true, "inquiryId" => $id, "message" => $message]);
         return;
@@ -73,8 +78,12 @@ function handle_admin_post(PDO $pdo, string $resource, $id, array $input): void
             "end_at" => str_replace("/", "-", $input["endAt"] ?? null),
             "push_enabled" => !empty($input["push"]) ? 1 : 0,
         ]);
+        $noticeId = (int) $pdo->lastInsertId();
+        sendRealtimeEvent("admin:global", "notice_created", [
+            "notice_id" => $noticeId,
+        ]);
         $_GET["resource"] = "notices";
-        $_GET["id"] = "n" . $pdo->lastInsertId();
+        $_GET["id"] = "n" . $noticeId;
         respond(current(array_filter(fetch_notices($pdo), fn($n) => $n["id"] === $_GET["id"])));
     }
 
@@ -90,7 +99,11 @@ function handle_admin_post(PDO $pdo, string $resource, $id, array $input): void
             "longitude" => $input["lng"] ?? 0,
             "status" => ($input["status"] ?? "公開中") === "非公開" ? "hidden" : "published",
         ]);
-        respond(current(array_filter(fetch_spots($pdo), fn($s) => $s["id"] === "s" . $pdo->lastInsertId())));
+        $spotId = (int) $pdo->lastInsertId();
+        sendRealtimeEvent("admin:global", "spot_created", [
+            "spot_id" => $spotId,
+        ]);
+        respond(current(array_filter(fetch_spots($pdo), fn($s) => $s["id"] === "s" . $spotId)));
     }
 
     if ($resource === "managers") {
@@ -104,6 +117,13 @@ function handle_admin_post(PDO $pdo, string $resource, $id, array $input): void
         $pdo->prepare("INSERT INTO admin_users (user_id, admin_level, created_at) VALUES (:user_id, :admin_level, NOW())")->execute(["user_id" => $userId, "admin_level" => $level]);
         $adminUserId = (int) $pdo->lastInsertId();
         $pdo->commit();
+        sendRealtimeEvent("admin:global", "manager_created", [
+            "manager_id" => $adminUserId,
+            "user_id" => $userId,
+        ]);
+        sendRealtimeEvent("admin:global", "user_created", [
+            "user_id" => $userId,
+        ]);
         respond(current(array_filter(fetch_managers($pdo), fn($m) => $m["id"] === "m" . $adminUserId)));
     }
 }

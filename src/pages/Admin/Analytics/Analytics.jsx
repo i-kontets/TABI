@@ -2,7 +2,38 @@ import { useCallback, useEffect, useState } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { StatCard, Card, LineChart, DonutChart } from '../../../components/Admin/ui/Ui';
 import { fetchAnalytics } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Analytics.module.css';
+
+const REALTIME_EVENTS = [
+    'admin:user_created',
+    'admin:user_updated',
+    'admin:user_deleted',
+    'admin:group_created',
+    'admin:group_updated',
+    'admin:group_deleted',
+    'admin:post_created',
+    'admin:post_updated',
+    'admin:post_deleted',
+    'admin:report_created',
+    'admin:report_updated',
+    'admin:inquiry_created',
+    'admin:inquiry_updated',
+];
+
+const formatDate = (date) => new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'Asia/Tokyo',
+}).format(date);
+
+const periodLabel = () => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 6);
+    return `${formatDate(start)} 〜 ${formatDate(end)}`;
+};
 
 export default function Analytics() {
     const [analytics, setAnalytics] = useState(null);
@@ -15,22 +46,7 @@ export default function Analytics() {
         loadAnalytics();
     }, [loadAnalytics]);
 
-    useEffect(() => {
-        const handleRealtimeUpdate = (event) => {
-            if (import.meta.env.DEV) {
-                console.log(`${event.type} received`);
-            }
-            loadAnalytics();
-        };
-
-        window.addEventListener('admin:inquiry_created', handleRealtimeUpdate);
-        window.addEventListener('admin:report_created', handleRealtimeUpdate);
-
-        return () => {
-            window.removeEventListener('admin:inquiry_created', handleRealtimeUpdate);
-            window.removeEventListener('admin:report_created', handleRealtimeUpdate);
-        };
-    }, [loadAnalytics]);
+    useAdminRealtimeRefresh(REALTIME_EVENTS, loadAnalytics);
 
     if (!analytics) return <AdminLayout title="分析・利用状況" back><div /></AdminLayout>;
 
@@ -39,7 +55,7 @@ export default function Analytics() {
 
     return (
         <AdminLayout title="分析・利用状況">
-            <div className={styles.periodBar}>2026/06/26 〜 2026/07/02</div>
+            <div className={styles.periodBar}>{periodLabel()}</div>
 
             <div className={styles.statGrid}>
                 <StatCard label="アクティブユーザー" value={summary.activeUsers.value} unit="人" />

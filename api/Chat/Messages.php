@@ -3,12 +3,60 @@ session_start();
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Groups/S3Common.php";
 
 function respond(array $payload, int $status = 200): void
 {
     http_response_code($status);
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
+}
+
+// users.icon_url にはS3キー（例: User/2/profile/xxx.jpeg）が保存されているため、
+// 表示可能な署名付きURLへ変換する。変換できない場合は null を返す。
+function resolveIconUrl(?string $iconValue): ?string
+{
+    static $initialized = false, $s3 = null, $aws = null, $cache = [];
+
+    $iconValue = trim((string) $iconValue);
+
+    if ($iconValue === "") {
+        return null;
+    }
+
+    // 誤って完全URLが保存されている場合はpath部分をS3キーに戻す
+    if (strpos($iconValue, "http://") === 0 || strpos($iconValue, "https://") === 0) {
+        $path = parse_url($iconValue, PHP_URL_PATH);
+
+        if (!$path) {
+            return null;
+        }
+
+        $iconValue = rawurldecode($path);
+    }
+
+    $key = ltrim($iconValue, "/");
+
+    if ($key === "") {
+        return null;
+    }
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    if (!$initialized) {
+        $initialized = true;
+
+        try {
+            $aws = loadAwsConfig();
+            $s3 = $aws ? createS3Client($aws) : null;
+        } catch (Throwable $error) {
+            $s3 = null;
+        }
+    }
+
+    return $cache[$key] = ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $key) : null;
 }
 
 function firstCharacter(string $value): string
@@ -200,7 +248,7 @@ function fetchContact(PDO $pdo, int $chatId): array
         "chat_id" => $chatId,
         "name" => $name,
         "category" => $category,
-        "avatar" => $chat["img_url"] ?: firstCharacter($name),
+        "avatar" => resolveIconUrl($chat["img_url"]) ?: firstCharacter($name),
         "lastMessage" => $chat["last_message"] ?: "",
         "time" => formatTime($chat["last_sent_at"]),
         "unread" => 0,
@@ -250,6 +298,14 @@ function fetchMessages(PDO $pdo, int $chatId, int $userId): array
     while ($message = $messageStmt->fetch(PDO::FETCH_ASSOC)) {
         $senderName = $message["sender_name"] ?? "Unknown user";
 
+        // DBに保存されている元のS3オブジェクトキー
+        $senderIconKey = trim(
+            (string) ($message["sender_icon_url"] ?? "")
+        );
+
+        // S3署名付きURLへ変換
+        $senderIconUrl = resolveIconUrl($senderIconKey);
+
         $messages[] = [
             "id" => (int) $message["message_id"],
             "message_id" => (int) $message["message_id"],
@@ -258,8 +314,13 @@ function fetchMessages(PDO $pdo, int $chatId, int $userId): array
             "sender" => $senderName,
             "sender_name" => $senderName,
             "senderName" => $senderName,
-            "avatar" => $message["sender_icon_url"] ?: firstCharacter($senderName),
-            "sender_icon_url" => $message["sender_icon_url"],
+
+            "avatar" => $senderIconUrl ?: firstCharacter($senderName),
+            "sender_icon_url" => $senderIconUrl,
+
+            // 原因確認用
+            "sender_icon_key_debug" => $senderIconKey,
+
             "text" => $message["body"],
             "body" => $message["body"],
             "image_url" => $message["image_url"],
@@ -293,13 +354,55 @@ if (!isset($_SESSION["user_id"])) {
 $userId = (int) $_SESSION["user_id"];
 
 try {
-    $chatId = resolveChatId($pdo, $userId, $_GET["chat_id"] ?? null, $_GET["group_id"] ?? null);
+    $chatId = resolveChatId(
+        $pdo,
+        $userId,
+        $_GET["chat_id"] ?? null,
+        $_GET["group_id"] ?? null
+    );
+
     ensureMember($pdo, $chatId, $userId);
 
     $contact = fetchContact($pdo, $chatId);
 
+    /*
+     * 原因調査用
+     * Webアプリが実際に接続しているDBの情報を取得する
+     */
+    $debugDbInfo = $pdo->query("
+        SELECT
+            DATABASE() AS database_name,
+            @@hostname AS database_hostname,
+            @@port AS database_port
+    ")->fetch(PDO::FETCH_ASSOC);
+
+    /*
+     * Webアプリが参照しているusersテーブルから、
+     * user_id = 3 のデータを直接取得する
+     */
+    $debugUserStmt = $pdo->prepare("
+        SELECT
+            user_id,
+            name,
+            icon_url,
+            HEX(icon_url) AS icon_url_hex
+        FROM users
+        WHERE user_id = :user_id
+        LIMIT 1
+    ");
+
+    $debugUserStmt->bindValue(":user_id", 3, PDO::PARAM_INT);
+    $debugUserStmt->execute();
+
+    $debugUser3 = $debugUserStmt->fetch(PDO::FETCH_ASSOC);
+
     respond([
         "success" => true,
+
+        // 原因調査用：確認が終わったら削除する
+        "debug_db_info" => $debugDbInfo,
+        "debug_user_3" => $debugUser3,
+
         "chat_id" => $chatId,
         "member_count" => (int) ($contact["memberCount"] ?? 0),
         "contact" => $contact,

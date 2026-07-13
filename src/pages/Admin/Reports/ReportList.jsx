@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Tabs, Badge, Pagination, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchReports, fetchReportCounts } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Reports.module.css';
+
+const REALTIME_EVENTS = ['admin:report_created', 'admin:report_updated'];
 
 export default function ReportList() {
     const [tab, setTab] = useState('未対応');
@@ -20,20 +23,7 @@ export default function ReportList() {
         loadReports();
     }, [loadReports]);
 
-    useEffect(() => {
-        const handleReportCreated = (event) => {
-            if (import.meta.env.DEV) {
-                console.log('Realtime report_created received', event.detail);
-            }
-            loadReports();
-        };
-
-        window.addEventListener('admin:report_created', handleReportCreated);
-
-        return () => {
-            window.removeEventListener('admin:report_created', handleReportCreated);
-        };
-    }, [loadReports]);
+    useAdminRealtimeRefresh(REALTIME_EVENTS, loadReports);
 
     const tabs = ['未対応', '確認中', '対応済み'].map((k) => ({
         key: k,

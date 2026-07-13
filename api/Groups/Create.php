@@ -4,6 +4,8 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // データベース接続設定を読み込む（$pdo を使用）
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Admin/includes/config.php";
+require_once __DIR__ . "/../Admin/services/realtime.php";
 
 // レスポンスをJSONで返して終了する共通関数
 function respond(array $payload, int $status = 200): void
@@ -141,6 +143,15 @@ try {
     }
 
     $pdo->commit();
+
+    sendRealtimeEvent("admin:global", "group_created", [
+        "group_id" => $groupId,
+        "trip_id" => $tripId,
+    ]);
+    sendRealtimeEvent("trip:" . $groupId, "trip_updated", [
+        "group_id" => $groupId,
+        "trip_id" => $tripId,
+    ]);
 
     // Home画面のカード表示に合わせた形で作成結果を返す
     respond([

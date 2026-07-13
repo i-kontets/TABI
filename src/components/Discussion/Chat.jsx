@@ -5,6 +5,11 @@ import "./Chat.css";
 const chatApiBase = `${import.meta.env.BASE_URL}api/Chat`;
 const pollingIntervalMs = 3000;
 
+// avatarが画像URLかどうか判定（URLでなければ頭文字テキストとして表示）
+function isImageAvatar(value) {
+    return typeof value === "string" && (/^(https?:)?\/\//.test(value) || value.startsWith("/"));
+}
+
 async function parseApiResponse(response) {
     const data = await response.json().catch(() => null);
 
@@ -49,10 +54,10 @@ function Chat({ active }) {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [notice, setNotice] = useState("");
-    const messageListRef    = useRef(null);
-    const textareaRef       = useRef(null);
-    const pollingRef        = useRef(false);
-    const lastMessageIdRef  = useRef(0);   // 差分ポーリング用
+    const messageListRef = useRef(null);
+    const textareaRef = useRef(null);
+    const pollingRef = useRef(false);
+    const lastMessageIdRef = useRef(0);   // 差分ポーリング用
 
     const applyReadStatuses = useCallback((reads) => {
         setMessages((currentMessages) => applyReadStatusesToMessages(currentMessages, reads));
@@ -84,9 +89,10 @@ function Chat({ active }) {
         }
 
         try {
-            const query = chatId
-                ? `chat_id=${encodeURIComponent(chatId)}`
-                : `group_id=${encodeURIComponent(groupId)}`;
+            // 初回表示はgroup_idからチャットを取得する。
+            // chatIdの更新でloadMessagesが作り直されることを防ぐ。
+            const query = `group_id=${encodeURIComponent(groupId)}`;
+            
             const response = await fetch(`${chatApiBase}/Messages.php?${query}`, {
                 credentials: "include",
                 signal,
@@ -117,7 +123,7 @@ function Chat({ active }) {
                 setLoading(false);
             }
         }
-    }, [chatId, groupId, markMessagesAsRead]);
+    }, [groupId, markMessagesAsRead]);
 
     useEffect(() => {
         if (!active) {
@@ -151,7 +157,7 @@ function Chat({ active }) {
             const newMax = data.messages.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
             if (newMax > lastMessageIdRef.current) lastMessageIdRef.current = newMax;
 
-            await markMessagesAsRead(chatId).catch(() => {});
+            await markMessagesAsRead(chatId).catch(() => { });
         } catch {
             // silent
         }
@@ -188,24 +194,56 @@ function Chat({ active }) {
 
     const chatContent = useMemo(() => {
         return messages.map((message, index) => {
-            const showDate = index === 0 || message.date !== messages[index - 1].date;
-            const readLabel = memberCount > 2 ? `既読 ${message.readCount}` : "既読";
+            const showDate =
+                index === 0 ||
+                message.date !== messages[index - 1].date;
+
+            const readLabel =
+                memberCount > 2
+                    ? `既読 ${message.readCount}`
+                    : "既読";
+
+            // APIから署名付きURLが返っていれば優先する
+            // URLがなければavatar、さらに無ければ名前の先頭文字を使う
+            const avatarValue =
+                message.sender_icon_url ||
+                message.avatar ||
+                message.sender?.slice(0, 1) ||
+                "?";
 
             return (
                 <div className="chatBlock" key={message.id}>
-                    {showDate && <div className="dateChip">{message.date}</div>}
-                    <article className={`messageRow ${message.isMine ? "mine" : ""}`}>
+                    {showDate && (
+                        <div className="dateChip">
+                            {message.date}
+                        </div>
+                    )}
+
+                    <article
+                        className={`messageRow ${message.isMine ? "mine" : ""}`}
+                    >
                         <div className="messageStack">
                             {!message.isMine && (
                                 <div className="userHeader">
                                     <div className="avatar">
-                                        {message.avatar}
+                                        {isImageAvatar(avatarValue) ? (
+                                            <img
+                                                src={avatarValue}
+                                                alt={`${message.sender}のアイコン`}
+                                                className="avatarImage"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            avatarValue
+                                        )}
                                     </div>
+
                                     <span className="senderName">
                                         {message.sender}
                                     </span>
                                 </div>
                             )}
+
                             <div className="bubbleLine">
                                 {message.isMine && (
                                     <div className="messageMeta mineMeta">
@@ -215,19 +253,32 @@ function Chat({ active }) {
                                         <time>{message.time}</time>
                                     </div>
                                 )}
+
                                 <div className="bubble">
                                     {message.image_url ? (
                                         <img
                                             src={message.image_url}
                                             alt="送信画像"
-                                            style={{ maxWidth: '200px', maxHeight: '260px', borderRadius: '8px', display: 'block', cursor: 'pointer' }}
+                                            style={{
+                                                maxWidth: "200px",
+                                                maxHeight: "260px",
+                                                borderRadius: "8px",
+                                                display: "block",
+                                                cursor: "pointer",
+                                            }}
                                             loading="lazy"
-                                            onClick={() => window.open(message.image_url, '_blank')}
+                                            onClick={() =>
+                                                window.open(
+                                                    message.image_url,
+                                                    "_blank",
+                                                )
+                                            }
                                         />
                                     ) : (
                                         message.text
                                     )}
                                 </div>
+
                                 {!message.isMine && (
                                     <div className="messageMeta">
                                         <time>{message.time}</time>

@@ -3,69 +3,32 @@
     "1": {
       "pay": [
         {
-          "id": 1780296326253,
-          "storeName": "コーナン",
-          "totalAmount": 8000,
-          "participantIds": [
-            2,
-            4
-          ],
-          "participantCount": 2,
-          "perPersonAmount": 4000
-        },
-        {
-          "id": 1781751984142,
-          "storeName": "コンビニ",
-          "totalAmount": 6000,
-          "participantIds": [
-            1,
-            3,
-            4
-          ],
-          "participantCount": 3,
-          "perPersonAmount": 2000
-        },
-        {
-          "id": 1782975725497,
-          "storeName": "コテージ代",
-          "totalAmount": 50000,
-          "participantIds": [
-            1,
-            2,
-            3,
-            4,
-            5
+          "id": 1783505961870,
+          "storeName": "お酒代",
+          "members": [
+            {
+              "id": 1,
+              "amount": 3000
+            },
+            {
+              "id": 2,
+              "amount": 3000
+            },
+            {
+              "id": 3,
+              "amount": 3000
+            },
+            {
+              "id": 4,
+              "amount": 3000
+            },
+            {
+              "id": 5,
+              "amount": 3000
+            }
           ],
           "participantCount": 5,
-          "perPersonAmount": 10000
-        },
-        {
-          "id": 1783306631532,
-          "storeName": "レンタカー代",
-          "totalAmount": 500000,
-          "participantIds": [
-            1,
-            2,
-            3,
-            4,
-            5
-          ],
-          "participantCount": 5,
-          "perPersonAmount": 100000
-        },
-        {
-          "id": 1783312491480,
-          "storeName": "コテージ代",
-          "totalAmount": 5000,
-          "participantIds": [
-            2,
-            1,
-            3,
-            4,
-            5
-          ],
-          "participantCount": 5,
-          "perPersonAmount": 1000
+          "totalAmount": 15000
         }
       ],
       "collect": [],
@@ -74,160 +37,26 @@
           "id": 1,
           "name": "志田",
           "paidPayIds": [
-            1781751984142,
-            1782975725497,
-            1783306631532
+            1783505588285,
+            1783505752909,
+            1783505961870
           ]
         },
         {
           "id": 2,
           "name": "石垣",
           "paidPayIds": [
-            1780296326253,
-            1782975725497,
-            1783306631532
+            1783505588285,
+            1783505752909,
+            1783505961870
           ]
         },
         {
           "id": 3,
           "name": "田中",
           "paidPayIds": [
-            1781751984142,
-            1782975725497,
-            1783306631532
+            1783505961870
           ]
-        },
-        {
-          "id": 4,
-          "name": "寺川",
-          "paidPayIds": [
-            1780296326253,
-            1781751984142,
-            1782975725497,
-            1783306631532
-          ]
-        },
-        {
-          "id": 5,
-          "name": "岩井",
-          "paidPayIds": [
-            1782975725497,
-            1783306631532
-          ]
-        }
-      ]
-    },
-    "2": {
-      "pay": [],
-      "collect": [],
-      "members": [
-        {
-          "id": 1,
-          "name": "志田",
-          "paidPayIds": []
-        },
-        {
-          "id": 2,
-          "name": "石垣",
-          "paidPayIds": []
-        },
-        {
-          "id": 3,
-          "name": "田中",
-          "paidPayIds": []
-        },
-        {
-          "id": 4,
-          "name": "寺川",
-          "paidPayIds": []
-        },
-        {
-          "id": 5,
-          "name": "岩井",
-          "paidPayIds": []
-        }
-      ]
-    },
-    "3": {
-      "pay": [],
-      "collect": [],
-      "members": [
-        {
-          "id": 1,
-          "name": "志田",
-          "paidPayIds": []
-        },
-        {
-          "id": 2,
-          "name": "石垣",
-          "paidPayIds": []
-        },
-        {
-          "id": 3,
-          "name": "田中",
-          "paidPayIds": []
-        },
-        {
-          "id": 4,
-          "name": "寺川",
-          "paidPayIds": []
-        },
-        {
-          "id": 5,
-          "name": "岩井",
-          "paidPayIds": []
-        }
-      ]
-    },
-    "4": {
-      "pay": [],
-      "collect": [],
-      "members": [
-        {
-          "id": 1,
-          "name": "志田",
-          "paidPayIds": []
-        },
-        {
-          "id": 2,
-          "name": "石垣",
-          "paidPayIds": []
-        },
-        {
-          "id": 3,
-          "name": "田中",
-          "paidPayIds": []
-        },
-        {
-          "id": 4,
-          "name": "寺川",
-          "paidPayIds": []
-        },
-        {
-          "id": 5,
-          "name": "岩井",
-          "paidPayIds": []
-        }
-      ]
-    },
-    "5": {
-      "pay": [],
-      "collect": [],
-      "members": [
-        {
-          "id": 1,
-          "name": "志田",
-          "paidPayIds": []
-        },
-        {
-          "id": 2,
-          "name": "石垣",
-          "paidPayIds": []
-        },
-        {
-          "id": 3,
-          "name": "田中",
-          "paidPayIds": []
         },
         {
           "id": 4,

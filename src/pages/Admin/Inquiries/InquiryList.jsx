@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Tabs, Badge, Avatar, Pagination, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchInquiries, fetchInquiryCounts } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Inquiries.module.css';
+
+const REALTIME_EVENTS = ['admin:inquiry_created', 'admin:inquiry_updated'];
 
 export default function InquiryList() {
     const [tab, setTab] = useState('未対応');
@@ -20,20 +23,7 @@ export default function InquiryList() {
         loadInquiries();
     }, [loadInquiries]);
 
-    useEffect(() => {
-        const handleInquiryCreated = (event) => {
-            if (import.meta.env.DEV) {
-                console.log('Realtime inquiry_created received', event.detail);
-            }
-            loadInquiries();
-        };
-
-        window.addEventListener('admin:inquiry_created', handleInquiryCreated);
-
-        return () => {
-            window.removeEventListener('admin:inquiry_created', handleInquiryCreated);
-        };
-    }, [loadInquiries]);
+    useAdminRealtimeRefresh(REALTIME_EVENTS, loadInquiries);
 
     const tabs = ['未対応', '対応中', '対応済み'].map((k) => ({
         key: k,

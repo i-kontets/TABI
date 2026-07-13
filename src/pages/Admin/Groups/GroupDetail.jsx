@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Badge, Avatar, Tabs, Card, DetailRow, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchGroup, fetchPosts } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Groups.module.css';
 
 const TABS = ['メンバー', 'しおり', '話し合い', '履歴'];
@@ -13,10 +14,16 @@ export default function GroupDetail() {
     const [tab, setTab] = useState('メンバー');
     const [posts, setPosts] = useState([]);
 
-    useEffect(() => {
+    const loadGroupDetail = useCallback(() => {
         fetchGroup(groupId).then(setGroup);
         fetchPosts().then((r) => setPosts(r.items));
     }, [groupId]);
+
+    useEffect(() => {
+        loadGroupDetail();
+    }, [loadGroupDetail]);
+
+    useAdminRealtimeRefresh(['admin:group_updated', 'admin:group_deleted', 'admin:post_created', 'admin:post_updated', 'admin:post_deleted'], loadGroupDetail);
 
     if (!group) {
         return (

@@ -12,6 +12,9 @@ function handle_admin_patch(PDO $pdo, string $resource, $id, array $input): void
         $status = $action === "delete" ? "deleted" : "suspended";
         $deletedAt = $action === "delete" ? "NOW()" : "NULL";
         $pdo->exec("UPDATE users SET status = " . $pdo->quote($status) . ", deleted_at = {$deletedAt}, updated_at = NOW() WHERE user_id = {$numericId}");
+        sendRealtimeEvent("admin:global", $action === "delete" ? "user_deleted" : "user_updated", [
+            "user_id" => $numericId,
+        ]);
         respond(current(array_filter(fetch_users($pdo), fn($u) => $u["id"] === $numericId)));
     }
 
@@ -19,9 +22,15 @@ function handle_admin_patch(PDO $pdo, string $resource, $id, array $input): void
         // 投稿の非表示切り替え、または管理画面上の削除を行います。
         if ($action === "delete") {
             $pdo->exec("UPDATE messages SET admin_deleted_at = NOW() WHERE message_id = {$numericId}");
+            sendRealtimeEvent("admin:global", "post_deleted", [
+                "post_id" => $numericId,
+            ]);
             respond(["ok" => true]);
         }
         $pdo->exec("UPDATE messages SET admin_visibility_status = IF(admin_visibility_status = 'hidden', 'visible', 'hidden') WHERE message_id = {$numericId}");
+        sendRealtimeEvent("admin:global", "post_updated", [
+            "post_id" => $numericId,
+        ]);
         respond(current(array_filter(fetch_posts($pdo), fn($p) => $p["id"] === "p" . $numericId)));
     }
 
@@ -33,6 +42,9 @@ function handle_admin_patch(PDO $pdo, string $resource, $id, array $input): void
             "note" => $input["note"] ?? "",
             "id" => $numericId,
         ]);
+        sendRealtimeEvent("admin:global", "report_updated", [
+            "report_id" => $numericId,
+        ]);
         respond(current(array_filter(fetch_reports($pdo), fn($r) => $r["id"] === "r" . $numericId)));
     }
 
@@ -43,6 +55,9 @@ function handle_admin_patch(PDO $pdo, string $resource, $id, array $input): void
             "status" => to_status_code($input["status"] ?? "", ["未対応" => "open", "対応中" => "working", "対応済み" => "resolved"], "open"),
             "memo" => $input["memo"] ?? "",
             "id" => $id,
+        ]);
+        sendRealtimeEvent("admin:global", "inquiry_updated", [
+            "public_id" => $id,
         ]);
         respond(current(array_filter(fetch_inquiries($pdo), fn($i) => $i["id"] === $id)));
     }
@@ -57,6 +72,9 @@ function handle_admin_patch(PDO $pdo, string $resource, $id, array $input): void
             "end_at" => str_replace("/", "-", $input["endAt"] ?? null),
             "push_enabled" => !empty($input["push"]) ? 1 : 0,
             "id" => $numericId,
+        ]);
+        sendRealtimeEvent("admin:global", "notice_updated", [
+            "notice_id" => $numericId,
         ]);
         respond(current(array_filter(fetch_notices($pdo), fn($n) => $n["id"] === "n" . $numericId)));
     }
@@ -73,6 +91,9 @@ function handle_admin_patch(PDO $pdo, string $resource, $id, array $input): void
             "status" => ($input["status"] ?? "公開中") === "非公開" ? "hidden" : "published",
             "id" => $numericId,
         ]);
+        sendRealtimeEvent("admin:global", "spot_updated", [
+            "spot_id" => $numericId,
+        ]);
         respond(current(array_filter(fetch_spots($pdo), fn($s) => $s["id"] === "s" . $numericId)));
     }
 
@@ -85,6 +106,9 @@ function handle_admin_patch(PDO $pdo, string $resource, $id, array $input): void
         $next = $manager["status"] === "停止中" ? "active" : "suspended";
         $stmt = $pdo->prepare("UPDATE users u INNER JOIN admin_users au ON au.user_id = u.user_id SET u.status = :status, u.updated_at = NOW() WHERE au.admin_user_id = :id");
         $stmt->execute(["status" => $next, "id" => $numericId]);
+        sendRealtimeEvent("admin:global", "manager_updated", [
+            "manager_id" => $numericId,
+        ]);
         respond(current(array_filter(fetch_managers($pdo), fn($m) => $m["id"] === "m" . $numericId)));
     }
 }

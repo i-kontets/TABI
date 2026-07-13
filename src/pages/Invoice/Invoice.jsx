@@ -5,9 +5,8 @@ import styles from "./Invoice.module.css";
 import Header from "../../components/header/Header";
 import BtmNav from "../../components/bottomNav/BottomNav";
 import invoiceJson from "./Invoice.json";
-import QRCode from 'react-qr-code';
-
-
+import QRCode from "react-qr-code";
+// 旧グループIDとの互換用
 const legacyGroupIds = {
     mie: 1,
     hok: 2,
@@ -15,7 +14,7 @@ const legacyGroupIds = {
     nara: 4,
     aom: 5,
 };
-
+// グループ名表示用
 const groupNames = {
     1: "三重",
     2: "北海道",
@@ -23,9 +22,7 @@ const groupNames = {
     4: "奈良",
     5: "青森",
 };
-
-// データがまだ無いグループのための、デフォルトのメンバー一覧
-// メンバー追加機能ができ次第、ここも変える必要あり！
+// 仮メンバー
 const defaultMembers = [
     { id: 1, name: "志田", paidPayIds: [] },
     { id: 2, name: "石垣", paidPayIds: [] },
@@ -33,295 +30,611 @@ const defaultMembers = [
     { id: 4, name: "寺川", paidPayIds: [] },
     { id: 5, name: "岩井", paidPayIds: [] },
 ];
-
+// 支払い追加フォーム初期値
+// 金額は人数割りせず、そのまま各メンバーへ設定する
 const emptyForm = {
     storeName: "",
-    totalAmount: "",
-    selectedMemberIds: [],
+    amount: "",
+    selectedMemberIds: []
 };
-
+// 金額表示
 function formatYen(value) {
-    // 数値を「1,000円」のような表示にそろえる
-    return `${Number(value).toLocaleString()}円`;
+    const number = Number(value);
+
+    if(Number.isNaN(number)){
+
+        return "0円";
+
+    }
+
+
+    return `${number.toLocaleString()}円`;
 }
-
+// グループデータを画面用へ変換
 function normalizeGroupData(data) {
-    const members = Array.isArray(data?.members) ? data.members : defaultMembers;
-    const memberIds = members.map((member) => member.id);
-    const pay = Array.isArray(data?.pay) ? data.pay : [];
+    const members =
+        Array.isArray(data?.members)
+            ? data.members
+            : defaultMembers;
 
+    const memberIds =
+        members.map(member => member.id);
+
+    const pay =
+        Array.isArray(data?.pay)
+            ? data.pay
+            : [];
     return {
-        // 支払いデータを画面で扱いやすい形に整える
         pay: pay.map((payItem) => {
-            // participantIds があればそれを優先し、なければ participantCount 分だけ
-            // メンバー一覧の先頭から参加者として扱う
-            const participantIds = Array.isArray(payItem.participantIds)
-                ? payItem.participantIds
-                : memberIds.slice(0, Number(payItem.participantCount) || memberIds.length);
+            let invoiceMembers = [];
+
+            /*
+                新形式
+                {
+                    id:1,
+                    storeName:"ホテル",
+                    members:[
+                        {
+                            id:1,
+                            amount:5000
+                        }
+                    ]
+                }
+            */
+
+            if(Array.isArray(payItem.members)){
+
+                invoiceMembers =
+                    payItem.members.map(member => ({
+
+                        id: member.id,
+                        amount:
+                            Number(member.amount)
+                    }));
+            }
+
+            /*
+                旧形式対応
+                以前は
+                totalAmount ÷ 人数
+                で保存していたため、
+                読み込み時だけ変換する
+            */
+
+            else {
+                const participantIds =
+                    Array.isArray(payItem.participantIds)
+                        ? payItem.participantIds
+                        : memberIds;
+                invoiceMembers =
+                    participantIds.map(id => ({
+                        id,
+                        amount:
+                            Number(
+                                payItem.perPersonAmount
+                                ??
+                                payItem.totalAmount
+                                ??
+                                0
+                            )
+                    }));
+            }
 
             return {
                 ...payItem,
-                participantIds,
-                // 参加人数は参加者IDの件数で確定する
-                participantCount: participantIds.length,
-                // 1人あたりの金額は総額を参加人数で割り、端数は切り上げる
-                perPersonAmount: Math.ceil(Number(payItem.totalAmount) / participantIds.length),
+
+                // 各メンバーごとの請求情報
+                members: invoiceMembers,
+
+                // 参加人数
+                participantCount:
+                    invoiceMembers.length,
+
+                /*
+                    総額は人数割りではなく
+                    各メンバーの請求額を合計
+                */
+
+                totalAmount:
+                    invoiceMembers.reduce(
+                        (sum,member) =>
+                            sum + Number(member.amount),
+                        0
+                    )
             };
+
         }),
-        // collect は未使用でもデータ構造だけは残す
-        collect: Array.isArray(data?.collect) ? data.collect : [],
-        members: members.map((member) => ({
-            id: member.id,
-            name: member.name,
-            paidPayIds: Array.isArray(member.paidPayIds) ? member.paidPayIds : [],
-        })),
+
+        // 徴収データ
+        collect:
+            Array.isArray(data?.collect)
+                ? data.collect
+                : [],
+
+        // メンバー情報
+        members:
+            members.map(member => ({
+                id: member.id,
+                name: member.name,
+                paidPayIds:
+                    Array.isArray(member.paidPayIds)
+                        ? member.paidPayIds
+                        : []
+            }))
     };
 }
 
-function createEmptyGroupData() {
-    // データがまだ無いグループ用に、空の請求データを作る
+// 空のグループデータ作成
+function createEmptyGroupData(){
     return normalizeGroupData({
         pay: [],
         collect: [],
-        members: defaultMembers,
+        members: defaultMembers
     });
 }
 
-function normalizeGroupId(groupId) {
-    // groupId が未指定なら、既存データとの互換のため 1(三重) を既定値にする
-    if (groupId == null || groupId === "") {
+// groupIdを統一
+function normalizeGroupId(groupId){
+    if(groupId == null || groupId === ""){
         return 1;
-    }
 
-    // URL クエリは文字列で来るため、まず数値として解釈できるか確認する
-    const numericGroupId = Number(groupId);
-    // 正の整数ならそのまま採用する（例: "2" -> 2）
-    if (Number.isInteger(numericGroupId) && numericGroupId > 0) {
+    }
+    const numericGroupId =
+        Number(groupId);
+
+    if(
+        Number.isInteger(numericGroupId)
+        &&
+        numericGroupId > 0
+    ){
         return numericGroupId;
+
     }
-
-    // 旧形式の文字列ID（mie/hok...）を数値IDへ変換し、未知の値は 1 にフォールバック
     return legacyGroupIds[groupId] || 1;
-}
 
-function normalizeInvoiceFile(data) {
-    // 読み込んだ請求ファイルを、画面側で同じ形に扱えるよう整える
-    if (data?.groups) {
-        // すでに groups 形式なら、各グループをまとめて正規化する
+}
+// Invoiceデータ全体を整形
+function normalizeInvoiceFile(data){
+
+    // groups形式
+    if(data?.groups){
         return {
-            groups: Object.fromEntries(
-                Object.entries(data.groups).map(([groupId, groupData]) => [
-                    normalizeGroupId(groupId),
-                    normalizeGroupData(groupData),
-                ])
-            ),
+            groups:
+                Object.fromEntries(
+                    Object.entries(data.groups)
+                    .map(([groupId,groupData]) => [
+                        normalizeGroupId(groupId),
+                        normalizeGroupData(groupData)
+                    ])
+                )
         };
     }
 
-    // 古い単一グループ形式なら、mie グループとして包み直す
+    // 古い単一グループ形式
     return {
-        groups: {
-            1: normalizeGroupData(data),
-        },
+        groups:{
+            1:
+                normalizeGroupData(data)
+        }
     };
 }
 
 export default function Invoice() {
+
     const location = useLocation();
-    const params = new URLSearchParams(location.search);
-    const groupId = normalizeGroupId(params.get("groupId"));
-    const { tripName } = useContext(TripContext);
 
-    const [activeTab, setActiveTab] = useState("collect");
-    const [allInvoiceData, setAllInvoiceData] = useState(normalizeInvoiceFile(invoiceJson));
-    const [invoiceData, setInvoiceData] = useState(
-        normalizeInvoiceFile(invoiceJson).groups[groupId] || createEmptyGroupData()
-    );
-    const [isFormOpen, setIsFormOpen] = useState(false);
-    // 追加フォームの入力内容をまとめて保持する
-    const [form, setForm] = useState(emptyForm);
+    const params =
+        new URLSearchParams(location.search);
 
-    useEffect(() => {
-        // groupId が変わったタイミングで請求データを読み直す
-        const loadInvoices = async () => {
-            try {
-                const response = await fetch(`${import.meta.env.BASE_URL}api/invoices`);
-                if (!response.ok) {
-                    // 正常なレスポンスでなければ失敗として扱う
-                    throw new Error("Invoice.jsonを読み込めませんでした");
+    // URLからグループID取得
+    const groupId =
+        normalizeGroupId(
+            params.get("groupId")
+        );
+
+    // Contextから旅行名取得
+    const { tripName } =
+        useContext(TripContext);
+
+    // 現在選択中のタブ
+    const [activeTab,setActiveTab] =
+        useState("collect");
+
+    // 全グループの請求データ
+    const [allInvoiceData,setAllInvoiceData] =
+        useState(
+            normalizeInvoiceFile(invoiceJson)
+        );
+
+    // 現在表示中の請求データ
+    const [invoiceData,setInvoiceData] =
+        useState(
+            normalizeInvoiceFile(invoiceJson)
+                .groups[groupId]
+            ||
+            createEmptyGroupData()
+        );
+
+    // 支払い追加フォーム表示状態
+    const [isFormOpen,setIsFormOpen] =
+        useState(false);
+
+    // 入力フォーム
+    const [form,setForm] =
+        useState(emptyForm);
+
+    /*
+        グループID変更時に
+        請求データを取得する
+    */
+    useEffect(()=>{
+        const loadInvoices = async()=>{
+            try{
+                const response =
+                    await fetch(
+                        `${import.meta.env.BASE_URL}api/invoices`
+                    );
+
+                if(!response.ok){
+                    throw new Error(
+                        "Invoice取得失敗"
+                    );
                 }
 
-                const data = normalizeInvoiceFile(await response.json());
-                const currentGroupData = data.groups[groupId] || createEmptyGroupData();
+                const data =
+                    normalizeInvoiceFile(
+                        await response.json()
+                    );
+
+                const currentGroupData =
+                    data.groups[groupId]
+                    ||
+                    createEmptyGroupData();
+
                 setAllInvoiceData(data);
-                setInvoiceData(currentGroupData);
-            } catch {
-                const data = normalizeInvoiceFile(invoiceJson);
-                setAllInvoiceData(data);
-                setInvoiceData(data.groups[groupId] || createEmptyGroupData());
+
+                setInvoiceData(
+                    currentGroupData
+                );
+
             }
+
+            catch{
+                // API取得失敗時はjsonを利用
+                const data =
+                    normalizeInvoiceFile(
+                        invoiceJson
+                    );
+
+                setAllInvoiceData(data);
+
+                setInvoiceData(
+                    data.groups[groupId]
+                    ||
+                    createEmptyGroupData()
+                );
+
+            }
+
         };
 
         loadInvoices();
-    }, [groupId]);
 
-    // メンバーごとに「参加している支払い」と「未払い合計」をまとめる
-    const collectMembers = useMemo(() => {
-        return invoiceData.members.map((member) => {
-            // 参加している支払いだけを明細化する
-            const details = invoiceData.pay
-                .filter((payItem) => payItem.participantIds.includes(member.id))
-                .map((payItem) => {
-                    // paidPayIds に入っていれば支払済み扱い
-                    const isPaid = member.paidPayIds.includes(payItem.id);
+    },[groupId]);
 
+    /*
+        徴収一覧用データ作成
+        変更前:
+        総額 ÷ 人数
+        変更後:
+        各メンバーに設定された金額を表示
+    */
+
+    const collectMembers =
+
+        useMemo(()=>{
+
+            return invoiceData.members.map(
+
+                (member)=>{
+
+                    // このメンバーが参加している支払い取得
+                    const details =
+
+                        invoiceData.pay
+                        .filter(
+                            payItem =>
+                                payItem.members.some(
+                                    payMember =>
+                                        payMember.id
+                                        ===
+                                        member.id
+                                )
+                        )
+
+                        .map(
+                            payItem=>{
+                                // メンバー個人の金額取得
+                                const memberPayment =
+                                    payItem.members.find(
+                                        payMember =>
+                                            payMember.id
+                                            ===
+                                            member.id
+                                    );
+
+                                return {
+                                    
+                                    id:
+                                        payItem.id,
+                                    storeName:
+                                        payItem.storeName,
+                                    // 人数割りせずそのまま表示
+                                    amount:
+                                        memberPayment.amount,
+                                    // 支払い済み判定
+                                    isPaid:
+                                        member.paidPayIds.includes(
+                                            payItem.id
+                                        )
+                                };
+                            }
+                        );
+                    // 未払い合計
+                    const totalAmount =
+                        details.reduce(
+                            (sum,detail)=>{
+                                if(detail.isPaid){
+                                    return sum;
+                                }
+                                return (
+                                    sum
+                                    +
+                                    Number(detail.amount)
+                                );
+                            },
+                            0
+                        );
                     return {
-                        id: payItem.id,
-                        storeName: payItem.storeName,
-                        amount: payItem.perPersonAmount,
-                        isPaid,
+                        ...member,
+                        // 未払い合計
+                        totalAmount,
+                        // 明細
+                        details
                     };
-                });
+                }
+            );
+        },[
+            invoiceData.members,
+            invoiceData.pay
+        ]);
+    // タイトル変更
+    const title =
+        activeTab === "pay"
+            ? "支払い"
+            : "徴収側";
+    // ヘッダー表示名
+    const headerTitle =
+        tripName
+        ||
+        groupNames[groupId]
 
-            // 未払い分だけを合計する
-            const totalAmount = details.reduce((sum, detail) => {
-                return detail.isPaid ? sum : sum + Number(detail.amount);
-            }, 0);
-
-            // 画面表示用に合計金額と明細を付け足す
-            return {
-                ...member,
-                totalAmount,
-                details,
+        ||
+        "割り勘";
+    /*
+        請求データ保存
+        JSON保存APIへ送信
+    */
+    const saveInvoiceData =
+        async(nextGroupData)=>{
+            const nextAllData = {
+                groups:{
+                    ...allInvoiceData.groups,
+                    [groupId]:
+                        nextGroupData
+                }
             };
-        });
-    }, [invoiceData.members, invoiceData.pay]);
-
-    // タブに応じて見出しを切り替える
-    const title = activeTab === "pay" ? "支払い" : "徴収側";
-    const headerTitle = tripName || groupNames[groupId] || "割り勘";
-
-    const saveInvoiceData = async (nextGroupData) => {
-        const nextAllData = {
-            groups: {
-                ...allInvoiceData.groups,
-                [groupId]: nextGroupData,
-            },
+            // 画面更新
+            setInvoiceData(
+                nextGroupData
+            );
+            setAllInvoiceData(
+                nextAllData
+            );
+            const response =
+                await fetch(
+                    `${import.meta.env.BASE_URL}api/invoices`,
+                    {
+                        method:"POST",
+                        headers:{
+                            "Content-Type":
+                                "application/json"
+                        },
+                        body:
+                            JSON.stringify(
+                                nextAllData
+                            )
+                    }
+                );
+            if(!response.ok){
+                throw new Error(
+                    "保存失敗"
+                );
+            }
         };
-
-        setInvoiceData(nextGroupData);
-        setAllInvoiceData(nextAllData);
-
-        const response = await fetch(`${import.meta.env.BASE_URL}api/invoices`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(nextAllData),
-        });
-
-        // 保存に失敗したら呼び出し元へ例外を返す
-        if (!response.ok) {
-            throw new Error("Invoice.jsonに保存できませんでした");
-        }
-    };
-
-    const handleChange = (event) => {
-        const { name, value } = event.target;
-        setForm((currentForm) => ({
-            ...currentForm,
-            [name]: value,
-        }));
-    };
-
-    const handleMemberSelect = (memberId) => {
-        // チェックのON/OFFに合わせて参加メンバーIDを更新する
-        setForm((currentForm) => {
-            const isSelected = currentForm.selectedMemberIds.includes(memberId);
-
-            return {
-                ...currentForm,
-                selectedMemberIds: isSelected
-                    ? currentForm.selectedMemberIds.filter((id) => id !== memberId)
-                    : [...currentForm.selectedMemberIds, memberId],
-            };
-        });
-    };
-
-    const handleOpenForm = () => {
-        // 新規追加用なので入力内容を初期化してフォームを開く
+    /*
+        入力変更
+    */
+    const handleChange =
+        (event)=>{
+            const {
+                name,
+                value
+            } = event.target;
+            setForm(
+                currentForm=>({
+                    ...currentForm,
+                    [name]:
+                        value
+                })
+            );
+        };
+    /*
+        メンバー選択変更
+    */
+    const handleMemberSelect =
+        (memberId)=>{
+            setForm(
+                currentForm=>{
+                    const isSelected =
+                        currentForm.selectedMemberIds
+                        .includes(memberId);
+                    return {
+                        ...currentForm,
+                        selectedMemberIds:
+                            isSelected
+                            ?
+                            currentForm.selectedMemberIds
+                            .filter(
+                                id =>
+                                    id !== memberId
+                            )
+                            :
+                            [
+                                ...currentForm.selectedMemberIds,
+                                memberId
+                            ]
+                    };
+                }
+            );
+        };
+    // フォームを開く
+    const handleOpenForm = ()=>{
         setForm(emptyForm);
         setIsFormOpen(true);
     };
-
-    const handleCloseForm = () => {
-        // フォームを閉じて入力内容を破棄する
+    // フォームを閉じる
+    const handleCloseForm = ()=>{
         setIsFormOpen(false);
         setForm(emptyForm);
     };
+ /*
+        支払い追加処理
 
-    const handleSubmit = async (event) => {
-        // 新しい支払いを追加して保存する
+        変更前:
+        入力金額 ÷ 人数
+
+        変更後:
+        入力金額を各メンバーへそのまま設定
+    */
+    const handleSubmit = async(event) => {
         event.preventDefault();
-
-        // 参加メンバーが最低1人いるか確認する
-        if (form.selectedMemberIds.length === 0) {
-            alert("参加メンバーを1人以上選択してください。");
+        // 参加メンバー確認
+        if(form.selectedMemberIds.length === 0){
+            alert(
+                "参加メンバーを1人以上選択してください。"
+            );
             return;
         }
+        // 入力された金額
+        const amount =
+            Number(form.amount);
+        /*
+            選択されたメンバーごとの
+            請求金額を作成
 
-        // 入力値を数値化して、人数ごとの金額を計算する
-        const totalAmount = Number(form.totalAmount);
-        const participantCount = form.selectedMemberIds.length;
-
+            例:
+            田中 5000円
+            山田 5000円
+        */
+        const members =
+            form.selectedMemberIds.map(
+                id => ({
+                    id:id,
+                    amount:amount
+                })
+            );
         const newInvoice = {
-            id: Date.now(),
-            storeName: form.storeName,
-            totalAmount,
-            participantIds: form.selectedMemberIds,
-            participantCount,
-            perPersonAmount: Math.ceil(totalAmount / participantCount),
+            // 支払いID
+            id:
+                Date.now(),
+            // 店名
+            storeName:
+                form.storeName,
+            // 各メンバーの請求情報
+            members,
+            // 人数
+            participantCount:
+                members.length,
+            // 各メンバー金額の合計
+            totalAmount:
+                members.reduce(
+                    (sum,member)=>
+                        sum + Number(member.amount),
+                    0
+                )
         };
-
         const nextData = {
             ...invoiceData,
-            pay: [...invoiceData.pay, newInvoice],
+            pay:[
+                ...invoiceData.pay,
+                newInvoice
+            ]
         };
-
-        try {
+        try{
             await saveInvoiceData(nextData);
             handleCloseForm();
-        } catch {
-            alert("画面には追加しましたが、Invoice.jsonへの保存に失敗しました。");
+        }
+        catch{
+            alert(
+                "請求データの保存に失敗しました。"
+            );
         }
     };
 
-    const handleCompletePayment = async (memberId, payId) => {
-        // 支払い完了の確認を取ってから、該当メンバーの支払済み一覧に追加する
-        const isConfirmed = confirm("支払い完了にしますか？\n完了後は編集できません。");
+    /*
+        支払い完了処理
+    */
+    const handleCompletePayment = async(memberId,payId)=>{
 
-        if (!isConfirmed) {
+        const isConfirmed =
+            confirm(
+                "支払い完了にしますか？\n完了後は編集できません。"
+            );
+
+        if(!isConfirmed){
             return;
         }
 
         const nextData = {
             ...invoiceData,
-            members: invoiceData.members.map((member) => {
-                if (member.id !== memberId || member.paidPayIds.includes(payId)) {
-                    return member;
-                }
-
-                return {
-                    ...member,
-                    paidPayIds: [...member.paidPayIds, payId],
-                };
-            }),
+            members:
+                invoiceData.members.map(
+                    member=>{
+                        if(
+                            member.id !== memberId
+                            ||
+                            member.paidPayIds.includes(payId)
+                        ){
+                            return member;
+                        }
+                        return {
+                            ...member,
+                            paidPayIds:[
+                                ...member.paidPayIds,
+                                payId
+                            ]
+                        };
+                    }
+                )
         };
-
-        try {
+        try{
             await saveInvoiceData(nextData);
-        } catch {
-            alert("支払い完了の保存に失敗しました。");
+        }
+        catch{
+            alert(
+                "支払い完了の保存に失敗しました。"
+            );
         }
     };
 
@@ -361,20 +674,41 @@ export default function Invoice() {
                         invoiceData.pay.length === 0 ? (
                             <p className={styles.emptyText}>まだ支払いがありません</p>
                         ) : (
-                            invoiceData.pay.map((item) => (
-                                <div className={styles.payItem} key={item.id}>
-                                    <p className={styles.storeName}>{item.storeName}</p>
-                                    <p className={styles.perPersonAmount}>
-                                        {formatYen(item.perPersonAmount)}
-                                    </p>
-                                    <p className={styles.participantCount}>
-                                        {item.participantCount}人
-                                    </p>
-                                    <p className={styles.totalAmount}>
-                                        総額{formatYen(item.totalAmount)}
-                                    </p>
-                                </div>
-                            ))
+                            invoiceData.pay.map((item) => {
+                                // 支払いの残額を計算
+                                const remainingAmount = item.members.reduce((sum, payMember) => {
+                                    // メンバー情報を取得
+                                    const member = invoiceData.members.find(
+                                        (m) => m.id === payMember.id
+                                    );
+
+                                    // 支払い済みなら加算しない
+                                    if(member?.paidPayIds.includes(item.id)){
+                                        return sum;
+                                    }
+
+                                    // 未払いなら残額へ加算
+                                    return sum + payMember.amount;
+                                
+                                }, 0);
+
+                                return (
+                                    <div className={styles.payItem} key={item.id}>
+                                        <p className={styles.storeName}>{item.storeName}</p>
+                                        <p className={styles.perPersonAmount}>
+                                            総額{formatYen(item.totalAmount)}
+                                        </p>
+                                        
+                                        <p className={styles.participantCount}>
+                                            {item.participantCount}人
+                                        </p>
+
+                                        <p className={styles.totalAmount}>
+                                            残額{formatYen(remainingAmount)}
+                                        </p>
+                                    </div>
+                                );
+                            })
                         )
                     ) : collectMembers.length === 0 ? (
                         // 徴収一覧を出す対象がいない場合のメッセージ
@@ -455,10 +789,10 @@ export default function Invoice() {
                             <label className={styles.form_label}>
                                 支払金額
                                 <input
-                                    name="totalAmount"
+                                    name="amount"
                                     type="number"
                                     min="1"
-                                    value={form.totalAmount}
+                                    value={form.amount}
                                     onChange={handleChange}
                                     placeholder="例: 4000"
                                     required

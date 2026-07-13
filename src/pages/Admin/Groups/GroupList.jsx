@@ -1,20 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { SearchBar, Badge, Pagination, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchGroups } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Groups.module.css';
 
 const THUMB_COLORS = ['#8fb3f5', '#7fc9a8', '#e8a87f', '#b79fe0', '#f0a8b8'];
+const REALTIME_EVENTS = ['admin:group_created', 'admin:group_updated', 'admin:group_deleted'];
 
 export default function GroupList() {
     const [query, setQuery] = useState('');
     const [page, setPage] = useState(1);
     const [result, setResult] = useState(null);
 
-    useEffect(() => {
+    const loadGroups = useCallback(() => {
         fetchGroups({ query, page }).then(setResult);
     }, [query, page]);
+
+    useEffect(() => {
+        loadGroups();
+    }, [loadGroups]);
+
+    useAdminRealtimeRefresh(REALTIME_EVENTS, loadGroups);
 
     return (
         <AdminLayout title="旅行グループ一覧">
