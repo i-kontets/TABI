@@ -8,6 +8,7 @@ import Login from './pages/Login/Login';
 import Home from './pages/Home/Home';
 import MyPage from './pages/MyPage/MyPage';
 import { ProfileEditPage, UserEditPage, EmailChangePage, NotificationSettingsPage, NotificationPermissionPage, ContactPage, FaqPage } from './pages/MyPage/MyPageSubPages';
+import UserProfilePage from './pages/UserProfile/UserProfilePage.jsx';
 import Itinerary from './pages/Itinerary/Itinerary.jsx';
 import ItineraryEdit from './pages/Itinerary/ItineraryEdit.jsx';
 import Tripmap from './pages/Tripmap/Tripmap';
@@ -49,6 +50,7 @@ function App() {
                     <Route path="/mypage/notification-permission" element={<NotificationPermissionPage />} />
                     <Route path="/mypage/contact" element={<ContactPage />} />
                     <Route path="/mypage/faq" element={<FaqPage />} />
+                    <Route path="/user/:userId" element={<UserProfilePage />} />
                     <Route path="/Itinerary" element={<Itinerary />} />
                     <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
                     <Route path="/Tripmap" element={<Tripmap />} />
