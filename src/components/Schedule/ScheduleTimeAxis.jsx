@@ -106,7 +106,7 @@ const scheduleData = {
             { id: 5, group: '全員', title: 'ホテル出発', endTime: '10:30', userIds: null },
         ],
         '10:00': [
-            { id: 6, group: null, title: 'コテージ到着', endTime: '10:20', userIds: [1, 2, 3, 4, 5, 6] },
+            { id: 6, group: null, title: 'コテージ到着', endTime: '10:20', userIds: [1, 2, 3, 4, 5, 6, 6, 6] },
             { id: 7, group: null, title: '買い出し', endTime: '10:40', userIds: [7, 1] },
             { id: 8, group: null, title: '買い出し', endTime: '10:50', userIds: [7] },
             { id: 9, group: null, title: '買い出し', endTime: '11:00', userIds: [7] },
