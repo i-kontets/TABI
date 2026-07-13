@@ -15,6 +15,15 @@
     scrollbar-width: thin;
 }
 
+.messageList,
+.messageList *,
+.messageActionBackdrop,
+.messageActionBackdrop * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
 .chatState,
 .chatNotice {
     margin: 18px auto;
@@ -79,6 +88,7 @@
     object-fit: cover;
     border-radius: 50%;
     display: block;
+    -webkit-user-drag: none;
 }
 
 .profileTapTarget {

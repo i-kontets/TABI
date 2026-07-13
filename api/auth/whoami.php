@@ -177,6 +177,12 @@ try {
     exit;
 
 } catch (PDOException $error) {
+    if (function_exists("logSystemError")) {
+        logSystemError("auth", "error", "ログインユーザー情報の取得に失敗しました", [
+            "error" => $error->getMessage(),
+        ], $userId ?? null, $_SERVER["REQUEST_URI"] ?? null);
+    }
+
     // DB接続やクエリ実行時のエラーは500で応答
     http_response_code(500);
     echo json_encode([
