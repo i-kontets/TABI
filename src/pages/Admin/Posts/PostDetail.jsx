@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Avatar, Badge, Card, DetailRow, Button, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchPost, togglePostVisibility, deletePost, fetchReports } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Posts.module.css';
 
 const STATUS_OPTIONS = ['未対応', '確認中', '対応済み'];
@@ -14,10 +15,16 @@ export default function PostDetail() {
     const [reports, setReports] = useState([]);
     const [status, setStatus] = useState('未対応');
 
-    useEffect(() => {
+    const loadPostDetail = useCallback(() => {
         fetchPost(postId).then(setPost);
         fetchReports().then((r) => setReports(r.items));
     }, [postId]);
+
+    useEffect(() => {
+        loadPostDetail();
+    }, [loadPostDetail]);
+
+    useAdminRealtimeRefresh(['admin:post_updated', 'admin:post_deleted', 'admin:report_created', 'admin:report_updated'], loadPostDetail);
 
     if (!post) {
         return (

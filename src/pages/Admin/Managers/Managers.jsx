@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Badge, Avatar, Card, Button, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchManagers, createManager, toggleManagerStatus } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Managers.module.css';
 
 const ROLES = ['管理者', 'サポート', '閲覧のみ'];
@@ -11,11 +12,13 @@ export default function Managers() {
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({ name: '', email: '', role: 'サポート' });
 
-    const load = () => fetchManagers().then((list) => setManagers([...list]));
+    const load = useCallback(() => fetchManagers().then((list) => setManagers([...list])), []);
 
     useEffect(() => {
         load();
-    }, []);
+    }, [load]);
+
+    useAdminRealtimeRefresh(['admin:manager_created', 'admin:manager_updated', 'admin:manager_deleted'], load);
 
     const handleAdd = async () => {
         if (!form.name.trim() || !form.email.trim()) {

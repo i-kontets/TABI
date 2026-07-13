@@ -1,6 +1,31 @@
 import { useEffect } from "react";
 import { getAdminSocket } from "./AdminSocket";
 
+const ADMIN_REALTIME_EVENTS = [
+    "user_created",
+    "user_updated",
+    "user_deleted",
+    "group_created",
+    "group_updated",
+    "group_deleted",
+    "post_created",
+    "post_updated",
+    "post_deleted",
+    "report_created",
+    "report_updated",
+    "inquiry_created",
+    "inquiry_updated",
+    "notice_created",
+    "notice_updated",
+    "notice_deleted",
+    "spot_created",
+    "spot_updated",
+    "spot_deleted",
+    "manager_created",
+    "manager_updated",
+    "manager_deleted",
+];
+
 export default function AdminRealtimeListener() {
     useEffect(() => {
         const socket = getAdminSocket();
@@ -9,8 +34,10 @@ export default function AdminRealtimeListener() {
             if (import.meta.env.DEV) {
                 console.log("WebSocket connected:", socket.id);
             }
-
             socket.emit("join_admin");
+            if (import.meta.env.DEV) {
+                console.log("join_admin sent");
+            }
         };
 
         const handleDisconnect = () => {
@@ -19,34 +46,23 @@ export default function AdminRealtimeListener() {
             }
         };
 
-        const handleInquiryCreated = (data) => {
-            if (import.meta.env.DEV) {
-                console.log("Realtime inquiry_created received", data);
-            }
-
-            window.dispatchEvent(
-                new CustomEvent("admin:inquiry_created", {
-                    detail: data,
-                })
-            );
-        };
-
-        const handleReportCreated = (data) => {
-            if (import.meta.env.DEV) {
-                console.log("Realtime report_created received", data);
-            }
-
-            window.dispatchEvent(
-                new CustomEvent("admin:report_created", {
-                    detail: data,
-                })
-            );
-        };
+        const handlers = ADMIN_REALTIME_EVENTS.map((eventName) => {
+            const handler = (data) => {
+                if (import.meta.env.DEV) {
+                    console.log("realtime event received:", eventName, data);
+                }
+                window.dispatchEvent(
+                    new CustomEvent(`admin:${eventName}`, {
+                        detail: data,
+                    })
+                );
+            };
+            socket.on(eventName, handler);
+            return [eventName, handler];
+        });
 
         socket.on("connect", handleConnect);
         socket.on("disconnect", handleDisconnect);
-        socket.on("inquiry_created", handleInquiryCreated);
-        socket.on("report_created", handleReportCreated);
 
         if (socket.connected) {
             handleConnect();
@@ -57,8 +73,9 @@ export default function AdminRealtimeListener() {
         return () => {
             socket.off("connect", handleConnect);
             socket.off("disconnect", handleDisconnect);
-            socket.off("inquiry_created", handleInquiryCreated);
-            socket.off("report_created", handleReportCreated);
+            handlers.forEach(([eventName, handler]) => {
+                socket.off(eventName, handler);
+            });
         };
     }, []);
 

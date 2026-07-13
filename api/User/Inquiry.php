@@ -50,7 +50,7 @@ try {
     $stmt->execute();
 
     $inquiryId = (int) $pdo->lastInsertId();
-    $realtime = sendRealtimeEvent("admin:global", "inquiry_created", [
+    sendRealtimeEvent("admin:global", "inquiry_created", [
         "id" => $inquiryId,
         "public_id" => $publicId,
     ]);
@@ -59,7 +59,6 @@ try {
         "success" => true,
         "message" => "お問い合わせを送信しました。",
         "public_id" => $publicId,
-        "realtime" => $realtime,
     ]);
 } catch (Throwable $error) {
     respond(["success" => false, "message" => "お問い合わせの保存に失敗しました。"], 500);

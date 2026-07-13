@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { StatCard, Card, LineChart, DonutChart, Badge } from '../../../components/Admin/ui/Ui';
 import { fetchAnalytics, fetchActivities } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Dashboard.module.css';
 
 const ACTIVITY_LINKS = {
@@ -12,6 +13,25 @@ const ACTIVITY_LINKS = {
     report: '/admin/reports',
     notice: '/admin/notices',
 };
+
+const REALTIME_EVENTS = [
+    'admin:user_created',
+    'admin:user_updated',
+    'admin:user_deleted',
+    'admin:group_created',
+    'admin:group_updated',
+    'admin:group_deleted',
+    'admin:post_created',
+    'admin:post_updated',
+    'admin:post_deleted',
+    'admin:inquiry_created',
+    'admin:inquiry_updated',
+    'admin:report_created',
+    'admin:report_updated',
+    'admin:notice_created',
+    'admin:notice_updated',
+    'admin:notice_deleted',
+];
 
 export default function Dashboard() {
     const [analytics, setAnalytics] = useState(null);
@@ -26,22 +46,7 @@ export default function Dashboard() {
         loadDashboard();
     }, [loadDashboard]);
 
-    useEffect(() => {
-        const handleRealtimeUpdate = (event) => {
-            if (import.meta.env.DEV) {
-                console.log(`${event.type} received`);
-            }
-            loadDashboard();
-        };
-
-        window.addEventListener('admin:inquiry_created', handleRealtimeUpdate);
-        window.addEventListener('admin:report_created', handleRealtimeUpdate);
-
-        return () => {
-            window.removeEventListener('admin:inquiry_created', handleRealtimeUpdate);
-            window.removeEventListener('admin:report_created', handleRealtimeUpdate);
-        };
-    }, [loadDashboard]);
+    useAdminRealtimeRefresh(REALTIME_EVENTS, loadDashboard);
 
     if (!analytics) return <AdminLayout title="TABI Admin"><div /></AdminLayout>;
 

@@ -21,6 +21,7 @@ import CheckList from './pages/CheckList/CheckList';
 import Other from './pages/Other/Other.jsx';
 import Tourist from './pages/Tourist/Tourist';
 import AdminRoutes from './pages/Admin/AdminRoutes.jsx';
+import UserRealtimeListener from './pages/UserRealtimeListener.jsx';
 
 
 export const TripContext = createContext();
@@ -34,6 +35,7 @@ function App() {
     return (
         <TripContext.Provider value={{ trip, setTrip }}>
             <BrowserRouter basename={import.meta.env.BASE_URL}>
+                <UserRealtimeListener trip={trip} />
                 <Routes>
                     <Route path="/" element={<Login />} />
                     <Route path="/Newreg" element={<Newreg />} />

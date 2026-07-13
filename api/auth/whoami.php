@@ -56,9 +56,8 @@ function resolveUserIconUrl(?string $iconKey): ?string
 
     try {
         $aws = loadAwsConfig();
-        $s3 = $aws ? createS3Client($aws) : null;
 
-        return ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $iconKey) : null;
+        return $aws ? presignS3Url($aws, $iconKey) : null;
     } catch (Throwable $error) {
         return null;
     }

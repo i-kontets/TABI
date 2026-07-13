@@ -7,6 +7,8 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // データベース接続設定を読み込む
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Admin/includes/config.php";
+require_once __DIR__ . "/../Admin/services/realtime.php";
 
 // 文字列の先頭1文字を取り出す。
 // ユーザー名のアイコン代わりに使うため、マルチバイト文字にも対応する。
@@ -229,6 +231,31 @@ try {
     $pdo->commit();
     $pdo->query("SELECT RELEASE_LOCK('tabi_messages_id_lock')");
     $idLockAcquired = false;
+
+    if (!$groupId) {
+        $groupStmt = $pdo->prepare("
+            SELECT t.group_id
+            FROM chats c
+            INNER JOIN trips t ON t.trip_id = c.trip_id
+            WHERE c.chat_id = :chat_id
+            LIMIT 1
+        ");
+        $groupStmt->bindValue(":chat_id", $chatId, PDO::PARAM_INT);
+        $groupStmt->execute();
+        $groupId = (int) $groupStmt->fetchColumn();
+    }
+
+    if ($groupId) {
+        sendRealtimeEvent("trip:" . $groupId, "chat_message_created", [
+            "group_id" => (int) $groupId,
+            "chat_id" => (int) $chatId,
+            "message_id" => $messageId,
+        ]);
+        sendRealtimeEvent("admin:global", "post_created", [
+            "post_id" => $messageId,
+            "group_id" => (int) $groupId,
+        ]);
+    }
 
     // 画面表示で使いやすいように、日付ラベルと時刻を生成する。
     $sentAt = new DateTimeImmutable($message["sent_at"]);
