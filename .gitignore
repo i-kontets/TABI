@@ -39,6 +39,7 @@ composer.phar
 *.sln
 *.sw?
 *env.php
+api/config/realtime.php
 
 # Android / Gradle
 android/.gradle/
