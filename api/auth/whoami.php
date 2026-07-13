@@ -10,17 +10,58 @@ header("Content-Type: application/json; charset=UTF-8");
 require_once __DIR__ . "/../config/db.php";
 require_once __DIR__ . "/../Groups/S3Common.php";
 
-function resolveUserIconUrl(?string $iconUrl): ?string
+function extractS3KeyFromIconValue(?string $iconValue): ?string
 {
-    if (!$iconUrl) {
+    if (!$iconValue) {
         return null;
     }
-    if (strpos($iconUrl, "http://") === 0 || strpos($iconUrl, "https://") === 0) {
-        return $iconUrl;
+
+    $iconValue = trim($iconValue);
+
+    if ($iconValue === "") {
+        return null;
     }
-    $aws = loadAwsConfig();
-    $s3 = $aws ? createS3Client($aws) : null;
-    return ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $iconUrl) : null;
+
+    // DBに誤ってS3の完全URLや署名付きURLが保存されている場合、
+    // URLのpath部分だけを取り出してS3キーに戻す
+    if (strpos($iconValue, "http://") === 0 || strpos($iconValue, "https://") === 0) {
+        $parts = parse_url($iconValue);
+
+        if (empty($parts["path"])) {
+            return null;
+        }
+
+        // 例:
+        // /User/2/profile/xxx.jpg
+        // ↓
+        // User/2/profile/xxx.jpg
+        return ltrim(rawurldecode($parts["path"]), "/");
+    }
+
+    // すでにS3キーだけが保存されている場合
+    return ltrim($iconValue, "/");
+}
+
+function resolveUserIconUrl(?string $iconKey): ?string
+{
+    if (!$iconKey) {
+        return null;
+    }
+
+    $iconKey = ltrim(trim($iconKey), "/");
+
+    if ($iconKey === "") {
+        return null;
+    }
+
+    try {
+        $aws = loadAwsConfig();
+        $s3 = $aws ? createS3Client($aws) : null;
+
+        return ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $iconKey) : null;
+    } catch (Throwable $error) {
+        return null;
+    }
 }
 
 // セッションにユーザーIDが無ければ未ログイン扱いで401を返す
@@ -60,8 +101,10 @@ try {
     }
 
     // 正常時はユーザー情報を含むJSONを返す
-    $user["icon_key"] = $user["icon_url"];
-    $user["icon_url"] = resolveUserIconUrl($user["icon_url"]);
+    $iconKey = extractS3KeyFromIconValue($user["icon_url"] ?? null);
+
+    $user["icon_key"] = $iconKey;
+    $user["icon_url"] = resolveUserIconUrl($iconKey);
 
     echo json_encode([
         "success" => true,

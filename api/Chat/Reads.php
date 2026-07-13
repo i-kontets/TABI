@@ -28,6 +28,11 @@ if (!isset($_SESSION["user_id"])) {
     exit;
 }
 
+$userId = (int) $_SESSION["user_id"];
+
+// ここで解除
+session_write_close();
+
 // GET の場合はクエリ文字列、POST の場合は JSON / フォームを読む。
 $input = $_GET;
 
@@ -37,7 +42,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 // 操作対象のチャットと、任意で指定されるメッセージID群を取得する。
-$userId = (int) $_SESSION["user_id"];
 $chatId = filter_var($input["chat_id"] ?? null, FILTER_VALIDATE_INT);
 $groupId = filter_var($input["group_id"] ?? null, FILTER_VALIDATE_INT);
 $messageId = filter_var($input["message_id"] ?? null, FILTER_VALIDATE_INT);
