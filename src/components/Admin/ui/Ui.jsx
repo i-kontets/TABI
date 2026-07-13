@@ -140,16 +140,22 @@ export function Avatar({ name = '', size = 40 }) {
 
 /* ============ 統計カード ============ */
 
-export function StatCard({ label, value, unit, diff, warn }) {
+export function StatCard({ label, value, unit, diff, diffLabel, diffTone, warn }) {
+    const diffClass = diffTone === 'warn'
+        ? styles.diffWarn
+        : diff >= 0
+            ? styles.diffUp
+            : styles.diffDown;
+
     return (
         <div className={styles.statCard}>
             <div className={styles.statLabel}>{label}</div>
             <div className={styles.statValueRow}>
                 <span className={`${styles.statValue} ${warn ? styles.statWarn : ''}`}>{value}</span>
                 {unit && <span className={styles.statUnit}>{unit}</span>}
-                {diff != null && (
-                    <span className={`${styles.statDiff} ${diff >= 0 ? styles.diffUp : styles.diffDown}`}>
-                        {diff >= 0 ? `+${diff}` : diff}
+                {(diff != null || diffLabel) && (
+                    <span className={`${styles.statDiff} ${diffClass}`}>
+                        {diffLabel || (diff >= 0 ? `+${diff}` : diff)}
                     </span>
                 )}
             </div>

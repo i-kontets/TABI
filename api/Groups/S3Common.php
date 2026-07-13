@@ -1,5 +1,10 @@
 <?php
 
+$systemErrorsPath = __DIR__ . "/../Admin/services/system_errors.php";
+if (file_exists($systemErrorsPath)) {
+    require_once $systemErrorsPath;
+}
+
 function loadAwsConfig(): ?array
 {
     $configPath = __DIR__ . "/../config/env.php";
@@ -28,6 +33,11 @@ function createS3Client(array $aws)
     $autoload = __DIR__ . "/../vendor/autoload.php";
 
     if (!file_exists($autoload)) {
+        if (function_exists("logSystemError")) {
+            logSystemError("s3", "error", "AWS SDK autoload が見つかりません", [
+                "path" => $autoload,
+            ]);
+        }
         return null;
     }
 
@@ -54,6 +64,13 @@ function presignS3Url($s3, string $bucket, string $key): ?string
 
         return (string) $request->getUri();
     } catch (Throwable $error) {
+        if (function_exists("logSystemError")) {
+            logSystemError("s3", "warning", "S3署名付きURL生成に失敗しました", [
+                "bucket" => $bucket,
+                "key" => $key,
+                "error" => $error->getMessage(),
+            ]);
+        }
         return null;
     }
 }

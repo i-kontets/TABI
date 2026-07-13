@@ -26,6 +26,7 @@ const REALTIME_EVENTS = [
     'admin:user_updated',
     'admin:user_deleted',
     'admin:user_active_updated',
+    'admin:system_error_created',
     'admin:group_created',
     'admin:group_updated',
     'admin:group_deleted',
@@ -61,6 +62,9 @@ export default function Dashboard() {
     if (!analytics) return <AdminLayout title="TABI Admin"><div /></AdminLayout>;
 
     const { summary, activeUserTrend, userAttributes } = analytics;
+    const systemErrors = typeof summary.systemErrors === 'object'
+        ? summary.systemErrors
+        : { value: summary.systemErrors ?? 0, today: 0 };
 
     return (
         <AdminLayout title="TABI Admin">
@@ -75,7 +79,14 @@ export default function Dashboard() {
                 <StatCard label="アクティブユーザー" value={summary.activeUsers.value} unit="人" diff={summary.activeUsers.diff} />
                 <StatCard label="未対応お問い合わせ" value={summary.pendingInquiries} unit="件" warn={summary.pendingInquiries > 0} />
                 <StatCard label="未対応通報" value={summary.pendingReports} unit="件" warn={summary.pendingReports > 0} />
-                <StatCard label="システムエラー" value={summary.systemErrors} unit="件" />
+                <StatCard
+                    label="システムエラー"
+                    value={systemErrors.value}
+                    unit="件"
+                    diffLabel={`本日 +${systemErrors.today}`}
+                    diffTone="warn"
+                    warn={systemErrors.value > 0}
+                />
             </div>
 
             <Card title="アクティブユーザー推移(過去7日間)">

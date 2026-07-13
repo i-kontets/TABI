@@ -533,6 +533,32 @@ function tokyo_day_range(int $offsetDays = 0): array
     ];
 }
 
+function fetch_system_error_summary(PDO $pdo): array
+{
+    if (!admin_column_exists($pdo, "system_errors", "error_id")) {
+        return ["value" => 0, "today" => 0];
+    }
+
+    [$start, $end] = tokyo_day_range();
+    $stmt = $pdo->prepare("
+        SELECT
+            COUNT(*) AS unresolved_count,
+            SUM(CASE WHEN created_at >= :start_at AND created_at < :end_at THEN 1 ELSE 0 END) AS today_count
+        FROM system_errors
+        WHERE status = 'unresolved'
+    ");
+    $stmt->execute([
+        "start_at" => $start,
+        "end_at" => $end,
+    ]);
+    $row = $stmt->fetch() ?: [];
+
+    return [
+        "value" => (int) ($row["unresolved_count"] ?? 0),
+        "today" => (int) ($row["today_count"] ?? 0),
+    ];
+}
+
 function fetch_today_active_users(PDO $pdo): int
 {
     if (!admin_column_exists($pdo, "users", "last_active_at")) {
