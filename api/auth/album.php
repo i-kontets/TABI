@@ -38,4 +38,4 @@ if($action === "add"){
 
 }
 
-if($action === "delete")
+if($action === "delete");

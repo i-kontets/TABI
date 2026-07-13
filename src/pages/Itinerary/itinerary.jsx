@@ -65,7 +65,6 @@ export default function Itinerary() {
       }
     };
 
-
     fetchMembers();
   }, [groupId]);
 
@@ -74,7 +73,7 @@ export default function Itinerary() {
 
     const fetchTripPeriod = async () => {
       try {
-        const response = await fetch("/TABI/api/Groups/TripPeriod.php", {
+        const response = await fetch("/TABI/api/Auth/TripPeriod.php", {
           method: "POST",
           credentials: "include",
           headers: {
@@ -85,7 +84,10 @@ export default function Itinerary() {
           }),
         });
 
-        const data = await response.json();
+        const text = await response.text();
+        console.log(text);
+
+        const data = JSON.parse(text);
 
         if (data.success) {
           setTripPeriod({
@@ -97,7 +99,6 @@ export default function Itinerary() {
         console.error(error);
       }
     };
-
     fetchTripPeriod();
   }, [groupId]);
 
