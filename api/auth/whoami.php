@@ -8,6 +8,8 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // データベース接続設定を読み込む（$pdo を使用）
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Admin/includes/config.php";
+require_once __DIR__ . "/../Admin/services/realtime.php";
 require_once __DIR__ . "/../Groups/S3Common.php";
 
 function extractS3KeyFromIconValue(?string $iconValue): ?string
@@ -56,11 +58,69 @@ function resolveUserIconUrl(?string $iconKey): ?string
 
     try {
         $aws = loadAwsConfig();
+        $s3 = $aws ? createS3Client($aws) : null;
 
-        return $aws ? presignS3Url($aws, $iconKey) : null;
+        return ($aws && $s3) ? presignS3Url($s3, $aws["bucket"], $iconKey) : null;
     } catch (Throwable $error) {
         return null;
     }
+}
+
+function userColumnExists(PDO $pdo, string $column): bool
+{
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'users'
+          AND COLUMN_NAME = :column_name
+    ");
+    $stmt->execute(["column_name" => $column]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+function notifyUserActiveUpdated(int $userId): void
+{
+    $result = sendRealtimeEvent("admin:global", "user_active_updated", [
+        "user_id" => $userId,
+    ]);
+
+    if (!$result["ok"]) {
+        error_log(
+            "Realtime user_active_updated failed for user_id "
+            . $userId
+            . ": HTTP "
+            . $result["http_code"]
+            . " "
+            . $result["curl_error"]
+        );
+    }
+}
+
+function touchUserLastActive(PDO $pdo, int $userId): bool
+{
+    if (!userColumnExists($pdo, "last_active_at")) {
+        return false;
+    }
+
+    $now = (new DateTimeImmutable("now", new DateTimeZone("Asia/Tokyo")))->format("Y-m-d H:i:s");
+    $stmt = $pdo->prepare("
+        UPDATE users
+        SET last_active_at = :now
+        WHERE user_id = :user_id
+          AND (
+              last_active_at IS NULL
+              OR last_active_at < DATE_SUB(:now_for_compare, INTERVAL 5 MINUTE)
+          )
+    ");
+    $stmt->execute([
+        "now" => $now,
+        "now_for_compare" => $now,
+        "user_id" => $userId,
+    ]);
+
+    return $stmt->rowCount() > 0;
 }
 
 // セッションにユーザーIDが無ければ未ログイン扱いで401を返す
@@ -74,9 +134,13 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 // セッションから現在のユーザーIDを取得
-$userId = $_SESSION["user_id"];
+$userId = (int) $_SESSION["user_id"];
 
 try {
+    if (touchUserLastActive($pdo, $userId)) {
+        notifyUserActiveUpdated($userId);
+    }
+
     // ユーザー情報をDBから取得するクエリ
     // 返却するカラム: user_id, name, email, icon_url, language_code, status
     $sql = " SELECT user_id, name, email, icon_url, language_code, status FROM users WHERE user_id = :user_id LIMIT 1 ";

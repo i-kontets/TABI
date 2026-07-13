@@ -14,10 +14,18 @@ const ACTIVITY_LINKS = {
     notice: '/admin/notices',
 };
 
+const todayLabel = () => new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'Asia/Tokyo',
+}).format(new Date());
+
 const REALTIME_EVENTS = [
     'admin:user_created',
     'admin:user_updated',
     'admin:user_deleted',
+    'admin:user_active_updated',
     'admin:group_created',
     'admin:group_updated',
     'admin:group_deleted',
@@ -58,7 +66,7 @@ export default function Dashboard() {
                 <span>本日のアプリ全体の状況を確認できます。</span>
             </p>
 
-            <h2 className={styles.sectionTitle}>本日のサマリー(2026/07/02 時点)</h2>
+            <h2 className={styles.sectionTitle}>本日のサマリー({todayLabel()} 時点)</h2>
             <div className={styles.statGrid}>
                 <StatCard label="新規ユーザー" value={summary.newUsers.value} unit="人" diff={summary.newUsers.diff} />
                 <StatCard label="旅行グループ作成数" value={summary.newGroups.value} unit="件" diff={summary.newGroups.diff} />
@@ -69,7 +77,7 @@ export default function Dashboard() {
             </div>
 
             <Card title="アクティブユーザー推移(過去7日間)">
-                <LineChart data={activeUserTrend.data} labels={activeUserTrend.labels} />
+                <LineChart data={activeUserTrend.data} labels={activeUserTrend.labels} padding={{ left: 24, right: 12, top: 8, bottom: 8 }} />
             </Card>
 
             <Card title="最近のアクティビティ">

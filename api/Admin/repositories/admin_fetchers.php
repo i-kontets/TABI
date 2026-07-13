@@ -453,16 +453,54 @@ function fetch_recent_activities(PDO $pdo): array
 }
 
 // 今日のアクティブユーザー数を取得します。
+function admin_column_exists(PDO $pdo, string $table, string $column): bool
+{
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = :table_name
+          AND COLUMN_NAME = :column_name
+    ");
+    $stmt->execute([
+        "table_name" => $table,
+        "column_name" => $column,
+    ]);
+
+    return (int) $stmt->fetchColumn() > 0;
+}
+
+function tokyo_day_range(int $offsetDays = 0): array
+{
+    $timezone = new DateTimeZone("Asia/Tokyo");
+    $start = (new DateTimeImmutable("today", $timezone))->modify("{$offsetDays} days");
+    $end = $start->modify("+1 day");
+
+    return [
+        $start->format("Y-m-d H:i:s"),
+        $end->format("Y-m-d H:i:s"),
+    ];
+}
+
 function fetch_today_active_users(PDO $pdo): int
 {
-    $stmt = $pdo->query("
-        SELECT COUNT(DISTINCT uda.user_id) AS active_users
-        FROM user_daily_activities uda
-        INNER JOIN users u ON u.user_id = uda.user_id
-        WHERE uda.activity_date = CURDATE()
-          AND u.status = 'active'
-          AND u.deleted_at IS NULL
+    if (!admin_column_exists($pdo, "users", "last_active_at")) {
+        return 0;
+    }
+
+    [$start, $end] = tokyo_day_range();
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) AS active_users
+        FROM users
+        WHERE last_active_at >= :start_at
+          AND last_active_at < :end_at
+          AND status = 'active'
+          AND deleted_at IS NULL
     ");
+    $stmt->execute([
+        "start_at" => $start,
+        "end_at" => $end,
+    ]);
 
     return (int) $stmt->fetchColumn();
 }
@@ -470,6 +508,39 @@ function fetch_today_active_users(PDO $pdo): int
 // 過去7日間の日別アクティブユーザー数を取得します。
 function fetch_active_user_trend(PDO $pdo): array
 {
+    $labels = [];
+    $data = [];
+    $hasLastActiveAt = admin_column_exists($pdo, "users", "last_active_at");
+    $stmt = $hasLastActiveAt ? $pdo->prepare("
+        SELECT COUNT(*) AS active_users
+        FROM users
+        WHERE last_active_at >= :start_at
+          AND last_active_at < :end_at
+          AND status = 'active'
+          AND deleted_at IS NULL
+    ") : null;
+
+    for ($i = 6; $i >= 0; $i--) {
+        [$start, $end] = tokyo_day_range(-$i);
+        $labels[] = $i === 0 ? "今日" : "{$i}日前";
+
+        if (!$stmt) {
+            $data[] = 0;
+            continue;
+        }
+
+        $stmt->execute([
+            "start_at" => $start,
+            "end_at" => $end,
+        ]);
+        $data[] = (int) $stmt->fetchColumn();
+    }
+
+    return [
+        "labels" => $labels,
+        "data" => $data,
+    ];
+
     $stmt = $pdo->query("
         SELECT
             uda.activity_date,
