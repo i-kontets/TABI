@@ -21,10 +21,11 @@
 }
 
 .preview {
-    width: 72px;
-    height: 72px;
+    /* Home画面カードの画像（140×110）と同じ縦横比の角丸長方形 */
+    width: 100px;
+    aspect-ratio: 140 / 110;
     flex: 0 0 auto;
-    border-radius: 50%;
+    border-radius: 12px;
     border: 1px solid #d1d5db;
     background: #eef0f5;
     display: flex;
@@ -127,9 +128,9 @@
 
 .editorCrop {
     position: relative;
-    width: min(300px, 80vw);
-    height: min(300px, 80vw);
-    border-radius: 50%;
+    /* 高さは JSX 側の aspectRatio（既定 140/110）から自動で決まる */
+    width: min(320px, 84vw);
+    border-radius: 12px;
     border: 2px solid rgba(255, 255, 255, 0.9);
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
     overflow: hidden;
