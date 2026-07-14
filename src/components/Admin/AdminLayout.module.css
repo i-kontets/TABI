@@ -12,3 +12,29 @@
     flex: 1;
     padding: 12px 16px 88px;
 }
+
+@media (min-width: 601px) {
+    .wrap {
+        max-width: 820px;
+    }
+
+    .content {
+        padding: 18px 24px 104px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .wrap {
+        max-width: none;
+        margin: 0;
+        padding-left: 184px;
+    }
+
+    .content {
+        width: 100%;
+        max-width: 1180px;
+        box-sizing: border-box;
+        margin: 0 auto;
+        padding: 24px 32px 40px;
+    }
+}

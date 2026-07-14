@@ -55,3 +55,31 @@
     background: #2f6ceb;
     border-radius: 999px;
 }
+
+@media (min-width: 601px) {
+    .periodBar {
+        padding: 12px 16px;
+        margin-bottom: 16px;
+    }
+
+    .statGrid {
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .periodBar {
+        max-width: 420px;
+        text-align: left;
+    }
+
+    .statGrid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .rankRow {
+        padding: 10px 0;
+    }
+}

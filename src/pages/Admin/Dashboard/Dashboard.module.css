@@ -82,3 +82,77 @@
     font-size: 13px;
     text-align: center;
 }
+
+.panelGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+}
+
+@media (min-width: 601px) {
+    .greeting {
+        margin-top: 2px;
+    }
+
+    .statGrid {
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .panelGrid {
+        gap: 16px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .greeting {
+        font-size: 16px;
+        margin-bottom: 18px;
+    }
+
+    .sectionTitle {
+        font-size: 13px;
+    }
+
+    .statGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .panelGrid {
+        grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+        align-items: start;
+    }
+
+    .chartPanel {
+        grid-column: 1 / -1;
+    }
+
+    .chartPanel svg {
+        height: 240px;
+    }
+
+    .panelGrid > section:nth-of-type(2),
+    .panelGrid > section:nth-of-type(3) {
+        min-height: 300px;
+    }
+
+    .panelGrid > section:nth-of-type(4) {
+        grid-column: 1 / -1;
+    }
+
+    .activityLink {
+        min-height: 34px;
+    }
+
+    .todoList {
+        max-height: 220px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .chartPanel svg {
+        height: 260px;
+    }
+}

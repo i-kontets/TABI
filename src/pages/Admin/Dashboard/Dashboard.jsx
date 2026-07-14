@@ -89,45 +89,47 @@ export default function Dashboard() {
                 />
             </div>
 
-            <Card title="アクティブユーザー推移(過去7日間)">
-                <LineChart data={activeUserTrend.data} labels={activeUserTrend.labels} padding={{ left: 24, right: 12, top: 8, bottom: 8 }} />
-            </Card>
+            <div className={styles.panelGrid}>
+                <Card title="アクティブユーザー推移(過去7日間)" className={styles.chartPanel}>
+                    <LineChart data={activeUserTrend.data} labels={activeUserTrend.labels} padding={{ left: 24, right: 12, top: 8, bottom: 8 }} />
+                </Card>
 
-            <Card title="最近のアクティビティ">
-                <ul className={styles.activityList}>
-                    {activities.map((action) => (
-                        <li key={action.id}>
-                            <Link to={ACTIVITY_LINKS[action.type] || '/admin'} className={styles.activityLink}>
-                                <span className={styles.activityText}>{action.text}</span>
-                                <span className={styles.activityTime}>{action.time}</span>
-                            </Link>
-                        </li>
-                    ))}
-                </ul>
-            </Card>
+                <Card title="最近のアクティビティ">
+                    <ul className={styles.activityList}>
+                        {activities.map((action) => (
+                            <li key={action.id}>
+                                <Link to={ACTIVITY_LINKS[action.type] || '/admin'} className={styles.activityLink}>
+                                    <span className={styles.activityText}>{action.text}</span>
+                                    <span className={styles.activityTime}>{action.time}</span>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </Card>
 
-            <Card title="ユーザー属性(全体)">
-                <DonutChart
-                    items={userAttributes}
-                    centerLabel="合計"
-                    centerValue={`${summary.totalUsers.toLocaleString()}人`}
-                />
-            </Card>
+                <Card title="ユーザー属性(全体)">
+                    <DonutChart
+                        items={userAttributes}
+                        centerLabel="合計"
+                        centerValue={`${summary.totalUsers.toLocaleString()}人`}
+                    />
+                </Card>
 
-            <Card title="要対応の一覧">
-                <div className={styles.todoList}>
-                    {pendingSupportItems.map((item) => (
-                        <div key={item.id} className={styles.todoRow}>
-                            <Badge label={item.status} />
-                            <Link to={item.to} className={styles.todoLink}>{item.title}</Link>
-                            <span className={styles.todoTime}>{item.createdAt}</span>
-                        </div>
-                    ))}
-                    {pendingSupportItems.length === 0 && (
-                        <p className={styles.todoEmpty}>未対応の項目はありません</p>
-                    )}
-                </div>
-            </Card>
+                <Card title="要対応の一覧">
+                    <div className={styles.todoList}>
+                        {pendingSupportItems.map((item) => (
+                            <div key={item.id} className={styles.todoRow}>
+                                <Badge label={item.status} />
+                                <Link to={item.to} className={styles.todoLink}>{item.title}</Link>
+                                <span className={styles.todoTime}>{item.createdAt}</span>
+                            </div>
+                        ))}
+                        {pendingSupportItems.length === 0 && (
+                            <p className={styles.todoEmpty}>未対応の項目はありません</p>
+                        )}
+                    </div>
+                </Card>
+            </div>
         </AdminLayout>
     );
 }
