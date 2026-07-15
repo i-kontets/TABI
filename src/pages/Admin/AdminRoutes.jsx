@@ -15,6 +15,7 @@ import NoticeForm from './Notices/NoticeForm';
 import SpotList from './Spots/SpotList';
 import SpotForm from './Spots/SpotForm';
 import Analytics from './Analytics/Analytics';
+import Activities from './Activities/Activities';
 import Managers from './Managers/Managers';
 import Logs from './Logs/Logs';
 import Settings from './Settings/Settings';
@@ -49,6 +50,7 @@ export default function AdminRoutes() {
                 <Route path="spots/new" element={<SpotForm />} />
                 <Route path="spots/:spotId/edit" element={<SpotForm />} />
                 <Route path="analytics" element={<Analytics />} />
+                <Route path="activities" element={<Activities />} />
                 <Route path="managers" element={<Managers />} />
                 <Route path="logs" element={<Logs />} />
                 <Route path="settings" element={<Settings />} />

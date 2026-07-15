@@ -78,6 +78,11 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
         respond(fetch_recent_activities($pdo));
     }
 
+    // activities-page は最近のアクティビティ一覧画面向けにページング済みで返します。
+    if ($resource === "activities-page") {
+        respond(page_result(fetch_recent_activities($pdo, null), (int) ($_GET["page"] ?? 1), 10));
+    }
+
     // 通報件数の状態別集計だけを返す専用エンドポイントです。
     if ($resource === "support-pending") {
         respond(fetch_pending_support_items($pdo));

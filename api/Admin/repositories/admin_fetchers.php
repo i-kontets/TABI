@@ -340,16 +340,17 @@ function activity_time(?string $value): string
 }
 
 // 最近の管理アクティビティを、種類ごとに集めて 1 つのタイムラインにまとめます。
-function fetch_recent_activities(PDO $pdo): array
+function fetch_recent_activities(PDO $pdo, ?int $limit = 8): array
 {
     $activities = [];
+    $queryLimit = $limit === null ? 100 : max(10, $limit + 2);
 
     $logRows = $pdo->query("
         SELECT l.activity_log_id, l.action_text, l.target_type, l.created_at, u.name AS manager_name
         FROM admin_activity_logs l
         LEFT JOIN users u ON u.user_id = l.manager_user_id
         ORDER BY l.created_at DESC, l.activity_log_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
     foreach ($logRows as $row) {
         $activities[] = [
@@ -365,7 +366,7 @@ function fetch_recent_activities(PDO $pdo): array
         SELECT inquiry_id, title, created_at
         FROM admin_inquiries
         ORDER BY created_at DESC, inquiry_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
     foreach ($inquiryRows as $row) {
         $activities[] = [
@@ -381,7 +382,7 @@ function fetch_recent_activities(PDO $pdo): array
         SELECT report_id, reason, reported_at
         FROM admin_reports
         ORDER BY reported_at DESC, report_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
     foreach ($reportRows as $row) {
         $activities[] = [
@@ -398,7 +399,7 @@ function fetch_recent_activities(PDO $pdo): array
         FROM users
         WHERE deleted_at IS NULL
         ORDER BY created_at DESC, user_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
     foreach ($userRows as $row) {
         $activities[] = [
@@ -414,7 +415,7 @@ function fetch_recent_activities(PDO $pdo): array
         SELECT group_id, group_name, created_at
         FROM user_groups
         ORDER BY created_at DESC, group_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
     foreach ($groupRows as $row) {
         $activities[] = [
@@ -431,7 +432,7 @@ function fetch_recent_activities(PDO $pdo): array
         FROM admin_notices
         WHERE deleted_at IS NULL
         ORDER BY created_at DESC, notice_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
     foreach ($noticeRows as $row) {
         $activities[] = [
@@ -444,7 +445,9 @@ function fetch_recent_activities(PDO $pdo): array
     }
 
     usort($activities, fn($a, $b) => strcmp($b["sortAt"], $a["sortAt"]));
-    $activities = array_slice($activities, 0, 8);
+    if ($limit !== null) {
+        $activities = array_slice($activities, 0, $limit);
+    }
 
     return array_map(function ($activity) {
         unset($activity["sortAt"]);

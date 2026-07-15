@@ -42,6 +42,9 @@ const REALTIME_EVENTS = [
     'admin:notice_deleted',
 ];
 
+const RESPONSE_PREVIEW_LIMIT = 4;
+const ACTIVITY_PREVIEW_LIMIT = 8;
+
 export default function Dashboard() {
     const [analytics, setAnalytics] = useState(null);
     const [activities, setActivities] = useState([]);
@@ -65,6 +68,8 @@ export default function Dashboard() {
     const systemErrors = typeof summary.systemErrors === 'object'
         ? summary.systemErrors
         : { value: summary.systemErrors ?? 0, today: 0 };
+    const responsePreviewItems = pendingSupportItems.slice(0, RESPONSE_PREVIEW_LIMIT);
+    const activityPreviewItems = activities.slice(0, ACTIVITY_PREVIEW_LIMIT);
 
     return (
         <AdminLayout title="TABI Admin">
@@ -102,9 +107,13 @@ export default function Dashboard() {
                     />
                 </Card>
 
-                <Card title="対応一覧" className={styles.todoPanel}>
+                <Card
+                    title={`対応一覧（${pendingSupportItems.length}件）`}
+                    action={<Link to="/admin/support" className={styles.cardAction}>すべて見る →</Link>}
+                    className={styles.todoPanel}
+                >
                     <div className={styles.todoList}>
-                        {pendingSupportItems.map((item) => (
+                        {responsePreviewItems.map((item) => (
                             <div key={item.id} className={styles.todoRow}>
                                 <Badge label={item.status} />
                                 <Link to={item.to} className={styles.todoLink}>{item.title}</Link>
@@ -117,9 +126,13 @@ export default function Dashboard() {
                     </div>
                 </Card>
 
-                <Card title="最近のアクティビティ" className={styles.activityPanel}>
+                <Card
+                    title="最近のアクティビティ"
+                    action={<Link to="/admin/activities" className={styles.cardAction}>すべて見る →</Link>}
+                    className={styles.activityPanel}
+                >
                     <ul className={styles.activityList}>
-                        {activities.map((action) => (
+                        {activityPreviewItems.map((action) => (
                             <li key={action.id}>
                                 <Link to={ACTIVITY_LINKS[action.type] || '/admin'} className={styles.activityLink}>
                                     <span className={styles.activityText}>{action.text}</span>
@@ -127,6 +140,9 @@ export default function Dashboard() {
                                 </Link>
                             </li>
                         ))}
+                        {activities.length === 0 && (
+                            <li className={styles.emptyRow}>最近のアクティビティはありません</li>
+                        )}
                     </ul>
                 </Card>
             </div>
