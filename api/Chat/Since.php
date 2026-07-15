@@ -130,6 +130,9 @@ try {
             END) AS read_count,
             MAX(CASE WHEN mr.user_id = :current_user_id THEN 1 ELSE 0 END) AS is_read
         FROM messages m
+        INNER JOIN chat_members cm_sender
+          ON cm_sender.chat_id = m.chat_id
+         AND cm_sender.user_id = m.sender_user_id
         LEFT JOIN users u ON u.user_id = m.sender_user_id
         LEFT JOIN message_reads mr ON mr.message_id = m.message_id
         WHERE m.chat_id = :chat_id

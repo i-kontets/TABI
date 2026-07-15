@@ -215,6 +215,9 @@ function fetchContact(PDO $pdo, int $chatId): array
         LEFT JOIN messages latest ON latest.message_id = (
             SELECT m2.message_id
             FROM messages m2
+            INNER JOIN chat_members cm_sender
+              ON cm_sender.chat_id = m2.chat_id
+             AND cm_sender.user_id = m2.sender_user_id
             WHERE m2.chat_id = c.chat_id
             ORDER BY m2.sent_at DESC, m2.message_id DESC
             LIMIT 1
@@ -275,6 +278,9 @@ function fetchMessages(PDO $pdo, int $chatId, int $userId): array
             END) AS read_count,
             MAX(CASE WHEN mr.user_id = :current_user_id THEN 1 ELSE 0 END) AS is_read
         FROM messages m
+        INNER JOIN chat_members cm_sender
+          ON cm_sender.chat_id = m.chat_id
+         AND cm_sender.user_id = m.sender_user_id
         LEFT JOIN users u ON u.user_id = m.sender_user_id
         LEFT JOIN message_reads mr ON mr.message_id = m.message_id
         WHERE m.chat_id = :chat_id

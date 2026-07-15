@@ -139,12 +139,21 @@ try {
         LEFT JOIN messages latest ON latest.message_id = (
             SELECT m2.message_id
             FROM messages m2
+            INNER JOIN chat_members cm_sender
+              ON cm_sender.chat_id = m2.chat_id
+             AND cm_sender.user_id = m2.sender_user_id
             WHERE m2.chat_id = c.chat_id
             ORDER BY m2.sent_at DESC, m2.message_id DESC
             LIMIT 1
         )
         LEFT JOIN messages unread ON unread.chat_id = c.chat_id
             AND unread.sender_user_id <> :unread_user_id
+            AND EXISTS (
+                SELECT 1
+                FROM chat_members cm_unread_sender
+                WHERE cm_unread_sender.chat_id = unread.chat_id
+                  AND cm_unread_sender.user_id = unread.sender_user_id
+            )
             AND NOT EXISTS (
                 SELECT 1
                 FROM message_reads mr
