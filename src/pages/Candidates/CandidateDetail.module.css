@@ -1,0 +1,351 @@
+.page {
+    min-height: 100vh;
+    color: #0f172a;
+    background:
+        radial-gradient(circle at top, rgba(0, 59, 149, 0.12), transparent 38%),
+        #edf2f7;
+    font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", system-ui, sans-serif;
+}
+
+.phone {
+    width: min(100%, 430px);
+    min-height: 100vh;
+    margin: 0 auto;
+    background: #f8fbff;
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-shadow: 0 20px 70px rgba(15, 23, 42, 0.14);
+}
+
+.hero {
+    padding: 16px 16px 32px;
+    color: #fff;
+    background: linear-gradient(160deg, #003b95 0%, #0a58ca 100%);
+    border-radius: 0 0 24px 24px;
+    box-shadow: 0 14px 28px rgba(0, 53, 128, 0.18);
+}
+
+.topBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 42px;
+}
+
+.brand {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+}
+
+.backButton,
+.actionButton {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.16);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.backButton:active,
+.actionButton:active {
+    transform: scale(0.95);
+}
+
+.actionButtonActive {
+    background: #22c55e;
+    color: #fff;
+}
+
+.actionButtonActive svg {
+    transform: rotate(45deg);
+}
+
+.backButton svg,
+.actionButton svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.2s;
+}
+
+.heroText {
+    margin-top: 20px;
+}
+
+.heroText p,
+.heroText h1 {
+    margin: 0;
+}
+
+.heroText p {
+    font-size: 13px;
+    font-weight: 700;
+    color: #cfe0ff;
+    letter-spacing: 0.02em;
+}
+
+.heroText h1 {
+    margin-top: 6px;
+    font-size: 26px;
+    line-height: 1.25;
+    font-weight: 900;
+}
+
+.heroMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.heroMeta span {
+    padding: 6px 12px;
+    color: #0b2d66;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.gallery {
+    margin: -20px 16px 0;
+}
+
+.mainImage {
+    width: 100%;
+    height: 220px;
+    display: block;
+    object-fit: cover;
+    background: #dbeafe;
+    border: 4px solid #fff;
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.thumbnailRow {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.thumbnailButton {
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    opacity: 0.6;
+    cursor: pointer;
+    transition: opacity 0.2s, outline 0.1s;
+}
+
+.thumbnailActive {
+    opacity: 1;
+    outline: 3px solid #0a58ca;
+}
+
+.thumbnailButton img {
+    width: 100%;
+    height: 64px;
+    display: block;
+    object-fit: cover;
+}
+
+.content {
+    display: grid;
+    gap: 16px;
+    padding: 20px 16px 40px;
+}
+
+.actionCard,
+.section {
+    padding: 18px;
+    background: #fff;
+    border: 1px solid #eef2f6;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+}
+
+.actionCard {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border-left: 5px solid #003b95;
+}
+
+.actionTextContent {
+    display: grid;
+    gap: 4px;
+}
+
+.actionLabel {
+    margin: 0;
+    color: #0071c2;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+}
+
+.actionCard h2,
+.sectionHeader h3,
+.emptyState h1 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.3;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.actionCard p,
+.description,
+.emptyState p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.6;
+    font-weight: 600;
+}
+
+.primaryButton {
+    min-height: 48px;
+    padding: 0 18px;
+    color: #fff;
+    background: linear-gradient(135deg, #003b95 0%, #0a58ca 100%);
+    border: 0;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 800;
+    box-shadow: 0 6px 16px rgba(0, 59, 149, 0.2);
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.primaryButton:active {
+    transform: scale(0.98);
+}
+
+.primaryButtonActive {
+    background: linear-gradient(135deg, #0d9488 0%, #10b981 100%);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.2);
+}
+
+.section {
+    display: grid;
+    gap: 14px;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 2px solid #f1f5f9;
+    padding-bottom: 8px;
+}
+
+.tagBadge {
+    padding: 4px 10px;
+    color: #003b95;
+    background: #eef4ff;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.detailList {
+    display: grid;
+    gap: 14px;
+    margin: 0;
+}
+
+.detailRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #e2e8f0;
+}
+
+.detailRow:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.detailList dt {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 800;
+    min-width: 70px;
+    flex-shrink: 0;
+}
+
+.detailList dd {
+    margin: 0;
+    color: #0f172a;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 700;
+    text-align: right;
+    word-break: break-all;
+}
+
+.mapProvider {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.mapContainer {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.emptyState {
+    display: grid;
+    place-items: center;
+    gap: 14px;
+    padding: 60px 20px 120px;
+    text-align: center;
+}
+
+@media (max-width: 380px) {
+    .hero,
+    .content {
+        padding-right: 12px;
+        padding-left: 12px;
+    }
+
+    .gallery {
+        margin-right: 12px;
+        margin-left: 12px;
+    }
+    
+    .detailRow {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .detailList dd {
+        text-align: left;
+    }
+}

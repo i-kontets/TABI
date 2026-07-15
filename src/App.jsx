@@ -22,7 +22,11 @@ import Appointment from './pages/Appointment/Appointment.jsx';
 import Discussion from './pages/Discussion/Discussion';
 import CheckList from './pages/CheckList/CheckList';
 import Other from './pages/Other/Other.jsx';
+// import TouristRanking from './pages/TouristRanking/TouristRanking';
+import Candidates from './pages/Candidates/Candidates';
+import CandidateDetail from './pages/Candidates/CandidateDetail.jsx';
 import Tourist from './pages/Tourist/Tourist';
+import CottageChatPage from './pages/CottageChat/CottageChatPage.jsx';
 import AdminRoutes from './pages/Admin/AdminRoutes.jsx';
 import UserRealtimeListener from './pages/UserRealtimeListener.jsx';
 import Maintenance from './pages/Maintenance/Maintenance.jsx';
@@ -66,9 +70,13 @@ function AppRoutes({ trip }) {
                 <Route path="/Invoice" element={<Invoice />} />
                 <Route path="/Appointment" element={<Appointment />} />
                 <Route path="/Other" element={<Other />} />
+                {/* <Route path="/TouristRanking" element={<TouristRanking />} /> */}
+                <Route path="/Candidates" element={<Candidates />} />
+                <Route path="/Candidates/:candidateId" element={<CandidateDetail />} />
                 <Route path="/Tourist" element={<Tourist />} />
                 <Route path="/TouristRanking" element={<Tourist />} />
-                <Route path="/CheckList" element={<CheckList />} />
+                <Route path="/CottageChatPage" element={<CottageChatPage />} />
+                <Route path="/CheckList" element={<CheckList /> }/>
                 <Route path="/maintenance" element={<Maintenance />} />
                 <Route path="/admin/*" element={<AdminRoutes />} />
             </Routes>
