@@ -1,3 +1,11 @@
+import {
+    isAdminPath,
+    isMaintenanceCode,
+    isMaintenancePath,
+    saveMaintenanceReason,
+    saveReturnPath,
+} from './serviceStatus';
+
 const endpoint = `${import.meta.env.BASE_URL}api/SystemErrors/Report.php`;
 const recentFingerprints = new Map();
 const suppressMs = 60 * 1000;
@@ -87,8 +95,20 @@ export function installSystemErrorListeners() {
         const response = await originalFetch(...args);
         const requestUrl = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
         const isReportEndpoint = requestUrl.includes('/api/SystemErrors/Report.php');
+        const isStatusEndpoint = requestUrl.includes('/api/system/status.php');
 
-        if (!isReportEndpoint && response.status >= 500) {
+        if (!isReportEndpoint && !isStatusEndpoint && response.status === 503) {
+            const data = await response.clone().json().catch(() => null);
+
+            if (isMaintenanceCode(data?.code) && !isAdminPath() && !isMaintenancePath()) {
+                saveReturnPath();
+                saveMaintenanceReason(data.code);
+                window.location.assign(`${import.meta.env.BASE_URL}maintenance`);
+                return response;
+            }
+        }
+
+        if (!isReportEndpoint && response.status >= 500 && response.status !== 503) {
             reportSystemError({
                 errorType: 'API_ERROR',
                 errorCode: 'API_HTTP_ERROR',

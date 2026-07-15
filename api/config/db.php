@@ -1,6 +1,17 @@
 <?php
 header("Content-Type: application/json; charset=UTF-8");
 
+require_once __DIR__ . "/serviceSchedule.php";
+
+$serviceGuardExempt = tabiIsServiceGuardExempt();
+
+if (!$serviceGuardExempt) {
+    $serviceStatus = tabiEvaluateServiceSchedule();
+    if (!$serviceStatus["available"]) {
+        tabiRespondServiceUnavailable($serviceStatus);
+    }
+}
+
 $configPath = __DIR__ . "/env.php";
 $config = file_exists($configPath) ? require $configPath : [];
 
@@ -35,6 +46,21 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
+    if (!$serviceGuardExempt) {
+        http_response_code(503);
+
+        echo json_encode([
+            "success" => false,
+            "code" => "DATABASE_UNAVAILABLE",
+            "message" => "ただいまサービスの準備を行っています。",
+            "now" => (new DateTimeImmutable("now", new DateTimeZone("Asia/Tokyo")))->format(DateTimeInterface::ATOM),
+            "nextOpenAt" => null,
+            "timezone" => "Asia/Tokyo",
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        exit;
+    }
+
     http_response_code(500);
 
     echo json_encode([
