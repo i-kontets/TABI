@@ -239,7 +239,6 @@ function MyPage() {
                             <p className={styles.userEmail}>{user?.email || '未設定'}</p>
                             <span className={styles.roleBadge}>{user?.role || '一般ユーザー'}</span>
                         </div>
-                        <ChevronRightIcon className={styles.profileChevron} />
                     </div>
 
                     <button
