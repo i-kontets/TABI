@@ -576,6 +576,100 @@ function fetch_system_error_summary(PDO $pdo): array
     ];
 }
 
+function redact_system_error_value(string $key, $value)
+{
+    $lowerKey = strtolower($key);
+    $sensitivePatterns = ["password", "token", "secret", "key", "authorization", "cookie", "db_"];
+
+    foreach ($sensitivePatterns as $pattern) {
+        if (str_contains($lowerKey, $pattern)) {
+            return "********";
+        }
+    }
+
+    if (is_array($value)) {
+        $redacted = [];
+        foreach ($value as $childKey => $childValue) {
+            $redacted[$childKey] = redact_system_error_value((string) $childKey, $childValue);
+        }
+        return $redacted;
+    }
+
+    return $value;
+}
+
+function summarize_system_error_detail(?string $detail): string
+{
+    $detail = trim((string) $detail);
+
+    if ($detail === "") {
+        return "";
+    }
+
+    $decoded = json_decode($detail, true);
+    if (is_array($decoded)) {
+        $redacted = [];
+        foreach ($decoded as $key => $value) {
+            $redacted[$key] = redact_system_error_value((string) $key, $value);
+        }
+        $detail = json_encode($redacted, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    return mb_strlen($detail) > 1200 ? mb_substr($detail, 0, 1200) . "..." : $detail;
+}
+
+function fetch_system_errors(PDO $pdo): array
+{
+    if (!admin_column_exists($pdo, "system_errors", "error_id")) {
+        return [];
+    }
+
+    $countExpr = admin_column_exists($pdo, "system_errors", "occurrence_count")
+        ? "COALESCE(occurrence_count, 1)"
+        : "1";
+    $occurredAtExpr = admin_column_exists($pdo, "system_errors", "last_occurred_at")
+        ? "COALESCE(last_occurred_at, created_at)"
+        : "created_at";
+
+    $stmt = $pdo->query("
+        SELECT
+            error_id,
+            source,
+            level,
+            message,
+            detail,
+            url,
+            status,
+            error_type,
+            error_code,
+            page_path,
+            request_url,
+            http_status,
+            {$countExpr} AS occurrence_count,
+            {$occurredAtExpr} AS occurred_at,
+            created_at
+        FROM system_errors
+        WHERE status = 'unresolved'
+        ORDER BY {$occurredAtExpr} DESC, error_id DESC
+        LIMIT 10
+    ");
+
+    return array_map(fn($row) => [
+        "id" => "se" . $row["error_id"],
+        "source" => $row["source"] ?: "-",
+        "level" => $row["level"] ?: "error",
+        "message" => $row["message"] ?: "-",
+        "detail" => summarize_system_error_detail($row["detail"] ?? ""),
+        "url" => $row["request_url"] ?: ($row["url"] ?: ""),
+        "pagePath" => $row["page_path"] ?: "",
+        "errorType" => $row["error_type"] ?: "",
+        "errorCode" => $row["error_code"] ?: "",
+        "httpStatus" => $row["http_status"] !== null ? (int) $row["http_status"] : null,
+        "occurrenceCount" => (int) $row["occurrence_count"],
+        "occurredAt" => format_dt($row["occurred_at"] ?: $row["created_at"]),
+    ], $stmt->fetchAll());
+}
+
 function fetch_today_active_users(PDO $pdo): int
 {
     if (!admin_column_exists($pdo, "users", "last_active_at")) {

@@ -11,6 +11,7 @@ header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/../config/db.php";
 require_once __DIR__ . "/../Admin/services/system_errors.php";
+require_once __DIR__ . "/../Admin/services/realtime.php";
 
 function respond(array $payload, int $status = 200): void
 {

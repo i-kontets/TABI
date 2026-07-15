@@ -4,6 +4,7 @@ header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/../config/db.php";
 require_once __DIR__ . "/../Admin/includes/config.php";
+require_once __DIR__ . "/../Admin/services/realtime.php";
 
 const PASSWORD_RESET_SUCCESS_MESSAGE = "入力されたメールアドレスが登録されている場合、パスワード再設定メールを送信しました。";
 const PASSWORD_RESET_COOLDOWN_SECONDS = 60;
@@ -42,11 +43,11 @@ function postJsonToGas(string $url, array $payload): array
         curl_close($ch);
 
         if ($body === false) {
-            throw new RuntimeException("GASへの送信に失敗しました。");
+            throw new RuntimeException("GASへの送信に失敗しました。HTTP {$status} {$error}");
         }
 
         if ($error !== "") {
-            throw new RuntimeException("GASへの送信に失敗しました。");
+            throw new RuntimeException("GASへの送信に失敗しました。HTTP {$status} {$error}");
         }
 
         return ["status" => $status, "body" => $body];
@@ -69,7 +70,7 @@ function postJsonToGas(string $url, array $payload): array
     }
 
     if ($body === false) {
-        throw new RuntimeException("GASへの送信に失敗しました。");
+        throw new RuntimeException("GASへの送信に失敗しました。HTTP {$status}");
     }
 
     return ["status" => $status, "body" => $body];
@@ -93,7 +94,10 @@ function buildResetUrl(string $resetToken): string
 function sendPasswordResetMail(string $email, string $userName, string $resetUrl): void
 {
     $gasUrl = app_config("GAS_PASSWORD_RESET_URL", app_config("GAS_INQUIRY_REPLY_URL", ""));
-    $gasToken = app_config("GAS_PASSWORD_RESET_TOKEN", app_config("GAS_INQUIRY_REPLY_TOKEN", ""));
+    $gasToken = app_config(
+        "GAS_PASSWORD_RESET_TOKEN",
+        app_config("GAS_SHARED_TOKEN", app_config("GAS_INQUIRY_REPLY_TOKEN", ""))
+    );
 
     if ($gasUrl === "") {
         throw new RuntimeException("GASのURLが設定されていません。");
@@ -110,11 +114,15 @@ function sendPasswordResetMail(string $email, string $userName, string $resetUrl
     $decoded = json_decode($response["body"], true);
 
     if ($response["status"] < 200 || $response["status"] >= 300) {
-        throw new RuntimeException("GASがメール送信を受け付けませんでした。");
+        throw new RuntimeException("GASがメール送信を受け付けませんでした。HTTP " . $response["status"]);
     }
 
-    if (is_array($decoded) && isset($decoded["ok"]) && !$decoded["ok"]) {
-        throw new RuntimeException("GAS側でメール送信に失敗しました。");
+    if (!is_array($decoded)) {
+        throw new RuntimeException("GASの応答をJSONとして読み取れませんでした。response=" . mb_substr((string) $response["body"], 0, 300));
+    }
+
+    if (($decoded["ok"] ?? false) !== true) {
+        throw new RuntimeException("GAS側でメール送信に失敗しました: " . (string) ($decoded["message"] ?? "unknown"));
     }
 }
 
@@ -215,5 +223,15 @@ try {
     }
 
     error_log("Password reset request failed: " . $error->getMessage());
+    if (function_exists("logSystemError")) {
+        logSystemError("auth", "error", "パスワード再設定メールの送信に失敗しました", [
+            "error_type" => "PASSWORD_RESET_MAIL_FAILED",
+            "error_code" => "PASSWORD_RESET_MAIL_FAILED",
+            "reason" => $error->getMessage(),
+            "email" => $email !== "" ? "provided" : "empty",
+            "request_url" => $_SERVER["REQUEST_URI"] ?? "",
+            "fingerprint" => hash("sha256", "password_reset_mail|" . $email . "|" . $error->getMessage()),
+        ], isset($user["user_id"]) ? (int) $user["user_id"] : null, $_SERVER["REQUEST_URI"] ?? null);
+    }
     respond(["success" => false, "message" => "メール送信の受付に失敗しました。時間をおいて再度お試しください。"], 500);
 }

@@ -13,6 +13,7 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
         "spots" => fn() => fetch_spots($pdo),
         "managers" => fn() => fetch_managers($pdo),
         "logs" => fn() => fetch_logs($pdo),
+        "system-errors" => fn() => fetch_system_errors($pdo),
     ][$resource] ?? null;
     $items = $items ? $items() : null;
 

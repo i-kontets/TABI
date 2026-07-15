@@ -16,6 +16,27 @@ import {
 const endpoint = `${import.meta.env.BASE_URL}api/SystemErrors/Report.php`;
 const recentFingerprints = new Map();
 const suppressMs = 60 * 1000;
+const systemErrorBroadcastChannel = 'tabi-admin-system-errors';
+
+function notifyAdminSystemErrorSaved(detail = {}) {
+    // 同じブラウザ内で管理画面を別タブ表示している場合も、保存直後に再取得できるよう通知します。
+    window.dispatchEvent(new CustomEvent('admin:system_error_created', { detail }));
+
+    try {
+        const channel = new BroadcastChannel(systemErrorBroadcastChannel);
+        channel.postMessage(detail);
+        channel.close();
+    } catch {
+        try {
+            localStorage.setItem('tabi:last-system-error-event', JSON.stringify({
+                ...detail,
+                notifiedAt: Date.now(),
+            }));
+        } catch {
+            // 通知に失敗しても、エラー保存そのものは完了しているため何もしません。
+        }
+    }
+}
 
 function stripUrlSecrets(value) {
     // URLにクエリ文字列やトークンが付いている可能性があるため、保存前にパス部分だけへ丸めます。
@@ -98,7 +119,18 @@ export function reportSystemError(payload = {}) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify(sanitizedPayload),
-    }).catch(() => {});
+    })
+        .then((response) => response.json().catch(() => null))
+        .then((data) => {
+            if (data?.success) {
+                notifyAdminSystemErrorSaved({
+                    error_id: data.error_id || null,
+                    errorCode: sanitizedPayload.errorCode,
+                    pagePath: sanitizedPayload.pagePath,
+                });
+            }
+        })
+        .catch(() => {});
 }
 
 export function installSystemErrorListeners() {

@@ -22,11 +22,50 @@ export function useAdminRealtimeRefresh(events, reload) {
             window.addEventListener(eventName, handleRealtimeEvent);
         });
 
+        let channel = null;
+        const shouldListenForSystemError = events.includes('admin:system_error_created');
+        const handleBroadcastMessage = (event) => {
+            if (!shouldListenForSystemError) {
+                return;
+            }
+
+            handleRealtimeEvent({
+                type: 'admin:system_error_created',
+                detail: event.data || {},
+            });
+        };
+        const handleStorageEvent = (event) => {
+            if (!shouldListenForSystemError || event.key !== 'tabi:last-system-error-event') {
+                return;
+            }
+
+            handleRealtimeEvent({
+                type: 'admin:system_error_created',
+                detail: event.newValue || {},
+            });
+        };
+
+        if (shouldListenForSystemError) {
+            try {
+                channel = new BroadcastChannel('tabi-admin-system-errors');
+                channel.addEventListener('message', handleBroadcastMessage);
+            } catch {
+                window.addEventListener('storage', handleStorageEvent);
+            }
+        }
+
         return () => {
             // コンポーネントが消えるときに解除し、同じ画面へ戻ったときの二重登録を防ぎます。
             events.forEach((eventName) => {
                 window.removeEventListener(eventName, handleRealtimeEvent);
             });
+
+            if (channel) {
+                channel.removeEventListener('message', handleBroadcastMessage);
+                channel.close();
+            } else {
+                window.removeEventListener('storage', handleStorageEvent);
+            }
         };
     }, [events, reload]);
 }
