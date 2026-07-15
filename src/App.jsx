@@ -33,6 +33,52 @@ import { isAdminPath, isMaintenancePath } from './services/serviceStatus.js';
 
 export const TripContext = createContext();
 
+function AppRoutes({ trip }) {
+    const location = useLocation();
+    const shouldRunUserRealtime = !isAdminPath(location.pathname) && !isMaintenancePath(location.pathname);
+
+    return (
+        <>
+            {shouldRunUserRealtime && <UserRealtimeListener trip={trip} />}
+            <Routes>
+                <Route path="/" element={<Login />} />
+                <Route path="/Newreg" element={<Newreg />} />
+                <Route path="/Home" element={<Home />} />
+                <Route path="/MyPage" element={<MyPage />} />
+                <Route path="/mypage" element={<MyPage />} />
+                <Route path="/mypage/profile-edit" element={<ProfileEditPage />} />
+                <Route path="/mypage/user-edit" element={<UserEditPage />} />
+                <Route path="/mypage/email-change" element={<EmailChangePage />} />
+                <Route path="/mypage/notification-settings" element={<NotificationSettingsPage />} />
+                <Route path="/mypage/notification-permission" element={<NotificationPermissionPage />} />
+                <Route path="/mypage/contact" element={<ContactPage />} />
+                <Route path="/mypage/faq" element={<FaqPage />} />
+                <Route path="/user/:userId" element={<UserProfilePage />} />
+                <Route path="/Itinerary" element={<Itinerary />} />
+                <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
+                <Route path="/Tripmap" element={<Tripmap />} />
+                <Route path="/schedule" element={<Schedule />} />
+                <Route path="/Chat" element={<Chat />} />
+                <Route path="/Discussion" element={<Discussion />} />
+                <Route path="/group/:groupId/talk" element={<Discussion />} />
+                <Route path="/album" element={<Album />} />
+                <Route path="/Invoice" element={<Invoice />} />
+                <Route path="/Appointment" element={<Appointment />} />
+                <Route path="/Other" element={<Other />} />
+                {/* <Route path="/TouristRanking" element={<TouristRanking />} /> */}
+                <Route path="/Candidates" element={<Candidates />} />
+                <Route path="/Candidates/:candidateId" element={<CandidateDetail />} />
+                <Route path="/Tourist" element={<Tourist />} />
+                <Route path="/TouristRanking" element={<Tourist />} />
+                <Route path="/CottageChatPage" element={<CottageChatPage />} />
+                <Route path="/CheckList" element={<CheckList /> }/>
+                <Route path="/maintenance" element={<Maintenance />} />
+                <Route path="/admin/*" element={<AdminRoutes />} />
+            </Routes>
+        </>
+    );
+}
+
 function App() {
     const [trip, setTrip] = useState({
         id: null,
@@ -42,40 +88,6 @@ function App() {
     return (
         <TripContext.Provider value={{ trip, setTrip }}>
             <BrowserRouter basename={import.meta.env.BASE_URL}>
-                <UserRealtimeListener trip={trip} />
-                <Routes>
-                    <Route path="/" element={<Login />} />
-                    <Route path="/Newreg" element={<Newreg />} />
-                    <Route path="/Home" element={<Home />} />
-                    <Route path="/MyPage" element={<MyPage />} />
-                    <Route path="/mypage" element={<MyPage />} />
-                    <Route path="/mypage/profile-edit" element={<ProfileEditPage />} />
-                    <Route path="/mypage/user-edit" element={<UserEditPage />} />
-                    <Route path="/mypage/email-change" element={<EmailChangePage />} />
-                    <Route path="/mypage/notification-settings" element={<NotificationSettingsPage />} />
-                    <Route path="/mypage/notification-permission" element={<NotificationPermissionPage />} />
-                    <Route path="/mypage/contact" element={<ContactPage />} />
-                    <Route path="/mypage/faq" element={<FaqPage />} />
-                    <Route path="/Itinerary" element={<Itinerary />} />
-                    <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
-                    <Route path="/Tripmap" element={<Tripmap />} />
-                    <Route path="/schedule" element={<Schedule />} />
-                    <Route path="/Chat" element={<Chat />} />
-                    <Route path="/Discussion" element={<Discussion />} />
-                    <Route path="/group/:groupId/talk" element={<Discussion />} />
-                    <Route path="/album" element={<Album />} />
-                    <Route path="/Invoice" element={<Invoice />} />
-                    <Route path="/Appointment" element={<Appointment />}/>
-                    <Route path="/Other" element={<Other />} />
-                    {/* <Route path="/TouristRanking" element={<TouristRanking />} /> */}
-                    <Route path="/Candidates" element={<Candidates />} />
-                    <Route path="/Candidates/:candidateId" element={<CandidateDetail />} />
-                    <Route path="/Tourist" element={<Tourist />} />
-                    <Route path="/TouristRanking" element={<Tourist />} />
-                    <Route path="/CottageChatPage" element={<CottageChatPage />} />
-                    <Route path="/CheckList" element={<CheckList /> }/>
-                    <Route path="/admin/*" element={<AdminRoutes />} />
-                </Routes>
                 <ServiceAvailabilityGate>
                     <AppRoutes trip={trip} />
                 </ServiceAvailabilityGate>
