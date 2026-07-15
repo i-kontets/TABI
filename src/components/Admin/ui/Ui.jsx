@@ -23,6 +23,7 @@ const LABEL_TONE = {
     '確認中': 'orange',
     '対応中': 'orange',
     '対応済み': 'green',
+    '解決済み': 'green',
     '下書き': 'gray',
     '終了': 'gray',
     'オーナー': 'blue',

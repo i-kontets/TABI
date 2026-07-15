@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
-import { fetchSystemErrors } from '../../../services/admin';
+import { fetchRecentSystemErrors } from '../../../services/admin';
 import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Settings.module.css';
 
@@ -22,8 +22,8 @@ export default function Settings() {
         setIsLoadingErrors(true);
         setErrorMessage('');
 
-        // 設定タブで最近の未対応エラーを確認できるように、管理APIから最新10件を取得します。
-        fetchSystemErrors()
+        // 設定タブでは概要だけを見せるため、APIから未対応の最新10件だけを取得します。
+        fetchRecentSystemErrors()
             .then(setSystemErrors)
             .catch(() => setErrorMessage('システムエラーの取得に失敗しました。'))
             .finally(() => setIsLoadingErrors(false));
@@ -57,9 +57,12 @@ export default function Settings() {
                         <h2 className={styles.panelTitle}>最近のシステムエラー</h2>
                         <p className={styles.panelLead}>未対応の最新10件を表示しています。</p>
                     </div>
-                    <button type="button" className={styles.reloadButton} onClick={loadSystemErrors}>
-                        更新
-                    </button>
+                    <div className={styles.panelActions}>
+                        <Link to="/admin/system-errors" className={styles.viewAllLink}>すべてのエラーを見る</Link>
+                        <button type="button" className={styles.reloadButton} onClick={loadSystemErrors}>
+                            更新
+                        </button>
+                    </div>
                 </div>
 
                 {isLoadingErrors && <p className={styles.emptyText}>読み込み中です。</p>}

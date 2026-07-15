@@ -2,6 +2,10 @@
 
 function handle_admin_get(PDO $pdo, string $resource, $id): void
 {
+    if ($resource === "system-errors") {
+        respond(fetch_system_errors($pdo, $_GET));
+    }
+
     // resource ごとに呼ぶ取得関数を切り替えます。
     $items = [
         "users" => fn() => fetch_users($pdo),
@@ -13,7 +17,6 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
         "spots" => fn() => fetch_spots($pdo),
         "managers" => fn() => fetch_managers($pdo),
         "logs" => fn() => fetch_logs($pdo),
-        "system-errors" => fn() => fetch_system_errors($pdo),
     ][$resource] ?? null;
     $items = $items ? $items() : null;
 

@@ -579,7 +579,7 @@ function fetch_system_error_summary(PDO $pdo): array
 function redact_system_error_value(string $key, $value)
 {
     $lowerKey = strtolower($key);
-    $sensitivePatterns = ["password", "token", "secret", "key", "authorization", "cookie", "db_"];
+    $sensitivePatterns = ["password", "token", "secret", "key", "authorization", "cookie", "session", "db_", "aws"];
 
     foreach ($sensitivePatterns as $pattern) {
         if (str_contains($lowerKey, $pattern)) {
@@ -594,6 +594,17 @@ function redact_system_error_value(string $key, $value)
         }
         return $redacted;
     }
+
+    return $value;
+}
+
+function mask_system_error_text(string $value): string
+{
+    // 表示用の文字列だけをマスキングし、DBに保存済みのログ本文は書き換えません。
+    $value = preg_replace('/([A-Z0-9._%+\-]{2})[A-Z0-9._%+\-]*(@[A-Z0-9.\-]+\.[A-Z]{2,})/iu', '$1***$2', $value);
+    $value = preg_replace('/\b0\d{1,4}[- ]?\d{1,4}[- ]?\d{3,4}\b/u', '[MASKED_PHONE]', $value);
+    $value = preg_replace('/(authorization\s*[:=]\s*bearer\s+)[^\s,"\']+/iu', '$1[MASKED]', $value);
+    $value = preg_replace('/([?&](?:token|key|secret|signature|gas_token|mail_token|session|sid)=)[^&\s"\']+/iu', '$1[MASKED]', $value);
 
     return $value;
 }
@@ -615,14 +626,54 @@ function summarize_system_error_detail(?string $detail): string
         $detail = json_encode($redacted, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
+    $detail = mask_system_error_text($detail);
+
     return mb_strlen($detail) > 1200 ? mb_substr($detail, 0, 1200) . "..." : $detail;
 }
 
-function fetch_system_errors(PDO $pdo): array
+function system_error_status_label(?string $status): string
+{
+    return [
+        "unresolved" => "未対応",
+        "working" => "対応中",
+        "resolved" => "解決済み",
+    ][$status] ?? ($status ?: "-");
+}
+
+function system_error_status_code(string $status): string
+{
+    return [
+        "未対応" => "unresolved",
+        "対応中" => "working",
+        "解決済み" => "resolved",
+    ][$status] ?? $status;
+}
+
+function fetch_system_errors(PDO $pdo, array $params = []): array
 {
     if (!admin_column_exists($pdo, "system_errors", "error_id")) {
-        return [];
+        return [
+            "items" => [],
+            "page" => 1,
+            "totalPages" => 1,
+            "total" => 0,
+            "limit" => 25,
+            "pagination" => [
+                "currentPage" => 1,
+                "perPage" => 25,
+                "totalItems" => 0,
+                "totalPages" => 1,
+                "hasPreviousPage" => false,
+                "hasNextPage" => false,
+            ],
+        ];
     }
+
+    // page と limit は画面から来る値なので、安全な整数に丸めてからSQLへ渡します。
+    $requestedPage = filter_var($params["page"] ?? 1, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1]]);
+    $requestedLimit = filter_var($params["limit"] ?? 25, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1]]);
+    $page = $requestedPage ?: 1;
+    $limit = min($requestedLimit ?: 25, 100);
 
     $countExpr = admin_column_exists($pdo, "system_errors", "occurrence_count")
         ? "COALESCE(occurrence_count, 1)"
@@ -630,8 +681,80 @@ function fetch_system_errors(PDO $pdo): array
     $occurredAtExpr = admin_column_exists($pdo, "system_errors", "last_occurred_at")
         ? "COALESCE(last_occurred_at, created_at)"
         : "created_at";
+    $firstOccurredAtExpr = admin_column_exists($pdo, "system_errors", "first_occurred_at")
+        ? "COALESCE(first_occurred_at, created_at)"
+        : "created_at";
 
-    $stmt = $pdo->query("
+    $where = [];
+    $bindings = [];
+
+    $status = trim((string) ($params["status"] ?? ""));
+    if ($status !== "" && $status !== "all") {
+        $where[] = "status = :status";
+        $bindings["status"] = system_error_status_code($status);
+    }
+
+    $severity = trim((string) ($params["severity"] ?? ""));
+    if ($severity !== "" && $severity !== "all") {
+        $where[] = "level = :severity";
+        $bindings["severity"] = $severity;
+    }
+
+    $source = trim((string) ($params["source"] ?? ""));
+    if ($source !== "" && $source !== "all") {
+        if ($source === "other") {
+            $where[] = "source NOT IN ('frontend', 'backend', 'auth', 'database', 'API')";
+        } else {
+            $where[] = "source = :source";
+            $bindings["source"] = $source;
+        }
+    }
+
+    $startDate = trim((string) ($params["start_date"] ?? ""));
+    if ($startDate !== "" && preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate)) {
+        $where[] = "{$occurredAtExpr} >= :start_date";
+        $bindings["start_date"] = $startDate . " 00:00:00";
+    }
+
+    $endDate = trim((string) ($params["end_date"] ?? ""));
+    if ($endDate !== "" && preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate)) {
+        $where[] = "{$occurredAtExpr} < :end_date";
+        $bindings["end_date"] = (new DateTimeImmutable($endDate))->modify("+1 day")->format("Y-m-d 00:00:00");
+    }
+
+    $keyword = trim((string) ($params["keyword"] ?? ""));
+    if ($keyword !== "") {
+        // 検索対象は実在するカラムだけに限定し、値はプレースホルダーで安全に渡します。
+        $keywordColumns = ["message", "detail", "url"];
+        foreach (["error_code", "error_type", "page_path", "request_url", "stack_trace"] as $column) {
+            if (admin_column_exists($pdo, "system_errors", $column)) {
+                $keywordColumns[] = $column;
+            }
+        }
+        $keywordConditions = [];
+        foreach ($keywordColumns as $index => $column) {
+            $placeholder = "keyword_{$index}";
+            $keywordConditions[] = "{$column} LIKE :{$placeholder}";
+            $bindings[$placeholder] = "%" . $keyword . "%";
+        }
+        $where[] = "(" . implode(" OR ", $keywordConditions) . ")";
+    }
+
+    $whereSql = $where ? "WHERE " . implode(" AND ", $where) : "";
+
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM system_errors {$whereSql}");
+    foreach ($bindings as $key => $value) {
+        $countStmt->bindValue(":{$key}", $value);
+    }
+    $countStmt->execute();
+    $total = (int) $countStmt->fetchColumn();
+    $totalPages = max(1, (int) ceil($total / $limit));
+    $page = min($page, $totalPages);
+
+    // OFFSET は「何件読み飛ばすか」です。DB側で25件ずつ取得するため、画面に不要な全件取得を避けます。
+    $offset = ($page - 1) * $limit;
+
+    $stmt = $pdo->prepare("
         SELECT
             error_id,
             source,
@@ -646,28 +769,53 @@ function fetch_system_errors(PDO $pdo): array
             request_url,
             http_status,
             {$countExpr} AS occurrence_count,
+            {$firstOccurredAtExpr} AS first_occurred_at,
             {$occurredAtExpr} AS occurred_at,
             created_at
         FROM system_errors
-        WHERE status = 'unresolved'
+        {$whereSql}
         ORDER BY {$occurredAtExpr} DESC, error_id DESC
-        LIMIT 10
+        LIMIT :limit OFFSET :offset
     ");
+    foreach ($bindings as $key => $value) {
+        $stmt->bindValue(":{$key}", $value);
+    }
+    $stmt->bindValue(":limit", $limit, PDO::PARAM_INT);
+    $stmt->bindValue(":offset", $offset, PDO::PARAM_INT);
+    $stmt->execute();
 
-    return array_map(fn($row) => [
+    $items = array_map(fn($row) => [
         "id" => "se" . $row["error_id"],
         "source" => $row["source"] ?: "-",
         "level" => $row["level"] ?: "error",
-        "message" => $row["message"] ?: "-",
+        "message" => mask_system_error_text($row["message"] ?: "-"),
         "detail" => summarize_system_error_detail($row["detail"] ?? ""),
-        "url" => $row["request_url"] ?: ($row["url"] ?: ""),
-        "pagePath" => $row["page_path"] ?: "",
+        "url" => mask_system_error_text($row["request_url"] ?: ($row["url"] ?: "")),
+        "pagePath" => mask_system_error_text($row["page_path"] ?: ""),
         "errorType" => $row["error_type"] ?: "",
         "errorCode" => $row["error_code"] ?: "",
         "httpStatus" => $row["http_status"] !== null ? (int) $row["http_status"] : null,
         "occurrenceCount" => (int) $row["occurrence_count"],
+        "firstOccurredAt" => format_dt($row["first_occurred_at"] ?: $row["created_at"]),
         "occurredAt" => format_dt($row["occurred_at"] ?: $row["created_at"]),
+        "status" => system_error_status_label($row["status"] ?? ""),
     ], $stmt->fetchAll());
+
+    return [
+        "items" => $items,
+        "page" => $page,
+        "totalPages" => $totalPages,
+        "total" => $total,
+        "limit" => $limit,
+        "pagination" => [
+            "currentPage" => $page,
+            "perPage" => $limit,
+            "totalItems" => $total,
+            "totalPages" => $totalPages,
+            "hasPreviousPage" => $page > 1,
+            "hasNextPage" => $page < $totalPages,
+        ],
+    ];
 }
 
 function fetch_today_active_users(PDO $pdo): int

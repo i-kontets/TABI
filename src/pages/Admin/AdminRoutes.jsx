@@ -19,6 +19,7 @@ import Activities from './Activities/Activities';
 import Managers from './Managers/Managers';
 import Logs from './Logs/Logs';
 import Settings from './Settings/Settings';
+import SystemErrors from './SystemErrors/SystemErrors';
 import AdminServiceGate from './AdminServiceGate';
 import AdminRealtimeListener from "./Realtime/AdminRealtimeListener";
 
@@ -55,6 +56,7 @@ export default function AdminRoutes() {
                 <Route path="managers" element={<Managers />} />
                 <Route path="logs" element={<Logs />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="system-errors" element={<SystemErrors />} />
             </Routes>
         </AdminServiceGate>
     );

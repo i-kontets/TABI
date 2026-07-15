@@ -37,7 +37,7 @@ const ITEMS = [
     { to: '/admin/users', label: 'ユーザー', icon: UserIcon, match: ['/admin/users'] },
     { to: '/admin/groups', label: 'グループ', icon: GroupIcon, match: ['/admin/groups', '/admin/posts'] },
     { to: '/admin/support', label: '対応', icon: ChatIcon, match: ['/admin/support', '/admin/inquiries', '/admin/reports'] },
-    { to: '/admin/settings', label: '設定', icon: SettingIcon, match: ['/admin/settings', '/admin/notices', '/admin/spots', '/admin/analytics', '/admin/activities', '/admin/managers', '/admin/logs'] },
+    { to: '/admin/settings', label: '設定', icon: SettingIcon, match: ['/admin/settings', '/admin/system-errors', '/admin/notices', '/admin/spots', '/admin/analytics', '/admin/activities', '/admin/managers', '/admin/logs'] },
 ];
 
 export default function AdminBottomNav() {
