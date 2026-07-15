@@ -5,13 +5,6 @@ require_once __DIR__ . "/serviceSchedule.php";
 
 $serviceGuardExempt = tabiIsServiceGuardExempt();
 
-if (!$serviceGuardExempt) {
-    $serviceStatus = tabiEvaluateServiceSchedule();
-    if (!$serviceStatus["available"]) {
-        tabiRespondServiceUnavailable($serviceStatus);
-    }
-}
-
 $configPath = __DIR__ . "/env.php";
 $config = file_exists($configPath) ? require $configPath : [];
 
@@ -40,22 +33,38 @@ try {
     $pdo = new PDO(
         "mysql:host={$host};dbname={$dbname};charset={$charset}",
         $user,
-        $password
+        $password,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_TIMEOUT => 3,
+        ]
     );
-
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     if (!$serviceGuardExempt) {
+        $serviceStatus = tabiEvaluateServiceSchedule();
+        $scheduledToRun = (bool) $serviceStatus["available"];
+        $statusCode = $scheduledToRun ? "DATABASE_UNAVAILABLE" : "SCHEDULED_DB_STOP";
+        $checkedAt = (new DateTimeImmutable("now", new DateTimeZone("Asia/Tokyo")))->format(DateTimeInterface::ATOM);
+
         http_response_code(503);
+        header("Cache-Control: no-store, no-cache, must-revalidate");
+        header("Pragma: no-cache");
 
         echo json_encode([
             "success" => false,
-            "code" => "DATABASE_UNAVAILABLE",
-            "message" => "ただいまサービスの準備を行っています。",
-            "now" => (new DateTimeImmutable("now", new DateTimeZone("Asia/Tokyo")))->format(DateTimeInterface::ATOM),
-            "nextOpenAt" => null,
-            "timezone" => "Asia/Tokyo",
+            "code" => $statusCode,
+            "status" => $statusCode,
+            "databaseAvailable" => false,
+            "scheduledToRun" => $scheduledToRun,
+            "message" => $scheduledToRun ? "現在DBへ接続できません。" : "現在はDBの接続を停止しています。",
+            "checkedAt" => $checkedAt,
+            "now" => $checkedAt,
+            "nextScheduledOpenAt" => $scheduledToRun ? null : $serviceStatus["nextOpenAt"],
+            "nextScheduledCloseAt" => $scheduledToRun ? $serviceStatus["nextCloseAt"] : null,
+            "nextOpenAt" => $scheduledToRun ? null : $serviceStatus["nextOpenAt"],
+            "nextCloseAt" => $scheduledToRun ? $serviceStatus["nextCloseAt"] : null,
+            "timezone" => $serviceStatus["timezone"],
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         exit;

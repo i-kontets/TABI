@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     clearReturnPath,
@@ -70,41 +70,8 @@ export default function Maintenance() {
         reason: getMaintenanceReason() || 'OUTSIDE_SERVICE_HOURS',
         nextOpenAt: null,
     }));
-    const [checking, setChecking] = useState(false);
     const isDatabaseUnavailable = status.reason === 'DATABASE_UNAVAILABLE';
     const nextOpenLabel = useMemo(() => formatNextOpen(status.nextOpenAt), [status.nextOpenAt]);
-
-    const returnToApp = useCallback(async () => {
-        setChecking(true);
-        try {
-            const nextStatus = await fetchServiceStatus();
-            let savedReason = getMaintenanceReason();
-            if (!nextStatus.available && nextStatus.reason === 'OUTSIDE_SERVICE_HOURS') {
-                clearMaintenanceReason();
-                savedReason = null;
-            }
-            const mergedStatus = savedReason === 'DATABASE_UNAVAILABLE'
-                ? { ...nextStatus, available: false, reason: 'DATABASE_UNAVAILABLE' }
-                : nextStatus;
-            setStatus(mergedStatus);
-
-            if (savedReason === 'DATABASE_UNAVAILABLE') {
-                const databaseAvailable = await probeDatabaseAvailability();
-                if (!databaseAvailable) {
-                    return;
-                }
-            }
-
-            if (nextStatus.available) {
-                const returnPath = getReturnPath();
-                clearReturnPath();
-                clearMaintenanceReason();
-                navigate(returnPath, { replace: true });
-            }
-        } finally {
-            setChecking(false);
-        }
-    }, [navigate]);
 
     useEffect(() => {
         let mounted = true;
@@ -172,7 +139,7 @@ export default function Maintenance() {
 
                 <div className={styles.panel}>
                     <p className={styles.eyebrow}>Service Status</p>
-                    <h1>{isDatabaseUnavailable ? '現在サービスを一時停止しています' : '現在メンテナンス中です'}</h1>
+                    <h1>現在メンテナンス中です</h1>
                     <p className={styles.description}>
                         {isDatabaseUnavailable
                             ? 'ただいまサービスの準備を行っています。しばらく時間をおいてから、もう一度お試しください。'

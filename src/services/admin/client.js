@@ -1,4 +1,9 @@
 const ADMIN_API_BASE = '/TABI/api/Admin/index.php';
+const ADMIN_DATABASE_UNAVAILABLE_CODES = new Set([
+    'OUTSIDE_SERVICE_HOURS',
+    'SCHEDULED_DB_STOP',
+    'DATABASE_UNAVAILABLE',
+]);
 
 function buildUrl(resource, params = {}) {
     const search = new URLSearchParams();
@@ -14,15 +19,17 @@ function buildUrl(resource, params = {}) {
 async function parseResponse(response) {
     const data = await response.json().catch(() => null);
     if (!response.ok || data?.success === false) {
-        if (data?.code === 'OUTSIDE_SERVICE_HOURS' || data?.code === 'DATABASE_UNAVAILABLE') {
+        const unavailableCode = data?.status || data?.code || data?.reason;
+
+        if (ADMIN_DATABASE_UNAVAILABLE_CODES.has(unavailableCode)) {
             window.dispatchEvent(new CustomEvent('admin:database_unavailable', {
                 detail: {
                     available: false,
-                    reason: data.code,
-                    now: data.now || null,
-                    nextOpenAt: data.nextOpenAt || null,
-                    nextCloseAt: data.nextCloseAt || null,
-                    timezone: data.timezone || 'Asia/Tokyo',
+                    reason: unavailableCode,
+                    now: data?.checkedAt || data?.now || null,
+                    nextOpenAt: data?.nextScheduledOpenAt || data?.nextOpenAt || null,
+                    nextCloseAt: data?.nextScheduledCloseAt || data?.nextCloseAt || null,
+                    timezone: data?.timezone || 'Asia/Tokyo',
                 },
             }));
         }

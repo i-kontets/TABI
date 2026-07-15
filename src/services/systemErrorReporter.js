@@ -99,10 +99,11 @@ export function installSystemErrorListeners() {
 
         if (!isReportEndpoint && !isStatusEndpoint && response.status === 503) {
             const data = await response.clone().json().catch(() => null);
+            const maintenanceCode = data?.status || data?.code || data?.reason;
 
-            if (isMaintenanceCode(data?.code) && !isAdminPath() && !isMaintenancePath()) {
+            if (isMaintenanceCode(maintenanceCode) && !isAdminPath() && !isMaintenancePath()) {
                 saveReturnPath();
-                saveMaintenanceReason(data.code);
+                saveMaintenanceReason(maintenanceCode);
                 window.location.assign(`${import.meta.env.BASE_URL}maintenance`);
                 return response;
             }

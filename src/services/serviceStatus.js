@@ -1,7 +1,31 @@
 const statusEndpoint = `${import.meta.env.BASE_URL}api/system/status.php`;
-const dbProbeEndpoint = `${import.meta.env.BASE_URL}api/Auth/whoami.php`;
 export const maintenanceReturnPathKey = 'tabi_return_path';
 export const maintenanceReasonKey = 'tabi_maintenance_reason';
+
+function normalizeServiceStatus(data = {}, fallbackStatus = 'DATABASE_UNAVAILABLE') {
+    const statusCode = data.status || data.code || data.reason || fallbackStatus;
+    const available = Boolean(data.databaseAvailable ?? data.available ?? data.serviceAvailable);
+    const checkedAt = data.checkedAt || data.now || null;
+    const nextScheduledOpenAt = data.nextScheduledOpenAt ?? data.nextOpenAt ?? null;
+    const nextScheduledCloseAt = data.nextScheduledCloseAt ?? data.nextCloseAt ?? null;
+
+    return {
+        ...data,
+        available,
+        databaseAvailable: available,
+        serviceAvailable: available,
+        status: statusCode,
+        reason: statusCode,
+        scheduledToRun: Boolean(data.scheduledToRun ?? data.databaseScheduled),
+        checkedAt,
+        now: checkedAt,
+        nextScheduledOpenAt,
+        nextScheduledCloseAt,
+        nextOpenAt: nextScheduledOpenAt,
+        nextCloseAt: nextScheduledCloseAt,
+        timezone: data.timezone || 'Asia/Tokyo',
+    };
+}
 
 export async function fetchServiceStatus() {
     const response = await fetch(statusEndpoint, {
@@ -14,21 +38,16 @@ export async function fetchServiceStatus() {
     const data = await response.json().catch(() => null);
 
     if (!response.ok || !data?.success) {
-        return {
-            available: false,
-            reason: data?.code || 'DATABASE_UNAVAILABLE',
-            now: data?.now || null,
-            nextOpenAt: data?.nextOpenAt || null,
-            nextCloseAt: null,
-            timezone: data?.timezone || 'Asia/Tokyo',
-        };
+        return normalizeServiceStatus(data || {}, data?.status || data?.code || 'DATABASE_UNAVAILABLE');
     }
 
-    return data;
+    return normalizeServiceStatus(data, 'AVAILABLE');
 }
 
 export function isMaintenanceCode(code) {
-    return code === 'OUTSIDE_SERVICE_HOURS' || code === 'DATABASE_UNAVAILABLE';
+    return code === 'OUTSIDE_SERVICE_HOURS' ||
+        code === 'SCHEDULED_DB_STOP' ||
+        code === 'DATABASE_UNAVAILABLE';
 }
 
 export function saveMaintenanceReason(reason) {
@@ -46,16 +65,8 @@ export function clearMaintenanceReason() {
 }
 
 export async function probeDatabaseAvailability() {
-    const response = await fetch(dbProbeEndpoint, {
-        credentials: 'include',
-        cache: 'no-store',
-        headers: {
-            'Cache-Control': 'no-cache',
-        },
-    });
-    const data = await response.clone().json().catch(() => null);
-
-    return !(response.status === 503 && data?.code === 'DATABASE_UNAVAILABLE');
+    const status = await fetchServiceStatus();
+    return Boolean(status.available);
 }
 
 export function isAdminPath(pathname = window.location.pathname) {

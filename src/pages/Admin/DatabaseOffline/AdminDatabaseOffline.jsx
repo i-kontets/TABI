@@ -132,7 +132,7 @@ function DisabledNavIcon({ children }) {
 }
 
 export default function AdminDatabaseOffline({ status }) {
-    const isScheduledStop = status?.reason === 'OUTSIDE_SERVICE_HOURS';
+    const isScheduledStop = status?.reason === 'SCHEDULED_DB_STOP' || status?.reason === 'OUTSIDE_SERVICE_HOURS';
     const title = isScheduledStop
         ? '現在はDBの接続をオフにしています'
         : '現在DBへ接続できません';
