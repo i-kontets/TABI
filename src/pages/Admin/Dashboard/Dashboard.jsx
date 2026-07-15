@@ -3,15 +3,43 @@ import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { StatCard, Card, LineChart, DonutChart, Badge } from '../../../components/Admin/ui/Ui';
 import { fetchAnalytics, fetchActivities } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Dashboard.module.css';
 
 const ACTIVITY_LINKS = {
     user: '/admin/users',
     group: '/admin/groups',
-    inquiry: '/admin/inquiries',
-    report: '/admin/reports',
+    inquiry: '/admin/support?type=inquiries',
+    report: '/admin/support?type=reports',
     notice: '/admin/notices',
 };
+
+const todayLabel = () => new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'Asia/Tokyo',
+}).format(new Date());
+
+const REALTIME_EVENTS = [
+    'admin:user_created',
+    'admin:user_updated',
+    'admin:user_deleted',
+    'admin:user_active_updated',
+    'admin:group_created',
+    'admin:group_updated',
+    'admin:group_deleted',
+    'admin:post_created',
+    'admin:post_updated',
+    'admin:post_deleted',
+    'admin:inquiry_created',
+    'admin:inquiry_updated',
+    'admin:report_created',
+    'admin:report_updated',
+    'admin:notice_created',
+    'admin:notice_updated',
+    'admin:notice_deleted',
+];
 
 export default function Dashboard() {
     const [analytics, setAnalytics] = useState(null);
@@ -26,22 +54,7 @@ export default function Dashboard() {
         loadDashboard();
     }, [loadDashboard]);
 
-    useEffect(() => {
-        const handleRealtimeUpdate = (event) => {
-            if (import.meta.env.DEV) {
-                console.log(`${event.type} received`);
-            }
-            loadDashboard();
-        };
-
-        window.addEventListener('admin:inquiry_created', handleRealtimeUpdate);
-        window.addEventListener('admin:report_created', handleRealtimeUpdate);
-
-        return () => {
-            window.removeEventListener('admin:inquiry_created', handleRealtimeUpdate);
-            window.removeEventListener('admin:report_created', handleRealtimeUpdate);
-        };
-    }, [loadDashboard]);
+    useAdminRealtimeRefresh(REALTIME_EVENTS, loadDashboard);
 
     if (!analytics) return <AdminLayout title="TABI Admin"><div /></AdminLayout>;
 
@@ -53,7 +66,7 @@ export default function Dashboard() {
                 <span>本日のアプリ全体の状況を確認できます。</span>
             </p>
 
-            <h2 className={styles.sectionTitle}>本日のサマリー(2026/07/02 時点)</h2>
+            <h2 className={styles.sectionTitle}>本日のサマリー({todayLabel()} 時点)</h2>
             <div className={styles.statGrid}>
                 <StatCard label="新規ユーザー" value={summary.newUsers.value} unit="人" diff={summary.newUsers.diff} />
                 <StatCard label="旅行グループ作成数" value={summary.newGroups.value} unit="件" diff={summary.newGroups.diff} />
@@ -64,7 +77,7 @@ export default function Dashboard() {
             </div>
 
             <Card title="アクティブユーザー推移(過去7日間)">
-                <LineChart data={activeUserTrend.data} labels={activeUserTrend.labels} />
+                <LineChart data={activeUserTrend.data} labels={activeUserTrend.labels} padding={{ left: 24, right: 12, top: 8, bottom: 8 }} />
             </Card>
 
             <Card title="最近のアクティビティ">
@@ -91,11 +104,11 @@ export default function Dashboard() {
             <Card title="要対応の一覧">
                 <div className={styles.todoRow}>
                     <Badge label="未対応" />
-                    <Link to="/admin/inquiries" className={styles.todoLink}>ログインできないお問い合わせ</Link>
+                    <Link to="/admin/support?type=inquiries" className={styles.todoLink}>ログインできないお問い合わせ</Link>
                 </div>
                 <div className={styles.todoRow}>
                     <Badge label="未対応" />
-                    <Link to="/admin/reports" className={styles.todoLink}>不適切投稿の通報</Link>
+                    <Link to="/admin/support?type=reports" className={styles.todoLink}>不適切投稿の通報</Link>
                 </div>
             </Card>
         </AdminLayout>

@@ -1,14 +1,37 @@
 <?php
 
 // cURL が使える環境では cURL を優先し、使えない場合は file_get_contents に切り替えます。
-function sendRealtimeEvent(string $room, string $event, array $data = []): bool
+function realtime_config(string $key, $default = null)
 {
-    $url = app_config("REALTIME_EMIT_URL", "https://ws.tabital.com/emit");
-    $secret = app_config("REALTIME_SECRET", "");
+    static $realtimeConfig = null;
+
+    if ($realtimeConfig === null) {
+        $configPath = __DIR__ . "/../../config/realtime.php";
+        $realtimeConfig = file_exists($configPath) ? require $configPath : [];
+        if (!is_array($realtimeConfig)) {
+            $realtimeConfig = [];
+        }
+    }
+
+    return $realtimeConfig[$key] ?? $default;
+}
+
+function sendRealtimeEvent(string $room, string $event, array $data = []): array
+{
+    $url = realtime_config("realtime_url", app_config("REALTIME_EMIT_URL", "https://ws.tabital.com/emit"));
+    $secret = realtime_config("realtime_secret", app_config("REALTIME_SECRET", ""));
+    $result = [
+        "attempted" => false,
+        "ok" => false,
+        "http_code" => 0,
+        "curl_error" => "",
+        "response" => "",
+    ];
 
     if (!$secret) {
         error_log("Realtime event skipped: REALTIME_SECRET is not set.");
-        return false;
+        $result["response"] = "REALTIME_SECRET is not set.";
+        return $result;
     }
 
     $json = json_encode([
@@ -19,8 +42,11 @@ function sendRealtimeEvent(string $room, string $event, array $data = []): bool
 
     if ($json === false) {
         error_log("Realtime event failed: payload JSON encode error.");
-        return false;
+        $result["response"] = "payload JSON encode error.";
+        return $result;
     }
+
+    $result["attempted"] = true;
 
     if (function_exists("curl_init")) {
         $ch = curl_init($url);
@@ -41,12 +67,17 @@ function sendRealtimeEvent(string $room, string $event, array $data = []): bool
         $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
+        $result["http_code"] = $status;
+        $result["curl_error"] = $error ?: "";
+        $result["response"] = is_string($body) ? substr($body, 0, 500) : "";
+
         if ($body === false || $status < 200 || $status >= 300) {
             error_log("Realtime event failed: HTTP {$status} {$error}");
-            return false;
+            return $result;
         }
 
-        return true;
+        $result["ok"] = true;
+        return $result;
     }
 
     $context = stream_context_create([
@@ -65,10 +96,14 @@ function sendRealtimeEvent(string $room, string $event, array $data = []): bool
         $status = (int) $matches[1];
     }
 
+    $result["http_code"] = $status;
+    $result["response"] = is_string($body) ? substr($body, 0, 500) : "";
+
     if ($body === false || $status < 200 || $status >= 300) {
         error_log("Realtime event failed: HTTP {$status}");
-        return false;
+        return $result;
     }
 
-    return true;
+    $result["ok"] = true;
+    return $result;
 }

@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Badge, Card, DetailRow, Button, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchInquiry, updateInquiry, replyInquiry } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Inquiries.module.css';
 
 const STATUS_OPTIONS = ['未対応', '対応中', '対応済み'];
@@ -14,7 +15,7 @@ export default function InquiryDetail() {
     const [memo, setMemo] = useState('');
     const [reply, setReply] = useState('');
 
-    useEffect(() => {
+    const loadInquiry = useCallback(() => {
         fetchInquiry(inquiryId).then((i) => {
             setInquiry(i);
             if (i) {
@@ -24,9 +25,15 @@ export default function InquiryDetail() {
         });
     }, [inquiryId]);
 
+    useEffect(() => {
+        loadInquiry();
+    }, [loadInquiry]);
+
+    useAdminRealtimeRefresh(['admin:inquiry_updated'], loadInquiry);
+
     if (!inquiry) {
         return (
-            <AdminLayout title="お問い合わせ詳細" back>
+            <AdminLayout title="お問い合わせ詳細" back backTo="/admin/support?type=inquiries">
                 <EmptyState message="お問い合わせが見つかりません" />
             </AdminLayout>
         );
@@ -52,7 +59,7 @@ export default function InquiryDetail() {
     };
 
     return (
-        <AdminLayout title="お問い合わせ詳細" back>
+        <AdminLayout title="お問い合わせ詳細" back backTo="/admin/support?type=inquiries">
             <div className={styles.detailHead}>
                 <Badge label={inquiry.status} />
                 <span className={styles.detailTitle}>{inquiry.title}</span>

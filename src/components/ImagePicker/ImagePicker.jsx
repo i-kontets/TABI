@@ -43,6 +43,7 @@ function ImagePicker({
     fileName = "image.jpg",
     // 切り抜き枠の縦横比（幅 ÷ 高さ）。既定は Home カード画像と同じ長方形です。
     aspectRatio = DEFAULT_ASPECT_RATIO,
+    circular = false,
     editorTitle = label,
     previewAlt = "画像プレビュー",
     addLabel = "画像を追加",
@@ -308,7 +309,7 @@ function ImagePicker({
 
                 <div className={styles.row}>
                     {/* 親から渡されたプレビュー画像を表示します。 */}
-                    <div className={styles.preview}>
+                    <div className={[styles.preview, circular ? styles.previewCircle : ''].join(' ')}>
                         {previewUrl ? (
                             <img
                                 src={previewUrl}
@@ -359,7 +360,7 @@ function ImagePicker({
                     {/* ここが画像を実際に切り抜く作業領域です。 */}
                     <div className={styles.editorStage}>
                         <div
-                            className={styles.editorCrop}
+                            className={[styles.editorCrop, circular ? styles.editorCropCircle : ''].join(' ')}
                             style={{ aspectRatio }}
                             ref={editorCropRef}
                             onPointerDown={handleEditorPointerDown}

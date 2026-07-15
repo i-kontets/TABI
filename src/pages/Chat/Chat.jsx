@@ -222,6 +222,25 @@ const Chat = () => {
     }, [activeContactId, pollNewMessages, loadContacts]);
 
     // サイドバーから会話相手を選んだときに、その相手の会話を開く。
+    useEffect(() => {
+        const handleRealtimeChatUpdate = () => {
+            loadContacts(undefined, { showNotice: false });
+            if (activeContactId) {
+                loadMessages(activeContactId, undefined, { showLoading: false, showNotice: false });
+            }
+        };
+
+        window.addEventListener('user:chat_message_created', handleRealtimeChatUpdate);
+        window.addEventListener('user:chat_message_updated', handleRealtimeChatUpdate);
+        window.addEventListener('user:chat_message_deleted', handleRealtimeChatUpdate);
+
+        return () => {
+            window.removeEventListener('user:chat_message_created', handleRealtimeChatUpdate);
+            window.removeEventListener('user:chat_message_updated', handleRealtimeChatUpdate);
+            window.removeEventListener('user:chat_message_deleted', handleRealtimeChatUpdate);
+        };
+    }, [activeContactId, loadContacts, loadMessages]);
+
     const handleContactSelect = (id) => {
         setActiveContactId(id);
         setIsMobileChatView(true);

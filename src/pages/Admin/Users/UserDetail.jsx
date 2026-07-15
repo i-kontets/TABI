@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Badge, Avatar, Tabs, Card, DetailRow, Button, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchUser, suspendUser, deleteUser, fetchGroups } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Users.module.css';
 
 const TABS = ['基本情報', '活動履歴', '所属グループ'];
@@ -15,10 +16,16 @@ export default function UserDetail() {
     const [memo, setMemo] = useState('');
     const [showMemo, setShowMemo] = useState(false);
 
-    useEffect(() => {
+    const loadUserDetail = useCallback(() => {
         fetchUser(userId).then(setUser);
         fetchGroups().then((r) => setGroups(r.items));
     }, [userId]);
+
+    useEffect(() => {
+        loadUserDetail();
+    }, [loadUserDetail]);
+
+    useAdminRealtimeRefresh(['admin:user_updated', 'admin:user_deleted', 'admin:group_updated'], loadUserDetail);
 
     if (!user) {
         return (

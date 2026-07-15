@@ -1,5 +1,8 @@
 2026 年卒業制作
 
+AWS IAMログインURL
+https://235729103785.signin.aws.amazon.com/console
+
 docker compose up --build
 
 docker compose down --rmi all --volumes --remove-orphans

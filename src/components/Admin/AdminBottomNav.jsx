@@ -36,7 +36,7 @@ const ITEMS = [
     { to: '/admin', label: 'ホーム', icon: HomeIcon, end: true },
     { to: '/admin/users', label: 'ユーザー', icon: UserIcon, match: ['/admin/users'] },
     { to: '/admin/groups', label: 'グループ', icon: GroupIcon, match: ['/admin/groups', '/admin/posts'] },
-    { to: '/admin/inquiries', label: '対応', icon: ChatIcon, match: ['/admin/inquiries', '/admin/reports'] },
+    { to: '/admin/support', label: '対応', icon: ChatIcon, match: ['/admin/support', '/admin/inquiries', '/admin/reports'] },
     { to: '/admin/settings', label: '設定', icon: SettingIcon, match: ['/admin/settings', '/admin/notices', '/admin/spots', '/admin/analytics', '/admin/managers', '/admin/logs'] },
 ];
 
@@ -45,7 +45,7 @@ export default function AdminBottomNav() {
 
     const isActive = (item) => {
         if (item.end) return pathname === item.to;
-        return (item.match || [item.to]).some((p) => pathname.startsWith(p));
+        return (item.match || [item.to]).some((path) => pathname.startsWith(path));
     };
 
     return (

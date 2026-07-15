@@ -1,0 +1,36 @@
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.row {
+    background: #fff;
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 3px rgba(20, 40, 80, 0.06);
+    position: relative;
+}
+
+.rowTime {
+    font-size: 11px;
+    color: #8a94a6;
+    margin-bottom: 4px;
+}
+
+.rowAction {
+    font-size: 13px;
+    line-height: 1.6;
+    padding-right: 56px;
+}
+
+.rowTarget {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    font-size: 10px;
+    background: #eef1f6;
+    color: #6b7280;
+    padding: 2px 8px;
+    border-radius: 999px;
+}

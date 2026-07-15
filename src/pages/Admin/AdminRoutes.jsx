@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Routes, Route } from 'react-router-dom';
 
 import Dashboard from './Dashboard/Dashboard';
 import UserList from './Users/UserList';
@@ -7,17 +7,16 @@ import GroupList from './Groups/GroupList';
 import GroupDetail from './Groups/GroupDetail';
 import PostList from './Posts/PostList';
 import PostDetail from './Posts/PostDetail';
-import ReportList from './Reports/ReportList';
 import ReportDetail from './Reports/ReportDetail';
-import InquiryList from './Inquiries/InquiryList';
 import InquiryDetail from './Inquiries/InquiryDetail';
+import SupportPage from './Support/SupportPage';
 import NoticeList from './Notices/NoticeList';
 import NoticeForm from './Notices/NoticeForm';
 import SpotList from './Spots/SpotList';
 import SpotForm from './Spots/SpotForm';
 import Analytics from './Analytics/Analytics';
 import Managers from './Managers/Managers';
-// import Logs from './Logs/Logs';
+import Logs from './Logs/Logs';
 import Settings from './Settings/Settings';
 import AdminRealtimeListener from "./Realtime/AdminRealtimeListener";
 
@@ -38,9 +37,10 @@ export default function AdminRoutes() {
                 <Route path="groups/:groupId" element={<GroupDetail />} />
                 <Route path="posts" element={<PostList />} />
                 <Route path="posts/:postId" element={<PostDetail />} />
-                <Route path="reports" element={<ReportList />} />
+                <Route path="support" element={<SupportPage />} />
+                <Route path="reports" element={<Navigate to="/admin/support?type=reports" replace />} />
                 <Route path="reports/:reportId" element={<ReportDetail />} />
-                <Route path="inquiries" element={<InquiryList />} />
+                <Route path="inquiries" element={<Navigate to="/admin/support?type=inquiries" replace />} />
                 <Route path="inquiries/:inquiryId" element={<InquiryDetail />} />
                 <Route path="notices" element={<NoticeList />} />
                 <Route path="notices/new" element={<NoticeForm />} />
