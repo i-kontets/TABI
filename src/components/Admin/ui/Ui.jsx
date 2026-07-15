@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './Ui.module.css';
 
 /* ============ ステータスバッジ ============ */
@@ -215,18 +215,51 @@ export function Button({ children, variant = 'primary', onClick, type = 'button'
 
 export function LineChart({ data, labels = [], height = 120, padding }) {
     const [activeIndex, setActiveIndex] = useState(null);
-    const w = 320;
-    const h = height;
+    const wrapRef = useRef(null);
+    const [chartWidth, setChartWidth] = useState(320);
+
+    useEffect(() => {
+        const node = wrapRef.current;
+        if (!node) return undefined;
+
+        const updateWidth = () => {
+            const nextWidth = Math.round(node.getBoundingClientRect().width);
+            if (nextWidth > 0) {
+                setChartWidth(nextWidth);
+            }
+        };
+
+        updateWidth();
+
+        if (typeof ResizeObserver === 'undefined') {
+            window.addEventListener('resize', updateWidth);
+            return () => window.removeEventListener('resize', updateWidth);
+        }
+
+        const observer = new ResizeObserver((entries) => {
+            const nextWidth = Math.round(entries[0]?.contentRect.width ?? 0);
+            if (nextWidth > 0) {
+                setChartWidth(nextWidth);
+            }
+        });
+        observer.observe(node);
+
+        return () => observer.disconnect();
+    }, []);
+
+    const w = Math.max(260, chartWidth);
+    const h = Math.max(height, Math.min(220, Math.round(w * 0.24)));
     const pad = {
         top: padding?.top ?? 8,
-        right: padding?.right ?? 8,
-        bottom: padding?.bottom ?? 8,
-        left: padding?.left ?? 8,
+        right: Math.max(padding?.right ?? 28, 28),
+        bottom: Math.max(padding?.bottom ?? 22, 22),
+        left: Math.max(padding?.left ?? 32, 32),
     };
     const max = Math.max(...data, 1);
     const min = Math.min(...data, 0);
     const range = max - min || 1;
-    const step = (w - pad.left - pad.right) / (data.length - 1 || 1);
+    const availableWidth = Math.max(0, w - pad.left - pad.right);
+    const step = data.length > 1 ? availableWidth / (data.length - 1) : 0;
     const points = data.map((v, i) => ({
         x: pad.left + i * step,
         y: pad.top + (h - pad.top - pad.bottom) * (1 - (v - min) / range),
@@ -235,12 +268,13 @@ export function LineChart({ data, labels = [], height = 120, padding }) {
     const activePoint = activeIndex == null ? null : points[activeIndex];
     const activeValue = activeIndex == null ? null : data[activeIndex];
     const activeLabel = activeValue == null ? '' : `${activeValue.toLocaleString()}人`;
-    const tooltipX = activePoint ? Math.min(Math.max(activePoint.x, 24), w - 24) : 0;
+    const tooltipWidth = 40;
+    const tooltipX = activePoint ? Math.min(Math.max(activePoint.x, tooltipWidth / 2 + 4), w - tooltipWidth / 2 - 4) : 0;
     const tooltipTextY = activePoint ? Math.max(18, activePoint.y - 14) : 0;
 
     return (
-        <div className={styles.chartWrap}>
-            <svg viewBox={`0 0 ${w} ${h + 16}`} className={styles.chart}>
+        <div className={styles.chartWrap} ref={wrapRef}>
+            <svg viewBox={`0 0 ${w} ${h + 22}`} className={styles.chart} preserveAspectRatio="none">
                 <path d={path} fill="none" stroke="#2f6ceb" strokeWidth="2" strokeLinejoin="round" />
                 {points.map((p, i) => (
                     <g key={i}>
@@ -269,9 +303,9 @@ export function LineChart({ data, labels = [], height = 120, padding }) {
                 {activePoint && (
                     <g pointerEvents="none">
                         <rect
-                            x={tooltipX - 18}
+                            x={tooltipX - tooltipWidth / 2}
                             y={tooltipTextY - 16}
-                            width="36"
+                            width={tooltipWidth}
                             height="18"
                             rx="5"
                             fill="#1f2937"
@@ -289,7 +323,7 @@ export function LineChart({ data, labels = [], height = 120, padding }) {
                     </g>
                 )}
                 {labels.map((l, i) => (
-                    <text key={i} x={pad.left + i * step} y={h + 12} textAnchor="middle" fontSize="9" fill="#8a94a6">
+                    <text key={i} x={pad.left + i * step} y={h + 15} textAnchor="middle" fontSize="10" fill="#8a94a6">
                         {l}
                     </text>
                 ))}

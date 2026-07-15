@@ -129,10 +129,6 @@
         grid-column: 1 / -1;
     }
 
-    .chartPanel svg {
-        height: 240px;
-    }
-
     .panelGrid > section:nth-of-type(2),
     .panelGrid > section:nth-of-type(3) {
         min-height: 300px;
@@ -148,11 +144,5 @@
 
     .todoList {
         max-height: 220px;
-    }
-}
-
-@media (min-width: 1280px) {
-    .chartPanel svg {
-        height: 260px;
     }
 }
