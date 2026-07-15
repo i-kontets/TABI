@@ -9,6 +9,11 @@ require_once __DIR__ . "/../Admin/services/realtime.php";
 const PASSWORD_RESET_SUCCESS_MESSAGE = "入力されたメールアドレスが登録されている場合、パスワード再設定メールを送信しました。";
 const PASSWORD_RESET_COOLDOWN_SECONDS = 60;
 
+function passwordResetLog(string $message): void
+{
+    error_log("[PasswordResetRequest] " . $message);
+}
+
 function respond(array $payload, int $status = 200): void
 {
     http_response_code($status);
@@ -21,9 +26,51 @@ function currentDateTime(): DateTimeImmutable
     return new DateTimeImmutable("now", new DateTimeZone("Asia/Tokyo"));
 }
 
+function logPasswordResetDatabaseDiagnostics(PDO $pdo): void
+{
+    try {
+        $dbInfo = $pdo->query(
+            "SELECT DATABASE() AS database_name, @@hostname AS database_host"
+        )->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        $tableStmt = $pdo->query("SHOW TABLES LIKE 'password_reset_tokens'");
+        $tableExists = $tableStmt && $tableStmt->fetchColumn() !== false;
+
+        // PHPがどのDBへ接続しているか確認するため、DB名・DBサーバー名・接続先種別だけをログへ記録する。
+        // DBパスワード、GAS認証値、ユーザーのパスワード、再設定トークンはログへ出力しない。
+        passwordResetLog(
+            "database="
+            . ($dbInfo["database_name"] ?? "unknown")
+            . ", host="
+            . ($dbInfo["database_host"] ?? "unknown")
+            . ", app_env="
+            . (function_exists("app_config") ? app_config("APP_ENV", "unknown") : "unknown")
+            . ", password_reset_tokens="
+            . ($tableExists ? "exists" : "missing")
+        );
+
+        if ($tableExists) {
+            $columns = $pdo->query("DESCRIBE password_reset_tokens")->fetchAll(PDO::FETCH_COLUMN);
+            passwordResetLog("password_reset_tokens columns=" . implode(",", $columns));
+        }
+    } catch (Throwable $diagnosticError) {
+        // 診断ログの失敗で本来の処理を止めない。原因調査用に、診断自体の失敗だけを残す。
+        passwordResetLog(
+            "database diagnostics failed: "
+            . get_class($diagnosticError)
+            . ": "
+            . $diagnosticError->getMessage()
+        );
+    }
+}
+
 function postJsonToGas(string $url, array $payload): array
 {
     $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+    if ($json === false) {
+        throw new RuntimeException("GAS送信用JSONの作成に失敗しました: " . json_last_error_msg());
+    }
 
     if (function_exists("curl_init")) {
         $ch = curl_init($url);
@@ -50,6 +97,9 @@ function postJsonToGas(string $url, array $payload): array
             throw new RuntimeException("GASへの送信に失敗しました。HTTP {$status} {$error}");
         }
 
+        // GASのHTTPステータスだけをログに残す。本文には認証情報が含まれる可能性があるため、ここでは出力しない。
+        passwordResetLog("[GAS] HTTP status={$status}");
+
         return ["status" => $status, "body" => $body];
     }
 
@@ -72,6 +122,8 @@ function postJsonToGas(string $url, array $payload): array
     if ($body === false) {
         throw new RuntimeException("GASへの送信に失敗しました。HTTP {$status}");
     }
+
+    passwordResetLog("[GAS] HTTP status={$status}");
 
     return ["status" => $status, "body" => $body];
 }
@@ -131,7 +183,13 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 }
 
 // JSONで送られたメールアドレスを受け取る。空のJSONでも落ちないよう配列にして扱う。
-$input = json_decode(file_get_contents("php://input"), true) ?: [];
+$rawBody = file_get_contents("php://input");
+$input = json_decode($rawBody ?: "{}", true);
+
+if (!is_array($input)) {
+    respond(["success" => false, "message" => "送信内容を確認してください。"], 400);
+}
+
 $email = trim((string) ($input["email"] ?? ""));
 
 if ($email === "") {
@@ -143,6 +201,8 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 try {
+    logPasswordResetDatabaseDiagnostics($pdo);
+
     $stmt = $pdo->prepare("
         SELECT user_id, name, email
         FROM users
@@ -212,6 +272,8 @@ try {
         "created_at" => $nowText,
     ]);
 
+    // このAPIは、GAS送信が成功した場合だけDB更新を確定する方式にしている。
+    // メールが届かないのに有効な再設定URLだけがDBへ残ることを防ぐため、GAS失敗時はcatchでロールバックする。
     sendPasswordResetMail($user["email"], $user["name"] ?? "ユーザー", $resetUrl);
 
     $pdo->commit();
@@ -219,10 +281,21 @@ try {
     respond(["success" => true, "message" => PASSWORD_RESET_SUCCESS_MESSAGE]);
 } catch (Throwable $error) {
     if ($pdo->inTransaction()) {
+        // 処理途中で失敗した場合に、不完全なDB更新が残らないよう開始済みのトランザクションだけ戻す。
         $pdo->rollBack();
     }
 
-    error_log("Password reset request failed: " . $error->getMessage());
+    // 詳細な原因はサーバーログにだけ記録する。ブラウザには内部情報を返さない。
+    passwordResetLog(
+        get_class($error)
+        . ": "
+        . $error->getMessage()
+        . " in "
+        . $error->getFile()
+        . ":"
+        . $error->getLine()
+    );
+
     if (function_exists("logSystemError")) {
         logSystemError("auth", "error", "パスワード再設定メールの送信に失敗しました", [
             "error_type" => "PASSWORD_RESET_MAIL_FAILED",
