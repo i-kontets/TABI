@@ -1,10 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './MessageBubble.module.css';
-
-function isImageAvatar(value) {
-    return typeof value === 'string' && (/^(https?:)?\/\//.test(value) || value.startsWith('/'));
-}
+import UserAvatar from '../UserAvatar';
 
 const MessageBubble = ({ message, memberCount = 0 }) => {
     const navigate = useNavigate();
@@ -30,13 +27,14 @@ const MessageBubble = ({ message, memberCount = 0 }) => {
                 disabled={!canOpenProfile}
                 aria-label={`${senderName || 'ユーザー'}のプロフィールを開く`}
             >
-                {isImageAvatar(message.avatar) ? (
-                    <img src={message.avatar} alt="" className={styles.msgAvatar} />
-                ) : (
-                    <div className={styles.msgAvatarFallback} aria-hidden="true">
-                        {avatarText}
-                    </div>
-                )}
+                <UserAvatar
+                    src={message.avatar}
+                    name={senderName || avatarText}
+                    alt=""
+                    className={styles.msgAvatar}
+                    fallbackClassName={styles.msgAvatarFallback}
+                    source="Chat message user icon"
+                />
             </button>
 
             <div className={styles.bubbleContent}>

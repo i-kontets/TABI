@@ -540,10 +540,17 @@ function fetch_system_error_summary(PDO $pdo): array
     }
 
     [$start, $end] = tokyo_day_range();
+    $countExpr = admin_column_exists($pdo, "system_errors", "occurrence_count")
+        ? "COALESCE(occurrence_count, 1)"
+        : "1";
+    $occurredAtExpr = admin_column_exists($pdo, "system_errors", "last_occurred_at")
+        ? "COALESCE(last_occurred_at, created_at)"
+        : "created_at";
+
     $stmt = $pdo->prepare("
         SELECT
-            COUNT(*) AS unresolved_count,
-            SUM(CASE WHEN created_at >= :start_at AND created_at < :end_at THEN 1 ELSE 0 END) AS today_count
+            SUM({$countExpr}) AS unresolved_count,
+            SUM(CASE WHEN {$occurredAtExpr} >= :start_at AND {$occurredAtExpr} < :end_at THEN {$countExpr} ELSE 0 END) AS today_count
         FROM system_errors
         WHERE status = 'unresolved'
     ");
