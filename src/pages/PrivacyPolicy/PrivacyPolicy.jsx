@@ -150,4 +150,10 @@ function PrivacyPolicy() {
     );
 }
 
+PrivacyPolicy.legalContent = {
+    updatedAt: LAST_UPDATED,
+    introduction,
+    sections,
+};
+
 export default PrivacyPolicy;

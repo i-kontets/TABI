@@ -159,4 +159,10 @@ function Terms() {
     );
 }
 
+Terms.legalContent = {
+    updatedAt: LAST_UPDATED,
+    introduction,
+    sections,
+};
+
 export default Terms;
