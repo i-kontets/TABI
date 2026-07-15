@@ -8,6 +8,8 @@ import Login from './pages/Login/Login';
 import Home from './pages/Home/Home';
 import MyPage from './pages/MyPage/MyPage';
 import { ProfileEditPage, UserEditPage, EmailChangePage, NotificationSettingsPage, NotificationPermissionPage, ContactPage, FaqPage } from './pages/MyPage/MyPageSubPages';
+import Terms from './pages/Terms/Terms.jsx';
+import PrivacyPolicy from './pages/PrivacyPolicy/PrivacyPolicy.jsx';
 import UserProfilePage from './pages/UserProfile/UserProfilePage.jsx';
 import Itinerary from './pages/Itinerary/Itinerary.jsx';
 import ItineraryEdit from './pages/Itinerary/ItineraryEdit.jsx';
@@ -27,7 +29,7 @@ import Maintenance from './pages/Maintenance/Maintenance.jsx';
 import ServiceAvailabilityGate from './components/ServiceAvailabilityGate.jsx';
 import { isAdminPath, isMaintenancePath } from './services/serviceStatus.js';
 
-
+// eslint-disable-next-line react-refresh/only-export-components
 export const TripContext = createContext();
 
 function AppRoutes({ trip }) {
@@ -50,6 +52,8 @@ function AppRoutes({ trip }) {
                 <Route path="/mypage/notification-permission" element={<NotificationPermissionPage />} />
                 <Route path="/mypage/contact" element={<ContactPage />} />
                 <Route path="/mypage/faq" element={<FaqPage />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/user/:userId" element={<UserProfilePage />} />
                 <Route path="/Itinerary" element={<Itinerary />} />
                 <Route path="/ItineraryEdit" element={<ItineraryEdit />} />

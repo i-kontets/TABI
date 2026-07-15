@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createElement, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Modal from '../../components/Modal/Modal';
 import styles from './MyPage.module.css';
@@ -115,11 +115,11 @@ function ChevronRightIcon({ className }) {
     );
 }
 
-function ItemRow({ icon: Icon, title, description, onClick }) {
+function ItemRow({ icon, title, description, onClick }) {
     return (
         <button type="button" className={styles.itemRow} onClick={onClick}>
             <span className={styles.itemIconWrap}>
-                <Icon className={styles.itemIcon} />
+                {createElement(icon, { className: styles.itemIcon })}
             </span>
             <span className={styles.itemText}>
                 <span className={styles.itemTitle}>{title}</span>
@@ -212,10 +212,6 @@ function MyPage() {
         } finally {
             navigate('/');
         }
-    };
-
-    const handleComingSoon = (label) => {
-        window.alert(label + 'は現在準備中です。');
     };
 
     return (
@@ -311,12 +307,12 @@ function MyPage() {
                     <ItemRow
                         icon={DocumentIcon}
                         title="利用規約"
-                        onClick={() => handleComingSoon('利用規約')}
+                        onClick={() => navigate('/terms')}
                     />
                     <ItemRow
                         icon={DocumentIcon}
                         title="プライバシーポリシー"
-                        onClick={() => handleComingSoon('プライバシーポリシー')}
+                        onClick={() => navigate('/privacy-policy')}
                     />
                 </SectionCard>
 
