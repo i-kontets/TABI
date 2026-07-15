@@ -249,6 +249,9 @@ function Album() {
                 formData.append('caption', photo.caption || '');
                 formData.append('shot_at', '');
 
+                const hashtags = parseHashtags(photo.hashtags);
+                formData.append('hashtags', JSON.stringify(hashtags));  
+
                 const response = await fetch (
                     'https://genshin.mond.jp/TABI/api/Photos/Upload.php',
                     {
