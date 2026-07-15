@@ -1,9 +1,6 @@
 import React from 'react';
 import styles from './ChatHeader.module.css';
-
-function isImageAvatar(value) {
-  return typeof value === 'string' && (/^(https?:)?\/\//.test(value) || value.startsWith('/'));
-}
+import UserAvatar from '../UserAvatar';
 
 const ChatHeader = ({ contact, reservation, onMobileBack }) => {
   if (!contact) return null;
@@ -31,13 +28,14 @@ const ChatHeader = ({ contact, reservation, onMobileBack }) => {
           戻る
         </button>
 
-        {isImageAvatar(contact.avatar) ? (
-          <img src={contact.avatar} alt={contact.name} className={styles.avatar} />
-        ) : (
-          <div className={styles.avatarFallback} aria-hidden="true">
-            {String(contact.avatar || contact.name || '?').slice(0, 1)}
-          </div>
-        )}
+        <UserAvatar
+          src={contact.avatar}
+          name={contact.avatar || contact.name}
+          alt={contact.name}
+          className={styles.avatar}
+          fallbackClassName={styles.avatarFallback}
+          source="Chat header user icon"
+        />
         <div className={styles.infoTexts}>
           <span className={styles.name}>
             {contact.name}

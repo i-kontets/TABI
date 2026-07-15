@@ -3,6 +3,7 @@ session_start();
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Groups/S3Common.php";
 
 function respond(array $payload, int $status = 200): void
 {
@@ -29,6 +30,50 @@ function formatTime(?string $value): string
     }
 
     return (new DateTimeImmutable($value))->format("H:i");
+}
+
+function resolveUserIconUrl(?string $iconValue): ?string
+{
+    static $initialized = false, $s3 = null, $aws = null, $cache = [];
+
+    $iconValue = trim((string) $iconValue);
+
+    if ($iconValue === "") {
+        return null;
+    }
+
+    if (strpos($iconValue, "http://") === 0 || strpos($iconValue, "https://") === 0) {
+        $path = parse_url($iconValue, PHP_URL_PATH);
+
+        if (!$path) {
+            return null;
+        }
+
+        $iconValue = rawurldecode($path);
+    }
+
+    $key = ltrim($iconValue, "/");
+
+    if ($key === "") {
+        return null;
+    }
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    if (!$initialized) {
+        $initialized = true;
+
+        try {
+            $aws = loadAwsConfig();
+            $s3 = $aws ? createS3Client($aws) : null;
+        } catch (Throwable $error) {
+            $s3 = null;
+        }
+    }
+
+    return $cache[$key] = ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $key) : null;
 }
 
 function normalizeCategory(?string $chatType): string
@@ -146,7 +191,7 @@ try {
             $avatar = $chat["candidate_img_url"] ?: "";
         } elseif ($category === "friend") {
             $name = $chat["other_user_name"] ?: $name;
-            $avatar = $chat["other_user_icon_url"] ?: "";
+            $avatar = resolveUserIconUrl($chat["other_user_icon_url"] ?? null) ?: "";
         }
 
         if ($avatar === "") {

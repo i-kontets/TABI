@@ -453,6 +453,57 @@ function fetch_recent_activities(PDO $pdo): array
 }
 
 // 今日のアクティブユーザー数を取得します。
+function fetch_pending_support_items(PDO $pdo): array
+{
+    $items = [];
+
+    $inquiryRows = $pdo->query("
+        SELECT inquiry_id, public_id, title, created_at
+        FROM admin_inquiries
+        WHERE status IS NULL OR status NOT IN ('working', 'resolved')
+        ORDER BY created_at DESC, inquiry_id DESC
+    ")->fetchAll();
+
+    foreach ($inquiryRows as $row) {
+        $items[] = [
+            "id" => "inquiry-" . $row["inquiry_id"],
+            "type" => "inquiry",
+            "title" => $row["title"],
+            "status" => "未対応",
+            "createdAt" => format_dt($row["created_at"]),
+            "sortAt" => $row["created_at"],
+            "to" => "/admin/inquiries/" . $row["public_id"],
+        ];
+    }
+
+    $reportRows = $pdo->query("
+        SELECT report_id, report_type, reason, reported_at
+        FROM admin_reports
+        WHERE status IS NULL OR status NOT IN ('reviewing', 'resolved')
+        ORDER BY reported_at DESC, report_id DESC
+    ")->fetchAll();
+
+    foreach ($reportRows as $row) {
+        $title = trim((string) ($row["report_type"] ?: $row["reason"] ?: "通報"));
+        $items[] = [
+            "id" => "report-" . $row["report_id"],
+            "type" => "report",
+            "title" => $title,
+            "status" => "未対応",
+            "createdAt" => format_dt($row["reported_at"]),
+            "sortAt" => $row["reported_at"],
+            "to" => "/admin/reports/r" . $row["report_id"],
+        ];
+    }
+
+    usort($items, fn($a, $b) => strcmp($b["sortAt"], $a["sortAt"]));
+
+    return array_map(function ($item) {
+        unset($item["sortAt"]);
+        return $item;
+    }, $items);
+}
+
 function admin_column_exists(PDO $pdo, string $table, string $column): bool
 {
     $stmt = $pdo->prepare("
@@ -479,6 +530,39 @@ function tokyo_day_range(int $offsetDays = 0): array
     return [
         $start->format("Y-m-d H:i:s"),
         $end->format("Y-m-d H:i:s"),
+    ];
+}
+
+function fetch_system_error_summary(PDO $pdo): array
+{
+    if (!admin_column_exists($pdo, "system_errors", "error_id")) {
+        return ["value" => 0, "today" => 0];
+    }
+
+    [$start, $end] = tokyo_day_range();
+    $countExpr = admin_column_exists($pdo, "system_errors", "occurrence_count")
+        ? "COALESCE(occurrence_count, 1)"
+        : "1";
+    $occurredAtExpr = admin_column_exists($pdo, "system_errors", "last_occurred_at")
+        ? "COALESCE(last_occurred_at, created_at)"
+        : "created_at";
+
+    $stmt = $pdo->prepare("
+        SELECT
+            SUM({$countExpr}) AS unresolved_count,
+            SUM(CASE WHEN {$occurredAtExpr} >= :start_at AND {$occurredAtExpr} < :end_at THEN {$countExpr} ELSE 0 END) AS today_count
+        FROM system_errors
+        WHERE status = 'unresolved'
+    ");
+    $stmt->execute([
+        "start_at" => $start,
+        "end_at" => $end,
+    ]);
+    $row = $stmt->fetch() ?: [];
+
+    return [
+        "value" => (int) ($row["unresolved_count"] ?? 0),
+        "today" => (int) ($row["today_count"] ?? 0),
     ];
 }
 

@@ -31,6 +31,7 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
         $todayActiveUsers = fetch_today_active_users($pdo);
         $activeUserTrend = fetch_active_user_trend($pdo);
         $notificationPermissions = fetch_notification_permissions($pdo);
+        $systemErrors = fetch_system_error_summary($pdo);
 
         // 取得した生データを、フロント画面がそのまま表示できる管理画面用の形にまとめ直して返します。
         // summary は一目で状況を把握するための要約、usage は利用実績、featureRanking は利用傾向の比較です。
@@ -44,8 +45,8 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
                 // 未対応の問い合わせと通報は、管理画面で優先的に確認したい件数です。
                 "pendingInquiries" => count(array_filter($inquiries, fn($i) => $i["status"] === "未対応")),
                 "pendingReports" => count(array_filter($reports, fn($r) => $r["status"] === "未対応")),
-                // 今回はシステムエラーの個別集計がないため、0 を返しています。
-                "systemErrors" => 0,
+                // system_errors の未対応件数と本日発生件数を返します。
+                "systemErrors" => $systemErrors,
                 // 総ユーザー数は、ダッシュボード上の基礎情報として一覧件数を使います。
                 "totalUsers" => count($users),
             ],
@@ -78,6 +79,10 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
     }
 
     // 通報件数の状態別集計だけを返す専用エンドポイントです。
+    if ($resource === "support-pending") {
+        respond(fetch_pending_support_items($pdo));
+    }
+
     if ($resource === "reports-counts") {
         $reports = fetch_reports($pdo);
         respond([

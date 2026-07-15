@@ -19,3 +19,26 @@
 .rowBody { flex: 1; min-width: 0; }
 .rowTitle { font-size: 14px; font-weight: 700; }
 .rowSub { font-size: 11.5px; color: #6b7280; margin-top: 2px; }
+
+@media (min-width: 601px) {
+    .list {
+        gap: 10px;
+    }
+
+    .row {
+        padding: 16px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .row {
+        min-height: 84px;
+        box-sizing: border-box;
+    }
+}

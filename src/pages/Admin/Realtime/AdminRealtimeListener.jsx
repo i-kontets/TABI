@@ -6,6 +6,7 @@ const ADMIN_REALTIME_EVENTS = [
     "user_updated",
     "user_deleted",
     "user_active_updated",
+    "system_error_created",
     "group_created",
     "group_updated",
     "group_deleted",

@@ -157,6 +157,13 @@ try {
     ]);
 
 } catch (PDOException $error) {
+    if (function_exists("logSystemError")) {
+        logSystemError("auth", "error", "ログイン処理に失敗しました", [
+            "error" => $error->getMessage(),
+            "email" => $email !== "" ? "provided" : "empty",
+        ], null, $_SERVER["REQUEST_URI"] ?? null);
+    }
+
     // データベース接続やクエリ実行時のエラーをキャッチ
     http_response_code(500);
     echo json_encode([

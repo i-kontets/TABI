@@ -243,7 +243,7 @@ export function ProfileEditPage() {
         setMessage('');
         setError('');
         try {
-            let iconUrl = currentUser.icon_url || '';
+            let iconUrl = currentUser.icon_key || '';
             if (selectedIcon?.file) {
                 iconUrl = await uploadUserIcon(selectedIcon.file);
             }
@@ -324,7 +324,7 @@ export function UserEditPage() {
         setMessage('');
         setError('');
         try {
-            let iconUrl = form.icon_url || '';
+            let iconUrl = form.icon_key || '';
             if (selectedIcon?.file) {
                 iconUrl = await uploadUserIcon(selectedIcon.file);
             }

@@ -61,5 +61,12 @@ try {
         "public_id" => $publicId,
     ]);
 } catch (Throwable $error) {
+    if (function_exists("logSystemError")) {
+        logSystemError("api", "error", "問い合わせ送信に失敗しました", [
+            "error" => $error->getMessage(),
+            "category" => $category,
+        ], (int) ($_SESSION["user_id"] ?? 0) ?: null, $_SERVER["REQUEST_URI"] ?? null);
+    }
+
     respond(["success" => false, "message" => "お問い合わせの保存に失敗しました。"], 500);
 }

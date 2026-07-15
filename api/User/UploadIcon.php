@@ -61,6 +61,11 @@ try {
     $aws = loadAwsConfig();
     $s3 = $aws ? createS3Client($aws) : null;
     if (!$s3) {
+        if (function_exists("logSystemError")) {
+            logSystemError("s3", "error", "ユーザーアイコン用S3クライアントの初期化に失敗しました", [
+                "user_id" => $userId,
+            ], $userId);
+        }
         respond(["success" => false, "message" => "S3設定が見つかりません。env.php と AWS SDK（vendor）を確認してください。"], 500);
     }
 
@@ -95,5 +100,11 @@ try {
         "image_url" => presignS3Url($s3, $aws["bucket"], $s3Key),
     ]);
 } catch (Throwable $error) {
+    if (function_exists("logSystemError")) {
+        logSystemError("s3", "error", "ユーザーアイコンアップロードに失敗しました", [
+            "user_id" => $userId ?? null,
+            "error" => $error->getMessage(),
+        ], $userId ?? null);
+    }
     respond(["success" => false, "message" => "ユーザーアイコンのアップロードに失敗しました。"], 500);
 }

@@ -31,12 +31,34 @@ function resolveUserIconUrl(?string $iconUrl): ?string
     if (!$iconUrl) {
         return null;
     }
-    if (strpos($iconUrl, "http://") === 0 || strpos($iconUrl, "https://") === 0) {
-        return $iconUrl;
+    $iconUrl = extractS3KeyFromIconValue($iconUrl);
+    if (!$iconUrl) {
+        return null;
     }
     $aws = loadAwsConfig();
     $s3 = $aws ? createS3Client($aws) : null;
     return ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $iconUrl) : null;
+}
+
+function extractS3KeyFromIconValue(?string $iconValue): ?string
+{
+    $iconValue = trim((string) $iconValue);
+
+    if ($iconValue === "") {
+        return null;
+    }
+
+    if (strpos($iconValue, "http://") === 0 || strpos($iconValue, "https://") === 0) {
+        $path = parse_url($iconValue, PHP_URL_PATH);
+
+        if (!$path) {
+            return null;
+        }
+
+        return ltrim(rawurldecode($path), "/");
+    }
+
+    return ltrim($iconValue, "/");
 }
 
 function fetchUserProfile(PDO $pdo, int $userId): array
@@ -68,8 +90,9 @@ function fetchUserProfile(PDO $pdo, int $userId): array
     if (!$user) {
         respond(["success" => false, "message" => "ユーザーが見つかりません。"], 404);
     }
-    $user["icon_key"] = $user["icon_url"];
-    $user["icon_url"] = resolveUserIconUrl($user["icon_url"]);
+    $iconKey = extractS3KeyFromIconValue($user["icon_url"] ?? null);
+    $user["icon_key"] = $iconKey;
+    $user["icon_url"] = resolveUserIconUrl($iconKey);
     return $user;
 }
 
@@ -115,7 +138,7 @@ try {
         respond(["success" => false, "message" => "名前を入力してください。"], 400);
     }
 
-    $iconUrl = isset($input["icon_url"]) ? trim((string) $input["icon_url"]) : null;
+    $iconUrl = isset($input["icon_url"]) ? extractS3KeyFromIconValue((string) $input["icon_url"]) : null;
     $language = trim((string) ($input["language_code"] ?? "ja"));
     $intro = trim((string) ($input["self_introduction"] ?? ""));
     $birthday = trim((string) ($input["birthday"] ?? ""));

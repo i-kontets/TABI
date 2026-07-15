@@ -7,6 +7,17 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // DB の接続情報を env.php から読み込む
 // env.php が存在しない環境でも壊れないよう、見つからなければ空配列で続行します。
+require_once __DIR__ . "/serviceSchedule.php";
+
+$serviceGuardExempt = tabiIsServiceGuardExempt();
+
+if (!$serviceGuardExempt) {
+    $serviceStatus = tabiEvaluateServiceSchedule();
+    if (!$serviceStatus["available"]) {
+        tabiRespondServiceUnavailable($serviceStatus);
+    }
+}
+
 $configPath = __DIR__ . "/env.php";
 $config = file_exists($configPath) ? require $configPath : [];
 
@@ -67,6 +78,21 @@ try {
 
     // 接続に失敗した場合は HTTP 500 を返します。
     // ここで JSON を返すことで、呼び出し側が失敗理由を判定しやすくなります。
+    if (!$serviceGuardExempt) {
+        http_response_code(503);
+
+        echo json_encode([
+            "success" => false,
+            "code" => "DATABASE_UNAVAILABLE",
+            "message" => "ただいまサービスの準備を行っています。",
+            "now" => (new DateTimeImmutable("now", new DateTimeZone("Asia/Tokyo")))->format(DateTimeInterface::ATOM),
+            "nextOpenAt" => null,
+            "timezone" => "Asia/Tokyo",
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        exit;
+    }
+
     http_response_code(500);
 
     echo json_encode([

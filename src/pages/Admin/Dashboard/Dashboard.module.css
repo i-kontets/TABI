@@ -47,6 +47,11 @@
 .activityText { line-height: 1.5; }
 .activityTime { color: #8a94a6; font-size: 11px; flex-shrink: 0; }
 
+.todoList {
+    max-height: 220px;
+    overflow-y: auto;
+}
+
 .todoRow {
     display: flex;
     align-items: center;
@@ -60,4 +65,84 @@
     color: #1f2937;
     text-decoration: none;
     flex: 1;
+    min-width: 0;
+    line-height: 1.4;
+}
+
+.todoTime {
+    color: #8a94a6;
+    font-size: 11px;
+    flex-shrink: 0;
+}
+
+.todoEmpty {
+    margin: 0;
+    padding: 8px 0;
+    color: #8a94a6;
+    font-size: 13px;
+    text-align: center;
+}
+
+.panelGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+}
+
+@media (min-width: 601px) {
+    .greeting {
+        margin-top: 2px;
+    }
+
+    .statGrid {
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .panelGrid {
+        gap: 16px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .greeting {
+        font-size: 16px;
+        margin-bottom: 18px;
+    }
+
+    .sectionTitle {
+        font-size: 13px;
+    }
+
+    .statGrid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .panelGrid {
+        grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+        align-items: start;
+    }
+
+    .chartPanel {
+        grid-column: 1 / -1;
+    }
+
+    .panelGrid > section:nth-of-type(2),
+    .panelGrid > section:nth-of-type(3) {
+        min-height: 300px;
+    }
+
+    .panelGrid > section:nth-of-type(4) {
+        grid-column: 1 / -1;
+    }
+
+    .activityLink {
+        min-height: 34px;
+    }
+
+    .todoList {
+        max-height: 220px;
+    }
 }

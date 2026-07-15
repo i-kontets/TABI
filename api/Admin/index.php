@@ -19,5 +19,12 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    if (function_exists("logSystemError")) {
+        logSystemError("php", "error", "Admin API error.", [
+            "resource" => $resource,
+            "method" => $method,
+            "error" => $e->getMessage(),
+        ]);
+    }
     respond(["success" => false, "message" => "Admin API error.", "error" => $e->getMessage()], 500);
 }
