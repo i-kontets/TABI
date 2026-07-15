@@ -1,3 +1,9 @@
+/**
+ * 管理者画面から管理者APIを呼び出すための共通クライアントです。
+ *
+ * 画面ごとにfetchの書き方がばらばらにならないよう、
+ * URL生成、レスポンス確認、DB停止時のイベント通知をここに集約しています。
+ */
 const ADMIN_API_BASE = '/TABI/api/Admin/index.php';
 const ADMIN_DATABASE_UNAVAILABLE_CODES = new Set([
     'OUTSIDE_SERVICE_HOURS',
@@ -6,9 +12,11 @@ const ADMIN_DATABASE_UNAVAILABLE_CODES = new Set([
 ]);
 
 function buildUrl(resource, params = {}) {
+    // 管理APIは resource パラメータで users / groups / notices などの対象を切り替えます。
     const search = new URLSearchParams();
     search.set('resource', resource);
     Object.entries(params).forEach(([key, value]) => {
+        // undefined や空文字はURLに含めず、必要な検索条件だけを送ります。
         if (value !== undefined && value !== null && value !== '') {
             search.set(key, value);
         }
@@ -17,11 +25,13 @@ function buildUrl(resource, params = {}) {
 }
 
 async function parseResponse(response) {
+    // APIのJSONを読み取り、HTTPエラーまたは success=false の場合は例外として扱います。
     const data = await response.json().catch(() => null);
     if (!response.ok || data?.success === false) {
         const unavailableCode = data?.status || data?.code || data?.reason;
 
         if (ADMIN_DATABASE_UNAVAILABLE_CODES.has(unavailableCode)) {
+            // DB停止系のエラーは、管理者画面全体へ通知して専用画面に切り替えます。
             window.dispatchEvent(new CustomEvent('admin:database_unavailable', {
                 detail: {
                     available: false,
@@ -40,6 +50,7 @@ async function parseResponse(response) {
 }
 
 export function fetchResource(resource, params = {}) {
+    // 一覧取得や詳細取得など、GETでデータを読むときに使います。
     return fetch(buildUrl(resource, params), { credentials: 'include' }).then(parseResponse);
 }
 
@@ -48,6 +59,7 @@ export function fetchResourceItem(resource, id) {
 }
 
 export function createResource(resource, body = {}) {
+    // 新規作成系のAPIです。JSON本文をPOSTで送ります。
     return fetch(buildUrl(resource), {
         method: 'POST',
         credentials: 'include',
@@ -57,6 +69,7 @@ export function createResource(resource, body = {}) {
 }
 
 export function updateResource(resource, id, body = {}, params = {}) {
+    // 既存データの更新や状態変更に使うPATCH APIです。
     return fetch(buildUrl(resource, { id, ...params }), {
         method: 'PATCH',
         credentials: 'include',
@@ -66,6 +79,7 @@ export function updateResource(resource, id, body = {}, params = {}) {
 }
 
 export function deleteResource(resource, id) {
+    // 管理画面上の削除操作です。API側では論理削除として扱うものがあります。
     return fetch(buildUrl(resource, { id }), {
         method: 'DELETE',
         credentials: 'include',

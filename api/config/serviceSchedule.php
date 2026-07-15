@@ -1,7 +1,16 @@
 <?php
+/**
+ * DB稼働予定を日本時間で管理するファイルです。
+ *
+ * ここでは「本来DBが動いている予定か」を計算します。
+ * ただし、画面を止める最終判断は実際のDB接続結果を優先します。
+ * そのため、このファイルの結果は主に「予定停止」か「予定外障害」かの分類に使われます。
+ */
 
 function tabiServiceSchedule(): array
 {
+    // weekly は曜日ごとの稼働時間です。DateTime の N 形式に合わせ、1=月曜日、7=日曜日です。
+    // special_dates は曜日ルールより優先される特別稼働日です。
     return [
         "timezone" => "Asia/Tokyo",
         "weekly" => [
@@ -24,6 +33,7 @@ function tabiServiceWindowsForDate(DateTimeImmutable $date, array $schedule): ar
 {
     $dateKey = $date->format("Y-m-d");
 
+    // 特別稼働日が登録されている日は、通常の曜日スケジュールではなく特別設定を使います。
     if (array_key_exists($dateKey, $schedule["special_dates"])) {
         return $schedule["special_dates"][$dateKey];
     }
@@ -34,16 +44,19 @@ function tabiServiceWindowsForDate(DateTimeImmutable $date, array $schedule): ar
 
 function tabiBuildDateTime(DateTimeImmutable $date, string $time, DateTimeZone $timezone): DateTimeImmutable
 {
+    // "08:00" のような文字列を、比較しやすい DateTimeImmutable に変換します。
     [$hour, $minute] = array_map("intval", explode(":", $time));
     return $date->setTimezone($timezone)->setTime($hour, $minute, 0);
 }
 
 function tabiEvaluateServiceSchedule(?DateTimeImmutable $now = null): array
 {
+    // テスト時は $now を渡せます。通常は現在時刻を Asia/Tokyo にそろえて判定します。
     $schedule = tabiServiceSchedule();
     $timezone = new DateTimeZone($schedule["timezone"]);
     $current = ($now ?: new DateTimeImmutable("now", $timezone))->setTimezone($timezone);
 
+    // 今日の稼働枠を1つずつ確認し、現在時刻が枠内なら available=true を返します。
     $todayWindows = tabiServiceWindowsForDate($current, $schedule);
     foreach ($todayWindows as $window) {
         [$openTime, $closeTime] = $window;
@@ -63,6 +76,7 @@ function tabiEvaluateServiceSchedule(?DateTimeImmutable $now = null): array
     }
 
     $nextOpenAt = null;
+    // 現在が停止予定時間の場合、次にDBが起動する予定時刻を最大370日先まで探します。
     for ($offset = 0; $offset <= 370; $offset++) {
         $date = $current->modify("+{$offset} days");
         $windows = tabiServiceWindowsForDate($date, $schedule);
@@ -92,6 +106,7 @@ function tabiEvaluateServiceSchedule(?DateTimeImmutable $now = null): array
 
 function tabiIsServiceGuardExempt(): bool
 {
+    // DB停止中でも状態確認APIとエラー記録APIは動かしたいので、ガード対象から外します。
     $uri = parse_url($_SERVER["REQUEST_URI"] ?? "", PHP_URL_PATH) ?: "";
     $normalized = strtolower($uri);
 
@@ -103,6 +118,7 @@ function tabiIsServiceGuardExempt(): bool
 
 function tabiRespondServiceUnavailable(array $status): void
 {
+    // 旧処理との互換用関数です。現在はDB接続結果を優先するため、通常の事前ブロックでは使いません。
     http_response_code(503);
 
     if (!headers_sent()) {

@@ -6,11 +6,19 @@ import {
     saveReturnPath,
 } from './serviceStatus';
 
+/**
+ * フロントエンド側で起きたエラーを管理者画面へ届けるための共通処理です。
+ *
+ * fetch の失敗、JavaScript の例外、画像以外のリソース読み込み失敗を拾い、
+ * api/SystemErrors/Report.php へ送信します。
+ * DB停止を表す503だけは、エラー記録ではなくメンテナンス画面への切り替えに使います。
+ */
 const endpoint = `${import.meta.env.BASE_URL}api/SystemErrors/Report.php`;
 const recentFingerprints = new Map();
 const suppressMs = 60 * 1000;
 
 function stripUrlSecrets(value) {
+    // URLにクエリ文字列やトークンが付いている可能性があるため、保存前にパス部分だけへ丸めます。
     if (!value || typeof value !== 'string') {
         return '';
     }
@@ -24,6 +32,7 @@ function stripUrlSecrets(value) {
 }
 
 function buildFingerprint(payload) {
+    // 同じエラーを短時間に何度も送らないため、内容から簡易的な識別文字列を作ります。
     return [
         payload.errorCode || 'UNKNOWN',
         payload.pagePath || '',
@@ -34,6 +43,7 @@ function buildFingerprint(payload) {
 }
 
 function shouldSuppress(fingerprint) {
+    // 直近1分以内に同じエラーを送っていれば、DBへの重複記録を避けるため送信しません。
     const now = Date.now();
     const lastSentAt = recentFingerprints.get(fingerprint) || 0;
 
@@ -46,6 +56,7 @@ function shouldSuppress(fingerprint) {
 }
 
 function isIgnoredError(error) {
+    // 画面遷移や通信中断など、ユーザー操作で自然に起きるエラーは記録対象から外します。
     const name = error?.name || '';
     const message = String(error?.message || error || '');
 
@@ -56,6 +67,7 @@ function isIgnoredError(error) {
 }
 
 export function reportSystemError(payload = {}) {
+    // APIへ送る前に、文字数やURLを安全な形に整えます。
     const pagePath = payload.pagePath || window.location.pathname;
     const requestUrl = stripUrlSecrets(payload.requestUrl || '');
     const sanitizedPayload = {
@@ -77,6 +89,7 @@ export function reportSystemError(payload = {}) {
         return;
     }
 
+    // keepalive を使うことで、ページ遷移中でもできるだけエラー送信を完了させます。
     fetch(endpoint, {
         method: 'POST',
         credentials: 'include',
@@ -89,6 +102,7 @@ export function reportSystemError(payload = {}) {
 }
 
 export function installSystemErrorListeners() {
+    // window.fetch を包み込み、既存コードのfetch呼び出しを変更せずにAPIエラーを監視します。
     const originalFetch = window.fetch.bind(window);
 
     window.fetch = async (...args) => {
@@ -102,6 +116,7 @@ export function installSystemErrorListeners() {
             const maintenanceCode = data?.status || data?.code || data?.reason;
 
             if (isMaintenanceCode(maintenanceCode) && !isAdminPath() && !isMaintenancePath()) {
+                // DB停止を検知した場合は、元の戻り先と理由を保存してユーザー向け案内画面へ移動します。
                 saveReturnPath();
                 saveMaintenanceReason(maintenanceCode);
                 window.location.assign(`${import.meta.env.BASE_URL}maintenance`);
@@ -110,6 +125,7 @@ export function installSystemErrorListeners() {
         }
 
         if (!isReportEndpoint && response.status >= 500 && response.status !== 503) {
+            // 503以外のサーバーエラーは、管理者が後から確認できるようシステムエラーとして記録します。
             reportSystemError({
                 errorType: 'API_ERROR',
                 errorCode: 'API_HTTP_ERROR',
@@ -124,6 +140,7 @@ export function installSystemErrorListeners() {
     };
 
     window.addEventListener('error', (event) => {
+        // JavaScript例外と、script/cssなどの読み込み失敗をここで拾います。
         const target = event.target;
         const isResourceError = target && target !== window;
 
@@ -156,6 +173,7 @@ export function installSystemErrorListeners() {
     }, true);
 
     window.addEventListener('unhandledrejection', (event) => {
+        // Promise の catch されなかった失敗も、画面上では気づきにくいため記録します。
         const reason = event.reason;
 
         if (isIgnoredError(reason)) {

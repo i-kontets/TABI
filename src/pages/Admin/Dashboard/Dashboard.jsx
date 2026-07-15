@@ -6,6 +6,12 @@ import { fetchAnalytics, fetchActivities, fetchPendingSupportItems } from '../..
 import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Dashboard.module.css';
 
+/**
+ * 管理者ホームダッシュボードです。
+ *
+ * APIから集計値、最近のアクティビティ、未対応の問い合わせ/通報を取得し、
+ * 管理者がアプリ全体の状態を短時間で確認できるように表示します。
+ */
 const ACTIVITY_LINKS = {
     user: '/admin/users',
     group: '/admin/groups',
@@ -15,6 +21,7 @@ const ACTIVITY_LINKS = {
 };
 
 const todayLabel = () => new Intl.DateTimeFormat('ja-JP', {
+    // ダッシュボードの日付表示は、サーバーの場所に左右されないよう日本時間に固定します。
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -22,6 +29,7 @@ const todayLabel = () => new Intl.DateTimeFormat('ja-JP', {
 }).format(new Date());
 
 const REALTIME_EVENTS = [
+    // これらのイベントを受け取ったら、ダッシュボードの集計を再取得します。
     'admin:user_created',
     'admin:user_updated',
     'admin:user_deleted',
@@ -42,32 +50,40 @@ const REALTIME_EVENTS = [
     'admin:notice_deleted',
 ];
 
+// ダッシュボードは概要画面なので、カード内に表示する件数だけを制限します。
+// 詳細は「すべて見る」から各一覧画面で確認します。
 const RESPONSE_PREVIEW_LIMIT = 4;
 const ACTIVITY_PREVIEW_LIMIT = 8;
 
 export default function Dashboard() {
+    // analytics はサマリーカードやグラフ用、activities は最近の出来事、pendingSupportItems は対応が必要な一覧です。
     const [analytics, setAnalytics] = useState(null);
     const [activities, setActivities] = useState([]);
     const [pendingSupportItems, setPendingSupportItems] = useState([]);
 
     const loadDashboard = useCallback(() => {
+        // 3種類のAPIをまとめて読み直し、管理画面の表示データを最新にします。
         fetchAnalytics().then(setAnalytics);
         fetchActivities().then(setActivities);
         fetchPendingSupportItems().then(setPendingSupportItems);
     }, []);
 
     useEffect(() => {
+        // 初回表示時に一度だけダッシュボード用データを取得します。
         loadDashboard();
     }, [loadDashboard]);
 
+    // WebSocket経由で変更通知を受け取ったら、画面を手動更新しなくても最新状態にします。
     useAdminRealtimeRefresh(REALTIME_EVENTS, loadDashboard);
 
     if (!analytics) return <AdminLayout title="TABI Admin"><div /></AdminLayout>;
 
     const { summary, activeUserTrend, userAttributes } = analytics;
+    // 古い形式のAPIレスポンスでも表示できるよう、systemErrors はオブジェクト形式へ整えます。
     const systemErrors = typeof summary.systemErrors === 'object'
         ? summary.systemErrors
         : { value: summary.systemErrors ?? 0, today: 0 };
+    // 取得した配列自体は変更せず、表示用だけ slice で先頭数件に絞ります。
     const responsePreviewItems = pendingSupportItems.slice(0, RESPONSE_PREVIEW_LIMIT);
     const activityPreviewItems = activities.slice(0, ACTIVITY_PREVIEW_LIMIT);
 
@@ -112,6 +128,7 @@ export default function Dashboard() {
                     action={<Link to="/admin/support" className={styles.cardAction}>すべて見る →</Link>}
                     className={styles.todoPanel}
                 >
+                    {/* 未対応の問い合わせ・通報を最大4件だけ表示し、カードの高さが伸び続けないようにします。 */}
                     <div className={styles.todoList}>
                         {responsePreviewItems.map((item) => (
                             <div key={item.id} className={styles.todoRow}>
@@ -131,6 +148,7 @@ export default function Dashboard() {
                     action={<Link to="/admin/activities" className={styles.cardAction}>すべて見る →</Link>}
                     className={styles.activityPanel}
                 >
+                    {/* 最新の出来事を最大8件だけ表示します。全件確認は専用一覧画面に任せます。 */}
                     <ul className={styles.activityList}>
                         {activityPreviewItems.map((action) => (
                             <li key={action.id}>

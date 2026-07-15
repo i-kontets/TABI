@@ -3,6 +3,8 @@
 // users 一覧は、プロフィールや利用状況の補助情報をまとめて管理画面向けに整形します。
 function fetch_users(PDO $pdo): array
 {
+    // users を中心に、プロフィール・端末ログイン情報・グループ参加・投稿数をJOINでまとめて取得します。
+    // COUNT や MAX を使うため、ユーザー1人につき1行になるよう GROUP BY しています。
     $sql = "
         SELECT
             u.user_id,
@@ -27,6 +29,7 @@ function fetch_users(PDO $pdo): array
     ";
     $rows = $pdo->query($sql)->fetchAll();
 
+    // DBのカラム名やステータス値を、React側がそのまま表示しやすいキー名と日本語ラベルに変換します。
     return array_map(function ($row) {
         return [
             "id" => (int) $row["user_id"],
@@ -50,6 +53,8 @@ function fetch_users(PDO $pdo): array
 // メンバー数や旅行期間、旅程数、アルバム数などを集計して返します。
 function fetch_groups(PDO $pdo): array
 {
+    // グループ一覧では、グループ基本情報に加えてメンバー数・旅程数・アルバム数を集計します。
+    // LEFT JOIN を使うことで、まだ旅程やアルバムがないグループも一覧から落ちないようにしています。
     $groups = $pdo->query("
         SELECT
             g.group_id,
@@ -74,6 +79,7 @@ function fetch_groups(PDO $pdo): array
         ORDER BY g.group_id DESC
     ")->fetchAll();
 
+    // 各グループのメンバー名と役割を、グループごとに後から取得します。
     $memberStmt = $pdo->prepare("
         SELECT u.user_id, u.name, gm.role_in_group
         FROM group_members gm
@@ -83,6 +89,7 @@ function fetch_groups(PDO $pdo): array
     ");
 
     return array_map(function ($row) use ($memberStmt) {
+        // グループごとにメンバー取得SQLを実行し、管理画面の詳細表示で使う配列へ整形します。
         $memberStmt->execute(["group_id" => $row["group_id"]]);
         $members = array_map(fn($member) => [
             "id" => (int) $member["user_id"],
