@@ -5,6 +5,7 @@ import './App.css'
 
 import Newreg from './pages/newreg/Newreg';
 import Login from './pages/Login/Login';
+import ResetPassword from './pages/ResetPassword/ResetPassword.jsx';
 import Home from './pages/Home/Home';
 import MyPage from './pages/MyPage/MyPage';
 import { ProfileEditPage, UserEditPage, EmailChangePage, NotificationSettingsPage, NotificationPermissionPage, ContactPage, FaqPage } from './pages/MyPage/MyPageSubPages';
@@ -45,6 +46,7 @@ function AppRoutes({ trip }) {
             {shouldRunUserRealtime && <UserRealtimeListener trip={trip} />}
             <Routes>
                 <Route path="/" element={<Login />} />
+                <Route path="/ResetPassword" element={<ResetPassword />} />
                 <Route path="/Newreg" element={<Newreg />} />
                 <Route path="/Home" element={<Home />} />
                 <Route path="/MyPage" element={<MyPage />} />
