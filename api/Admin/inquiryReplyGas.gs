@@ -1,11 +1,33 @@
 // このスクリプトは、TABI 管理画面から送られたお問い合わせ返信をメール送信するためのものです。
 // 外部からの不正送信を防ぐため、PHP 側と共有するトークンを持たせています。
 const INQUIRY_REPLY_TOKEN = "tabi-inquiry-reply-2026";
+const NO_REPLY_NOTICE = "※このメールは送信専用です。返信いただいても対応できかねます。";
 
 // GASのScript Propertiesに設定した共有トークンを取得します。
 // PHP側だけがこの値を知ることで、ブラウザのNetworkタブに認証情報が出ないようにします。
 function getSharedToken() {
   return PropertiesService.getScriptProperties().getProperty("GAS_SHARED_TOKEN") || INQUIRY_REPLY_TOKEN;
+}
+
+// GASのScript Propertiesに設定した管理者メールアドレスを取得します。
+// メールアドレスをコードへ直接書かないことで、管理者変更時にGAS設定だけで対応できます。
+function getAdminEmail() {
+  return PropertiesService.getScriptProperties().getProperty("ADMIN_EMAIL") || "";
+}
+
+// TABIから送るメールの共通送信オプションを作ります。
+// ADMIN_EMAILが設定されている場合は、返信先として使えるようにします。
+function buildMailOptions() {
+  const adminEmail = getAdminEmail();
+  const options = {
+    name: "TABI運営",
+  };
+
+  if (adminEmail) {
+    options.replyTo = adminEmail;
+  }
+
+  return options;
 }
 
 // 管理画面から POST される JSON を受け取り、内容を検証してメール送信まで行います。
@@ -61,9 +83,7 @@ function doPost(e) {
 
     // GmailApp を使って、宛先・件名・本文を送信します。
     // name を指定することで、受信側には TABI 運営名義で表示されます。
-    GmailApp.sendEmail(data.to, subject, body, {
-      name: "TABI運営",
-    });
+    GmailApp.sendEmail(data.to, subject, body, buildMailOptions());
 
     // 送信成功を JSON で返します。
     return jsonResponse({ ok: true });
@@ -96,12 +116,12 @@ function sendPasswordResetMail(data) {
     "",
     "この操作に心当たりがない場合は、このメールを破棄してください。",
     "",
+    NO_REPLY_NOTICE,
+    "",
     "TABI運営",
   ].join("\n");
 
-  GmailApp.sendEmail(data.to, subject, body, {
-    name: "TABI運営",
-  });
+  GmailApp.sendEmail(data.to, subject, body, buildMailOptions());
 
   return jsonResponse({ ok: true });
 }
