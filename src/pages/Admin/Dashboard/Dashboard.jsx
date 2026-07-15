@@ -94,20 +94,7 @@ export default function Dashboard() {
                     <LineChart data={activeUserTrend.data} labels={activeUserTrend.labels} padding={{ left: 24, right: 12, top: 8, bottom: 8 }} />
                 </Card>
 
-                <Card title="最近のアクティビティ">
-                    <ul className={styles.activityList}>
-                        {activities.map((action) => (
-                            <li key={action.id}>
-                                <Link to={ACTIVITY_LINKS[action.type] || '/admin'} className={styles.activityLink}>
-                                    <span className={styles.activityText}>{action.text}</span>
-                                    <span className={styles.activityTime}>{action.time}</span>
-                                </Link>
-                            </li>
-                        ))}
-                    </ul>
-                </Card>
-
-                <Card title="ユーザー属性(全体)">
+                <Card title="ユーザー属性(全体)" className={styles.attributePanel}>
                     <DonutChart
                         items={userAttributes}
                         centerLabel="合計"
@@ -115,7 +102,7 @@ export default function Dashboard() {
                     />
                 </Card>
 
-                <Card title="要対応の一覧">
+                <Card title="対応一覧" className={styles.todoPanel}>
                     <div className={styles.todoList}>
                         {pendingSupportItems.map((item) => (
                             <div key={item.id} className={styles.todoRow}>
@@ -128,6 +115,19 @@ export default function Dashboard() {
                             <p className={styles.todoEmpty}>未対応の項目はありません</p>
                         )}
                     </div>
+                </Card>
+
+                <Card title="最近のアクティビティ" className={styles.activityPanel}>
+                    <ul className={styles.activityList}>
+                        {activities.map((action) => (
+                            <li key={action.id}>
+                                <Link to={ACTIVITY_LINKS[action.type] || '/admin'} className={styles.activityLink}>
+                                    <span className={styles.activityText}>{action.text}</span>
+                                    <span className={styles.activityTime}>{action.time}</span>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
                 </Card>
             </div>
         </AdminLayout>

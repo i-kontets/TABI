@@ -44,7 +44,10 @@
     color: #1f2937;
     font-size: 12.5px;
 }
-.activityText { line-height: 1.5; }
+.activityText {
+    min-width: 0;
+    line-height: 1.5;
+}
 .activityTime { color: #8a94a6; font-size: 11px; flex-shrink: 0; }
 
 .todoList {
@@ -53,7 +56,8 @@
 }
 
 .todoRow {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) max-content;
     align-items: center;
     gap: 8px;
     padding: 8px 0;
@@ -67,12 +71,15 @@
     flex: 1;
     min-width: 0;
     line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .todoTime {
     color: #8a94a6;
     font-size: 11px;
-    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .todoEmpty {
@@ -86,7 +93,15 @@
 .panelGrid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 0;
+    gap: 12px;
+}
+
+.chartPanel,
+.attributePanel,
+.todoPanel,
+.activityPanel {
+    min-width: 0;
+    margin-bottom: 0;
 }
 
 @media (min-width: 601px) {
@@ -100,7 +115,22 @@
     }
 
     .panelGrid {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
         gap: 16px;
+    }
+
+    .chartPanel,
+    .activityPanel {
+        grid-column: 1 / -1;
+    }
+
+    .attributePanel,
+    .todoPanel {
+        min-height: 230px;
+    }
+
+    .todoList {
+        max-height: 190px;
     }
 }
 
@@ -121,21 +151,13 @@
     }
 
     .panelGrid {
-        grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
         align-items: start;
     }
 
-    .chartPanel {
-        grid-column: 1 / -1;
-    }
-
-    .panelGrid > section:nth-of-type(2),
-    .panelGrid > section:nth-of-type(3) {
-        min-height: 300px;
-    }
-
-    .panelGrid > section:nth-of-type(4) {
-        grid-column: 1 / -1;
+    .attributePanel,
+    .todoPanel {
+        min-height: 260px;
     }
 
     .activityLink {
