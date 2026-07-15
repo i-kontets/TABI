@@ -19,6 +19,7 @@ import Activities from './Activities/Activities';
 import Managers from './Managers/Managers';
 import Logs from './Logs/Logs';
 import Settings from './Settings/Settings';
+import AdminServiceGate from './AdminServiceGate';
 import AdminRealtimeListener from "./Realtime/AdminRealtimeListener";
 
 /**
@@ -28,7 +29,7 @@ import AdminRealtimeListener from "./Realtime/AdminRealtimeListener";
  */
 export default function AdminRoutes() {
     return (
-        <>
+        <AdminServiceGate>
             <AdminRealtimeListener />
             <Routes>
                 <Route index element={<Dashboard />} />
@@ -55,6 +56,6 @@ export default function AdminRoutes() {
                 <Route path="logs" element={<Logs />} />
                 <Route path="settings" element={<Settings />} />
             </Routes>
-        </>
+        </AdminServiceGate>
     );
 }

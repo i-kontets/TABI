@@ -14,6 +14,19 @@ function buildUrl(resource, params = {}) {
 async function parseResponse(response) {
     const data = await response.json().catch(() => null);
     if (!response.ok || data?.success === false) {
+        if (data?.code === 'OUTSIDE_SERVICE_HOURS' || data?.code === 'DATABASE_UNAVAILABLE') {
+            window.dispatchEvent(new CustomEvent('admin:database_unavailable', {
+                detail: {
+                    available: false,
+                    reason: data.code,
+                    now: data.now || null,
+                    nextOpenAt: data.nextOpenAt || null,
+                    nextCloseAt: data.nextCloseAt || null,
+                    timezone: data.timezone || 'Asia/Tokyo',
+                },
+            }));
+        }
+
         throw new Error(data?.message || '管理APIの取得に失敗しました。');
     }
     return data;

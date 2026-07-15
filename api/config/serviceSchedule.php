@@ -96,7 +96,6 @@ function tabiIsServiceGuardExempt(): bool
     $normalized = strtolower($uri);
 
     return (
-        strpos($normalized, "/api/admin/") !== false ||
         strpos($normalized, "/api/system/status.php") !== false ||
         strpos($normalized, "/api/systemerrors/") !== false
     );

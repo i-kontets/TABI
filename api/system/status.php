@@ -10,6 +10,8 @@ $status = tabiEvaluateServiceSchedule();
 echo json_encode([
     "success" => true,
     "available" => $status["available"],
+    "serviceAvailable" => $status["available"],
+    "databaseScheduled" => $status["available"],
     "reason" => $status["reason"],
     "now" => $status["now"],
     "nextOpenAt" => $status["nextOpenAt"],
