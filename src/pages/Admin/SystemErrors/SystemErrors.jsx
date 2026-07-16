@@ -80,7 +80,7 @@ export default function SystemErrors() {
         loadErrors();
     }, [loadErrors]);
 
-    useAdminRealtimeRefresh(['admin:system_error_created'], loadErrors);
+    useAdminRealtimeRefresh(['admin:system_error_created', 'admin:system_error_resolved'], loadErrors);
 
     const updateFilter = (key, value) => {
         // 検索条件を変えたときは、古いページ番号だと0件になりやすいので1ページ目へ戻します。
@@ -171,7 +171,7 @@ export default function SystemErrors() {
                                         <Badge label={item.status} />
                                         <span className={styles.level}>{item.level}</span>
                                         <span>{item.source}</span>
-                                        <span>最終 {item.occurredAt}</span>
+                                        <span>最終 {item.lastOccurredAt || item.occurredAt}</span>
                                         {item.occurrenceCount > 1 && <span>{item.occurrenceCount}回</span>}
                                     </div>
                                     <button type="button" className={styles.detailButton} onClick={() => setOpenedId(isOpen ? '' : item.id)}>
@@ -183,6 +183,8 @@ export default function SystemErrors() {
                                     <div><dt>コード</dt><dd>{item.errorCode || '-'}</dd></div>
                                     <div><dt>種類</dt><dd>{item.errorType || '-'}</dd></div>
                                     <div><dt>初回発生</dt><dd>{item.firstOccurredAt || '-'}</dd></div>
+                                    <div><dt>最終検出</dt><dd>{item.lastOccurredAt || item.occurredAt || '-'}</dd></div>
+                                    <div><dt>解消日時</dt><dd>{item.resolvedAt || '-'}</dd></div>
                                     <div><dt>場所</dt><dd>{item.pagePath || item.url || '-'}</dd></div>
                                 </dl>
                                 {isOpen && (

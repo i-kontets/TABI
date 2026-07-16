@@ -684,6 +684,9 @@ function fetch_system_errors(PDO $pdo, array $params = []): array
     $firstOccurredAtExpr = admin_column_exists($pdo, "system_errors", "first_occurred_at")
         ? "COALESCE(first_occurred_at, created_at)"
         : "created_at";
+    $resolvedAtSelect = admin_column_exists($pdo, "system_errors", "resolved_at")
+        ? "resolved_at"
+        : "NULL";
 
     $where = [];
     $bindings = [];
@@ -771,6 +774,7 @@ function fetch_system_errors(PDO $pdo, array $params = []): array
             {$countExpr} AS occurrence_count,
             {$firstOccurredAtExpr} AS first_occurred_at,
             {$occurredAtExpr} AS occurred_at,
+            {$resolvedAtSelect} AS resolved_at,
             created_at
         FROM system_errors
         {$whereSql}
@@ -797,7 +801,13 @@ function fetch_system_errors(PDO $pdo, array $params = []): array
         "httpStatus" => $row["http_status"] !== null ? (int) $row["http_status"] : null,
         "occurrenceCount" => (int) $row["occurrence_count"],
         "firstOccurredAt" => format_dt($row["first_occurred_at"] ?: $row["created_at"]),
+        "firstOccurredAtIso" => format_dt_iso_tokyo($row["first_occurred_at"] ?: $row["created_at"]),
+        "lastOccurredAt" => format_dt($row["occurred_at"] ?: $row["created_at"]),
+        "lastOccurredAtIso" => format_dt_iso_tokyo($row["occurred_at"] ?: $row["created_at"]),
         "occurredAt" => format_dt($row["occurred_at"] ?: $row["created_at"]),
+        "occurredAtIso" => format_dt_iso_tokyo($row["occurred_at"] ?: $row["created_at"]),
+        "resolvedAt" => format_dt($row["resolved_at"] ?? null),
+        "resolvedAtIso" => format_dt_iso_tokyo($row["resolved_at"] ?? null),
         "status" => system_error_status_label($row["status"] ?? ""),
     ], $stmt->fetchAll());
 

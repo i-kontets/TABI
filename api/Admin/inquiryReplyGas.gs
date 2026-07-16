@@ -50,6 +50,14 @@ function doPost(e) {
       return sendPasswordResetMail(data);
     }
 
+    if (action === "email_change_verification") {
+      return sendEmailChangeVerificationMail(data);
+    }
+
+    if (action === "email_change_completed") {
+      return sendEmailChangeCompletedMail(data);
+    }
+
     if (action !== "inquiry_reply") {
       return jsonResponse({ ok: false, message: "Unsupported action" });
     }
@@ -115,6 +123,62 @@ function sendPasswordResetMail(data) {
     "このリンクは一度使用すると無効になります。",
     "",
     "この操作に心当たりがない場合は、このメールを破棄してください。",
+    "",
+    NO_REPLY_NOTICE,
+    "",
+    "TABI運営",
+  ].join("\n");
+
+  GmailApp.sendEmail(data.to, subject, body, buildMailOptions());
+
+  return jsonResponse({ ok: true });
+}
+
+// メールアドレス変更のための6桁認証コードを、新しいメールアドレスへ送信します。
+function sendEmailChangeVerificationMail(data) {
+  if (!data.to || !data.verificationCode) {
+    return jsonResponse({ ok: false, message: "Missing recipient or verification code" });
+  }
+
+  const subject = "【TABI】メールアドレス変更の認証コード";
+  const body = [
+    `${data.userName || "ユーザー"} 様`,
+    "",
+    "TABIのメールアドレス変更手続きが行われました。",
+    "",
+    "認証コード：",
+    data.verificationCode,
+    "",
+    `この認証コードの有効期限は${data.expiresMinutes || 10}分です。`,
+    "",
+    "この操作に心当たりがない場合は、認証コードを入力せず、このメールを破棄してください。",
+    "",
+    NO_REPLY_NOTICE,
+    "",
+    "TABI運営",
+  ].join("\n");
+
+  GmailApp.sendEmail(data.to, subject, body, buildMailOptions());
+
+  return jsonResponse({ ok: true });
+}
+
+// メールアドレス変更が完了したことを、変更前のメールアドレスへ通知します。
+function sendEmailChangeCompletedMail(data) {
+  if (!data.to || !data.changedAt) {
+    return jsonResponse({ ok: false, message: "Missing recipient or changed date" });
+  }
+
+  const subject = "【TABI】メールアドレスが変更されました";
+  const body = [
+    `${data.userName || "ユーザー"} 様`,
+    "",
+    "TABIに登録されているメールアドレスが変更されました。",
+    "",
+    `変更日時：${data.changedAt}`,
+    `変更後メールアドレス：${data.newMaskedEmail || ""}`,
+    "",
+    "この操作に心当たりがない場合は、すみやかにTABI運営へお問い合わせください。",
     "",
     NO_REPLY_NOTICE,
     "",

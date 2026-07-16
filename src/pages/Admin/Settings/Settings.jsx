@@ -33,7 +33,7 @@ export default function Settings() {
         loadSystemErrors();
     }, [loadSystemErrors]);
 
-    useAdminRealtimeRefresh(['admin:system_error_created'], loadSystemErrors);
+    useAdminRealtimeRefresh(['admin:system_error_created', 'admin:system_error_resolved'], loadSystemErrors);
 
     return (
         <AdminLayout title="設定">
@@ -78,7 +78,7 @@ export default function Settings() {
                                 <div className={styles.errorMeta}>
                                     <span className={styles.levelBadge}>{item.level}</span>
                                     <span>{item.source}</span>
-                                    <span>{item.occurredAt}</span>
+                                    <span>{item.lastOccurredAt || item.occurredAt}</span>
                                     {item.occurrenceCount > 1 && <span>{item.occurrenceCount}回</span>}
                                 </div>
                                 <h3 className={styles.errorTitle}>{item.message}</h3>

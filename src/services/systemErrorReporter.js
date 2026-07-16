@@ -14,28 +14,39 @@ import {
  * DB停止を表す503だけは、エラー記録ではなくメンテナンス画面への切り替えに使います。
  */
 const endpoint = `${import.meta.env.BASE_URL}api/SystemErrors/Report.php`;
+const resolveEndpoint = `${import.meta.env.BASE_URL}api/SystemErrors/Resolve.php`;
 const recentFingerprints = new Map();
+const failedFetchFingerprints = new Map();
 const suppressMs = 60 * 1000;
 const systemErrorBroadcastChannel = 'tabi-admin-system-errors';
 
-function notifyAdminSystemErrorSaved(detail = {}) {
+function notifyAdminSystemErrorChanged(type, detail = {}) {
     // 同じブラウザ内で管理画面を別タブ表示している場合も、保存直後に再取得できるよう通知します。
-    window.dispatchEvent(new CustomEvent('admin:system_error_created', { detail }));
+    const eventDetail = { ...detail, type };
+    window.dispatchEvent(new CustomEvent(`admin:${type}`, { detail: eventDetail }));
 
     try {
         const channel = new BroadcastChannel(systemErrorBroadcastChannel);
-        channel.postMessage(detail);
+        channel.postMessage(eventDetail);
         channel.close();
     } catch {
         try {
             localStorage.setItem('tabi:last-system-error-event', JSON.stringify({
-                ...detail,
+                ...eventDetail,
                 notifiedAt: Date.now(),
             }));
         } catch {
             // 通知に失敗しても、エラー保存そのものは完了しているため何もしません。
         }
     }
+}
+
+function notifyAdminSystemErrorSaved(detail = {}) {
+    notifyAdminSystemErrorChanged('system_error_created', detail);
+}
+
+function notifyAdminSystemErrorResolved(detail = {}) {
+    notifyAdminSystemErrorChanged('system_error_resolved', detail);
 }
 
 function stripUrlSecrets(value) {
@@ -61,6 +72,11 @@ function buildFingerprint(payload) {
         payload.requestUrl || '',
         String(payload.message || '').slice(0, 120),
     ].join('|');
+}
+
+function buildFetchRequestKey(requestUrl, pagePath = window.location.pathname) {
+    // 同じAPIが後で成功したかを判定するため、クエリを除いたURLと画面パスで失敗履歴を持ちます。
+    return `${stripUrlSecrets(requestUrl)}|${pagePath || ''}`;
 }
 
 function shouldSuppress(fingerprint) {
@@ -133,6 +149,43 @@ export function reportSystemError(payload = {}) {
         .catch(() => {});
 }
 
+function resolveSystemError(payload = {}) {
+    const pagePath = payload.pagePath || window.location.pathname;
+    const requestUrl = stripUrlSecrets(payload.requestUrl || '');
+    const sanitizedPayload = {
+        fingerprint: payload.fingerprint || '',
+        pagePath,
+        requestUrl,
+        httpStatus: Number.isFinite(Number(payload.httpStatus)) ? Number(payload.httpStatus) : null,
+    };
+
+    if (!sanitizedPayload.fingerprint) {
+        return;
+    }
+
+    // 成功時の解消通知は表示更新が目的なので、失敗しても元の画面操作は止めません。
+    fetch(resolveEndpoint, {
+        method: 'POST',
+        credentials: 'include',
+        keepalive: true,
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(sanitizedPayload),
+    })
+        .then((response) => response.json().catch(() => null))
+        .then((data) => {
+            if (data?.success && Number(data.resolved_count) > 0) {
+                notifyAdminSystemErrorResolved({
+                    resolvedCount: Number(data.resolved_count),
+                    pagePath: sanitizedPayload.pagePath,
+                    requestUrl: sanitizedPayload.requestUrl,
+                });
+            }
+        })
+        .catch(() => {});
+}
+
 export function installSystemErrorListeners() {
     // window.fetch を包み込み、既存コードのfetch呼び出しを変更せずにAPIエラーを監視します。
     const originalFetch = window.fetch.bind(window);
@@ -141,9 +194,11 @@ export function installSystemErrorListeners() {
         const response = await originalFetch(...args);
         const requestUrl = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
         const isReportEndpoint = requestUrl.includes('/api/SystemErrors/Report.php');
+        const isResolveEndpoint = requestUrl.includes('/api/SystemErrors/Resolve.php');
         const isStatusEndpoint = requestUrl.includes('/api/system/status.php');
+        const requestKey = buildFetchRequestKey(requestUrl);
 
-        if (!isReportEndpoint && !isStatusEndpoint && response.status === 503) {
+        if (!isReportEndpoint && !isResolveEndpoint && !isStatusEndpoint && response.status === 503) {
             const data = await response.clone().json().catch(() => null);
             const maintenanceCode = data?.status || data?.code || data?.reason;
 
@@ -156,14 +211,30 @@ export function installSystemErrorListeners() {
             }
         }
 
-        if (!isReportEndpoint && response.status >= 500 && response.status !== 503) {
+        if (!isReportEndpoint && !isResolveEndpoint && response.status >= 500 && response.status !== 503) {
             // 503以外のサーバーエラーは、管理者が後から確認できるようシステムエラーとして記録します。
-            reportSystemError({
+            const failurePayload = {
                 errorType: 'API_ERROR',
                 errorCode: 'API_HTTP_ERROR',
                 message: `API request failed with HTTP ${response.status}`,
                 source: 'fetch',
                 requestUrl,
+                httpStatus: response.status,
+                pagePath: window.location.pathname,
+            };
+            failurePayload.fingerprint = buildFingerprint({
+                ...failurePayload,
+                requestUrl: stripUrlSecrets(requestUrl),
+            });
+            failedFetchFingerprints.set(requestKey, failurePayload.fingerprint);
+            reportSystemError(failurePayload);
+        } else if (!isReportEndpoint && !isResolveEndpoint && response.ok && failedFetchFingerprints.has(requestKey)) {
+            const fingerprint = failedFetchFingerprints.get(requestKey);
+            failedFetchFingerprints.delete(requestKey);
+            resolveSystemError({
+                fingerprint,
+                requestUrl,
+                pagePath: window.location.pathname,
                 httpStatus: response.status,
             });
         }

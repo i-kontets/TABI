@@ -23,14 +23,15 @@ export function useAdminRealtimeRefresh(events, reload) {
         });
 
         let channel = null;
-        const shouldListenForSystemError = events.includes('admin:system_error_created');
+        const shouldListenForSystemError = events.includes('admin:system_error_created') || events.includes('admin:system_error_resolved');
         const handleBroadcastMessage = (event) => {
             if (!shouldListenForSystemError) {
                 return;
             }
 
+            const type = event.data?.type || event.data?.event || 'system_error_created';
             handleRealtimeEvent({
-                type: 'admin:system_error_created',
+                type: `admin:${type}`,
                 detail: event.data || {},
             });
         };
@@ -39,9 +40,16 @@ export function useAdminRealtimeRefresh(events, reload) {
                 return;
             }
 
+            let data = {};
+            try {
+                data = JSON.parse(event.newValue || "{}");
+            } catch {
+                data = {};
+            }
+            const type = data?.type || data?.event || 'system_error_created';
             handleRealtimeEvent({
-                type: 'admin:system_error_created',
-                detail: event.newValue || {},
+                type: `admin:${type}`,
+                detail: data,
             });
         };
 

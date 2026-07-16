@@ -165,8 +165,6 @@ function logSystemError(string $source, string $level, string $message, $detail 
                 SELECT error_id
                 FROM system_errors
                 WHERE fingerprint = :fingerprint
-                  AND status = 'unresolved'
-                  AND COALESCE(last_occurred_at, created_at) >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)
                 ORDER BY error_id DESC
                 LIMIT 1
             ");
@@ -178,6 +176,8 @@ function logSystemError(string $source, string $level, string $message, $detail 
                     UPDATE system_errors
                     SET occurrence_count = occurrence_count + 1,
                         last_occurred_at = NOW(),
+                        status = 'unresolved',
+                        resolved_at = NULL,
                         detail = :detail,
                         user_id = COALESCE(:user_id, user_id)
                     WHERE error_id = :error_id
@@ -285,5 +285,57 @@ function logSystemError(string $source, string $level, string $message, $detail 
     } catch (Throwable $error) {
         error_log("Failed to save system error: " . $error->getMessage());
         return null;
+    }
+}
+
+function resolveSystemErrorByFingerprint(string $fingerprint, ?string $requestUrl = null, ?string $pagePath = null, ?int $httpStatus = null): int
+{
+    global $pdo;
+
+    if (!$pdo instanceof PDO || $fingerprint === "" || !systemErrorColumnExists($pdo, "fingerprint")) {
+        return 0;
+    }
+
+    try {
+        ensureSystemErrorsTable($pdo);
+        $requestUrl = stripSensitiveUrlParts($requestUrl);
+        $pagePath = trim((string) $pagePath);
+
+        $where = ["fingerprint = :fingerprint", "status = 'unresolved'"];
+        $params = ["fingerprint" => $fingerprint];
+
+        // 成功通知で無関係なエラーを閉じないよう、URLや画面パスが分かる場合だけ条件に加えます。
+        if ($requestUrl) {
+            $where[] = "(request_url = :request_url OR request_url IS NULL OR request_url = '')";
+            $params["request_url"] = $requestUrl;
+        }
+        if ($pagePath !== "") {
+            $where[] = "(page_path = :page_path OR page_path IS NULL OR page_path = '')";
+            $params["page_path"] = $pagePath;
+        }
+        if ($httpStatus !== null) {
+            $where[] = "(http_status >= 500 OR http_status IS NULL)";
+        }
+
+        $stmt = $pdo->prepare("
+            UPDATE system_errors
+            SET status = 'resolved',
+                resolved_at = NOW()
+            WHERE " . implode(" AND ", $where) . "
+        ");
+        $stmt->execute($params);
+        $count = $stmt->rowCount();
+
+        if ($count > 0 && function_exists("sendRealtimeEvent")) {
+            sendRealtimeEvent("admin:global", "system_error_resolved", [
+                "fingerprint" => $fingerprint,
+                "resolvedAt" => date("Y-m-d H:i:s"),
+            ], false);
+        }
+
+        return $count;
+    } catch (Throwable $error) {
+        error_log("Failed to resolve system error: " . $error->getMessage());
+        return 0;
     }
 }

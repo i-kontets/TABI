@@ -9,6 +9,20 @@ function format_dt(?string $value): string
     return str_replace("-", "/", substr($value, 0, 16));
 }
 
+function format_dt_iso_tokyo(?string $value): ?string
+{
+    // DBのDATETIMEは既存仕様では日本時間として保存しているため、ここでは9時間を足さずにAsia/Tokyoを明示します。
+    if (!$value) {
+        return null;
+    }
+
+    try {
+        return (new DateTimeImmutable($value, new DateTimeZone("Asia/Tokyo")))->format(DateTimeInterface::ATOM);
+    } catch (Throwable $error) {
+        return null;
+    }
+}
+
 function is_cottage_manager_user(array $item): bool
 {
     // コテージ運営向けの特定ユーザーかどうかを、名前やメールのキーワードで判定します。
