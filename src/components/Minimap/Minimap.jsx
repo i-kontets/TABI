@@ -10,6 +10,7 @@ function MiniMap({ place, center = [135.4983, 34.7025], zoom = 12 }) {
 
     const mapContainer = useRef(null);
     const map = useRef(null);
+    const marker = useRef(null);
 
     useEffect(() => {
         if (!mapContainer.current) {
@@ -30,7 +31,27 @@ function MiniMap({ place, center = [135.4983, 34.7025], zoom = 12 }) {
             map.current.setZoom(zoom);
         }
 
+        // 既存のピンがあれば削除
+        if (marker.current) {
+            marker.current.remove();
+        }
+
+        // 新しいピンを追加
+        marker.current = new mapboxgl.Marker({
+            color: "#e53935",
+        })
+            .setLngLat(center)
+            .setPopup(
+                new mapboxgl.Popup({
+                    offset: 25,
+                }).setText(place)
+            )
+            .addTo(map.current);
+
         return () => {
+            marker.current?.remove();
+            marker.current = null;
+
             map.current?.remove();
             map.current = null;
         };
