@@ -6,22 +6,81 @@ import {
     saveReturnPath,
 } from './serviceStatus';
 
-/**
- * フロントエンド側で起きたエラーを管理者画面へ届けるための共通処理です。
- *
- * fetch の失敗、JavaScript の例外、画像以外のリソース読み込み失敗を拾い、
- * api/SystemErrors/Report.php へ送信します。
- * DB停止を表す503だけは、エラー記録ではなくメンテナンス画面への切り替えに使います。
- */
 const endpoint = `${import.meta.env.BASE_URL}api/SystemErrors/Report.php`;
 const resolveEndpoint = `${import.meta.env.BASE_URL}api/SystemErrors/Resolve.php`;
 const recentFingerprints = new Map();
-const failedFetchFingerprints = new Map();
+const unresolvedRecoveryKeys = new Set();
+const unresolvedRecoveryStorageKey = 'tabi:unresolved-system-error-recovery-keys';
 const suppressMs = 60 * 1000;
 const systemErrorBroadcastChannel = 'tabi-admin-system-errors';
 
+const removableQueryKeys = new Set([
+    '_',
+    't',
+    'ts',
+    'timestamp',
+    'cache',
+    'cacheBust',
+    'cache_bust',
+    'v',
+]);
+
+const sensitiveQueryKeys = new Set([
+    'token',
+    'auth',
+    'authorization',
+    'email',
+    'code',
+    'verification_code',
+    'password',
+]);
+
+function loadUnresolvedRecoveryKeys() {
+    try {
+        const savedKeys = JSON.parse(sessionStorage.getItem(unresolvedRecoveryStorageKey) || '[]');
+        if (Array.isArray(savedKeys)) {
+            savedKeys.forEach((key) => {
+                if (typeof key === 'string' && key !== '') {
+                    unresolvedRecoveryKeys.add(key);
+                }
+            });
+        }
+    } catch {
+        /* 保存済みデータが壊れていても、エラー監視自体は止めないようにします。 */
+    }
+}
+
+function saveUnresolvedRecoveryKeys() {
+    try {
+        sessionStorage.setItem(unresolvedRecoveryStorageKey, JSON.stringify([...unresolvedRecoveryKeys]));
+    } catch {
+        /* sessionStorage が使えない環境でも、画面を開いている間の Set だけで動かします。 */
+    }
+}
+
+function rememberUnresolvedRecoveryKey(recoveryKey) {
+    if (!recoveryKey) {
+        return;
+    }
+
+    unresolvedRecoveryKeys.add(recoveryKey);
+    saveUnresolvedRecoveryKeys();
+}
+
+function forgetUnresolvedRecoveryKey(recoveryKey) {
+    if (!recoveryKey) {
+        return;
+    }
+
+    unresolvedRecoveryKeys.delete(recoveryKey);
+    saveUnresolvedRecoveryKeys();
+}
+
+function hasUnresolvedRecoveryKey(recoveryKey) {
+    return recoveryKey !== '' && unresolvedRecoveryKeys.has(recoveryKey);
+}
+
 function notifyAdminSystemErrorChanged(type, detail = {}) {
-    // 同じブラウザ内で管理画面を別タブ表示している場合も、保存直後に再取得できるよう通知します。
     const eventDetail = { ...detail, type };
     window.dispatchEvent(new CustomEvent(`admin:${type}`, { detail: eventDetail }));
 
@@ -36,7 +95,7 @@ function notifyAdminSystemErrorChanged(type, detail = {}) {
                 notifiedAt: Date.now(),
             }));
         } catch {
-            // 通知に失敗しても、エラー保存そのものは完了しているため何もしません。
+            /* 通知だけの失敗なので、エラー登録や解消処理そのものは止めません。 */
         }
     }
 }
@@ -50,21 +109,59 @@ function notifyAdminSystemErrorResolved(detail = {}) {
 }
 
 function stripUrlSecrets(value) {
-    // URLにクエリ文字列やトークンが付いている可能性があるため、保存前にパス部分だけへ丸めます。
     if (!value || typeof value !== 'string') {
         return '';
     }
 
     try {
         const url = new URL(value, window.location.origin);
-        return `${url.origin}${url.pathname}`;
+        const safeParams = new URLSearchParams();
+        [...url.searchParams.entries()]
+            .filter(([key]) => {
+                const normalizedKey = key.trim();
+                return !removableQueryKeys.has(normalizedKey) && !sensitiveQueryKeys.has(normalizedKey.toLowerCase());
+            })
+            .sort(([left], [right]) => left.localeCompare(right))
+            .forEach(([key, entryValue]) => safeParams.append(key, entryValue));
+        const query = safeParams.toString();
+
+        return `${url.origin}${url.pathname.replace(/\/+$/, '')}${query ? `?${query}` : ''}`;
     } catch {
-        return value.replace(/[?#].*$/, '');
+        return value.replace(/[?#].*$/, '').replace(/\/+$/, '');
     }
 }
 
+function normalizeRequestPath(value) {
+    const sanitized = stripUrlSecrets(value);
+
+    if (!sanitized) {
+        return '';
+    }
+
+    try {
+        const url = new URL(sanitized, window.location.origin);
+        const path = `/${url.pathname.replace(/^\/+/, '').replace(/\/+$/, '')}`;
+        return `${path}${url.search || ''}`;
+    } catch {
+        return `/${sanitized.replace(/[?#].*$/, '').replace(/^\/+/, '')}`;
+    }
+}
+
+function readFetchMethod(args) {
+    const init = args[1] || {};
+
+    if (init.method) {
+        return String(init.method).toUpperCase();
+    }
+
+    if (typeof args[0] === 'object' && args[0]?.method) {
+        return String(args[0].method).toUpperCase();
+    }
+
+    return 'GET';
+}
+
 function buildFingerprint(payload) {
-    // 同じエラーを短時間に何度も送らないため、内容から簡易的な識別文字列を作ります。
     return [
         payload.errorCode || 'UNKNOWN',
         payload.pagePath || '',
@@ -74,13 +171,18 @@ function buildFingerprint(payload) {
     ].join('|');
 }
 
-function buildFetchRequestKey(requestUrl, pagePath = window.location.pathname) {
-    // 同じAPIが後で成功したかを判定するため、クエリを除いたURLと画面パスで失敗履歴を持ちます。
-    return `${stripUrlSecrets(requestUrl)}|${pagePath || ''}`;
+function buildRecoveryKey(payload) {
+    /* 自動解消用の安定キーです。HTTPステータスやエラーメッセージは、失敗時と成功時で変わるため含めません。 */
+    return [
+        payload.source || 'frontend',
+        payload.requestMethod || 'GET',
+        normalizeRequestPath(payload.requestUrl || ''),
+        payload.pagePath || '',
+        payload.errorCode || 'API_HTTP_ERROR',
+    ].join('|');
 }
 
 function shouldSuppress(fingerprint) {
-    // 直近1分以内に同じエラーを送っていれば、DBへの重複記録を避けるため送信しません。
     const now = Date.now();
     const lastSentAt = recentFingerprints.get(fingerprint) || 0;
 
@@ -93,7 +195,6 @@ function shouldSuppress(fingerprint) {
 }
 
 function isIgnoredError(error) {
-    // 画面遷移や通信中断など、ユーザー操作で自然に起きるエラーは記録対象から外します。
     const name = error?.name || '';
     const message = String(error?.message || error || '');
 
@@ -103,10 +204,25 @@ function isIgnoredError(error) {
     );
 }
 
+function isSystemErrorInternalEndpoint(requestUrl) {
+    return (
+        requestUrl.includes('/api/SystemErrors/Report.php') ||
+        requestUrl.includes('/api/SystemErrors/Resolve.php')
+    );
+}
+
+function shouldTrackApiRequest(requestUrl) {
+    return (
+        requestUrl.includes('/api/') &&
+        !isSystemErrorInternalEndpoint(requestUrl) &&
+        !requestUrl.includes('/api/system/status.php')
+    );
+}
+
 export function reportSystemError(payload = {}) {
-    // APIへ送る前に、文字数やURLを安全な形に整えます。
     const pagePath = payload.pagePath || window.location.pathname;
     const requestUrl = stripUrlSecrets(payload.requestUrl || '');
+    const requestMethod = String(payload.requestMethod || 'GET').toUpperCase();
     const sanitizedPayload = {
         errorType: payload.errorType || 'FRONTEND_ERROR',
         errorCode: payload.errorCode || 'FRONTEND_ERROR',
@@ -115,6 +231,14 @@ export function reportSystemError(payload = {}) {
         component: payload.component || '',
         pagePath,
         requestUrl,
+        requestMethod,
+        recoveryKey: payload.recoveryKey || buildRecoveryKey({
+            ...payload,
+            source: payload.source || 'frontend',
+            pagePath,
+            requestUrl,
+            requestMethod,
+        }),
         httpStatus: Number.isFinite(Number(payload.httpStatus)) ? Number(payload.httpStatus) : null,
         stack: String(payload.stack || '').slice(0, 2000),
         userAgent: navigator.userAgent,
@@ -126,7 +250,6 @@ export function reportSystemError(payload = {}) {
         return;
     }
 
-    // keepalive を使うことで、ページ遷移中でもできるだけエラー送信を完了させます。
     fetch(endpoint, {
         method: 'POST',
         credentials: 'include',
@@ -142,6 +265,7 @@ export function reportSystemError(payload = {}) {
                 notifyAdminSystemErrorSaved({
                     error_id: data.error_id || null,
                     errorCode: sanitizedPayload.errorCode,
+                    recoveryKey: sanitizedPayload.recoveryKey,
                     pagePath: sanitizedPayload.pagePath,
                 });
             }
@@ -152,18 +276,25 @@ export function reportSystemError(payload = {}) {
 function resolveSystemError(payload = {}) {
     const pagePath = payload.pagePath || window.location.pathname;
     const requestUrl = stripUrlSecrets(payload.requestUrl || '');
+    const requestMethod = String(payload.requestMethod || 'GET').toUpperCase();
     const sanitizedPayload = {
         fingerprint: payload.fingerprint || '',
+        recoveryKey: payload.recoveryKey || buildRecoveryKey({
+            source: 'frontend',
+            requestMethod,
+            requestUrl,
+            pagePath,
+            errorCode: 'API_HTTP_ERROR',
+        }),
+        errorCode: payload.errorCode || 'API_HTTP_ERROR',
+        source: payload.source || 'frontend',
+        requestMethod,
         pagePath,
         requestUrl,
         httpStatus: Number.isFinite(Number(payload.httpStatus)) ? Number(payload.httpStatus) : null,
     };
 
-    if (!sanitizedPayload.fingerprint) {
-        return;
-    }
-
-    // 成功時の解消通知は表示更新が目的なので、失敗しても元の画面操作は止めません。
+    /* APIが成功した直後に、同じAPIで過去に登録された未対応エラーがないかサーバーへ確認します。 */
     fetch(resolveEndpoint, {
         method: 'POST',
         credentials: 'include',
@@ -175,9 +306,12 @@ function resolveSystemError(payload = {}) {
     })
         .then((response) => response.json().catch(() => null))
         .then((data) => {
-            if (data?.success && Number(data.resolved_count) > 0) {
+            const resolvedCount = Number(data?.resolvedCount ?? data?.resolved_count ?? 0);
+            if (data?.success && resolvedCount > 0) {
+                forgetUnresolvedRecoveryKey(sanitizedPayload.recoveryKey);
                 notifyAdminSystemErrorResolved({
-                    resolvedCount: Number(data.resolved_count),
+                    resolvedCount,
+                    recoveryKey: sanitizedPayload.recoveryKey,
                     pagePath: sanitizedPayload.pagePath,
                     requestUrl: sanitizedPayload.requestUrl,
                 });
@@ -187,23 +321,28 @@ function resolveSystemError(payload = {}) {
 }
 
 export function installSystemErrorListeners() {
-    // window.fetch を包み込み、既存コードのfetch呼び出しを変更せずにAPIエラーを監視します。
     const originalFetch = window.fetch.bind(window);
+
+    loadUnresolvedRecoveryKeys();
 
     window.fetch = async (...args) => {
         const response = await originalFetch(...args);
         const requestUrl = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
-        const isReportEndpoint = requestUrl.includes('/api/SystemErrors/Report.php');
-        const isResolveEndpoint = requestUrl.includes('/api/SystemErrors/Resolve.php');
-        const isStatusEndpoint = requestUrl.includes('/api/system/status.php');
-        const requestKey = buildFetchRequestKey(requestUrl);
+        const requestMethod = readFetchMethod(args);
+        const pagePath = window.location.pathname;
+        const recoveryKey = buildRecoveryKey({
+            source: 'frontend',
+            requestMethod,
+            requestUrl,
+            pagePath,
+            errorCode: 'API_HTTP_ERROR',
+        });
 
-        if (!isReportEndpoint && !isResolveEndpoint && !isStatusEndpoint && response.status === 503) {
+        if (!isSystemErrorInternalEndpoint(requestUrl) && !requestUrl.includes('/api/system/status.php') && response.status === 503) {
             const data = await response.clone().json().catch(() => null);
             const maintenanceCode = data?.status || data?.code || data?.reason;
 
             if (isMaintenanceCode(maintenanceCode) && !isAdminPath() && !isMaintenancePath()) {
-                // DB停止を検知した場合は、元の戻り先と理由を保存してユーザー向け案内画面へ移動します。
                 saveReturnPath();
                 saveMaintenanceReason(maintenanceCode);
                 window.location.assign(`${import.meta.env.BASE_URL}maintenance`);
@@ -211,30 +350,36 @@ export function installSystemErrorListeners() {
             }
         }
 
-        if (!isReportEndpoint && !isResolveEndpoint && response.status >= 500 && response.status !== 503) {
-            // 503以外のサーバーエラーは、管理者が後から確認できるようシステムエラーとして記録します。
+        if (shouldTrackApiRequest(requestUrl) && response.status >= 500 && response.status !== 503) {
+            /* API失敗時は、あとで同じAPIが成功したか判定できるよう recoveryKey も保存します。 */
             const failurePayload = {
                 errorType: 'API_ERROR',
                 errorCode: 'API_HTTP_ERROR',
                 message: `API request failed with HTTP ${response.status}`,
-                source: 'fetch',
+                source: 'frontend',
+                requestMethod,
                 requestUrl,
+                recoveryKey,
                 httpStatus: response.status,
-                pagePath: window.location.pathname,
+                pagePath,
             };
             failurePayload.fingerprint = buildFingerprint({
                 ...failurePayload,
                 requestUrl: stripUrlSecrets(requestUrl),
             });
-            failedFetchFingerprints.set(requestKey, failurePayload.fingerprint);
+            rememberUnresolvedRecoveryKey(recoveryKey);
             reportSystemError(failurePayload);
-        } else if (!isReportEndpoint && !isResolveEndpoint && response.ok && failedFetchFingerprints.has(requestKey)) {
-            const fingerprint = failedFetchFingerprints.get(requestKey);
-            failedFetchFingerprints.delete(requestKey);
+        } else if (shouldTrackApiRequest(requestUrl) && response.ok && hasUnresolvedRecoveryKey(recoveryKey)) {
+            /*
+             * 以前このAPIで失敗を記録した場合だけ、解決APIを呼びます。
+             * すべての成功fetchで毎回問い合わせると、管理画面の一覧取得など無関係な通信でも
+             * 解決処理が走ってしまうため、request_url から作った recoveryKey を条件にしています。
+             */
             resolveSystemError({
-                fingerprint,
+                recoveryKey,
                 requestUrl,
-                pagePath: window.location.pathname,
+                requestMethod,
+                pagePath,
                 httpStatus: response.status,
             });
         }
@@ -243,7 +388,6 @@ export function installSystemErrorListeners() {
     };
 
     window.addEventListener('error', (event) => {
-        // JavaScript例外と、script/cssなどの読み込み失敗をここで拾います。
         const target = event.target;
         const isResourceError = target && target !== window;
 
@@ -276,7 +420,6 @@ export function installSystemErrorListeners() {
     }, true);
 
     window.addEventListener('unhandledrejection', (event) => {
-        // Promise の catch されなかった失敗も、画面上では気づきにくいため記録します。
         const reason = event.reason;
 
         if (isIgnoredError(reason)) {

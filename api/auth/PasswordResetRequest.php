@@ -276,6 +276,21 @@ try {
     // メールが届かないのに有効な再設定URLだけがDBへ残ることを防ぐため、GAS失敗時はcatchでロールバックする。
     sendPasswordResetMail($user["email"], $user["name"] ?? "ユーザー", $resetUrl);
 
+    if (function_exists("resolveSystemErrorsByRecoveryContext")) {
+        /*
+         * PASSWORD_RESET_MAIL_FAILED は、HTTP 200 だけではなく「GASへのメール送信が成功した」
+         * ことを確認できた直後だけ解決済みにします。メール送信が失敗した場合はこの行に到達せず、
+         * catch 側で未対応エラーとして記録されます。
+         */
+        resolveSystemErrorsByRecoveryContext(
+            $_SERVER["REQUEST_URI"] ?? "/TABI/api/Auth/PasswordResetRequest.php",
+            null,
+            "PASSWORD_RESET_MAIL_FAILED",
+            "auth",
+            "POST"
+        );
+    }
+
     $pdo->commit();
 
     respond(["success" => true, "message" => PASSWORD_RESET_SUCCESS_MESSAGE]);
@@ -300,10 +315,12 @@ try {
         logSystemError("auth", "error", "パスワード再設定メールの送信に失敗しました", [
             "error_type" => "PASSWORD_RESET_MAIL_FAILED",
             "error_code" => "PASSWORD_RESET_MAIL_FAILED",
+            "source" => "auth",
+            "request_method" => "POST",
             "reason" => $error->getMessage(),
             "email" => $email !== "" ? "provided" : "empty",
             "request_url" => $_SERVER["REQUEST_URI"] ?? "",
-            "fingerprint" => hash("sha256", "password_reset_mail|" . $email . "|" . $error->getMessage()),
+            "fingerprint" => hash("sha256", "password_reset_mail|POST|" . ($_SERVER["REQUEST_URI"] ?? "/TABI/api/Auth/PasswordResetRequest.php") . "|PASSWORD_RESET_MAIL_FAILED"),
         ], isset($user["user_id"]) ? (int) $user["user_id"] : null, $_SERVER["REQUEST_URI"] ?? null);
     }
     respond(["success" => false, "message" => "メール送信の受付に失敗しました。時間をおいて再度お試しください。"], 500);

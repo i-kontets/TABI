@@ -43,20 +43,25 @@ if (!is_array($input)) {
 }
 
 $fingerprint = limitText($input["fingerprint"] ?? "", 255);
+$requestUrl = limitText($input["requestUrl"] ?? "", 1000);
+$pagePath = limitText($input["pagePath"] ?? ($_SERVER["HTTP_REFERER"] ?? ""), 500);
+$httpStatus = isset($input["httpStatus"]) && is_numeric($input["httpStatus"]) ? (int) $input["httpStatus"] : null;
+$errorCode = limitText($input["errorCode"] ?? "API_HTTP_ERROR", 120);
+$source = limitText($input["source"] ?? "frontend", 80);
+$requestMethod = limitText($input["requestMethod"] ?? "", 20);
+$recoveryKey = limitText($input["recoveryKey"] ?? "", 500);
 
-if (!$fingerprint) {
-    respond(["success" => false, "message" => "fingerprint is required."], 400);
+$resolvedCount = 0;
+
+if ($fingerprint) {
+    $resolvedCount += resolveSystemErrorByFingerprint($fingerprint, $requestUrl, $pagePath, $httpStatus);
 }
 
-// Only resolve errors whose stored failed fingerprint and request context match.
-$resolvedCount = resolveSystemErrorByFingerprint(
-    $fingerprint,
-    limitText($input["requestUrl"] ?? "", 1000),
-    limitText($input["pagePath"] ?? ($_SERVER["HTTP_REFERER"] ?? ""), 500),
-    isset($input["httpStatus"]) && is_numeric($input["httpStatus"]) ? (int) $input["httpStatus"] : null
-);
+/* fingerprintがない古いエラーでも、request_url・page_path・error_codeなどが安全に一致すれば解消します。 */
+$resolvedCount += resolveSystemErrorsByRecoveryContext($requestUrl, $pagePath, $errorCode, $source, $requestMethod, $recoveryKey);
 
 respond([
     "success" => true,
+    "resolvedCount" => $resolvedCount,
     "resolved_count" => $resolvedCount,
 ]);

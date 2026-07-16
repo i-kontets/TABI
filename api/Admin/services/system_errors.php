@@ -87,9 +87,30 @@ function stripSensitiveUrlParts(?string $url): ?string
     }
 
     $parts = parse_url($url);
+    $removeQueryKeys = ["_", "t", "ts", "timestamp", "cache", "cacheBust", "cache_bust", "v"];
+    $sensitiveQueryKeys = ["token", "auth", "authorization", "email", "code", "verification_code", "password"];
 
     if ($parts === false || !isset($parts["scheme"], $parts["host"])) {
-        return preg_replace('/[?#].*$/', '', $url);
+        $relativeParts = parse_url($url);
+        $path = is_array($relativeParts) && isset($relativeParts["path"])
+            ? $relativeParts["path"]
+            : preg_replace('/[?#].*$/', '', $url);
+        $queryText = "";
+        if (is_array($relativeParts) && isset($relativeParts["query"])) {
+            parse_str($relativeParts["query"], $queryParams);
+            ksort($queryParams);
+            $safeQuery = [];
+            foreach ($queryParams as $key => $value) {
+                $keyText = (string) $key;
+                if (in_array($keyText, $removeQueryKeys, true) || in_array(strtolower($keyText), $sensitiveQueryKeys, true)) {
+                    continue;
+                }
+                $safeQuery[$keyText] = $value;
+            }
+            $queryText = http_build_query($safeQuery);
+        }
+
+        return rtrim((string) $path, "/") . ($queryText !== "" ? "?" . $queryText : "");
     }
 
     $result = $parts["scheme"] . "://" . $parts["host"];
@@ -98,9 +119,66 @@ function stripSensitiveUrlParts(?string $url): ?string
         $result .= ":" . $parts["port"];
     }
 
-    $result .= $parts["path"] ?? "";
+    $result .= rtrim($parts["path"] ?? "", "/");
+
+    if (isset($parts["query"])) {
+        parse_str($parts["query"], $queryParams);
+        ksort($queryParams);
+        $safeQuery = [];
+        foreach ($queryParams as $key => $value) {
+            $keyText = (string) $key;
+            if (in_array($keyText, $removeQueryKeys, true) || in_array(strtolower($keyText), $sensitiveQueryKeys, true)) {
+                continue;
+            }
+            $safeQuery[$keyText] = $value;
+        }
+        $queryText = http_build_query($safeQuery);
+        if ($queryText !== "") {
+            $result .= "?" . $queryText;
+        }
+    }
 
     return $result;
+}
+
+function normalizeSystemErrorPath(?string $url): ?string
+{
+    $url = stripSensitiveUrlParts($url);
+
+    if (!$url) {
+        return null;
+    }
+
+    $parts = parse_url($url);
+    $path = is_array($parts) && isset($parts["path"]) ? $parts["path"] : $url;
+    $path = preg_replace('/[?#].*$/', '', trim((string) $path));
+
+    if ($path === "") {
+        return null;
+    }
+
+    $normalizedPath = "/" . ltrim(rtrim($path, "/"), "/");
+    if (is_array($parts) && isset($parts["query"]) && trim((string) $parts["query"]) !== "") {
+        $normalizedPath .= "?" . trim((string) $parts["query"]);
+    }
+
+    return $normalizedPath;
+}
+
+function buildSystemErrorRecoveryKey(?string $source, ?string $requestMethod, ?string $requestUrl, ?string $pagePath, ?string $errorCode): ?string
+{
+    $requestPath = normalizeSystemErrorPath($requestUrl);
+    $pagePath = normalizeSystemErrorPath($pagePath) ?: trim((string) $pagePath);
+    $source = trim((string) ($source ?: "frontend"));
+    $requestMethod = strtoupper(trim((string) ($requestMethod ?: "GET")));
+    $errorCode = trim((string) ($errorCode ?: "API_HTTP_ERROR"));
+
+    if (!$requestPath || $pagePath === "") {
+        return null;
+    }
+
+    /* HTTPステータスやエラーメッセージを含めず、同じAPI処理だけを判定できる安定キーを作ります。 */
+    return implode("|", [$source, $requestMethod, $requestPath, $pagePath, $errorCode]);
 }
 
 function normalizedSystemErrorDetail($detail): array
@@ -114,6 +192,18 @@ function normalizedSystemErrorDetail($detail): array
     }
 
     return ["detail" => (string) $detail];
+}
+
+function systemErrorResolvedSetSql(PDO $pdo): string
+{
+    $setSql = "status = 'resolved', resolved_at = NOW()";
+
+    if (systemErrorColumnExists($pdo, "updated_at")) {
+        /* updated_atカラムがあるDBでは、自動解消した時刻も更新日時として残します。 */
+        $setSql .= ", updated_at = NOW()";
+    }
+
+    return $setSql;
 }
 
 function logSystemError(string $source, string $level, string $message, $detail = null, $userId = null, $url = null): ?int
@@ -133,9 +223,19 @@ function logSystemError(string $source, string $level, string $message, $detail 
         $requestUrl = stripSensitiveUrlParts($detailData["request_url"] ?? null);
         $errorCode = $detailData["error_code"] ?? null;
         $fingerprint = $detailData["fingerprint"] ?? null;
+        $requestMethod = strtoupper(trim((string) ($detailData["request_method"] ?? "")));
+        $recoveryKey = trim((string) ($detailData["recovery_key"] ?? ""));
         $httpStatus = isset($detailData["http_status"]) && is_numeric($detailData["http_status"])
             ? (int) $detailData["http_status"]
             : null;
+
+        if ($recoveryKey === "") {
+            $recoveryKey = buildSystemErrorRecoveryKey($detailData["source"] ?? $source, $requestMethod, $requestUrl, $pagePath, $errorCode) ?? "";
+            if ($recoveryKey !== "") {
+                /* 古い登録経路でも、あとで同じAPIの成功を判定できるようdetailへ補完します。 */
+                $detailData["recovery_key"] = $recoveryKey;
+            }
+        }
 
         if (!$fingerprint && $errorCode) {
             $fingerprint = hash("sha256", implode("|", [
@@ -172,14 +272,22 @@ function logSystemError(string $source, string $level, string $message, $detail 
             $existingId = (int) $dedupeStmt->fetchColumn();
 
             if ($existingId > 0 && systemErrorColumnExists($pdo, "occurrence_count")) {
-                $updateStmt = $pdo->prepare("
-                    UPDATE system_errors
-                    SET occurrence_count = occurrence_count + 1,
+                $reopenSetSql = "
+                        occurrence_count = occurrence_count + 1,
                         last_occurred_at = NOW(),
                         status = 'unresolved',
                         resolved_at = NULL,
                         detail = :detail,
-                        user_id = COALESCE(:user_id, user_id)
+                        user_id = COALESCE(:user_id, user_id)";
+                if (systemErrorColumnExists($pdo, "updated_at")) {
+                    /* 対応済み後に再発した場合も、更新日時を最新にします。 */
+                    $reopenSetSql .= ",
+                        updated_at = NOW()";
+                }
+
+                $updateStmt = $pdo->prepare("
+                    UPDATE system_errors
+                    SET {$reopenSetSql}
                     WHERE error_id = :error_id
                 ");
                 $updateStmt->bindValue(":detail", $detailText);
@@ -304,7 +412,6 @@ function resolveSystemErrorByFingerprint(string $fingerprint, ?string $requestUr
         $where = ["fingerprint = :fingerprint", "status = 'unresolved'"];
         $params = ["fingerprint" => $fingerprint];
 
-        // 成功通知で無関係なエラーを閉じないよう、URLや画面パスが分かる場合だけ条件に加えます。
         if ($requestUrl) {
             $where[] = "(request_url = :request_url OR request_url IS NULL OR request_url = '')";
             $params["request_url"] = $requestUrl;
@@ -319,8 +426,7 @@ function resolveSystemErrorByFingerprint(string $fingerprint, ?string $requestUr
 
         $stmt = $pdo->prepare("
             UPDATE system_errors
-            SET status = 'resolved',
-                resolved_at = NOW()
+            SET " . systemErrorResolvedSetSql($pdo) . "
             WHERE " . implode(" AND ", $where) . "
         ");
         $stmt->execute($params);
@@ -336,6 +442,93 @@ function resolveSystemErrorByFingerprint(string $fingerprint, ?string $requestUr
         return $count;
     } catch (Throwable $error) {
         error_log("Failed to resolve system error: " . $error->getMessage());
+        return 0;
+    }
+}
+
+function resolveSystemErrorsByRecoveryContext(?string $requestUrl, ?string $pagePath, ?string $errorCode = "API_HTTP_ERROR", ?string $source = "frontend", ?string $requestMethod = null, ?string $recoveryKey = null): int
+{
+    global $pdo;
+
+    if (!$pdo instanceof PDO || !systemErrorColumnExists($pdo, "request_url") || !systemErrorColumnExists($pdo, "page_path")) {
+        return 0;
+    }
+
+    try {
+        ensureSystemErrorsTable($pdo);
+
+        $requestPath = normalizeSystemErrorPath($requestUrl);
+        $pagePath = normalizeSystemErrorPath($pagePath) ?: trim((string) $pagePath);
+        $errorCode = trim((string) $errorCode);
+        $source = trim((string) $source);
+        $requestMethod = strtoupper(trim((string) $requestMethod));
+        $recoveryKey = trim((string) $recoveryKey);
+
+        if (!$requestPath) {
+            return 0;
+        }
+
+        $conditions = [
+            "status = 'unresolved'",
+            "request_url IS NOT NULL",
+            "request_url <> ''",
+            "(request_url = :request_url OR request_url LIKE :absolute_request_url)",
+        ];
+        $params = [
+            "request_url" => $requestPath,
+            "absolute_request_url" => "%{$requestPath}",
+        ];
+
+        if ($pagePath !== "") {
+            /*
+             * フロントエンド由来のエラーは、同じ画面内の別APIを誤って解決しないように
+             * page_path も一致条件に含めます。バックエンドだけで起きたエラーは
+             * page_path が保存されないことがあるため、その場合は request_url と error_code を優先します。
+             */
+            $conditions[] = "page_path = :page_path";
+            $params["page_path"] = $pagePath;
+        }
+
+        if ($errorCode !== "" && systemErrorColumnExists($pdo, "error_code")) {
+            $conditions[] = "error_code = :error_code";
+            $params["error_code"] = $errorCode;
+        }
+
+        if ($source !== "" && systemErrorColumnExists($pdo, "source")) {
+            $conditions[] = "(source = :source OR source = 'frontend')";
+            $params["source"] = $source;
+        }
+
+        if ($requestMethod !== "") {
+            $conditions[] = "(detail IS NULL OR LOCATE('\"request_method\"', detail) = 0 OR LOCATE(:request_method_json, detail) > 0)";
+            $params["request_method_json"] = '"request_method":"' . $requestMethod . '"';
+        }
+
+        if ($recoveryKey !== "") {
+            /* 新しいレコードは recovery_key も一致確認し、別APIを誤って対応済みにしないようにします。 */
+            $conditions[] = "(detail IS NULL OR LOCATE('\"recovery_key\"', detail) = 0 OR LOCATE(:recovery_key_json, detail) > 0)";
+            $params["recovery_key_json"] = '"recovery_key":"' . $recoveryKey . '"';
+        }
+
+        $stmt = $pdo->prepare("
+            UPDATE system_errors
+            SET " . systemErrorResolvedSetSql($pdo) . "
+            WHERE " . implode(" AND ", $conditions) . "
+        ");
+        $stmt->execute($params);
+        $count = $stmt->rowCount();
+
+        if ($count > 0 && function_exists("sendRealtimeEvent")) {
+            sendRealtimeEvent("admin:global", "system_error_resolved", [
+                "requestUrl" => $requestPath,
+                "pagePath" => $pagePath,
+                "resolvedAt" => date("Y-m-d H:i:s"),
+            ], false);
+        }
+
+        return $count;
+    } catch (Throwable $error) {
+        error_log("Failed to resolve system error by recovery context: " . $error->getMessage());
         return 0;
     }
 }
