@@ -46,6 +46,7 @@ const Chat = () => {
     const location = useLocation();
     const pollingRef       = useRef(false);
     const lastMessageIdRef = useRef(0);   // 差分ポーリング用：最後に受信したmessage_id
+    const currentChatIdRef = useRef(null);
     const [activeCategory, setActiveCategory] = useState('all');
     const [activeContactId, setActiveContactId] = useState(null);
     const [contacts, setContacts] = useState([]);
@@ -102,14 +103,19 @@ const Chat = () => {
 
     const loadMessages = useCallback(async (chatId, signal = undefined, options = {}) => {
         const { showLoading = true, showNotice = true } = options;
+        const requestedChatId = Number(chatId);
 
-        if (!chatId) {
+        if (!requestedChatId) {
+            currentChatIdRef.current = null;
             setMessages([]);
             return;
         }
 
+        currentChatIdRef.current = requestedChatId;
+
         if (showLoading) {
             setLoading(true);
+            setMessages([]);
         }
 
         if (showNotice) {
@@ -118,17 +124,21 @@ const Chat = () => {
 
         try {
             const response = await fetch(
-                `${chatApiBase}/Messages.php?chat_id=${encodeURIComponent(chatId)}`,
+                `${chatApiBase}/Messages.php?chat_id=${encodeURIComponent(requestedChatId)}`,
                 {
                     credentials: 'include',
                     signal,
                 },
             );
             const data = await parseApiResponse(response);
-            const resolvedChatId = Number(data.chat_id || chatId);
+            const resolvedChatId = Number(data.chat_id || requestedChatId);
+
+            if (signal?.aborted || currentChatIdRef.current !== requestedChatId) {
+                return;
+            }
 
             setActiveContactId(resolvedChatId);
-            const msgs = data.messages || [];
+            const msgs = (data.messages || []).filter((message) => Number(message.chat_id) === resolvedChatId);
             setMessages(msgs);
             // 差分ポーリング用に最大IDを記録
             const maxId = msgs.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
@@ -140,7 +150,7 @@ const Chat = () => {
                 setNotice(error.message);
             }
         } finally {
-            if (!signal?.aborted && showLoading) {
+            if (!signal?.aborted && currentChatIdRef.current === requestedChatId && showLoading) {
                 setLoading(false);
             }
         }
@@ -156,10 +166,14 @@ const Chat = () => {
             );
             const data = await response.json().catch(() => null);
             if (!data?.success || !data.messages?.length) return;
+            if (currentChatIdRef.current !== Number(chatId)) return;
 
             setMessages((prev) => {
                 const existingIds = new Set(prev.map((m) => m.message_id));
-                const newMsgs = data.messages.filter((m) => !existingIds.has(m.message_id));
+                const newMsgs = data.messages.filter((m) => (
+                    Number(m.chat_id) === Number(chatId)
+                    && !existingIds.has(m.message_id)
+                ));
                 if (!newMsgs.length) return prev;
                 return [...prev, ...newMsgs];
             });
@@ -242,9 +256,11 @@ const Chat = () => {
     }, [activeContactId, loadContacts, loadMessages]);
 
     const handleContactSelect = (id) => {
+        const nextChatId = Number(id);
+        currentChatIdRef.current = nextChatId;
         setActiveContactId(id);
         setIsMobileChatView(true);
-        loadMessages(id);
+        loadMessages(nextChatId);
     };
 
     const handleSendMessage = async (event) => {
@@ -272,7 +288,9 @@ const Chat = () => {
             });
             const data = await parseApiResponse(response);
 
-            setMessages((currentMessages) => [...currentMessages, data.message]);
+            if (Number(data.message?.chat_id) === Number(activeContactId)) {
+                setMessages((currentMessages) => [...currentMessages, data.message]);
+            }
             setDraft('');
             await loadContacts(undefined, { showNotice: false });
         } catch (error) {
@@ -309,7 +327,9 @@ const Chat = () => {
             });
             const sendData = await parseApiResponse(sendRes);
 
-            setMessages((currentMessages) => [...currentMessages, sendData.message]);
+            if (Number(sendData.message?.chat_id) === Number(activeContactId)) {
+                setMessages((currentMessages) => [...currentMessages, sendData.message]);
+            }
             await loadContacts(undefined, { showNotice: false });
         } catch (error) {
             setNotice(error.message);

@@ -1,13 +1,17 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { createContext } from 'react';
 import './App.css'
 
 import Newreg from './pages/newreg/Newreg';
 import Login from './pages/Login/Login';
+import ResetPassword from './pages/ResetPassword/ResetPassword.jsx';
 import Home from './pages/Home/Home';
 import MyPage from './pages/MyPage/MyPage';
 import { ProfileEditPage, UserEditPage, EmailChangePage, NotificationSettingsPage, NotificationPermissionPage, ContactPage, FaqPage } from './pages/MyPage/MyPageSubPages';
+import Terms from './pages/Terms/Terms.jsx';
+import PrivacyPolicy from './pages/PrivacyPolicy/PrivacyPolicy.jsx';
+import UserProfilePage from './pages/UserProfile/UserProfilePage.jsx';
 import Itinerary from './pages/Itinerary/Itinerary.jsx';
 import ItineraryEdit from './pages/Itinerary/ItineraryEdit.jsx';
 import Tripmap from './pages/Tripmap/Tripmap';
@@ -26,7 +30,11 @@ import Tourist from './pages/Tourist/Tourist';
 import CottageChatPage from './pages/CottageChat/CottageChatPage.jsx';
 import AdminRoutes from './pages/Admin/AdminRoutes.jsx';
 import UserRealtimeListener from './pages/UserRealtimeListener.jsx';
+import Maintenance from './pages/Maintenance/Maintenance.jsx';
+import ServiceAvailabilityGate from './components/ServiceAvailabilityGate.jsx';
+import { isAdminPath, isMaintenancePath } from './services/serviceStatus.js';
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const TripContext = createContext();
 
 function App() {

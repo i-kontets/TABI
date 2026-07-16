@@ -8,3 +8,4 @@ export * from './spots';
 export * from './analytics';
 export * from './managers';
 export * from './logs';
+export * from './systemErrors';

@@ -1,6 +1,7 @@
 <?php
 
-// cURL が使える環境では cURL を優先し、使えない場合は file_get_contents に切り替えます。
+require_once __DIR__ . "/system_errors.php";
+
 function realtime_config(string $key, $default = null)
 {
     static $realtimeConfig = null;
@@ -16,7 +17,14 @@ function realtime_config(string $key, $default = null)
     return $realtimeConfig[$key] ?? $default;
 }
 
-function sendRealtimeEvent(string $room, string $event, array $data = []): array
+function logRealtimeSystemError(string $message, array $detail): void
+{
+    if (function_exists("logSystemError")) {
+        logSystemError("websocket", "warning", $message, $detail);
+    }
+}
+
+function sendRealtimeEvent(string $room, string $event, array $data = [], bool $logFailure = true): array
 {
     $url = realtime_config("realtime_url", app_config("REALTIME_EMIT_URL", "https://ws.tabital.com/emit"));
     $secret = realtime_config("realtime_secret", app_config("REALTIME_SECRET", ""));
@@ -31,6 +39,13 @@ function sendRealtimeEvent(string $room, string $event, array $data = []): array
     if (!$secret) {
         error_log("Realtime event skipped: REALTIME_SECRET is not set.");
         $result["response"] = "REALTIME_SECRET is not set.";
+        if ($logFailure) {
+            logRealtimeSystemError("WebSocket通知設定が不足しています", [
+                "room" => $room,
+                "event" => $event,
+                "reason" => "REALTIME_SECRET is not set.",
+            ]);
+        }
         return $result;
     }
 
@@ -43,6 +58,13 @@ function sendRealtimeEvent(string $room, string $event, array $data = []): array
     if ($json === false) {
         error_log("Realtime event failed: payload JSON encode error.");
         $result["response"] = "payload JSON encode error.";
+        if ($logFailure) {
+            logRealtimeSystemError("WebSocket通知ペイロードのJSON生成に失敗しました", [
+                "room" => $room,
+                "event" => $event,
+                "json_error" => json_last_error_msg(),
+            ]);
+        }
         return $result;
     }
 
@@ -73,6 +95,15 @@ function sendRealtimeEvent(string $room, string $event, array $data = []): array
 
         if ($body === false || $status < 200 || $status >= 300) {
             error_log("Realtime event failed: HTTP {$status} {$error}");
+            if ($logFailure) {
+                logRealtimeSystemError("WebSocket通知に失敗しました", [
+                    "room" => $room,
+                    "event" => $event,
+                    "http_code" => $status,
+                    "curl_error" => $error ?: "",
+                    "response" => $result["response"],
+                ]);
+            }
             return $result;
         }
 
@@ -101,6 +132,14 @@ function sendRealtimeEvent(string $room, string $event, array $data = []): array
 
     if ($body === false || $status < 200 || $status >= 300) {
         error_log("Realtime event failed: HTTP {$status}");
+        if ($logFailure) {
+            logRealtimeSystemError("WebSocket通知に失敗しました", [
+                "room" => $room,
+                "event" => $event,
+                "http_code" => $status,
+                "response" => $result["response"],
+            ]);
+        }
         return $result;
     }
 

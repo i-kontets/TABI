@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./Login.module.css";
+import PasswordResetRequestModal from "../../components/PasswordReset/PasswordResetRequestModal";
 
 import eyeIcon from "../../assets/icons/eye.svg";
 import eyeOffIcon from "../../assets/icons/eye_off.svg";
@@ -16,6 +17,7 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
 
     const [bgImage, setBgImage] = useState(BACKGROUND_IMAGES[0] || "");
 
@@ -118,6 +120,14 @@ export default function Login() {
                             />
                         </div>
 
+                        <button
+                            type="button"
+                            className={styles.forgotPasswordLink}
+                            onClick={() => setIsPasswordResetOpen(true)}
+                        >
+                            パスワードを忘れた方はこちら
+                        </button>
+
                         {errorMessage && (
                             <p className={styles.errorMessage}>
                                 {errorMessage}
@@ -142,6 +152,12 @@ export default function Login() {
                     </button>
                 </div>
             </div>
+
+            <PasswordResetRequestModal
+                isOpen={isPasswordResetOpen}
+                onClose={() => setIsPasswordResetOpen(false)}
+                initialEmail={email}
+            />
         </div>
     );
 }

@@ -32,7 +32,7 @@ export default function ReportDetail() {
 
     if (!report) {
         return (
-            <AdminLayout title="通報詳細" back>
+            <AdminLayout title="通報詳細" back backTo="/admin/support?type=reports">
                 <EmptyState message="通報が見つかりません" />
             </AdminLayout>
         );
@@ -45,7 +45,7 @@ export default function ReportDetail() {
     };
 
     return (
-        <AdminLayout title="通報詳細" back>
+        <AdminLayout title="通報詳細" back backTo="/admin/support?type=reports">
             <div className={styles.detailHead}>
                 <Badge label={report.status} />
                 <span className={styles.detailType}>{report.type}</span>

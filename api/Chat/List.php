@@ -3,6 +3,7 @@ session_start();
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Groups/S3Common.php";
 
 function respond(array $payload, int $status = 200): void
 {
@@ -29,6 +30,50 @@ function formatTime(?string $value): string
     }
 
     return (new DateTimeImmutable($value))->format("H:i");
+}
+
+function resolveUserIconUrl(?string $iconValue): ?string
+{
+    static $initialized = false, $s3 = null, $aws = null, $cache = [];
+
+    $iconValue = trim((string) $iconValue);
+
+    if ($iconValue === "") {
+        return null;
+    }
+
+    if (strpos($iconValue, "http://") === 0 || strpos($iconValue, "https://") === 0) {
+        $path = parse_url($iconValue, PHP_URL_PATH);
+
+        if (!$path) {
+            return null;
+        }
+
+        $iconValue = rawurldecode($path);
+    }
+
+    $key = ltrim($iconValue, "/");
+
+    if ($key === "") {
+        return null;
+    }
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    if (!$initialized) {
+        $initialized = true;
+
+        try {
+            $aws = loadAwsConfig();
+            $s3 = $aws ? createS3Client($aws) : null;
+        } catch (Throwable $error) {
+            $s3 = null;
+        }
+    }
+
+    return $cache[$key] = ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $key) : null;
 }
 
 function normalizeCategory(?string $chatType): string
@@ -94,12 +139,21 @@ try {
         LEFT JOIN messages latest ON latest.message_id = (
             SELECT m2.message_id
             FROM messages m2
+            INNER JOIN chat_members cm_sender
+              ON cm_sender.chat_id = m2.chat_id
+             AND cm_sender.user_id = m2.sender_user_id
             WHERE m2.chat_id = c.chat_id
             ORDER BY m2.sent_at DESC, m2.message_id DESC
             LIMIT 1
         )
         LEFT JOIN messages unread ON unread.chat_id = c.chat_id
             AND unread.sender_user_id <> :unread_user_id
+            AND EXISTS (
+                SELECT 1
+                FROM chat_members cm_unread_sender
+                WHERE cm_unread_sender.chat_id = unread.chat_id
+                  AND cm_unread_sender.user_id = unread.sender_user_id
+            )
             AND NOT EXISTS (
                 SELECT 1
                 FROM message_reads mr
@@ -146,7 +200,7 @@ try {
             $avatar = $chat["candidate_img_url"] ?: "";
         } elseif ($category === "friend") {
             $name = $chat["other_user_name"] ?: $name;
-            $avatar = $chat["other_user_icon_url"] ?: "";
+            $avatar = resolveUserIconUrl($chat["other_user_icon_url"] ?? null) ?: "";
         }
 
         if ($avatar === "") {

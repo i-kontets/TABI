@@ -215,6 +215,9 @@ function fetchContact(PDO $pdo, int $chatId): array
         LEFT JOIN messages latest ON latest.message_id = (
             SELECT m2.message_id
             FROM messages m2
+            INNER JOIN chat_members cm_sender
+              ON cm_sender.chat_id = m2.chat_id
+             AND cm_sender.user_id = m2.sender_user_id
             WHERE m2.chat_id = c.chat_id
             ORDER BY m2.sent_at DESC, m2.message_id DESC
             LIMIT 1
@@ -275,6 +278,9 @@ function fetchMessages(PDO $pdo, int $chatId, int $userId): array
             END) AS read_count,
             MAX(CASE WHEN mr.user_id = :current_user_id THEN 1 ELSE 0 END) AS is_read
         FROM messages m
+        INNER JOIN chat_members cm_sender
+          ON cm_sender.chat_id = m.chat_id
+         AND cm_sender.user_id = m.sender_user_id
         LEFT JOIN users u ON u.user_id = m.sender_user_id
         LEFT JOIN message_reads mr ON mr.message_id = m.message_id
         WHERE m.chat_id = :chat_id
@@ -319,8 +325,6 @@ function fetchMessages(PDO $pdo, int $chatId, int $userId): array
             "sender_icon_url" => $senderIconUrl,
 
             // 原因確認用
-            "sender_icon_key_debug" => $senderIconKey,
-
             "text" => $message["body"],
             "body" => $message["body"],
             "image_url" => $message["image_url"],
@@ -369,40 +373,14 @@ try {
      * 原因調査用
      * Webアプリが実際に接続しているDBの情報を取得する
      */
-    $debugDbInfo = $pdo->query("
-        SELECT
-            DATABASE() AS database_name,
-            @@hostname AS database_hostname,
-            @@port AS database_port
-    ")->fetch(PDO::FETCH_ASSOC);
-
     /*
      * Webアプリが参照しているusersテーブルから、
      * user_id = 3 のデータを直接取得する
      */
-    $debugUserStmt = $pdo->prepare("
-        SELECT
-            user_id,
-            name,
-            icon_url,
-            HEX(icon_url) AS icon_url_hex
-        FROM users
-        WHERE user_id = :user_id
-        LIMIT 1
-    ");
-
-    $debugUserStmt->bindValue(":user_id", 3, PDO::PARAM_INT);
-    $debugUserStmt->execute();
-
-    $debugUser3 = $debugUserStmt->fetch(PDO::FETCH_ASSOC);
-
     respond([
         "success" => true,
 
         // 原因調査用：確認が終わったら削除する
-        "debug_db_info" => $debugDbInfo,
-        "debug_user_3" => $debugUser3,
-
         "chat_id" => $chatId,
         "member_count" => (int) ($contact["memberCount"] ?? 0),
         "contact" => $contact,
