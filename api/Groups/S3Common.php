@@ -64,14 +64,25 @@ function loadAwsConfig(): ?array
 function createS3Client(array $aws)
 {
     // AWS SDK の autoload.php を読み込むと、Aws\S3\S3Client クラスが使えるようになります。
-    $autoload = __DIR__ . "/../vendor/autoload.php";
+    $autoloadCandidates = [
+        __DIR__ . "/../../vendor/autoload.php",
+        __DIR__ . "/../vendor/autoload.php",
+    ];
+    $autoload = null;
+
+    foreach ($autoloadCandidates as $candidate) {
+        if (file_exists($candidate)) {
+            $autoload = $candidate;
+            break;
+        }
+    }
 
     // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
-    if (!file_exists($autoload)) {
+    if ($autoload === null) {
         // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if (function_exists("logSystemError")) {
             logSystemError("s3", "error", "AWS SDK autoload が見つかりません", [
-                "path" => $autoload,
+                "paths" => $autoloadCandidates,
             ]);
         }
         return null;
@@ -79,6 +90,15 @@ function createS3Client(array $aws)
 
     // 共通設定や別ファイルの関数を読み込み、この API から使えるようにします。
     require_once $autoload;
+
+    if (!class_exists(\Aws\S3\S3Client::class)) {
+        if (function_exists("logSystemError")) {
+            logSystemError("s3", "error", "AWS SDK S3Client class is not available", [
+                "autoload" => $autoload,
+            ]);
+        }
+        return null;
+    }
 
     return new Aws\S3\S3Client([
         "version" => "latest",

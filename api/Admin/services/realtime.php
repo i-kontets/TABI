@@ -35,6 +35,25 @@ function realtime_config(string $key, $default = null)
     return $realtimeConfig[$key] ?? $default;
 }
 
+function realtime_app_config(string $key, $default = null)
+{
+    if (function_exists("app_config")) {
+        return app_config($key, $default);
+    }
+
+    global $config;
+    if (!empty($config[$key])) {
+        return $config[$key];
+    }
+
+    $envValue = getenv($key);
+    if ($envValue !== false && $envValue !== "") {
+        return $envValue;
+    }
+
+    return $_SERVER[$key] ?? $_ENV[$key] ?? $default;
+}
+
 /**
  * logRealtimeSystemError は、この API 内で何度も使う処理をまとめた関数です。
  * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
@@ -54,9 +73,9 @@ function logRealtimeSystemError(string $message, array $detail): void
 function sendRealtimeEvent(string $room, string $event, array $data = [], bool $logFailure = true): array
 {
     // WebSocketサーバーのemit用HTTP APIへ通知を送ります。PHPは直接ブラウザへ送るのではなく、このサーバーに配信を依頼します。
-    $url = realtime_config("realtime_url", app_config("REALTIME_EMIT_URL", "https://ws.tabital.com/emit"));
+    $url = realtime_config("realtime_url", realtime_app_config("REALTIME_EMIT_URL", "https://ws.tabital.com/emit"));
     // WebSocket通知サーバーへ送る秘密の合言葉です。実際の値はコメント・画面・通常ログへ出してはいけません。
-    $secret = realtime_config("realtime_secret", app_config("REALTIME_SECRET", ""));
+    $secret = realtime_config("realtime_secret", realtime_app_config("REALTIME_SECRET", ""));
     $result = [
         "attempted" => false,
         "ok" => false,
