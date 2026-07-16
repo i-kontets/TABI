@@ -7,6 +7,9 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // データベース接続設定を読み込む
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Admin/includes/config.php";
+require_once __DIR__ . "/../Admin/services/realtime.php";
+require_once __DIR__ . "/../Groups/S3Common.php";
 
 // 文字列の先頭1文字を取り出す。
 // ユーザー名のアイコン代わりに使うため、マルチバイト文字にも対応する。
@@ -38,6 +41,50 @@ function formatDateLabel(DateTimeImmutable $date): string
 }
 
 // 送信は POST のみ受け付ける。
+function resolveUserIconUrl(?string $iconValue): ?string
+{
+    static $initialized = false, $s3 = null, $aws = null, $cache = [];
+
+    $iconValue = trim((string) $iconValue);
+
+    if ($iconValue === "") {
+        return null;
+    }
+
+    if (strpos($iconValue, "http://") === 0 || strpos($iconValue, "https://") === 0) {
+        $path = parse_url($iconValue, PHP_URL_PATH);
+
+        if (!$path) {
+            return null;
+        }
+
+        $iconValue = rawurldecode($path);
+    }
+
+    $key = ltrim($iconValue, "/");
+
+    if ($key === "") {
+        return null;
+    }
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    if (!$initialized) {
+        $initialized = true;
+
+        try {
+            $aws = loadAwsConfig();
+            $s3 = $aws ? createS3Client($aws) : null;
+        } catch (Throwable $error) {
+            $s3 = null;
+        }
+    }
+
+    return $cache[$key] = ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $key) : null;
+}
+
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
     echo json_encode([
@@ -230,10 +277,36 @@ try {
     $pdo->query("SELECT RELEASE_LOCK('tabi_messages_id_lock')");
     $idLockAcquired = false;
 
+    if (!$groupId) {
+        $groupStmt = $pdo->prepare("
+            SELECT t.group_id
+            FROM chats c
+            INNER JOIN trips t ON t.trip_id = c.trip_id
+            WHERE c.chat_id = :chat_id
+            LIMIT 1
+        ");
+        $groupStmt->bindValue(":chat_id", $chatId, PDO::PARAM_INT);
+        $groupStmt->execute();
+        $groupId = (int) $groupStmt->fetchColumn();
+    }
+
+    if ($groupId) {
+        sendRealtimeEvent("trip:" . $groupId, "chat_message_created", [
+            "group_id" => (int) $groupId,
+            "chat_id" => (int) $chatId,
+            "message_id" => $messageId,
+        ]);
+        sendRealtimeEvent("admin:global", "post_created", [
+            "post_id" => $messageId,
+            "group_id" => (int) $groupId,
+        ]);
+    }
+
     // 画面表示で使いやすいように、日付ラベルと時刻を生成する。
     $sentAt = new DateTimeImmutable($message["sent_at"]);
     $senderName = $message["sender_name"] ?? ($_SESSION["user_name"] ?? "自分");
     $dateLabel = formatDateLabel($sentAt);
+    $senderIconUrl = resolveUserIconUrl($message["sender_icon_url"] ?? null);
 // フロント側でそのまま利用できる形に整えて返す。
     http_response_code(201);
     echo json_encode([
@@ -245,8 +318,8 @@ try {
             "sender_user_id" => (int) $message["sender_user_id"],
             "sender" => $senderName,
             "sender_name" => $senderName,
-            "avatar" => firstCharacter($senderName),
-            "sender_icon_url" => $message["sender_icon_url"],
+            "avatar" => $senderIconUrl ?: firstCharacter($senderName),
+            "sender_icon_url" => $senderIconUrl,
             "text" => $message["body"],
             "body" => $message["body"],
             "image_url" => $message["image_url"],

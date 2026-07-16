@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { createElement, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Modal from '../../components/Modal/Modal';
+import PasswordResetRequestModal from '../../components/PasswordReset/PasswordResetRequestModal';
 import styles from './MyPage.module.css';
 
 function BellIcon({ className }) {
@@ -115,11 +116,11 @@ function ChevronRightIcon({ className }) {
     );
 }
 
-function ItemRow({ icon: Icon, title, description, onClick }) {
+function ItemRow({ icon, title, description, onClick }) {
     return (
         <button type="button" className={styles.itemRow} onClick={onClick}>
             <span className={styles.itemIconWrap}>
-                <Icon className={styles.itemIcon} />
+                {createElement(icon, { className: styles.itemIcon })}
             </span>
             <span className={styles.itemText}>
                 <span className={styles.itemTitle}>{title}</span>
@@ -144,8 +145,6 @@ function MyPage() {
     const [user, setUser] = useState(null);
     const [isPasswordOpen, setIsPasswordOpen] = useState(false);
     const [isLogoutOpen, setIsLogoutOpen] = useState(false);
-    const [passwordMessage, setPasswordMessage] = useState('');
-    const [isSendingPasswordMail, setIsSendingPasswordMail] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -189,20 +188,6 @@ function MyPage() {
         return name.trim().slice(0, 1).toUpperCase();
     }, [user?.name]);
 
-    const handlePasswordReset = async () => {
-        setIsSendingPasswordMail(true);
-        setPasswordMessage('');
-
-        try {
-            // TODO: パスワード再設定APIが用意できたら、以下の仮成功処理を
-            // POST /api/password/reset-request body: { email: string } への呼び出しに差し替える。
-            await new Promise((resolve) => setTimeout(resolve, 450));
-            setPasswordMessage('再設定メールを送信しました。メールに記載されたリンクから新しいパスワードを設定してください。');
-        } finally {
-            setIsSendingPasswordMail(false);
-        }
-    };
-
     const handleLogout = async () => {
         try {
             await fetch('/TABI/api/Auth/logout.php', {
@@ -212,10 +197,6 @@ function MyPage() {
         } finally {
             navigate('/');
         }
-    };
-
-    const handleComingSoon = (label) => {
-        window.alert(label + 'は現在準備中です。');
     };
 
     return (
@@ -243,7 +224,6 @@ function MyPage() {
                             <p className={styles.userEmail}>{user?.email || '未設定'}</p>
                             <span className={styles.roleBadge}>{user?.role || '一般ユーザー'}</span>
                         </div>
-                        <ChevronRightIcon className={styles.profileChevron} />
                     </div>
 
                     <button
@@ -274,7 +254,6 @@ function MyPage() {
                         title="パスワードの変更"
                         description="登録メールに再設定リンクを送信します"
                         onClick={() => {
-                            setPasswordMessage('');
                             setIsPasswordOpen(true);
                         }}
                     />
@@ -311,12 +290,12 @@ function MyPage() {
                     <ItemRow
                         icon={DocumentIcon}
                         title="利用規約"
-                        onClick={() => handleComingSoon('利用規約')}
+                        onClick={() => navigate('/terms')}
                     />
                     <ItemRow
                         icon={DocumentIcon}
                         title="プライバシーポリシー"
-                        onClick={() => handleComingSoon('プライバシーポリシー')}
+                        onClick={() => navigate('/privacy-policy')}
                     />
                 </SectionCard>
 
@@ -348,37 +327,12 @@ function MyPage() {
                 </button>
             </footer>
 
-            <Modal isOpen={isPasswordOpen} onClose={() => setIsPasswordOpen(false)}>
-                <div className={styles.modalContent}>
-                    <h2 className={styles.modalTitle}>パスワードの変更</h2>
-                    <p className={styles.modalLead}>登録メールアドレスに再設定リンクを送信します。</p>
-
-                    <label className={styles.emailLabel}>
-                        登録メールアドレス
-                        <input className={styles.emailInput} value={user?.email || '未設定'} readOnly />
-                    </label>
-
-                    {passwordMessage && <p className={styles.successMessage}>{passwordMessage}</p>}
-
-                    <div className={styles.modalActions}>
-                        <button
-                            type="button"
-                            className={styles.secondaryButton}
-                            onClick={() => setIsPasswordOpen(false)}
-                        >
-                            閉じる
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.primaryButton}
-                            onClick={handlePasswordReset}
-                            disabled={isSendingPasswordMail}
-                        >
-                            {isSendingPasswordMail ? '送信中...' : '再設定メールを送信'}
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+            <PasswordResetRequestModal
+                isOpen={isPasswordOpen}
+                onClose={() => setIsPasswordOpen(false)}
+                initialEmail={user?.email || ''}
+                isEmailReadOnly
+            />
 
             <Modal isOpen={isLogoutOpen} onClose={() => setIsLogoutOpen(false)}>
                 <div className={styles.modalContent}>

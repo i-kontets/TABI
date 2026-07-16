@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Badge, Card, DetailRow, Button, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchReport, updateReport } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Reports.module.css';
 
 const STATUS_OPTIONS = ['未対応', '確認中', '対応済み'];
@@ -13,7 +14,7 @@ export default function ReportDetail() {
     const [status, setStatus] = useState('未対応');
     const [note, setNote] = useState('');
 
-    useEffect(() => {
+    const loadReport = useCallback(() => {
         fetchReport(reportId).then((r) => {
             setReport(r);
             if (r) {
@@ -23,9 +24,15 @@ export default function ReportDetail() {
         });
     }, [reportId]);
 
+    useEffect(() => {
+        loadReport();
+    }, [loadReport]);
+
+    useAdminRealtimeRefresh(['admin:report_updated'], loadReport);
+
     if (!report) {
         return (
-            <AdminLayout title="通報詳細" back>
+            <AdminLayout title="通報詳細" back backTo="/admin/support?type=reports">
                 <EmptyState message="通報が見つかりません" />
             </AdminLayout>
         );
@@ -38,7 +45,7 @@ export default function ReportDetail() {
     };
 
     return (
-        <AdminLayout title="通報詳細" back>
+        <AdminLayout title="通報詳細" back backTo="/admin/support?type=reports">
             <div className={styles.detailHead}>
                 <Badge label={report.status} />
                 <span className={styles.detailType}>{report.type}</span>

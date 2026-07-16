@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Tabs, Badge, Pagination, EmptyState, Button } from '../../../components/Admin/ui/Ui';
 import { fetchNotices } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Notices.module.css';
 
 const TABS = [
@@ -11,6 +12,7 @@ const TABS = [
     { key: '公開中', label: '公開中' },
     { key: '終了', label: '公開終了' },
 ];
+const REALTIME_EVENTS = ['admin:notice_created', 'admin:notice_updated', 'admin:notice_deleted'];
 
 export default function NoticeList() {
     const navigate = useNavigate();
@@ -18,9 +20,15 @@ export default function NoticeList() {
     const [page, setPage] = useState(1);
     const [result, setResult] = useState(null);
 
-    useEffect(() => {
+    const loadNotices = useCallback(() => {
         fetchNotices({ status: tab, page }).then(setResult);
     }, [tab, page]);
+
+    useEffect(() => {
+        loadNotices();
+    }, [loadNotices]);
+
+    useAdminRealtimeRefresh(REALTIME_EVENTS, loadNotices);
 
     return (
         <AdminLayout

@@ -31,12 +31,34 @@ function resolveUserIconUrl(?string $iconUrl): ?string
     if (!$iconUrl) {
         return null;
     }
-    if (strpos($iconUrl, "http://") === 0 || strpos($iconUrl, "https://") === 0) {
-        return $iconUrl;
+    $iconUrl = extractS3KeyFromIconValue($iconUrl);
+    if (!$iconUrl) {
+        return null;
     }
     $aws = loadAwsConfig();
     $s3 = $aws ? createS3Client($aws) : null;
     return ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $iconUrl) : null;
+}
+
+function extractS3KeyFromIconValue(?string $iconValue): ?string
+{
+    $iconValue = trim((string) $iconValue);
+
+    if ($iconValue === "") {
+        return null;
+    }
+
+    if (strpos($iconValue, "http://") === 0 || strpos($iconValue, "https://") === 0) {
+        $path = parse_url($iconValue, PHP_URL_PATH);
+
+        if (!$path) {
+            return null;
+        }
+
+        return ltrim(rawurldecode($path), "/");
+    }
+
+    return ltrim($iconValue, "/");
 }
 
 function fetchUserProfile(PDO $pdo, int $userId): array
@@ -68,10 +90,35 @@ function fetchUserProfile(PDO $pdo, int $userId): array
     if (!$user) {
         respond(["success" => false, "message" => "ユーザーが見つかりません。"], 404);
     }
-    $user["icon_key"] = $user["icon_url"];
-    $user["icon_url"] = resolveUserIconUrl($user["icon_url"]);
+    $iconKey = extractS3KeyFromIconValue($user["icon_url"] ?? null);
+    $user["icon_key"] = $iconKey;
+    $user["icon_url"] = resolveUserIconUrl($iconKey);
     return $user;
 }
+
+function formatPhoneNumber(?string $value): string
+{
+    $digits = substr(preg_replace("/\D/", "", (string) $value) ?? "", 0, 11);
+
+    if ($digits === null || $digits === "") {
+        return "";
+    }
+
+    if (strlen($digits) <= 3) {
+        return $digits;
+    }
+
+    if (strlen($digits) <= 7) {
+        return substr($digits, 0, 3) . "-" . substr($digits, 3);
+    }
+
+    if (strlen($digits) <= 11) {
+        return substr($digits, 0, 3) . "-" . substr($digits, 3, 4) . "-" . substr($digits, 7, 4);
+    }
+
+    return substr($digits, 0, 3) . "-" . substr($digits, 3, 4) . "-" . substr($digits, 7, 4);
+}
+
 try {
     if ($_SERVER["REQUEST_METHOD"] === "GET") {
         respond(["success" => true, "user" => fetchUserProfile($pdo, $userId)]);
@@ -91,14 +138,14 @@ try {
         respond(["success" => false, "message" => "名前を入力してください。"], 400);
     }
 
-    $iconUrl = isset($input["icon_url"]) ? trim((string) $input["icon_url"]) : null;
+    $iconUrl = isset($input["icon_url"]) ? extractS3KeyFromIconValue((string) $input["icon_url"]) : null;
     $language = trim((string) ($input["language_code"] ?? "ja"));
     $intro = trim((string) ($input["self_introduction"] ?? ""));
     $birthday = trim((string) ($input["birthday"] ?? ""));
     $gender = trim((string) ($input["gender"] ?? ""));
     $country = trim((string) ($input["country_code"] ?? ""));
     $timezone = trim((string) ($input["timezone"] ?? "Asia/Tokyo"));
-    $phoneNumber = trim((string) ($input["phone_number"] ?? ""));
+    $phoneNumber = formatPhoneNumber($input["phone_number"] ?? "");
     $hasPhoneNumber = userColumnExists($pdo, "phone_number");
     $now = (new DateTimeImmutable("now"))->format("Y-m-d H:i:s");
 

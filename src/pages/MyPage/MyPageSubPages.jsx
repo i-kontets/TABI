@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ImagePicker from '../../components/ImagePicker/ImagePicker';
 import styles from './MyPageSubPages.module.css';
@@ -81,6 +81,24 @@ function emptyUser() {
     };
 }
 
+function formatPhoneNumber(value) {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+
+    if (digits.length <= 3) {
+        return digits;
+    }
+
+    if (digits.length <= 7) {
+        return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    }
+
+    if (digits.length <= 11) {
+        return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
+    }
+
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
+}
+
 async function parseJson(response) {
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.success === false) {
@@ -128,12 +146,12 @@ function useCurrentUser() {
     return { user, setUser, loading };
 }
 
-function PageShell({ title, children }) {
+function PageShell({ title, children, onBack }) {
     const navigate = useNavigate();
     return (
         <div className={styles.page}>
             <header className={styles.header}>
-                <button type="button" className={styles.backButton} onClick={() => navigate('/MyPage')} aria-label="戻る">
+                <button type="button" className={styles.backButton} onClick={onBack || (() => navigate('/MyPage'))} aria-label="戻る">
                     <BackIcon className={styles.headerIcon} />
                 </button>
                 <h1 className={styles.headerTitle}>{title}</h1>
@@ -225,7 +243,7 @@ export function ProfileEditPage() {
         setMessage('');
         setError('');
         try {
-            let iconUrl = currentUser.icon_url || '';
+            let iconUrl = currentUser.icon_key || '';
             if (selectedIcon?.file) {
                 iconUrl = await uploadUserIcon(selectedIcon.file);
             }
@@ -250,6 +268,7 @@ export function ProfileEditPage() {
                         value={profilePreviewValue(currentUser, selectedIcon)}
                         onChange={setSelectedIcon}
                         fileName="user-icon.jpg"
+                        circular
                         editorTitle="アイコンを変更"
                         previewAlt="ユーザーアイコン"
                         addLabel="アイコンを変更"
@@ -291,21 +310,25 @@ export function UserEditPage() {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        setForm(currentUser);
+        setForm({
+            ...currentUser,
+            phone_number: formatPhoneNumber(currentUser.phone_number || ''),
+        });
     }, [user]);
 
     const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+    const updatePhoneNumber = (value) => update('phone_number', formatPhoneNumber(value));
 
     const handleSave = async () => {
         setSaving(true);
         setMessage('');
         setError('');
         try {
-            let iconUrl = form.icon_url || '';
+            let iconUrl = form.icon_key || '';
             if (selectedIcon?.file) {
                 iconUrl = await uploadUserIcon(selectedIcon.file);
             }
-            const payload = { ...form, icon_url: iconUrl };
+            const payload = { ...form, icon_url: iconUrl, phone_number: formatPhoneNumber(form.phone_number || '') };
             const data = await saveProfile(payload);
             const next = normalizeUser(data.user || payload);
             setUser(next);
@@ -328,6 +351,7 @@ export function UserEditPage() {
                         value={profilePreviewValue(form, selectedIcon)}
                         onChange={setSelectedIcon}
                         fileName="user-icon.jpg"
+                        circular
                         editorTitle="アイコンを変更"
                         previewAlt="ユーザーアイコン"
                         addLabel="アイコンを変更"
@@ -348,7 +372,7 @@ export function UserEditPage() {
                             type="tel"
                             inputMode="tel"
                             value={form.phone_number || ''}
-                            onChange={(event) => update('phone_number', event.target.value)}
+                            onChange={(event) => updatePhoneNumber(event.target.value)}
                             placeholder="例）09012345678"
                         />
                     </Field>
@@ -412,127 +436,298 @@ function isEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-function maskPhone(value) {
-    if (!value) {
-        return '';
-    }
-    const text = String(value);
-    if (text.includes('*')) {
-        return text;
-    }
-    return text.replace(/(\d{2,3})[- ]?(\d{3,4})[- ]?(\d{4})/, '$1-****-$3');
+function maskEmail(value) {
+    const [local, domain] = String(value || '').split('@');
+    if (!local || !domain) return value || '';
+    return `${local.slice(0, Math.min(3, local.length))}***@${domain}`;
+}
+
+function formatCountdown(seconds) {
+    const safe = Math.max(0, seconds);
+    const minutes = String(Math.floor(safe / 60)).padStart(2, '0');
+    const rest = String(safe % 60).padStart(2, '0');
+    return `${minutes}:${rest}`;
+}
+
+function StepIndicator({ step }) {
+    return (
+        <div className={styles.emailSteps} aria-label="メールアドレス変更の進行状況">
+            {[1, 2, 3].map((value) => (
+                <div key={value} className={styles.emailStepItem}>
+                    <span className={`${styles.emailStepCircle} ${step === value ? styles.emailStepActive : ''}`}>{value}</span>
+                    <span className={`${styles.emailStepLabel} ${step === value ? styles.emailStepLabelActive : ''}`}>
+                        {value === 1 ? '入力' : value === 2 ? '認証' : '完了'}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
 }
 
 export function EmailChangePage() {
+    const navigate = useNavigate();
     const { user, setUser } = useCurrentUser();
     const currentUser = user || emptyUser();
+    const [step, setStep] = useState(1);
     const [newEmail, setNewEmail] = useState('');
     const [confirmEmail, setConfirmEmail] = useState('');
-    const [code, setCode] = useState('');
-    const [codeSent, setCodeSent] = useState(false);
-    const [cooldown, setCooldown] = useState(0);
-    const [message, setMessage] = useState('');
+    const [codeDigits, setCodeDigits] = useState(Array(6).fill(''));
+    const [expiresAt, setExpiresAt] = useState(null);
+    const [resendAvailableAt, setResendAvailableAt] = useState(null);
+    const [changedAt, setChangedAt] = useState('');
+    const [maskedSentEmail, setMaskedSentEmail] = useState('');
+    const [sending, setSending] = useState(false);
+    const [verifying, setVerifying] = useState(false);
     const [error, setError] = useState('');
+    const [fieldError, setFieldError] = useState('');
+    const [nowMs, setNowMs] = useState(Date.now());
+    const codeRefs = useRef([]);
 
     useEffect(() => {
-        if (cooldown <= 0) {
-            return undefined;
-        }
-        const id = window.setInterval(() => setCooldown((value) => Math.max(0, value - 1)), 1000);
-        return () => window.clearInterval(id);
-    }, [cooldown]);
+        const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    const normalizedNewEmail = newEmail.trim();
+    const normalizedConfirmEmail = confirmEmail.trim();
+    const code = codeDigits.join('');
+    const expiresMs = expiresAt ? new Date(expiresAt).getTime() : 0;
+    const resendMs = resendAvailableAt ? new Date(resendAvailableAt).getTime() : 0;
+    const remainingSeconds = expiresMs ? Math.max(0, Math.ceil((expiresMs - nowMs) / 1000)) : 0;
+    const resendSeconds = resendMs ? Math.max(0, Math.ceil((resendMs - nowMs) / 1000)) : 0;
+    const isExpired = step === 2 && remainingSeconds <= 0;
 
     const validateEmailInput = () => {
-        if (!isEmail(newEmail)) {
+        if (!normalizedNewEmail || !normalizedConfirmEmail) {
+            return '新しいメールアドレスと確認用メールアドレスを入力してください。';
+        }
+        if (!isEmail(normalizedNewEmail)) {
             return 'メールアドレスの形式を確認してください。';
         }
-        if (newEmail !== confirmEmail) {
+        if (normalizedNewEmail !== normalizedConfirmEmail) {
             return '新しいメールアドレスと確認用メールアドレスが一致しません。';
+        }
+        if (currentUser.email && normalizedNewEmail.toLowerCase() === String(currentUser.email).toLowerCase()) {
+            return '現在のメールアドレスとは別のメールアドレスを入力してください。';
         }
         return '';
     };
 
+    const emailValidation = validateEmailInput();
+    const canSend = !!currentUser.email && !emailValidation && !sending;
+    const canVerify = code.length === 6 && !isExpired && !verifying;
+
+    const clearCode = () => {
+        setCodeDigits(Array(6).fill(''));
+    };
+
     const handleSendCode = async () => {
         const validation = validateEmailInput();
-        setMessage('');
-        setError(validation);
-        if (validation || cooldown > 0) {
-            return;
-        }
+        setFieldError(validation);
+        setError('');
+        if (validation || sending || resendSeconds > 0) return;
+
+        setSending(true);
         try {
             const response = await fetch(api.emailSend, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ new_email: newEmail }),
+                body: JSON.stringify({ new_email: normalizedNewEmail }),
             });
             const data = await parseJson(response);
-            setCodeSent(true);
-            setCooldown(60);
-            setMessage(data.message || '登録済み電話番号へ認証コードを送信しました。');
+            clearCode();
+            setMaskedSentEmail(data.maskedEmail || maskEmail(normalizedNewEmail));
+            setExpiresAt(data.expiresAt || null);
+            setResendAvailableAt(data.resendAvailableAt || null);
+            setStep(2);
+            window.setTimeout(() => codeRefs.current[0]?.focus(), 80);
         } catch (err) {
             setError(err.message);
+        } finally {
+            setSending(false);
+        }
+    };
+
+    const handleCodeChange = (index, value) => {
+        const digits = value.replace(/\D/g, '');
+        if (digits.length > 1) {
+            const next = Array(6).fill('');
+            digits.slice(0, 6).split('').forEach((digit, digitIndex) => {
+                next[digitIndex] = digit;
+            });
+            setCodeDigits(next);
+            codeRefs.current[Math.min(5, digits.length - 1)]?.focus();
+            return;
+        }
+        setCodeDigits((prev) => {
+            const next = [...prev];
+            next[index] = digits;
+            return next;
+        });
+        if (digits && index < 5) {
+            codeRefs.current[index + 1]?.focus();
+        }
+    };
+
+    const handleCodeKeyDown = (index, event) => {
+        if (event.key === 'Backspace' && !codeDigits[index] && index > 0) {
+            codeRefs.current[index - 1]?.focus();
         }
     };
 
     const handleVerify = async () => {
-        const validation = validateEmailInput();
-        setMessage('');
-        setError(validation);
-        if (validation) {
-            return;
-        }
-        if (!code.trim()) {
-            setError('認証コードを入力してください。');
-            return;
-        }
+        setError('');
+        if (!canVerify) return;
+
+        setVerifying(true);
         try {
             const response = await fetch(api.emailVerify, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ new_email: newEmail, code }),
+                body: JSON.stringify({ new_email: normalizedNewEmail, code }),
             });
             const data = await parseJson(response);
-            const next = normalizeUser({ ...currentUser, ...(data.user || {}), email: newEmail });
+            const next = normalizeUser({ ...currentUser, ...(data.user || {}), email: normalizedNewEmail });
             setUser(next);
-            setMessage('メールアドレスを変更しました。');
+            setChangedAt(data.changedAt || new Date().toLocaleString('ja-JP'));
+            setStep(3);
         } catch (err) {
             setError(err.message);
+            if (err.message.includes('上限') || err.message.includes('期限')) {
+                clearCode();
+            }
+        } finally {
+            setVerifying(false);
         }
     };
 
+    const handleBack = () => {
+        if (step === 2) {
+            clearCode();
+            setError('');
+            setStep(1);
+            return;
+        }
+        navigate('/MyPage');
+    };
+
     return (
-        <PageShell title="メールアドレスの変更">
-            <section className={styles.card}>
-                <p className={styles.lead}>新しいメールアドレスに確認後、登録済み電話番号へ認証コードを送信します。</p>
-                <Field label="現在のメールアドレス">
-                    <input className={styles.input} value={currentUser.email || ''} readOnly />
-                </Field>
-                <Field label="新しいメールアドレス">
-                    <input className={styles.input} value={newEmail} onChange={(event) => setNewEmail(event.target.value)} placeholder="新しいメールアドレスを入力" />
-                </Field>
-                <Field label="新しいメールアドレス（確認）">
-                    <input className={styles.input} value={confirmEmail} onChange={(event) => setConfirmEmail(event.target.value)} placeholder="もう一度入力してください" />
-                </Field>
-                <div className={styles.phoneNotice}>
-                    <MailIcon className={styles.noticeIcon} />
-                    <span>認証コード送信先: {maskPhone(currentUser.phone_number)}</span>
-                </div>
-                <button type="button" className={styles.primaryButton} onClick={handleSendCode} disabled={cooldown > 0}>
-                    {cooldown > 0 ? cooldown + '秒後に再送信' : '認証コードを送信'}
-                </button>
-                {codeSent && (
-                    <Field label="認証コード">
-                        <input className={styles.input} value={code} onChange={(event) => setCode(event.target.value)} inputMode="numeric" placeholder="6桁のコード" />
+        <PageShell title="メールアドレスの変更" onBack={handleBack}>
+            {step === 1 && (
+                <section className={styles.emailChangeCard}>
+                    <p className={styles.lead}>新しいメールアドレスを確認後、認証コードを送信します。</p>
+                    <Field label="現在のメールアドレス">
+                        <input className={styles.input} value={currentUser.email || ''} readOnly />
                     </Field>
-                )}
-                <StatusMessage>{message}</StatusMessage>
-                <StatusMessage type="error">{error}</StatusMessage>
-                <button type="button" className={styles.primaryButton} onClick={handleVerify} disabled={!codeSent}>
-                    メールアドレスを変更
-                </button>
-            </section>
+                    <Field label="新しいメールアドレス">
+                        <input className={styles.input} type="email" value={newEmail} onChange={(event) => setNewEmail(event.target.value)} placeholder="新しいメールアドレスを入力" />
+                    </Field>
+                    <Field label="新しいメールアドレス（確認）" hint={fieldError}>
+                        <input className={styles.input} type="email" value={confirmEmail} onChange={(event) => setConfirmEmail(event.target.value)} placeholder="もう一度入力してください" />
+                    </Field>
+                    <div className={styles.emailInfoBox}>
+                        <MailIcon className={styles.noticeIcon} />
+                        <div>
+                            <strong>認証コード送信先</strong>
+                            <span>新しいメールアドレス宛に<br />6桁の認証コードを送信します。</span>
+                        </div>
+                    </div>
+                    <div className={styles.emailNoteBox}>
+                        <strong>ご注意</strong>
+                        <ul>
+                            <li>メールアドレスの変更には認証が必要です。</li>
+                            <li>認証コードの有効期限は10分間です。</li>
+                            <li>すでに登録されているメールアドレスは利用できません。</li>
+                        </ul>
+                    </div>
+                    <StatusMessage type="error">{error}</StatusMessage>
+                    <button type="button" className={styles.primaryButton} onClick={handleSendCode} disabled={!canSend}>
+                        {sending ? '送信中...' : '認証コードを送信する'}
+                    </button>
+                </section>
+            )}
+
+            {step === 2 && (
+                <section className={styles.emailChangeCard}>
+                    <StepIndicator step={2} />
+                    <div className={styles.emailSuccessBox}>
+                        <span className={styles.emailCheckIcon}>✓</span>
+                        <div>
+                            <strong>認証コードを新しいメールアドレスへ送信しました。</strong>
+                            <span>送信先：{maskedSentEmail || maskEmail(normalizedNewEmail)}</span>
+                            <span>6桁の認証コードを入力してください。</span>
+                        </div>
+                    </div>
+                    <Field label="新しいメールアドレス">
+                        <input className={styles.input} value={normalizedNewEmail} readOnly />
+                    </Field>
+                    <div className={styles.codeField}>
+                        <span className={styles.label}>認証コード</span>
+                        <p>送信された6桁の認証コードを入力してください。</p>
+                        <div className={styles.codeInputs}>
+                            {codeDigits.map((digit, index) => (
+                                <input
+                                    key={index}
+                                    ref={(node) => { codeRefs.current[index] = node; }}
+                                    value={digit}
+                                    inputMode="numeric"
+                                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
+                                    maxLength={1}
+                                    onChange={(event) => handleCodeChange(index, event.target.value)}
+                                    onKeyDown={(event) => handleCodeKeyDown(index, event)}
+                                    onPaste={(event) => {
+                                        event.preventDefault();
+                                        handleCodeChange(index, event.clipboardData.getData('text'));
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                    <p className={styles.emailTimer}>有効期限：残り {formatCountdown(remainingSeconds)}</p>
+                    {isExpired && <StatusMessage type="error">認証コードの有効期限が切れました。再送信してください。</StatusMessage>}
+                    <div className={styles.emailHelpBox}>
+                        <MailIcon className={styles.noticeIcon} />
+                        <div>
+                            <strong>認証コードが届かない場合</strong>
+                            <ul>
+                                <li>迷惑メールフォルダをご確認ください。</li>
+                                <li>60秒後に再送信できます。</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <button type="button" className={styles.textButton} onClick={handleSendCode} disabled={sending || resendSeconds > 0}>
+                        {resendSeconds > 0 ? `${resendSeconds}秒後に再送信可能` : sending ? '再送信中...' : '認証コードを再送信する'}
+                    </button>
+                    <StatusMessage type="error">{error}</StatusMessage>
+                    <button type="button" className={styles.primaryButton} onClick={handleVerify} disabled={!canVerify}>
+                        {verifying ? '変更中...' : 'メールアドレスを変更する'}
+                    </button>
+                </section>
+            )}
+
+            {step === 3 && (
+                <section className={styles.emailCompleteCard}>
+                    <StepIndicator step={3} />
+                    <div className={styles.completeMark}>✓</div>
+                    <h2>メールアドレスの変更が完了しました</h2>
+                    <p>ご登録のメールアドレスを<br />以下の内容に変更しました。</p>
+                    <div className={styles.completeInfoCard}>
+                        <strong>新しいメールアドレス</strong>
+                        <span>{normalizedNewEmail}</span>
+                        <strong>変更日時</strong>
+                        <span>{changedAt}</span>
+                    </div>
+                    <div className={styles.emailInfoBox}>
+                        <span className={styles.emailInfoIcon}>i</span>
+                        <span>変更前のメールアドレスにもお知らせメールを送信しました。</span>
+                    </div>
+                    <button type="button" className={styles.primaryButton} onClick={() => navigate('/MyPage')}>
+                        マイページに戻る
+                    </button>
+                </section>
+            )}
         </PageShell>
     );
 }

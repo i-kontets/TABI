@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import "./Chat.css";
 
 const chatApiBase = `${import.meta.env.BASE_URL}api/Chat`;
+const reportApi = `${import.meta.env.BASE_URL}api/User/Report.php`;
 const pollingIntervalMs = 3000;
+const REPORT_REASONS = ["不適切な内容", "迷惑行為", "個人情報", "その他"];
+
+// avatarが画像URLかどうか判定（URLでなければ頭文字テキストとして表示）
+function isImageAvatar(value) {
+    return typeof value === "string" && (/^(https?:)?\/\//.test(value) || value.startsWith("/"));
+}
 
 async function parseApiResponse(response) {
     const data = await response.json().catch(() => null);
@@ -39,6 +46,7 @@ function applyReadStatusesToMessages(messages, reads) {
 function Chat({ active }) {
     const { groupId: pathGroupId } = useParams();
     const location = useLocation();
+    const navigate = useNavigate();
     const queryGroupId = new URLSearchParams(location.search).get("groupId");
     const groupId = pathGroupId || queryGroupId || "1";
 
@@ -49,10 +57,17 @@ function Chat({ active }) {
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [notice, setNotice] = useState("");
-    const messageListRef    = useRef(null);
-    const textareaRef       = useRef(null);
-    const pollingRef        = useRef(false);
-    const lastMessageIdRef  = useRef(0);   // 差分ポーリング用
+    const [reportTarget, setReportTarget] = useState(null);
+    const [reportReason, setReportReason] = useState(REPORT_REASONS[0]);
+    const [reportDetail, setReportDetail] = useState("");
+    const [reportSending, setReportSending] = useState(false);
+    const [reportNotice, setReportNotice] = useState("");
+    const [actionTarget, setActionTarget] = useState(null);
+    const messageListRef = useRef(null);
+    const textareaRef = useRef(null);
+    const pollingRef = useRef(false);
+    const longPressTimerRef = useRef(null);
+    const lastMessageIdRef = useRef(0);   // 差分ポーリング用
 
     const applyReadStatuses = useCallback((reads) => {
         setMessages((currentMessages) => applyReadStatusesToMessages(currentMessages, reads));
@@ -84,9 +99,10 @@ function Chat({ active }) {
         }
 
         try {
-            const query = chatId
-                ? `chat_id=${encodeURIComponent(chatId)}`
-                : `group_id=${encodeURIComponent(groupId)}`;
+            // 初回表示はgroup_idからチャットを取得する。
+            // chatIdの更新でloadMessagesが作り直されることを防ぐ。
+            const query = `group_id=${encodeURIComponent(groupId)}`;
+            
             const response = await fetch(`${chatApiBase}/Messages.php?${query}`, {
                 credentials: "include",
                 signal,
@@ -117,7 +133,7 @@ function Chat({ active }) {
                 setLoading(false);
             }
         }
-    }, [chatId, groupId, markMessagesAsRead]);
+    }, [groupId, markMessagesAsRead]);
 
     useEffect(() => {
         if (!active) {
@@ -151,7 +167,7 @@ function Chat({ active }) {
             const newMax = data.messages.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
             if (newMax > lastMessageIdRef.current) lastMessageIdRef.current = newMax;
 
-            await markMessagesAsRead(chatId).catch(() => {});
+            await markMessagesAsRead(chatId).catch(() => { });
         } catch {
             // silent
         }
@@ -188,24 +204,96 @@ function Chat({ active }) {
 
     const chatContent = useMemo(() => {
         return messages.map((message, index) => {
-            const showDate = index === 0 || message.date !== messages[index - 1].date;
-            const readLabel = memberCount > 2 ? `既読 ${message.readCount}` : "既読";
+            const showDate =
+                index === 0 ||
+                message.date !== messages[index - 1].date;
+
+            const readLabel =
+                memberCount > 2
+                    ? `既読 ${message.readCount}`
+                    : "既読";
+
+            // APIから署名付きURLが返っていれば優先する
+            // URLがなければavatar、さらに無ければ名前の先頭文字を使う
+            const avatarValue =
+                message.sender_icon_url ||
+                message.avatar ||
+                message.sender?.slice(0, 1) ||
+                "?";
+            const senderUserId = Number(message.sender_user_id || message.user_id || 0);
+            const canOpenProfile = senderUserId > 0;
+            const openProfile = () => {
+                if (canOpenProfile) {
+                    navigate(`/user/${senderUserId}`);
+                }
+            };
+            const openReport = () => {
+                setReportTarget(message);
+                setActionTarget(null);
+                setReportReason(REPORT_REASONS[0]);
+                setReportDetail("");
+                setReportNotice("");
+            };
+            const openActions = () => {
+                if (!message.isMine) {
+                    setActionTarget(message);
+                }
+            };
+            const startLongPress = () => {
+                if (message.isMine) return;
+                window.clearTimeout(longPressTimerRef.current);
+                longPressTimerRef.current = window.setTimeout(openActions, 520);
+            };
+            const cancelLongPress = () => {
+                window.clearTimeout(longPressTimerRef.current);
+            };
 
             return (
                 <div className="chatBlock" key={message.id}>
-                    {showDate && <div className="dateChip">{message.date}</div>}
-                    <article className={`messageRow ${message.isMine ? "mine" : ""}`}>
+                    {showDate && (
+                        <div className="dateChip">
+                            {message.date}
+                        </div>
+                    )}
+
+                    <article
+                        className={`messageRow ${message.isMine ? "mine" : ""}`}
+                    >
                         <div className="messageStack">
                             {!message.isMine && (
                                 <div className="userHeader">
+                                    <button
+                                        type="button"
+                                        className="profileTapTarget"
+                                        onClick={openProfile}
+                                        disabled={!canOpenProfile}
+                                        aria-label={`${message.sender || "ユーザー"}のプロフィールを開く`}
+                                    >
                                     <div className="avatar">
-                                        {message.avatar}
+                                        {isImageAvatar(avatarValue) ? (
+                                            <img
+                                                src={avatarValue}
+                                                alt={`${message.sender}のアイコン`}
+                                                className="avatarImage"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            avatarValue
+                                        )}
                                     </div>
-                                    <span className="senderName">
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className="senderName"
+                                        onClick={openProfile}
+                                        disabled={!canOpenProfile}
+                                    >
                                         {message.sender}
-                                    </span>
+                                    </button>
                                 </div>
                             )}
+
                             <div className="bubbleLine">
                                 {message.isMine && (
                                     <div className="messageMeta mineMeta">
@@ -215,19 +303,42 @@ function Chat({ active }) {
                                         <time>{message.time}</time>
                                     </div>
                                 )}
-                                <div className="bubble">
+
+                                <div
+                                    className="bubble"
+                                    onPointerDown={startLongPress}
+                                    onPointerUp={cancelLongPress}
+                                    onPointerCancel={cancelLongPress}
+                                    onPointerLeave={cancelLongPress}
+                                    onContextMenu={(event) => {
+                                        event.preventDefault();
+                                        openActions();
+                                    }}
+                                >
                                     {message.image_url ? (
                                         <img
                                             src={message.image_url}
                                             alt="送信画像"
-                                            style={{ maxWidth: '200px', maxHeight: '260px', borderRadius: '8px', display: 'block', cursor: 'pointer' }}
+                                            style={{
+                                                maxWidth: "200px",
+                                                maxHeight: "260px",
+                                                borderRadius: "8px",
+                                                display: "block",
+                                                cursor: "pointer",
+                                            }}
                                             loading="lazy"
-                                            onClick={() => window.open(message.image_url, '_blank')}
+                                            onClick={() =>
+                                                window.open(
+                                                    message.image_url,
+                                                    "_blank",
+                                                )
+                                            }
                                         />
                                     ) : (
                                         message.text
                                     )}
                                 </div>
+
                                 {!message.isMine && (
                                     <div className="messageMeta">
                                         <time>{message.time}</time>
@@ -239,7 +350,43 @@ function Chat({ active }) {
                 </div>
             );
         });
-    }, [memberCount, messages]);
+    }, [memberCount, messages, navigate]);
+
+    const submitMessageReport = async (event) => {
+        event.preventDefault();
+        if (!reportTarget || reportSending) return;
+
+        setReportSending(true);
+        setReportNotice("");
+
+        try {
+            const response = await fetch(reportApi, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    target_type: "message",
+                    target_id: reportTarget.message_id || reportTarget.id,
+                    reason: reportReason,
+                    detail: reportDetail,
+                }),
+            });
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || !data?.success) {
+                throw new Error(data?.message || "通報を送信できませんでした。");
+            }
+
+            setReportTarget(null);
+            window.alert("通報を送信しました。");
+        } catch (error) {
+            setReportNotice(error.message || "通報を送信できませんでした。");
+        } finally {
+            setReportSending(false);
+        }
+    };
 
     const handleImageUpload = async (file) => {
         if (sending) return;
@@ -384,7 +531,85 @@ function Chat({ active }) {
                     </svg>
                 </button>
             </form>
-        </section>
+            {reportTarget && (
+                <div className="reportBackdrop" role="presentation">
+                    <form className="reportSheet" onSubmit={submitMessageReport}>
+                        <h2>このメッセージを通報</h2>
+                        <p>管理者が対象メッセージと通報内容を確認します。</p>
+
+                        <label>
+                            通報理由
+                            <select
+                                value={reportReason}
+                                onChange={(event) => setReportReason(event.target.value)}
+                            >
+                                {REPORT_REASONS.map((reason) => (
+                                    <option key={reason} value={reason}>{reason}</option>
+                                ))}
+                            </select>
+                        </label>
+
+                        <label>
+                            詳細（任意）
+                            <textarea
+                                value={reportDetail}
+                                onChange={(event) => setReportDetail(event.target.value)}
+                                rows={4}
+                                maxLength={1000}
+                                placeholder="確認してほしい内容を入力してください"
+                            />
+                        </label>
+
+                        {reportNotice && <p className="reportError">{reportNotice}</p>}
+
+                        <div className="reportActions">
+                            <button
+                                type="button"
+                                className="reportCancel"
+                                onClick={() => setReportTarget(null)}
+                                disabled={reportSending}
+                            >
+                                キャンセル
+                            </button>
+                            <button type="submit" className="reportSubmit" disabled={reportSending}>
+                                {reportSending ? "送信中..." : "通報する"}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+            {actionTarget && (
+                <div className="messageActionBackdrop" onClick={() => setActionTarget(null)} role="presentation">
+                    <div className="messageActionMenu" onClick={(event) => event.stopPropagation()}>
+                        <button
+                            type="button"
+                            className="messageActionItem"
+                            onClick={() => {
+                                const senderUserId = Number(actionTarget.sender_user_id || actionTarget.user_id || 0);
+                                setActionTarget(null);
+                                if (senderUserId > 0) {
+                                    navigate(`/user/${senderUserId}`);
+                                }
+                            }}
+                        >
+                            プロフィール
+                        </button>
+                        <button
+                            type="button"
+                            className="messageActionItem danger"
+                            onClick={() => {
+                                setReportTarget(actionTarget);
+                                setActionTarget(null);
+                                setReportReason(REPORT_REASONS[0]);
+                                setReportDetail("");
+                                setReportNotice("");
+                            }}
+                        >
+                            通報
+                        </button>
+                    </div>
+                </div>
+            )}        </section>
     );
 }
 

@@ -1,0 +1,233 @@
+.page {
+    --legal-footer-inactive-color: #737373;
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    background: #f7f7f8;
+    color: #111827;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.03);
+}
+
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    width: 100%;
+    min-height: 64px;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    align-items: center;
+    padding: 0 12px;
+    box-sizing: border-box;
+    background: var(--header-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.backButton {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+.headerSpacer {
+    width: 44px;
+    height: 44px;
+}
+
+.headerTitle {
+    margin: 0;
+    color: #fff;
+    font-size: 17px;
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: 0;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.headerIcon,
+.footerIcon {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.headerIcon {
+    width: 24px;
+    height: 24px;
+}
+
+.content {
+    padding: 16px 16px calc(104px + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+}
+
+.card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    padding: 18px 16px 22px;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    word-break: normal;
+}
+
+.intro {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #eef1f6;
+}
+
+.intro p,
+.section p {
+    margin: 0;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.85;
+}
+
+.updatedAt {
+    color: var(--sub-color);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.section {
+    padding-top: 22px;
+}
+
+.section h2 {
+    margin: 0 0 10px;
+    color: #111827;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.45;
+}
+
+.section p + p {
+    margin-top: 10px;
+}
+
+.section ul {
+    margin: 10px 0 0;
+    padding-left: 1.2em;
+}
+
+.section li {
+    color: #334155;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.75;
+    padding-left: 2px;
+}
+
+.section li + li {
+    margin-top: 5px;
+}
+
+.inlineLink {
+    color: var(--sub-color);
+    font-weight: 800;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.footer {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    width: min(100%, 430px);
+    height: calc(70px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background-color: var(--main-color);
+    border-top: 1px solid var(--main-color);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    z-index: 100;
+    box-sizing: border-box;
+}
+
+.footerItem {
+    flex: 1;
+    height: 70px;
+    border: 0;
+    background: transparent;
+    color: var(--legal-footer-inactive-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+}
+
+.footerItemActive {
+    color: var(--footer-active-color);
+}
+
+.footerIcon {
+    width: 25px;
+    height: 25px;
+}
+
+@media screen and (min-width: 768px) {
+    .page {
+        max-width: 560px;
+    }
+
+    .footer {
+        width: min(100%, 560px);
+    }
+}
+
+@media screen and (max-width: 430px) {
+    .page {
+        max-width: none;
+    }
+
+    .content {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .card {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+}
+
+@media screen and (max-width: 340px) {
+    .headerTitle {
+        font-size: 15px;
+    }
+
+    .content {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .card {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+}

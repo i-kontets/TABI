@@ -15,6 +15,15 @@
     scrollbar-width: thin;
 }
 
+.messageList,
+.messageList *,
+.messageActionBackdrop,
+.messageActionBackdrop * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
 .chatState,
 .chatNotice {
     margin: 18px auto;
@@ -70,6 +79,31 @@
     font-size: 12px;
     font-weight: 800;
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.avatar .avatarImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+    -webkit-user-drag: none;
+}
+
+.profileTapTarget {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.profileTapTarget:disabled {
+    cursor: default;
 }
 
 .messageStack {
@@ -81,9 +115,17 @@
 }
 
 .senderName {
+    border: 0;
+    background: transparent;
+    padding: 0;
     color: var(--discussion-muted);
     font-size: 11px;
     font-weight: 700;
+    cursor: pointer;
+}
+
+.senderName:disabled {
+    cursor: default;
 }
 
 .bubbleLine {
@@ -120,7 +162,7 @@
     min-width: 36px;
     display: flex;
     flex-direction: column;
-    gap: 1px;
+    gap: 3px;
     color: #7d8795;
     font-size: 10px;
     line-height: 1.1;
@@ -246,4 +288,156 @@
     .messageRow {
         margin: 7px 0;
     }
+}
+
+.reportBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.35);
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.reportSheet {
+    width: min(100%, 398px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.24);
+}
+
+.reportSheet h2 {
+    margin: 0;
+    color: #111827;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.reportSheet p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.reportSheet label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.reportSheet select,
+.reportSheet textarea {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: #fff;
+    color: #111827;
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.reportSheet select {
+    height: 42px;
+    padding: 0 10px;
+}
+
+.reportSheet textarea {
+    resize: vertical;
+    min-height: 92px;
+    padding: 10px;
+    line-height: 1.5;
+}
+
+.reportError {
+    color: #dc2626 !important;
+}
+
+.reportActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.reportCancel,
+.reportSubmit {
+    min-height: 42px;
+    border-radius: 10px;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.reportCancel {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+}
+
+.reportSubmit {
+    border: 0;
+    background: #dc2626;
+    color: #fff;
+}
+
+.reportCancel:disabled,
+.reportSubmit:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+.messageActionBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.08);
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.messageActionMenu {
+    width: min(86vw, 320px);
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: hidden;
+    border-radius: 10px;
+    background: rgba(24, 31, 42, 0.96);
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.35);
+}
+
+.messageActionItem {
+    min-height: 64px;
+    border: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.messageActionItem:last-child {
+    border-right: 0;
+}
+
+.messageActionItem.danger {
+    color: #fecaca;
+}
+
+.messageActionItem:active {
+    background: rgba(255, 255, 255, 0.1);
 }

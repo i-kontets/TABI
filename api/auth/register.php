@@ -26,6 +26,7 @@ $name = $input["name"] ?? "";
 $email = $input["email"] ?? "";
 $password = $input["password"] ?? "";
 $languageCode = $input["language_code"] ?? "ja";
+$termsAgreed = ($input["terms_agreed"] ?? false) === true;
 
 // 入力値の必須チェック：名前、メールアドレス、パスワードが空の場合はエラー
 if ($name === "" || $email === "" || $password === "") {
@@ -34,6 +35,17 @@ if ($name === "" || $email === "" || $password === "") {
     echo json_encode([
         "success" => false,
         "message" => "名前、メールアドレス、パスワードを入力してください"
+    ]);
+
+    exit;
+}
+
+if (!$termsAgreed) {
+    http_response_code(400);
+
+    echo json_encode([
+        "success" => false,
+        "message" => "利用規約とプライバシーポリシーへの同意が必要です"
     ]);
 
     exit;

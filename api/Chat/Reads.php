@@ -28,6 +28,11 @@ if (!isset($_SESSION["user_id"])) {
     exit;
 }
 
+$userId = (int) $_SESSION["user_id"];
+
+// ここで解除
+session_write_close();
+
 // GET の場合はクエリ文字列、POST の場合は JSON / フォームを読む。
 $input = $_GET;
 
@@ -37,7 +42,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 // 操作対象のチャットと、任意で指定されるメッセージID群を取得する。
-$userId = (int) $_SESSION["user_id"];
 $chatId = filter_var($input["chat_id"] ?? null, FILTER_VALIDATE_INT);
 $groupId = filter_var($input["group_id"] ?? null, FILTER_VALIDATE_INT);
 $messageId = filter_var($input["message_id"] ?? null, FILTER_VALIDATE_INT);
@@ -152,6 +156,9 @@ try {
         $targetSql = "
             SELECT m.message_id
             FROM messages m
+            INNER JOIN chat_members cm_sender
+              ON cm_sender.chat_id = m.chat_id
+             AND cm_sender.user_id = m.sender_user_id
             WHERE m.chat_id = :chat_id
               AND m.sender_user_id <> :user_id
         ";
@@ -241,6 +248,9 @@ try {
             END) AS read_count,
             MAX(CASE WHEN mr.user_id = :user_id THEN 1 ELSE 0 END) AS is_read
         FROM messages m
+        INNER JOIN chat_members cm_sender
+          ON cm_sender.chat_id = m.chat_id
+         AND cm_sender.user_id = m.sender_user_id
         LEFT JOIN message_reads mr ON mr.message_id = m.message_id
         WHERE m.chat_id = :chat_id
         GROUP BY m.message_id
