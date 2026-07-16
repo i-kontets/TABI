@@ -10,6 +10,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import UserAvatar from '../../components/UserAvatar';
 import './CottageChatPage.css';
 
 const cottageChatApiBase = `${import.meta.env.BASE_URL}api/CottageChat`;
@@ -83,6 +84,13 @@ export default function CottageChatPage({ active, isAdmin = false }) {
     const requestedChatId = urlParams.get('chat_id') || urlParams.get('chatId');
 
     const activeContact = contacts.find((contact) => contact.id === activeContactId) || null;
+    // メッセージ内には相手ユーザーのアイコンが入っているため、一覧APIの管理人アイコンが空でもここから補えます。
+    // ヘッダーはチャット名を表示しますが、丸アイコンは相手のものなので、相手のメッセージ情報を予備として使います。
+    const activePartnerMessage = messages.find((message) => !message.isMine && (message.sender_icon_url || message.sender_name || message.sender));
+    // コテージ管理人との個別チャットでは、相手である管理人のアイコンをヘッダーに出します。
+    // 画像がない時だけ管理人名の先頭文字に戻すことで、チャット名と相手名を混同しないようにします。
+    const headerIconUrl = activeContact?.manager_icon_url || activePartnerMessage?.sender_icon_url || activeContact?.header_avatar || '';
+    const headerIconName = activeContact?.manager_name || activePartnerMessage?.sender_name || activePartnerMessage?.sender || activeContact?.representative_name || activeContact?.name || '宿';
     const loadContacts = useCallback(async (signal = undefined, options = {}) => {
         const { showNotice = true } = options;
 
@@ -421,7 +429,14 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                                         className={`chat-item${isActive ? ' active' : ''}`}
                                         onClick={() => handleContactSelect(contact.id)}
                                     >
-                                        <span className="ci-avatar">{contact.avatar}</span>
+                                        <UserAvatar
+                                            src={contact.manager_icon_url || contact.avatar}
+                                            name={contact.manager_name || contact.representative_name || contact.name}
+                                            className="ci-avatar ci-avatar-image"
+                                            fallbackClassName="ci-avatar"
+                                            alt={`${contact.name || 'コテージ'}の管理人アイコン`}
+                                            source="Cottage chat list manager icon"
+                                        />
                                         <span className="ci-body">
                                             <div className="ci-top">
                                                 <span className="ci-user">
@@ -461,6 +476,14 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                         <button type="button" className="back-btn" onClick={() => setIsMobileChatView(false)}>
                             戻る
                         </button>
+                        <UserAvatar
+                            src={headerIconUrl}
+                            name={headerIconName}
+                            className="chat-header-avatar chat-header-avatar-image"
+                            fallbackClassName="chat-header-avatar"
+                            alt={`${activeContact?.name || 'コテージ'}の管理人アイコン`}
+                            source="Cottage chat header manager icon"
+                        />
                         <div className="chat-title-block">
                             <h3 className="chat-title">{activeContact?.name || 'コテージチャット'}</h3>
                         </div>
@@ -487,7 +510,14 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                                         )}
                                         <div className={`msg-row ${isMine ? 'msg-row-me' : 'msg-row-other'}`}>
                                             {!isMine && (
-                                                <div className="msg-avatar">{msg.avatar}</div>
+                                                <UserAvatar
+                                                    src={msg.sender_icon_url || msg.avatar}
+                                                    name={msg.sender_name || msg.sender || msg.avatar}
+                                                    className="msg-avatar msg-avatar-image"
+                                                    fallbackClassName="msg-avatar"
+                                                    alt={`${msg.sender_name || msg.sender || '相手'}のアイコン`}
+                                                    source="Cottage chat message user icon"
+                                                />
                                             )}
                                             <div className="msg-content">
                                                 {!isMine && (

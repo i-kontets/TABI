@@ -18,6 +18,7 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // 共通設定や別ファイルの関数を読み込み、この API から使えるようにします。
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Groups/S3Common.php";
 
 /**
  * respond は、この API 内で何度も使う処理をまとめた関数です。
@@ -79,6 +80,54 @@ function formatTime(?string $value): string
     }
 
     return (new DateTimeImmutable($value))->format('H:i');
+}
+
+/**
+ * DBのユーザーアイコン値を、画面で表示できるURLに変換します。
+ * メッセージ内の管理人アイコンとヘッダーの管理人アイコンを同じ画像にそろえるために必要です。
+ */
+function resolveUserIconUrl(?string $iconValue): ?string
+{
+    static $initialized = false, $s3 = null, $aws = null, $cache = [];
+
+    $iconValue = trim((string) $iconValue);
+
+    if ($iconValue === '') {
+        return null;
+    }
+
+    if (strpos($iconValue, 'http://') === 0 || strpos($iconValue, 'https://') === 0) {
+        $path = parse_url($iconValue, PHP_URL_PATH);
+
+        if (!$path) {
+            return null;
+        }
+
+        $iconValue = rawurldecode($path);
+    }
+
+    $key = ltrim($iconValue, '/');
+
+    if ($key === '') {
+        return null;
+    }
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    if (!$initialized) {
+        $initialized = true;
+
+        try {
+            $aws = loadAwsConfig();
+            $s3 = $aws ? createS3Client($aws) : null;
+        } catch (Throwable $error) {
+            $s3 = null;
+        }
+    }
+
+    return $cache[$key] = ($s3 && $aws) ? presignS3Url($s3, $aws['bucket'], $key) : null;
 }
 
 /**
@@ -188,6 +237,7 @@ try {
     $messages = [];
     while ($message = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $senderName = $message['sender_name'] ?? 'Unknown user';
+        $senderIconUrl = resolveUserIconUrl($message['sender_icon_url'] ?? null);
 
         $messages[] = [
             'id' => (int) $message['message_id'],
@@ -197,8 +247,8 @@ try {
             'sender' => $senderName,
             'sender_name' => $senderName,
             'senderName' => $senderName,
-            'avatar' => $message['sender_icon_url'] ?: firstCharacter($senderName),
-            'sender_icon_url' => $message['sender_icon_url'],
+            'avatar' => $senderIconUrl ?: firstCharacter($senderName),
+            'sender_icon_url' => $senderIconUrl,
             'text' => $message['body'],
             'body' => $message['body'],
             'image_url' => $message['image_url'],

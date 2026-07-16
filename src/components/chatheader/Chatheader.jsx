@@ -31,6 +31,11 @@ const ChatHeader = ({ contact, reservation, onMobileBack }) => {
   const periodParts = reservation?.period?.split('〜') || [];
   const checkInDate = formatMonthDay(periodParts[0]);
   const checkOutDate = formatMonthDay(periodParts[1]);
+  // ホテルチャットの表示名はコテージ名ですが、丸アイコンの相手は管理人です。
+  // 画像が読めない時の文字アイコンも管理人名を使い、コテージ名の先頭文字にならないようにします。
+  const avatarFallbackName = contact.category === 'hotel'
+    ? (contact.manager_name || contact.name)
+    : (contact.avatar || contact.name);
 
   return (
     <div className={styles.headerContainer}>
@@ -44,7 +49,7 @@ const ChatHeader = ({ contact, reservation, onMobileBack }) => {
 
         <UserAvatar
           src={contact.avatar}
-          name={contact.avatar || contact.name}
+          name={avatarFallbackName}
           alt={contact.name}
           className={styles.avatar}
           fallbackClassName={styles.avatarFallback}

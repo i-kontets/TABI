@@ -18,6 +18,7 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // 共通設定や別ファイルの関数を読み込み、この API から使えるようにします。
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Groups/S3Common.php";
 
 /**
  * respond は、この API 内で何度も使う処理をまとめた関数です。
@@ -56,6 +57,54 @@ function formatTime(?string $value): string
     return (new DateTimeImmutable($value))->format('H:i');
 }
 
+/**
+ * DBに保存されたユーザーアイコンのS3キーを、ブラウザで表示できる一時URLに変換します。
+ * DBには期限切れになるURLではなくS3キーを残すため、画面へ返す直前に変換する必要があります。
+ */
+function resolveUserIconUrl(?string $iconValue): ?string
+{
+    static $initialized = false, $s3 = null, $aws = null, $cache = [];
+
+    $iconValue = trim((string) $iconValue);
+
+    if ($iconValue === '') {
+        return null;
+    }
+
+    if (strpos($iconValue, 'http://') === 0 || strpos($iconValue, 'https://') === 0) {
+        $path = parse_url($iconValue, PHP_URL_PATH);
+
+        if (!$path) {
+            return null;
+        }
+
+        $iconValue = rawurldecode($path);
+    }
+
+    $key = ltrim($iconValue, '/');
+
+    if ($key === '') {
+        return null;
+    }
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key];
+    }
+
+    if (!$initialized) {
+        $initialized = true;
+
+        try {
+            $aws = loadAwsConfig();
+            $s3 = $aws ? createS3Client($aws) : null;
+        } catch (Throwable $error) {
+            $s3 = null;
+        }
+    }
+
+    return $cache[$key] = ($s3 && $aws) ? presignS3Url($s3, $aws['bucket'], $key) : null;
+}
+
 // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
 if ($_SERVER["REQUEST_METHOD"] !== "GET") {
     // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
@@ -83,6 +132,9 @@ try {
             t.end_date,
             tc.candidate_name,
             tc.img_url AS candidate_img_url,
+            manager_user.user_id AS manager_user_id,
+            manager_user.name AS manager_name,
+            manager_user.icon_url AS manager_icon_url,
             (
                 SELECT u.name
                 FROM trip_members tm
@@ -113,6 +165,11 @@ try {
         LEFT JOIN trip_candidates tc
             ON c.related_entity_type = 'hotel'
            AND tc.candidate_id = c.related_entity_id
+        LEFT JOIN chat_members cm_manager
+            ON cm_manager.chat_id = c.chat_id
+           AND cm_manager.user_id <> :manager_current_user_id
+        LEFT JOIN users manager_user
+            ON manager_user.user_id = cm_manager.user_id
         LEFT JOIN chat_members cm_all ON cm_all.chat_id = c.chat_id
         LEFT JOIN messages latest ON latest.message_id = (
             SELECT m2.message_id
@@ -135,6 +192,9 @@ try {
             c.trip_id,
             c.chat_type,
             t.title,
+            manager_user.user_id,
+            manager_user.name,
+            manager_user.icon_url,
             tc.candidate_name,
             tc.img_url,
             latest.body,
@@ -143,6 +203,7 @@ try {
     ");
     // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $stmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
+    $stmt->bindValue(":manager_current_user_id", $userId, PDO::PARAM_INT);
     // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $stmt->bindValue(":user_id_unread", $userId, PDO::PARAM_INT);
     // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
@@ -156,8 +217,12 @@ try {
         $chatId = (int) $chat["chat_id"];
 
         $representativeName = $chat["representative_name"] ?: "代表者";
+        $managerName = $chat["manager_name"] ?: $representativeName;
+        $managerIconUrl = resolveUserIconUrl($chat["manager_icon_url"] ?? null);
 
         $avatar = $chat["candidate_img_url"] ?: firstCharacter($representativeName);
+        $headerAvatar = $managerIconUrl ?: ($chat["candidate_img_url"] ?: firstCharacter($managerName));
+        $cottageName = $chat["candidate_name"] ?: ($chat["trip_title"] ?: "コテージチャット");
 
         $stayPeriod = "";
 
@@ -173,7 +238,12 @@ try {
             "id" => $chatId,
             "chat_id" => $chatId,
 
+            "name" => $cottageName,
             "representative_name" => $representativeName,
+            "manager_user_id" => isset($chat["manager_user_id"]) ? (int)$chat["manager_user_id"] : null,
+            "manager_name" => $managerName,
+            "manager_icon_url" => $managerIconUrl,
+            "header_avatar" => $headerAvatar,
             "people_count" => (int)$chat["people_count"],
             "stay_period" => $stayPeriod,
 

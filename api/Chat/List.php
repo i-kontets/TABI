@@ -174,6 +174,7 @@ try {
             t.title AS trip_title,
             tc.candidate_name,
             tc.img_url AS candidate_img_url,
+            other_user.user_id AS other_user_id,
             other_user.name AS other_user_name,
             other_user.icon_url AS other_user_icon_url,
             latest.body AS last_message,
@@ -228,6 +229,7 @@ try {
             t.title,
             tc.candidate_name,
             tc.img_url,
+            other_user.user_id,
             other_user.name,
             other_user.icon_url,
             latest.body,
@@ -261,17 +263,24 @@ try {
         $avatar = "";
 
         // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+        $managerIconUrl = resolveUserIconUrl($chat["other_user_icon_url"] ?? null) ?: "";
+        $managerName = $chat["other_user_name"] ?: "";
+
         if ($category === "hotel") {
             $name = $chat["candidate_name"] ?: $name;
-            $avatar = $chat["candidate_img_url"] ?: "";
+            // ホテルチャットの丸アイコンはコテージ名ではなく、相手である管理人ユーザーのDBアイコンを使います。
+            // chat_membersで自分以外の参加者を管理人として取り、users.icon_urlのS3キーを表示用URLに変換しています。
+            $avatar = $managerIconUrl ?: ($chat["candidate_img_url"] ?: "");
         } elseif ($category === "friend") {
-            $name = $chat["other_user_name"] ?: $name;
-            $avatar = resolveUserIconUrl($chat["other_user_icon_url"] ?? null) ?: "";
+            $name = $managerName ?: $name;
+            $avatar = $managerIconUrl;
         }
 
         // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($avatar === "") {
-            $avatar = firstCharacter($name);
+            // 管理人アイコンがDBに未登録、または画像URLを作れない時だけ文字アイコンに戻します。
+            // ホテル名の先頭文字ではなく相手名を優先し、チャット名と相手アイコンを混同しないようにします。
+            $avatar = firstCharacter($category === "hotel" ? ($managerName ?: $name) : $name);
         }
 
         $contacts[] = [
@@ -280,6 +289,9 @@ try {
             "name" => $name,
             "category" => $category,
             "avatar" => $avatar,
+            "manager_user_id" => isset($chat["other_user_id"]) ? (int)$chat["other_user_id"] : null,
+            "manager_name" => $managerName,
+            "manager_icon_url" => $managerIconUrl,
             "lastMessage" => $chat["last_message"] ?: "",
             "time" => formatTime($chat["last_sent_at"]),
             "unread" => (int) $chat["unread_count"],
