@@ -50,6 +50,11 @@ const truncateHashtagPreview = (value) => {
         : text;
 };
 
+const formatHashtagLabel = (value) => {
+    const tag = String(value || '').replace(/^[#＃]+/, '').trim();
+    return tag ? `#${tag}` : '';
+};
+
 function Album() {
     // App.jsxで管理している旅行名を、Context経由で受け取っています。
     const { tripName } = useContext(TripContext);
@@ -307,27 +312,81 @@ function Album() {
     };
 
     // 詳細表示中の写真をアルバムから削除する処理です。
-    const removeSelectedPhoto = () => {
+    const removeSelectedPhoto = async () => {
         if (selectedIndex === null) return;
 
         const selectedPhoto = photos[selectedIndex];
-        if (selectedPhoto?.image_url?.startsWith('blob:')) {
-            URL.revokeObjectURL(selectedPhoto.image_url);
+
+        if(!selectedPhoto){
+            alert('削除する写真が見つかりません')
+            return;
         }
 
-        setPhotos((currentPhotos) => currentPhotos.filter((_, index) => index !== selectedIndex));
-        setSelectedIndex(null);
-        setIsMenuOpen(false);
-        setView('list');
+        const isConfirmed = window.confirm(
+            'この写真をアルバムから削除しますか？'
+        );
+
+        if(!isConfirmed) return;
+
+        try{
+            const response = await fetch(
+                'https://genshin.mond.jp/TABI/api/Photos/Delete.php',
+                {
+                    method:'POST',
+                    headers: {
+                        'Content-Type':'application/json',
+                    },
+                    body: JSON.stringify({
+                        photo_id:selectedPhoto.id,
+                    }),
+                }
+            );
+
+            const responseText = await response.text();
+
+            console.log('ステータス:', response.status);
+            console.log('返答内容:', responseText);
+
+            if (!responseText) {
+                throw new Error(
+                    `Delete.phpから返答がありません。ステータス: ${response.status}`
+                );
+            }
+
+            const data = JSON.parse(responseText);
+
+            if(!response.ok || !data.success){
+                throw new Error(
+                    data.message || '写真の削除に失敗しました'
+                );
+            }
+
+            setPhotos((currentPhotos) =>
+                currentPhotos.filter(
+                    (photo) => photo.id !== selectedPhoto.id
+                )
+            );
+
+
+            setSelectedIndex(null);
+            setIsMenuOpen(false);
+            setView('list');
+
+            alert('写真を削除しました');
+
+        }catch (error){
+            console.error('写真削除エラー:',error);
+            alert(error.message || '写真の削除に失敗しました');
+        }
     };
+
 
     // viewがdetailかつ選択されている画像があるなら、投稿詳細風の画面を表示します。
     if (view === 'detail' && selectedIndex !== null) {
         const photo = photos[selectedIndex];
         if (!photo) return null;
 
-        const hashtags = String(photo.hashtags || '');
-        const hashtagList = hashtags.split(/\s+/).filter(Boolean);
+        const hashtagList = parseHashtags(photo.hashtags);
         const isFavorite = Boolean(photo.favorite);
         const uploaderName = String(photo.uploaded_by || photo.uploader || '投稿者不明');
         const locationName = String(photo.place || photo.location || photo.spot_name || '場所未設定');
@@ -393,9 +452,14 @@ function Album() {
                         </p>
                         <div className={styles.hashtags}>
                             {hashtagList.length > 0 ? (
-                                hashtagList.map((tag) => (
-                                    <span key={tag} title={tag}>{truncateHashtagPreview(tag)}</span>
-                                ))
+                                hashtagList.map((tag, index) => {
+                                    const hashtagLabel = formatHashtagLabel(tag);
+                                    return (
+                                        <span key={`${tag}-${index}`} title={hashtagLabel}>
+                                            {truncateHashtagPreview(hashtagLabel)}
+                                        </span>
+                                    );
+                                })
                             ) : (
                                 <span>#未設定</span>
                             )}
@@ -428,9 +492,10 @@ function Album() {
                         <button
                             className={styles.addSubmitButton}
                             onClick={addPendingPhotos}
-                            disabled={pendingPhotos.length === 0}
+                            disabled={pendingPhotos.length === 0 || uploading}
+                            type="button"
                         >
-                            追加
+                            {uploading ? '追加中...' : '追加'}
                         </button>
                     </div>
                 </div>
