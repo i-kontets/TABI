@@ -13,17 +13,19 @@ import Group from "../../assets/icons/group.svg?react";
 export default function Itinerary() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [tripPeriod, setTripPeriod] = useState(null);
-  const { trip } = useContext(TripContext);
+  const {
+    trip,
+    members,
+    setMembers,
+    tripPeriod,
+    setTripPeriod,
+  } = useContext(TripContext);
 
   const groupId = searchParams.get("groupId");
 
   // 招待モーダルの管理状態
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isLiquidationOpen, setIsLiquidationOpen] = useState(false);
-
-  // メンバー情報
-  const [members, setMembers] = useState([]);
 
   // 旅行グループにはいっているメンバーの取得
   useEffect(() => {
@@ -42,10 +44,7 @@ export default function Itinerary() {
           }),
         });
 
-        const text = await response.text();
-        console.log(text);
-
-        const data = JSON.parse(text);
+        const data = await response.json();
 
         if (data.success && Array.isArray(data.members)) {
           setMembers(
@@ -56,16 +55,21 @@ export default function Itinerary() {
               color: member.color ?? "#b5ead7",
             }))
           );
+
         } else {
           setMembers([]);
+
         }
       } catch (error) {
         console.error(error);
+
         setMembers([]);
+
       }
     };
 
     fetchMembers();
+
   }, [groupId]);
 
   useEffect(() => {
@@ -84,10 +88,7 @@ export default function Itinerary() {
           }),
         });
 
-        const text = await response.text();
-        console.log(text);
-
-        const data = JSON.parse(text);
+        const data = await response.json();
 
         if (data.success) {
           setTripPeriod({
@@ -99,6 +100,7 @@ export default function Itinerary() {
         console.error(error);
       }
     };
+
     fetchTripPeriod();
   }, [groupId]);
 
@@ -233,7 +235,7 @@ export default function Itinerary() {
       {/* メンバー数ウィジェット */}
       <div className={styles.WidgetFrame}>
         <div className={styles.WidgetTitle}>メンバー数</div>
-        <div className={styles.WidgetText}>4人</div>
+        <div className={styles.WidgetText}>{members.length}人</div>
       </div>
 
       {/* 移動手段ウィジェット */}

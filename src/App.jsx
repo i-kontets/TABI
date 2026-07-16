@@ -30,13 +30,21 @@ import UserRealtimeListener from './pages/UserRealtimeListener.jsx';
 export const TripContext = createContext();
 
 function App() {
-    const [trip, setTrip] = useState({
-        id: null,
-        name: ""
-    });
+    const [trip, setTrip] = useState({});
+    const [members, setMembers] = useState([]);
+    const [tripPeriod, setTripPeriod] = useState(null);
 
     return (
-        <TripContext.Provider value={{ trip, setTrip }}>
+        <TripContext.Provider
+            value={{
+                trip,
+                setTrip,
+                members,
+                setMembers,
+                tripPeriod,
+                setTripPeriod,
+            }}
+        >
             <BrowserRouter basename={import.meta.env.BASE_URL}>
                 <UserRealtimeListener trip={trip} />
                 <Routes>
@@ -61,7 +69,7 @@ function App() {
                     <Route path="/group/:groupId/talk" element={<Discussion />} />
                     <Route path="/album" element={<Album />} />
                     <Route path="/Invoice" element={<Invoice />} />
-                    <Route path="/Appointment" element={<Appointment />}/>
+                    <Route path="/Appointment" element={<Appointment />} />
                     <Route path="/Other" element={<Other />} />
                     {/* <Route path="/TouristRanking" element={<TouristRanking />} /> */}
                     <Route path="/Candidates" element={<Candidates />} />
@@ -69,7 +77,7 @@ function App() {
                     <Route path="/Tourist" element={<Tourist />} />
                     <Route path="/TouristRanking" element={<Tourist />} />
                     <Route path="/CottageChatPage" element={<CottageChatPage />} />
-                    <Route path="/CheckList" element={<CheckList /> }/>
+                    <Route path="/CheckList" element={<CheckList />} />
                     <Route path="/admin/*" element={<AdminRoutes />} />
                 </Routes>
             </BrowserRouter>
