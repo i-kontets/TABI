@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
+import MapboxLanguage from "@mapbox/mapbox-gl-language/index.js";
 import "mapbox-gl/dist/mapbox-gl.css";
 import styles from "./Minimap.module.css";
 
@@ -22,6 +23,8 @@ function MiniMap({ place, center = [135.4983, 34.7025], zoom = 12 }) {
                 center,
                 zoom,
             });
+            const language = new MapboxLanguage();
+            map.current.addControl(language);
         } else {
             map.current.setCenter(center);
             map.current.setZoom(zoom);
