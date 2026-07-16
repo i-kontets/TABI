@@ -1,8 +1,25 @@
 <?php
 
+/**
+ * 管理 API の GET/POST/PATCH/DELETE ごとの処理を担当します。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
+/**
+ * handle_admin_get は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function handle_admin_get(PDO $pdo, string $resource, $id): void
 {
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($resource === "system-errors") {
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond(fetch_system_errors($pdo, $_GET));
     }
 
@@ -48,6 +65,7 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
                 "activeUsers" => ["value" => $todayActiveUsers, "diff" => 0],
                 // 未対応の問い合わせと通報は、管理画面で優先的に確認したい件数です。
                 "pendingInquiries" => count(array_filter($inquiries, fn($i) => $i["status"] === "未対応")),
+                // 条件に合うデータだけを残して、返す内容を絞り込みます。
                 "pendingReports" => count(array_filter($reports, fn($r) => $r["status"] === "未対応")),
                 // system_errors の未対応件数と本日発生件数を返します。
                 "systemErrors" => $systemErrors,
@@ -79,24 +97,32 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
 
     // activities はダッシュボード向けに最近の出来事をまとめて返します。
     if ($resource === "activities") {
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond(fetch_recent_activities($pdo));
     }
 
     // activities-page は最近のアクティビティ一覧画面向けにページング済みで返します。
     if ($resource === "activities-page") {
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond(page_result(fetch_recent_activities($pdo, null), (int) ($_GET["page"] ?? 1), 10));
     }
 
     // 通報件数の状態別集計だけを返す専用エンドポイントです。
     if ($resource === "support-pending") {
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond(fetch_pending_support_items($pdo));
     }
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($resource === "reports-counts") {
         $reports = fetch_reports($pdo);
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond([
+            // 条件に合うデータだけを残して、返す内容を絞り込みます。
             "未対応" => count(array_filter($reports, fn($r) => $r["status"] === "未対応")),
+            // 条件に合うデータだけを残して、返す内容を絞り込みます。
             "確認中" => count(array_filter($reports, fn($r) => $r["status"] === "確認中")),
+            // 条件に合うデータだけを残して、返す内容を絞り込みます。
             "対応済み" => count(array_filter($reports, fn($r) => $r["status"] === "対応済み")),
         ]);
     }
@@ -104,21 +130,28 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
     // お問い合わせ件数の状態別集計だけを返します。
     if ($resource === "inquiries-counts") {
         $inquiries = fetch_inquiries($pdo);
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond([
+            // 条件に合うデータだけを残して、返す内容を絞り込みます。
             "未対応" => count(array_filter($inquiries, fn($i) => $i["status"] === "未対応")),
+            // 条件に合うデータだけを残して、返す内容を絞り込みます。
             "対応中" => count(array_filter($inquiries, fn($i) => $i["status"] === "対応中")),
+            // 条件に合うデータだけを残して、返す内容を絞り込みます。
             "対応済み" => count(array_filter($inquiries, fn($i) => $i["status"] === "対応済み")),
         ]);
     }
 
     // resource が既知でない場合は、対応していないとして 404 を返します。
     if (!is_array($items)) {
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond(["success" => false, "message" => "Unknown resource."], 404);
     }
 
     // id があれば一覧ではなく単体データを返します。
     if ($id !== null) {
+        // 条件に合うデータだけを残して、返す内容を絞り込みます。
         $found = current(array_filter($items, fn($item) => (string) $item["id"] === (string) $id));
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond($found ?: null);
     }
 
@@ -131,18 +164,22 @@ function handle_admin_get(PDO $pdo, string $resource, $id): void
     // キーワード検索は、各項目を JSON にして文字列として部分一致を確認します。
     // 複数の項目を横断して探したいときに、個別のカラムを意識せず絞り込めます。
     if ($query !== "") {
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         $items = array_values(array_filter($items, fn($item) => strpos(json_encode($item, JSON_UNESCAPED_UNICODE), $query) !== false));
     }
     // status が指定されたときは、一覧の状態ラベルが一致するものだけ残します。
     if ($status !== "") {
+        // 条件に合うデータだけを残して、返す内容を絞り込みます。
         $items = array_values(array_filter($items, fn($item) => ($item["status"] ?? "") === $status));
     }
     // category は「すべて」を除外して、実際に選ばれた分類だけを残します。
     if ($category !== "" && $category !== "すべて") {
+        // 条件に合うデータだけを残して、返す内容を絞り込みます。
         $items = array_values(array_filter($items, fn($item) => ($item["category"] ?? "") === $category));
     }
     // prefecture も同じ考え方で、観光スポットなどの都道府県絞り込みに使います。
     if ($prefecture !== "" && $prefecture !== "すべて") {
+        // 条件に合うデータだけを残して、返す内容を絞り込みます。
         $items = array_values(array_filter($items, fn($item) => ($item["prefecture"] ?? "") === $prefecture));
     }
     // users 一覧だけは、通常の新しい順ではなく、管理画面用の独自ルールで並び替えます。

@@ -1,3 +1,13 @@
+/**
+ * アプリ全体のルーティングと、旅行グループ情報を共有する大元の画面を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
 import { useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { createContext } from 'react';
@@ -37,6 +47,10 @@ import { isAdminPath, isMaintenancePath } from './services/serviceStatus.js';
 // eslint-disable-next-line react-refresh/only-export-components
 export const TripContext = createContext();
 
+/**
+ * AppRoutes は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function AppRoutes({ trip }) {
     const location = useLocation();
     const shouldRunUserRealtime = !isAdminPath(location.pathname) && !isMaintenancePath(location.pathname);
@@ -86,7 +100,12 @@ function AppRoutes({ trip }) {
     );
 }
 
+/**
+ * App は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function App() {
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [trip, setTrip] = useState({
         id: null,
         name: ""

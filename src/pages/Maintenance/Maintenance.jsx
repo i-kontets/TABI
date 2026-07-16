@@ -1,3 +1,13 @@
+/**
+ * サービス停止中やメンテナンス中であることを利用者へ知らせる画面です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -10,12 +20,18 @@ import {
 } from '../../services/serviceStatus';
 import styles from './Maintenance.module.css';
 
+/**
+ * formatNextOpen は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function formatNextOpen(value) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!value) {
         return '再開予定を確認中です';
     }
 
     const date = new Date(value);
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (Number.isNaN(date.getTime())) {
         return '再開予定を確認中です';
     }
@@ -26,10 +42,12 @@ function formatNextOpen(value) {
     const diffDays = Math.round((targetDay - today) / 86400000);
     const time = date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (diffDays === 0) {
         return `本日 ${time}〜`;
     }
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (diffDays === 1) {
         return `明日 ${time}〜`;
     }
@@ -42,6 +60,10 @@ function formatNextOpen(value) {
     return `${day} ${time}〜`;
 }
 
+/**
+ * MaintenanceIllustration は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function MaintenanceIllustration() {
     return (
         <div className={styles.illustration} aria-hidden="true">
@@ -63,8 +85,13 @@ function MaintenanceIllustration() {
     );
 }
 
+/**
+ * Maintenance は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function Maintenance() {
     const navigate = useNavigate();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [status, setStatus] = useState(() => ({
         available: false,
         reason: getMaintenanceReason() || 'OUTSIDE_SERVICE_HOURS',
@@ -73,13 +100,17 @@ export default function Maintenance() {
     const isDatabaseUnavailable = status.reason === 'DATABASE_UNAVAILABLE';
     const nextOpenLabel = useMemo(() => formatNextOpen(status.nextOpenAt), [status.nextOpenAt]);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         let mounted = true;
 
+        // check は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const check = async () => {
             const nextStatus = await fetchServiceStatus();
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (!mounted) return;
             let savedReason = getMaintenanceReason();
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (!nextStatus.available && nextStatus.reason === 'OUTSIDE_SERVICE_HOURS') {
                 clearMaintenanceReason();
                 savedReason = null;
@@ -89,13 +120,16 @@ export default function Maintenance() {
                 : nextStatus;
             setStatus(mergedStatus);
 
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (savedReason === 'DATABASE_UNAVAILABLE') {
                 const databaseAvailable = await probeDatabaseAvailability();
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!mounted || !databaseAvailable) {
                     return;
                 }
             }
 
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (nextStatus.available) {
                 const returnPath = getReturnPath();
                 clearReturnPath();
@@ -109,7 +143,9 @@ export default function Maintenance() {
             check().catch(() => {});
         }, 60000);
 
+        // handleVisibility は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const handleVisibility = () => {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (!document.hidden) {
                 check().catch(() => {});
             }

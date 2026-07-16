@@ -1,3 +1,13 @@
+/**
+ * 管理者向け画面の表示と、管理 API から取得したデータの操作を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: 管理 API から取得した一覧や詳細データ、画面上の検索条件や入力値を主に扱います。
+ */
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
@@ -5,11 +15,16 @@ import { Card, Button, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchSpot, createSpot, updateSpot, deleteSpot, spotCategories, prefectures } from '../../../services/admin';
 import styles from './Spots.module.css';
 
+/**
+ * SpotForm は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function SpotForm() {
     const { spotId } = useParams();
     const navigate = useNavigate();
     const isEdit = Boolean(spotId);
 
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [form, setForm] = useState({
         name: '',
         category: spotCategories[0],
@@ -19,11 +34,16 @@ export default function SpotForm() {
         lng: '',
         status: '公開中',
     });
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [notFound, setNotFound] = useState(false);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!isEdit) return;
+        // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
         fetchSpot(spotId).then((s) => {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (!s) {
                 setNotFound(true);
                 return;
@@ -32,6 +52,7 @@ export default function SpotForm() {
         });
     }, [spotId, isEdit]);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (notFound) {
         return (
             <AdminLayout title="スポット編集" back>
@@ -40,14 +61,18 @@ export default function SpotForm() {
         );
     }
 
+    // set は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
 
+    // handleSubmit は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleSubmit = async () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!form.name.trim()) {
             window.alert('スポット名は必須です。');
             return;
         }
         const data = { ...form, lat: Number(form.lat) || 0, lng: Number(form.lng) || 0 };
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (isEdit) {
             await updateSpot(spotId, data);
         } else {
@@ -56,7 +81,9 @@ export default function SpotForm() {
         navigate('/admin/spots');
     };
 
+    // handleDelete は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleDelete = async () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!window.confirm('このスポットを削除しますか?')) return;
         await deleteSpot(spotId);
         navigate('/admin/spots');

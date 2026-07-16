@@ -1,14 +1,31 @@
 <?php
 
+/**
+ * 管理 API から使う補助サービス処理をまとめます。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
+/**
+ * systemErrorColumnExists は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function systemErrorColumnExists(PDO $pdo, string $column): bool
 {
     static $cache = [];
     $key = $column;
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (array_key_exists($key, $cache)) {
         return $cache[$key];
     }
 
+    // SQL を準備し、あとから値を安全に入れられる形にします。
     $stmt = $pdo->prepare("
         SELECT COUNT(*)
         FROM INFORMATION_SCHEMA.COLUMNS
@@ -16,11 +33,16 @@ function systemErrorColumnExists(PDO $pdo, string $column): bool
           AND TABLE_NAME = 'system_errors'
           AND COLUMN_NAME = :column_name
     ");
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $stmt->execute(["column_name" => $column]);
 
     return $cache[$key] = ((int) $stmt->fetchColumn() > 0);
 }
 
+/**
+ * ensureSystemErrorsTable は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function ensureSystemErrorsTable(PDO $pdo): void
 {
     $pdo->exec("
@@ -67,10 +89,14 @@ function ensureSystemErrorsTable(PDO $pdo): void
         "resolved_at" => "ALTER TABLE system_errors ADD COLUMN resolved_at DATETIME NULL",
     ];
 
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
     foreach ($columns as $column => $sql) {
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if (!systemErrorColumnExists($pdo, $column)) {
+            // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
             try {
                 $pdo->exec($sql);
+            // エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
             } catch (Throwable $error) {
                 error_log("Failed to add system_errors.{$column}: " . $error->getMessage());
             }
@@ -78,10 +104,15 @@ function ensureSystemErrorsTable(PDO $pdo): void
     }
 }
 
+/**
+ * stripSensitiveUrlParts は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function stripSensitiveUrlParts(?string $url): ?string
 {
     $url = trim((string) $url);
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($url === "") {
         return null;
     }
@@ -90,18 +121,22 @@ function stripSensitiveUrlParts(?string $url): ?string
     $removeQueryKeys = ["_", "t", "ts", "timestamp", "cache", "cacheBust", "cache_bust", "v"];
     $sensitiveQueryKeys = ["token", "auth", "authorization", "email", "code", "verification_code", "password"];
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($parts === false || !isset($parts["scheme"], $parts["host"])) {
         $relativeParts = parse_url($url);
         $path = is_array($relativeParts) && isset($relativeParts["path"])
             ? $relativeParts["path"]
             : preg_replace('/[?#].*$/', '', $url);
         $queryText = "";
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if (is_array($relativeParts) && isset($relativeParts["query"])) {
             parse_str($relativeParts["query"], $queryParams);
             ksort($queryParams);
             $safeQuery = [];
+            // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
             foreach ($queryParams as $key => $value) {
                 $keyText = (string) $key;
+                // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
                 if (in_array($keyText, $removeQueryKeys, true) || in_array(strtolower($keyText), $sensitiveQueryKeys, true)) {
                     continue;
                 }
@@ -115,24 +150,29 @@ function stripSensitiveUrlParts(?string $url): ?string
 
     $result = $parts["scheme"] . "://" . $parts["host"];
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (isset($parts["port"])) {
         $result .= ":" . $parts["port"];
     }
 
     $result .= rtrim($parts["path"] ?? "", "/");
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (isset($parts["query"])) {
         parse_str($parts["query"], $queryParams);
         ksort($queryParams);
         $safeQuery = [];
+        // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
         foreach ($queryParams as $key => $value) {
             $keyText = (string) $key;
+            // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
             if (in_array($keyText, $removeQueryKeys, true) || in_array(strtolower($keyText), $sensitiveQueryKeys, true)) {
                 continue;
             }
             $safeQuery[$keyText] = $value;
         }
         $queryText = http_build_query($safeQuery);
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($queryText !== "") {
             $result .= "?" . $queryText;
         }
@@ -141,10 +181,15 @@ function stripSensitiveUrlParts(?string $url): ?string
     return $result;
 }
 
+/**
+ * normalizeSystemErrorPath は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function normalizeSystemErrorPath(?string $url): ?string
 {
     $url = stripSensitiveUrlParts($url);
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$url) {
         return null;
     }
@@ -153,11 +198,13 @@ function normalizeSystemErrorPath(?string $url): ?string
     $path = is_array($parts) && isset($parts["path"]) ? $parts["path"] : $url;
     $path = preg_replace('/[?#].*$/', '', trim((string) $path));
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($path === "") {
         return null;
     }
 
     $normalizedPath = "/" . ltrim(rtrim($path, "/"), "/");
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (is_array($parts) && isset($parts["query"]) && trim((string) $parts["query"]) !== "") {
         $normalizedPath .= "?" . trim((string) $parts["query"]);
     }
@@ -165,6 +212,10 @@ function normalizeSystemErrorPath(?string $url): ?string
     return $normalizedPath;
 }
 
+/**
+ * buildSystemErrorRecoveryKey は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function buildSystemErrorRecoveryKey(?string $source, ?string $requestMethod, ?string $requestUrl, ?string $pagePath, ?string $errorCode): ?string
 {
     $requestPath = normalizeSystemErrorPath($requestUrl);
@@ -173,6 +224,7 @@ function buildSystemErrorRecoveryKey(?string $source, ?string $requestMethod, ?s
     $requestMethod = strtoupper(trim((string) ($requestMethod ?: "GET")));
     $errorCode = trim((string) ($errorCode ?: "API_HTTP_ERROR"));
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$requestPath || $pagePath === "") {
         return null;
     }
@@ -181,12 +233,18 @@ function buildSystemErrorRecoveryKey(?string $source, ?string $requestMethod, ?s
     return implode("|", [$source, $requestMethod, $requestPath, $pagePath, $errorCode]);
 }
 
+/**
+ * normalizedSystemErrorDetail は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function normalizedSystemErrorDetail($detail): array
 {
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (is_array($detail)) {
         return $detail;
     }
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($detail === null || $detail === "") {
         return [];
     }
@@ -194,10 +252,15 @@ function normalizedSystemErrorDetail($detail): array
     return ["detail" => (string) $detail];
 }
 
+/**
+ * systemErrorResolvedSetSql は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function systemErrorResolvedSetSql(PDO $pdo): string
 {
     $setSql = "status = 'resolved', resolved_at = NOW()";
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (systemErrorColumnExists($pdo, "updated_at")) {
         /* updated_atカラムがあるDBでは、自動解消した時刻も更新日時として残します。 */
         $setSql .= ", updated_at = NOW()";
@@ -206,15 +269,21 @@ function systemErrorResolvedSetSql(PDO $pdo): string
     return $setSql;
 }
 
+/**
+ * logSystemError は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function logSystemError(string $source, string $level, string $message, $detail = null, $userId = null, $url = null): ?int
 {
     global $pdo;
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$pdo instanceof PDO) {
         error_log("System error not saved: PDO is not available. {$source} {$level} {$message}");
         return null;
     }
 
+    // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
     try {
         ensureSystemErrorsTable($pdo);
 
@@ -229,14 +298,17 @@ function logSystemError(string $source, string $level, string $message, $detail 
             ? (int) $detailData["http_status"]
             : null;
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($recoveryKey === "") {
             $recoveryKey = buildSystemErrorRecoveryKey($detailData["source"] ?? $source, $requestMethod, $requestUrl, $pagePath, $errorCode) ?? "";
+            // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
             if ($recoveryKey !== "") {
                 /* 古い登録経路でも、あとで同じAPIの成功を判定できるようdetailへ補完します。 */
                 $detailData["recovery_key"] = $recoveryKey;
             }
         }
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if (!$fingerprint && $errorCode) {
             $fingerprint = hash("sha256", implode("|", [
                 $errorCode,
@@ -248,19 +320,25 @@ function logSystemError(string $source, string $level, string $message, $detail 
         }
 
         $detailText = null;
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($detail !== null) {
+            // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
             if (isset($detailData["request_url"])) {
                 $detailData["request_url"] = $requestUrl;
             }
+            // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
             $detailText = json_encode($detailData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
         $legacyUrl = stripSensitiveUrlParts($url);
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($legacyUrl === null && isset($_SERVER["REQUEST_URI"])) {
             $legacyUrl = stripSensitiveUrlParts($_SERVER["REQUEST_URI"]);
         }
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($fingerprint && systemErrorColumnExists($pdo, "fingerprint")) {
+            // SQL を準備し、あとから値を安全に入れられる形にします。
             $dedupeStmt = $pdo->prepare("
                 SELECT error_id
                 FROM system_errors
@@ -268,9 +346,11 @@ function logSystemError(string $source, string $level, string $message, $detail 
                 ORDER BY error_id DESC
                 LIMIT 1
             ");
+            // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
             $dedupeStmt->execute(["fingerprint" => $fingerprint]);
             $existingId = (int) $dedupeStmt->fetchColumn();
 
+            // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
             if ($existingId > 0 && systemErrorColumnExists($pdo, "occurrence_count")) {
                 $reopenSetSql = "
                         occurrence_count = occurrence_count + 1,
@@ -279,26 +359,35 @@ function logSystemError(string $source, string $level, string $message, $detail 
                         resolved_at = NULL,
                         detail = :detail,
                         user_id = COALESCE(:user_id, user_id)";
+                // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
                 if (systemErrorColumnExists($pdo, "updated_at")) {
                     /* 対応済み後に再発した場合も、更新日時を最新にします。 */
                     $reopenSetSql .= ",
                         updated_at = NOW()";
                 }
 
+                // SQL を準備し、あとから値を安全に入れられる形にします。
                 $updateStmt = $pdo->prepare("
                     UPDATE system_errors
                     SET {$reopenSetSql}
                     WHERE error_id = :error_id
                 ");
+                // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
                 $updateStmt->bindValue(":detail", $detailText);
+                // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
                 if ($userId === null || $userId === "") {
+                    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
                     $updateStmt->bindValue(":user_id", null, PDO::PARAM_NULL);
                 } else {
+                    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
                     $updateStmt->bindValue(":user_id", (int) $userId, PDO::PARAM_INT);
                 }
+                // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
                 $updateStmt->bindValue(":error_id", $existingId, PDO::PARAM_INT);
+                // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
                 $updateStmt->execute();
 
+                // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
                 if (function_exists("sendRealtimeEvent")) {
                     sendRealtimeEvent("admin:global", "system_error_created", [
                         "error_id" => $existingId,
@@ -312,6 +401,7 @@ function logSystemError(string $source, string $level, string $message, $detail 
             }
         }
 
+        // SQL を準備し、あとから値を安全に入れられる形にします。
         $stmt = $pdo->prepare("
             INSERT INTO system_errors (
                 source,
@@ -355,31 +445,51 @@ function logSystemError(string $source, string $level, string $message, $detail 
                 NOW()
             )
         ");
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":source", $source);
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":level", $level);
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":message", $message);
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":detail", $detailText);
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":url", $legacyUrl);
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($userId === null || $userId === "") {
+            // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
             $stmt->bindValue(":user_id", null, PDO::PARAM_NULL);
         } else {
+            // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
             $stmt->bindValue(":user_id", (int) $userId, PDO::PARAM_INT);
         }
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":error_type", $detailData["error_type"] ?? null);
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":error_code", $errorCode);
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":page_path", $pagePath);
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":request_url", $requestUrl);
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($httpStatus === null) {
+            // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
             $stmt->bindValue(":http_status", null, PDO::PARAM_NULL);
         } else {
+            // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
             $stmt->bindValue(":http_status", $httpStatus, PDO::PARAM_INT);
         }
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":user_agent", $detailData["user_agent"] ?? null);
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":stack_trace", $detailData["stack_trace"] ?? null);
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $stmt->bindValue(":fingerprint", $fingerprint);
+        // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
         $stmt->execute();
 
         $errorId = (int) $pdo->lastInsertId();
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($errorId > 0 && function_exists("sendRealtimeEvent")) {
             sendRealtimeEvent("admin:global", "system_error_created", [
                 "error_id" => $errorId,
@@ -390,20 +500,27 @@ function logSystemError(string $source, string $level, string $message, $detail 
         }
 
         return $errorId > 0 ? $errorId : null;
+    // エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
     } catch (Throwable $error) {
         error_log("Failed to save system error: " . $error->getMessage());
         return null;
     }
 }
 
+/**
+ * resolveSystemErrorByFingerprint は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function resolveSystemErrorByFingerprint(string $fingerprint, ?string $requestUrl = null, ?string $pagePath = null, ?int $httpStatus = null): int
 {
     global $pdo;
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$pdo instanceof PDO || $fingerprint === "" || !systemErrorColumnExists($pdo, "fingerprint")) {
         return 0;
     }
 
+    // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
     try {
         ensureSystemErrorsTable($pdo);
         $requestUrl = stripSensitiveUrlParts($requestUrl);
@@ -412,26 +529,32 @@ function resolveSystemErrorByFingerprint(string $fingerprint, ?string $requestUr
         $where = ["fingerprint = :fingerprint", "status = 'unresolved'"];
         $params = ["fingerprint" => $fingerprint];
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($requestUrl) {
             $where[] = "(request_url = :request_url OR request_url IS NULL OR request_url = '')";
             $params["request_url"] = $requestUrl;
         }
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($pagePath !== "") {
             $where[] = "(page_path = :page_path OR page_path IS NULL OR page_path = '')";
             $params["page_path"] = $pagePath;
         }
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($httpStatus !== null) {
             $where[] = "(http_status >= 500 OR http_status IS NULL)";
         }
 
+        // SQL を準備し、あとから値を安全に入れられる形にします。
         $stmt = $pdo->prepare("
             UPDATE system_errors
             SET " . systemErrorResolvedSetSql($pdo) . "
             WHERE " . implode(" AND ", $where) . "
         ");
+        // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
         $stmt->execute($params);
         $count = $stmt->rowCount();
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($count > 0 && function_exists("sendRealtimeEvent")) {
             sendRealtimeEvent("admin:global", "system_error_resolved", [
                 "fingerprint" => $fingerprint,
@@ -440,20 +563,27 @@ function resolveSystemErrorByFingerprint(string $fingerprint, ?string $requestUr
         }
 
         return $count;
+    // エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
     } catch (Throwable $error) {
         error_log("Failed to resolve system error: " . $error->getMessage());
         return 0;
     }
 }
 
+/**
+ * resolveSystemErrorsByRecoveryContext は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function resolveSystemErrorsByRecoveryContext(?string $requestUrl, ?string $pagePath, ?string $errorCode = "API_HTTP_ERROR", ?string $source = "frontend", ?string $requestMethod = null, ?string $recoveryKey = null): int
 {
     global $pdo;
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$pdo instanceof PDO || !systemErrorColumnExists($pdo, "request_url") || !systemErrorColumnExists($pdo, "page_path")) {
         return 0;
     }
 
+    // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
     try {
         ensureSystemErrorsTable($pdo);
 
@@ -464,6 +594,7 @@ function resolveSystemErrorsByRecoveryContext(?string $requestUrl, ?string $page
         $requestMethod = strtoupper(trim((string) $requestMethod));
         $recoveryKey = trim((string) $recoveryKey);
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if (!$requestPath) {
             return 0;
         }
@@ -479,6 +610,7 @@ function resolveSystemErrorsByRecoveryContext(?string $requestUrl, ?string $page
             "absolute_request_url" => "%{$requestPath}",
         ];
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($pagePath !== "") {
             /*
              * フロントエンド由来のエラーは、同じ画面内の別APIを誤って解決しないように
@@ -489,35 +621,42 @@ function resolveSystemErrorsByRecoveryContext(?string $requestUrl, ?string $page
             $params["page_path"] = $pagePath;
         }
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($errorCode !== "" && systemErrorColumnExists($pdo, "error_code")) {
             $conditions[] = "error_code = :error_code";
             $params["error_code"] = $errorCode;
         }
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($source !== "" && systemErrorColumnExists($pdo, "source")) {
             $conditions[] = "(source = :source OR source = 'frontend')";
             $params["source"] = $source;
         }
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($requestMethod !== "") {
             $conditions[] = "(detail IS NULL OR LOCATE('\"request_method\"', detail) = 0 OR LOCATE(:request_method_json, detail) > 0)";
             $params["request_method_json"] = '"request_method":"' . $requestMethod . '"';
         }
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($recoveryKey !== "") {
             /* 新しいレコードは recovery_key も一致確認し、別APIを誤って対応済みにしないようにします。 */
             $conditions[] = "(detail IS NULL OR LOCATE('\"recovery_key\"', detail) = 0 OR LOCATE(:recovery_key_json, detail) > 0)";
             $params["recovery_key_json"] = '"recovery_key":"' . $recoveryKey . '"';
         }
 
+        // SQL を準備し、あとから値を安全に入れられる形にします。
         $stmt = $pdo->prepare("
             UPDATE system_errors
             SET " . systemErrorResolvedSetSql($pdo) . "
             WHERE " . implode(" AND ", $conditions) . "
         ");
+        // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
         $stmt->execute($params);
         $count = $stmt->rowCount();
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($count > 0 && function_exists("sendRealtimeEvent")) {
             sendRealtimeEvent("admin:global", "system_error_resolved", [
                 "requestUrl" => $requestPath,
@@ -527,6 +666,7 @@ function resolveSystemErrorsByRecoveryContext(?string $requestUrl, ?string $page
         }
 
         return $count;
+    // エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
     } catch (Throwable $error) {
         error_log("Failed to resolve system error by recovery context: " . $error->getMessage());
         return 0;

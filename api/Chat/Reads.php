@@ -1,4 +1,16 @@
 <?php
+
+/**
+ * チャットの一覧、メッセージ取得、送信、既読、画像アップロードを扱う API です。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
 // セッション開始 - ユーザーのセッション管理を初期化
 session_start();
 
@@ -11,6 +23,7 @@ require_once __DIR__ . "/../config/db.php";
 // このAPIは閲覧用(GET)と既読登録用(POST)の両方を受け付ける。
 if (!in_array($_SERVER["REQUEST_METHOD"], ["GET", "POST"], true)) {
     http_response_code(405);
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     echo json_encode([
         "success" => false,
         "message" => "GETまたはPOSTメソッドで送信してください"
@@ -21,6 +34,7 @@ if (!in_array($_SERVER["REQUEST_METHOD"], ["GET", "POST"], true)) {
 // ログインしていないユーザーには既読情報を扱わせない。
 if (!isset($_SESSION["user_id"])) {
     http_response_code(401);
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     echo json_encode([
         "success" => false,
         "message" => "ログインが必要です"
@@ -36,7 +50,9 @@ session_write_close();
 // GET の場合はクエリ文字列、POST の場合は JSON / フォームを読む。
 $input = $_GET;
 
+// ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    // フロントエンドから送られた JSON 文字列を、PHP で扱える配列に変換します。
     $jsonInput = json_decode(file_get_contents("php://input"), true);
     $input = is_array($jsonInput) ? $jsonInput : $_POST;
 }
@@ -52,6 +68,7 @@ if ($chatId !== null && $chatId !== false && $chatId < 1) {
     $chatId = false;
 }
 
+// ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
 if ($groupId !== null && $groupId !== false && $groupId < 1) {
     $groupId = false;
 }
@@ -59,6 +76,7 @@ if ($groupId !== null && $groupId !== false && $groupId < 1) {
 // chat_id か group_id のどちらかが必須。
 if (!$chatId && !$groupId) {
     http_response_code(400);
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     echo json_encode([
         "success" => false,
         "message" => "chat_id または group_id を指定してください"
@@ -92,9 +110,11 @@ $messageIds = array_values(array_unique(array_filter(
 // 既読登録の同時実行を避けるため、採番処理を直列化する。
 $idLockAcquired = false;
 
+// データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
     // group_id だけ渡された場合は、最新の group チャットを解決する。
     if (!$chatId) {
+        // SQL を準備し、あとから値を安全に入れられる形にします。
         $chatStmt = $pdo->prepare("
             SELECT c.chat_id
             FROM chats c
@@ -104,12 +124,16 @@ try {
             ORDER BY c.chat_id DESC
             LIMIT 1
         ");
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
         $chatStmt->bindValue(":group_id", $groupId, PDO::PARAM_INT);
+        // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
         $chatStmt->execute();
         $chatId = $chatStmt->fetchColumn();
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if (!$chatId) {
             http_response_code(404);
+            // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
             echo json_encode([
                 "success" => false,
                 "message" => "対象のチャットが見つかりません"
@@ -126,12 +150,17 @@ try {
           AND user_id = :user_id
         LIMIT 1
     ");
+    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $memberStmt->bindValue(":chat_id", $chatId, PDO::PARAM_INT);
+    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $memberStmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $memberStmt->execute();
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$memberStmt->fetchColumn()) {
         http_response_code(403);
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         echo json_encode([
             "success" => false,
             "message" => "このチャットを閲覧する権限がありません"
@@ -139,12 +168,14 @@ try {
         exit;
     }
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($_SERVER["REQUEST_METHOD"] === "POST") {
         // message_read_id は AUTO_INCREMENT ではなく、
         // (message_id, user_id) の一意制約もないため、既読登録全体を直列化する。
         $lockStmt = $pdo->query("SELECT GET_LOCK('tabi_message_reads_id_lock', 5)");
         $idLockAcquired = (int) $lockStmt->fetchColumn() === 1;
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if (!$idLockAcquired) {
             throw new RuntimeException("既読IDの採番ロックを取得できませんでした");
         }
@@ -167,9 +198,11 @@ try {
             ":user_id" => $userId
         ];
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($messageIds !== []) {
             $placeholders = [];
 
+            // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
             foreach ($messageIds as $index => $id) {
                 $placeholder = ":message_id_" . $index;
                 $placeholders[] = $placeholder;
@@ -190,16 +223,21 @@ try {
         ";
         $targetParams[":read_user_id"] = $userId;
 
+        // SQL を準備し、あとから値を安全に入れられる形にします。
         $targetStmt = $pdo->prepare($targetSql);
 
+        // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
         foreach ($targetParams as $key => $value) {
+            // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
             $targetStmt->bindValue($key, $value, PDO::PARAM_INT);
         }
 
+        // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
         $targetStmt->execute();
         $targetMessageIds = array_map("intval", $targetStmt->fetchAll(PDO::FETCH_COLUMN));
         $markedCount = 0;
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($targetMessageIds !== []) {
             // message_reads の採番用に、次に使うIDを決める。
             $idStmt = $pdo->query("
@@ -223,10 +261,15 @@ try {
                 )
             ");
 
+            // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
             foreach ($targetMessageIds as $targetMessageId) {
+                // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
                 $insertStmt->bindValue(":message_read_id", $nextReadId, PDO::PARAM_INT);
+                // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
                 $insertStmt->bindValue(":message_id", $targetMessageId, PDO::PARAM_INT);
+                // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
                 $insertStmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
+                // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
                 $insertStmt->execute();
                 $nextReadId++;
                 $markedCount++;
@@ -256,8 +299,11 @@ try {
         GROUP BY m.message_id
         ORDER BY m.sent_at ASC, m.message_id ASC
     ");
+    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $statusStmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
+    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $statusStmt->bindValue(":chat_id", $chatId, PDO::PARAM_INT);
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $statusStmt->execute();
 
     // フロント側がそのまま参照できる配列に整形する。
@@ -281,10 +327,12 @@ try {
         $response["marked_count"] = $markedCount;
     }
 
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     echo json_encode(
         $response,
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
     );
+// エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
 } catch (Throwable $error) {
     // エラー時はトランザクションを戻す。
     if ($pdo->inTransaction()) {
@@ -298,6 +346,7 @@ try {
 
     // 詳細な内部例外は返さず、共通メッセージにまとめる。
     http_response_code(500);
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     echo json_encode([
         "success" => false,
         "message" => "既読状態の処理に失敗しました"

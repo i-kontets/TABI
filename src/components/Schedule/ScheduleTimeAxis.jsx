@@ -1,3 +1,13 @@
+/**
+ * 旅行スケジュールを時間軸に沿って表示する画面部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useEffect, useState } from 'react';
 import { Avatar, Timeline } from '@mantine/core';
 import styles from './ScheduleTimeAxis.module.css';
@@ -9,6 +19,7 @@ const GROUP_COLORS = {
 };
 const MY_MEMBER_NAME = '自分';
 
+// generateHours は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
 const generateHours = (overrides = {}) =>
     Array.from({ length: 24 }, (_, i) => {
         const time = `${String(i).padStart(2, '0')}:00`;
@@ -54,15 +65,28 @@ const EVENTS_PER_ROW = 2;
 const TIMELINE_PADDING_TOP = 36;
 const TIMELINE_BULLET_CENTER = 11;
 
+/**
+ * isCompactSlot は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function isCompactSlot(item) {
     return item.events.length === 0;
 }
 
+/**
+ * getEventRows は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function getEventRows(item) {
     return Math.max(Math.ceil(item.events.length / EVENTS_PER_ROW), 1);
 }
 
+/**
+ * getSlotVisualHeight は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function getSlotVisualHeight(item) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (isCompactSlot(item)) {
         return COMPACT_SLOT_HEIGHT + COMPACT_SLOT_MARGIN_BOTTOM;
     }
@@ -70,7 +94,12 @@ function getSlotVisualHeight(item) {
     return getEventRows(item) * SLOT_HEIGHT;
 }
 
+/**
+ * getSlotStyle は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function getSlotStyle(item) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (isCompactSlot(item)) {
         return { minHeight: COMPACT_SLOT_HEIGHT, marginBottom: COMPACT_SLOT_MARGIN_BOTTOM };
     }
@@ -79,14 +108,23 @@ function getSlotStyle(item) {
     return slotHeight > SLOT_HEIGHT ? { minHeight: slotHeight } : undefined;
 }
 
+/**
+ * formatTime は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function formatTime(date) {
     return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+/**
+ * getCurrentTimeTop は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function getCurrentTimeTop(items, now) {
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:00`;
     const currentIndex = items.findIndex((item) => item.time === currentTime);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (currentIndex === -1) {
         return null;
     }
@@ -101,30 +139,48 @@ function getCurrentTimeTop(items, now) {
     return TIMELINE_PADDING_TOP + TIMELINE_BULLET_CENTER + offsetBeforeCurrent + minuteOffset;
 }
 
+/**
+ * isCurrentTimeOverEvent は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function isCurrentTimeOverEvent(items, now) {
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:00`;
     return items.some((item) => item.time === currentTime && item.events.length > 0);
 }
 
+/**
+ * filterItemsByView は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function filterItemsByView(items, viewMode) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (viewMode === 'all') {
         return items;
     }
 
+    // 配列のデータを1件ずつ画面表示用の形に変換します。
     return items.map((item) => ({
         ...item,
+        // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         events: item.events.filter((event) => (
             event.group === '全員' || event.members?.includes(MY_MEMBER_NAME)
         )),
     }));
 }
 
+/**
+ * ScheduleTimeAxis は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function ScheduleTimeAxis({ selectedDay }) {
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [now, setNow] = useState(() => new Date());
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [viewMode, setViewMode] = useState('all');
     const baseItems = scheduleData[selectedDay] ?? [];
     const items = filterItemsByView(baseItems, viewMode);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         const timerId = window.setInterval(() => {
             setNow(new Date());
@@ -133,6 +189,7 @@ export default function ScheduleTimeAxis({ selectedDay }) {
         return () => window.clearInterval(timerId);
     }, []);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (items.length === 0) {
         return null;
     }

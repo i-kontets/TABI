@@ -1,4 +1,16 @@
 <?php
+
+/**
+ * 旅行先候補やアンケートの作成、取得、投票を扱う API です。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
 // セッション開始。作成者をログインユーザーとして記録するために必要
 session_start();
 
@@ -11,9 +23,11 @@ require_once __DIR__ . "/CandidateCommon.php";
 
 // このエンドポイントはPOSTのみ受け付ける
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     respond(405, ["success" => false, "message" => "許可されていないメソッドです"]);
 }
 
+// データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
     // JSON本文を読み込んで、作成リクエストの内容を取得する
     $input = json_decode(file_get_contents("php://input"), true) ?: [];
@@ -36,11 +50,13 @@ try {
 
     // タイトル未入力またはカテゴリが不正なら400を返す
     if ($title === "" || !in_array($candidateType, ["destination", "spot", "hotel", "restaurant"], true)) {
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond(400, ["success" => false, "message" => "タイトルとカテゴリを入力してください"]);
     }
 
     // 候補は最低2件必要
     if (count($candidateIds) < 2) {
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond(400, ["success" => false, "message" => "候補を2件以上選択してください"]);
     }
 
@@ -48,6 +64,7 @@ try {
     $deadline = DateTime::createFromFormat("Y-m-d\TH:i", $deadlineAt);
     // 現在時刻より未来でない場合はエラーにする
     if (!$deadline || $deadline <= new DateTime()) {
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond(400, ["success" => false, "message" => "現在より後の回答期限を指定してください"]);
     }
 
@@ -63,6 +80,7 @@ try {
            AND (status IS NULL OR status <> 'rejected')
          ORDER BY candidate_id"
     );
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $candidateStmt->execute(array_merge(
         [(string) $trip["trip_id"], $candidateType],
         $candidateIds
@@ -72,6 +90,7 @@ try {
 
     // 件数が一致しなければ、無効な候補が含まれていたと判断する
     if (count($selectedCandidates) !== count($candidateIds)) {
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond(400, ["success" => false, "message" => "選択した候補が正しくありません"]);
     }
 
@@ -85,6 +104,7 @@ try {
          VALUES
             (:trip_id, :title, :candidate_type, :created_by, :deadline_at, NOW())"
     );
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $surveyStmt->execute([
         ":trip_id" => $trip["trip_id"],
         ":title" => $title,
@@ -102,7 +122,9 @@ try {
          VALUES
             (:survey_id, :option_text, :candidate_id, :sort_order)"
     );
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
     foreach ($selectedCandidates as $index => $candidate) {
+        // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
         $optionStmt->execute([
             ":survey_id" => $surveyId,
             ":option_text" => $candidate["candidate_name"],
@@ -115,6 +137,7 @@ try {
     $pdo->commit();
     // 作成完了を返す。新規IDも返して、呼び出し側で追跡できるようにする
     respond(201, ["success" => true, "survey_id" => $surveyId]);
+// エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
 } catch (PDOException $error) {
     // 登録途中で失敗したらロールバックして中途半端なデータを残さない
     if (isset($pdo) && $pdo->inTransaction()) {

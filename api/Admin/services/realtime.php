@@ -1,14 +1,32 @@
 <?php
 
+/**
+ * 管理 API から使う補助サービス処理をまとめます。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
+// 共通設定や別ファイルの関数を読み込み、この API から使えるようにします。
 require_once __DIR__ . "/system_errors.php";
 
+/**
+ * realtime_config は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function realtime_config(string $key, $default = null)
 {
     static $realtimeConfig = null;
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($realtimeConfig === null) {
         $configPath = __DIR__ . "/../../config/realtime.php";
         $realtimeConfig = file_exists($configPath) ? require $configPath : [];
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if (!is_array($realtimeConfig)) {
             $realtimeConfig = [];
         }
@@ -17,13 +35,22 @@ function realtime_config(string $key, $default = null)
     return $realtimeConfig[$key] ?? $default;
 }
 
+/**
+ * logRealtimeSystemError は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function logRealtimeSystemError(string $message, array $detail): void
 {
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (function_exists("logSystemError")) {
         logSystemError("websocket", "warning", $message, $detail);
     }
 }
 
+/**
+ * sendRealtimeEvent は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function sendRealtimeEvent(string $room, string $event, array $data = [], bool $logFailure = true): array
 {
     $url = realtime_config("realtime_url", app_config("REALTIME_EMIT_URL", "https://ws.tabital.com/emit"));
@@ -36,9 +63,11 @@ function sendRealtimeEvent(string $room, string $event, array $data = [], bool $
         "response" => "",
     ];
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$secret) {
         error_log("Realtime event skipped: REALTIME_SECRET is not set.");
         $result["response"] = "REALTIME_SECRET is not set.";
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($logFailure) {
             logRealtimeSystemError("WebSocket通知設定が不足しています", [
                 "room" => $room,
@@ -49,15 +78,18 @@ function sendRealtimeEvent(string $room, string $event, array $data = [], bool $
         return $result;
     }
 
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     $json = json_encode([
         "room" => $room,
         "event" => $event,
         "data" => $data,
     ], JSON_UNESCAPED_UNICODE);
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($json === false) {
         error_log("Realtime event failed: payload JSON encode error.");
         $result["response"] = "payload JSON encode error.";
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($logFailure) {
             logRealtimeSystemError("WebSocket通知ペイロードのJSON生成に失敗しました", [
                 "room" => $room,
@@ -70,6 +102,7 @@ function sendRealtimeEvent(string $room, string $event, array $data = [], bool $
 
     $result["attempted"] = true;
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (function_exists("curl_init")) {
         $ch = curl_init($url);
         curl_setopt_array($ch, [
@@ -93,8 +126,10 @@ function sendRealtimeEvent(string $room, string $event, array $data = [], bool $
         $result["curl_error"] = $error ?: "";
         $result["response"] = is_string($body) ? substr($body, 0, 500) : "";
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($body === false || $status < 200 || $status >= 300) {
             error_log("Realtime event failed: HTTP {$status} {$error}");
+            // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
             if ($logFailure) {
                 logRealtimeSystemError("WebSocket通知に失敗しました", [
                     "room" => $room,
@@ -123,6 +158,7 @@ function sendRealtimeEvent(string $room, string $event, array $data = [], bool $
 
     $body = file_get_contents($url, false, $context);
     $status = 0;
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (isset($http_response_header[0]) && preg_match("/\s(\d{3})\s/", $http_response_header[0], $matches)) {
         $status = (int) $matches[1];
     }
@@ -130,8 +166,10 @@ function sendRealtimeEvent(string $room, string $event, array $data = [], bool $
     $result["http_code"] = $status;
     $result["response"] = is_string($body) ? substr($body, 0, 500) : "";
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($body === false || $status < 200 || $status >= 300) {
         error_log("Realtime event failed: HTTP {$status}");
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($logFailure) {
             logRealtimeSystemError("WebSocket通知に失敗しました", [
                 "room" => $room,

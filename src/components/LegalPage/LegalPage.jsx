@@ -1,6 +1,20 @@
+/**
+ * 利用規約やプライバシーポリシーなど、文章中心の案内画面を表示します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './LegalPage.module.css';
 
+/**
+ * BackIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function BackIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -9,6 +23,10 @@ function BackIcon({ className }) {
     );
 }
 
+/**
+ * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function HomeIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -19,6 +37,10 @@ function HomeIcon({ className }) {
     );
 }
 
+/**
+ * UserIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function UserIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -28,7 +50,12 @@ function UserIcon({ className }) {
     );
 }
 
+/**
+ * renderParagraph は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function renderParagraph(paragraph, sectionIndex, paragraphIndex) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (typeof paragraph === 'string') {
         return <p key={`${sectionIndex}-${paragraphIndex}`}>{paragraph}</p>;
     }
@@ -49,10 +76,16 @@ function renderParagraph(paragraph, sectionIndex, paragraphIndex) {
     );
 }
 
+/**
+ * LegalPage は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function LegalPage({ title, updatedAt, introduction, sections }) {
     const navigate = useNavigate();
 
+    // handleBack は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleBack = () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (window.history.length > 1) {
             navigate(-1);
             return;
