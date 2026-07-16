@@ -272,9 +272,9 @@ function PageShell({ title, children, onBack }) {
  * Field は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-function Field({ label, children, hint }) {
+function Field({ label, children, hint, className }) {
     return (
-        <label className={styles.field}>
+        <label className={[styles.field, className].filter(Boolean).join(' ')}>
             <span className={styles.label}>{label}</span>
             {children}
             {hint && <span className={styles.hint}>{hint}</span>}
@@ -529,30 +529,32 @@ export function UserEditPage() {
                 </Field>
             </section>
 
-            <section className={styles.userEditCard}>
+            <section className={[styles.userEditCard, styles.userEditDetailCard].join(' ')}>
                 <h2 className={styles.userEditSectionTitle}>詳細情報</h2>
-                <div className={styles.userEditFields}>
-                    <Field label="生年月日">
-                        <input className={styles.input} type="date" value={form.birthday || ''} onChange={(event) => update('birthday', event.target.value)} />
+                <div className={[styles.userEditFields, styles.userEditDetailFields].join(' ')}>
+                    <Field label="生年月日" className={styles.formGroup}>
+                        <div className={[styles.formControl, styles.dateInputWrapper].join(' ')}>
+                            <input className={styles.dateInput} type="date" value={form.birthday || ''} onChange={(event) => update('birthday', event.target.value)} />
+                        </div>
                     </Field>
-                    <Field label="性別">
-                        <select className={styles.input} value={form.gender || ''} onChange={(event) => update('gender', event.target.value)}>
+                    <Field label="性別" className={styles.formGroup}>
+                        <select className={styles.formControl} value={form.gender || ''} onChange={(event) => update('gender', event.target.value)}>
                             <option value="">未設定</option>
                             <option value="男性">男性</option>
                             <option value="女性">女性</option>
                             <option value="その他">その他</option>
                         </select>
                     </Field>
-                    <Field label="国・地域">
-                        <select className={styles.input} value={form.country_code || 'JP'} onChange={(event) => update('country_code', event.target.value)}>
+                    <Field label="国・地域" className={styles.formGroup}>
+                        <select className={styles.formControl} value={form.country_code || 'JP'} onChange={(event) => update('country_code', event.target.value)}>
                             <option value="JP">日本</option>
                             <option value="US">アメリカ</option>
                             <option value="KR">韓国</option>
                             <option value="TW">台湾</option>
                         </select>
                     </Field>
-                    <Field label="言語">
-                        <select className={styles.input} value={form.language_code || 'ja'} onChange={(event) => update('language_code', event.target.value)}>
+                    <Field label="言語" className={styles.formGroup}>
+                        <select className={styles.formControl} value={form.language_code || 'ja'} onChange={(event) => update('language_code', event.target.value)}>
                             <option value="ja">日本語</option>
                             <option value="en">English</option>
                         </select>
