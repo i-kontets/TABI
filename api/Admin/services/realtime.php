@@ -53,7 +53,9 @@ function logRealtimeSystemError(string $message, array $detail): void
  */
 function sendRealtimeEvent(string $room, string $event, array $data = [], bool $logFailure = true): array
 {
+    // WebSocketサーバーのemit用HTTP APIへ通知を送ります。PHPは直接ブラウザへ送るのではなく、このサーバーに配信を依頼します。
     $url = realtime_config("realtime_url", app_config("REALTIME_EMIT_URL", "https://ws.tabital.com/emit"));
+    // WebSocket通知サーバーへ送る秘密の合言葉です。実際の値はコメント・画面・通常ログへ出してはいけません。
     $secret = realtime_config("realtime_secret", app_config("REALTIME_SECRET", ""));
     $result = [
         "attempted" => false,
@@ -70,6 +72,7 @@ function sendRealtimeEvent(string $room, string $event, array $data = [], bool $
         // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($logFailure) {
             logRealtimeSystemError("WebSocket通知設定が不足しています", [
+                // roomは通知先の部屋です。admin:globalは管理画面全体、trip:{id}は特定旅行グループ、user:{id}は特定ユーザー向けです。
                 "room" => $room,
                 "event" => $event,
                 "reason" => "REALTIME_SECRET is not set.",
@@ -105,6 +108,7 @@ function sendRealtimeEvent(string $room, string $event, array $data = [], bool $
     // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (function_exists("curl_init")) {
         $ch = curl_init($url);
+        // cURLが使える環境ではcURLで送ります。Authorizationヘッダーに秘密鍵を付け、通知サーバー側で正規の送信元か確認します。
         curl_setopt_array($ch, [
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_POST => true,
@@ -146,6 +150,7 @@ function sendRealtimeEvent(string $room, string $event, array $data = [], bool $
         return $result;
     }
 
+    // cURLが使えない環境でも通知できるように、file_get_contents用のHTTP設定を作る予備ルートです。
     $context = stream_context_create([
         "http" => [
             "method" => "POST",

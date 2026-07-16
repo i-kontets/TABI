@@ -12,6 +12,7 @@ import { useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { getUserSocket } from "./userSocket";
 
+// ここに並ぶイベント名を受け取った時だけ、利用者画面へ更新通知を流します。
 const USER_REALTIME_EVENTS = [
     "trip_updated",
     "trip_member_joined",
@@ -87,6 +88,7 @@ export default function UserRealtimeListener({ trip }) {
                 const userId = data?.user?.user_id;
                 // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (userId) {
+                    // join_userで「この接続はこのユーザーの通知を受け取る」とWebSocketサーバーへ知らせます。
                     socket.emit("join_user", userId);
                     // ここで条件を確認し、状況に合う処理だけを実行します。
                     if (import.meta.env.DEV) {
@@ -123,6 +125,7 @@ export default function UserRealtimeListener({ trip }) {
         }
 
         return () => {
+            // クリーンアップで接続イベントと各通知イベントを外し、画面遷移後の二重受信を防ぎます。
             socket.off("connect", handleConnect);
             handlers.forEach(([eventName, handler]) => {
                 socket.off(eventName, handler);
@@ -140,6 +143,7 @@ export default function UserRealtimeListener({ trip }) {
         const socket = getUserSocket();
         // joinTrip は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const joinTrip = () => {
+            // join_tripで現在の旅行グループの部屋へ参加し、同じグループ内の変更通知を受け取ります。
             socket.emit("join_trip", groupId);
             // ここで条件を確認し、状況に合う処理だけを実行します。
             if (import.meta.env.DEV) {

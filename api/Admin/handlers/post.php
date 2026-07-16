@@ -82,6 +82,7 @@ function handle_admin_post(PDO $pdo, string $resource, $id, array $input): void
             "public_id" => $id,
         ]);
 
+        // WebSocket通知を送ります。DB更新後に呼ぶことで、他の画面へ「変更があった」ことを伝えます。
         sendRealtimeEvent("admin:global", "inquiry_updated", [
             "id" => (int) $inquiry["inquiry_id"],
             "public_id" => $id,

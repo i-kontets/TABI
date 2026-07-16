@@ -310,6 +310,7 @@ function profilePreviewValue(currentUser, selectedIcon) {
     return null;
 }
 
+// 画像ファイルをプロフィール画像アップロードAPIへ送る関数です。AWS/S3の認証や保存処理はバックエンド側だけで行います。
 async function uploadUserIcon(file) {
     const body = new FormData();
     body.append('image', file);

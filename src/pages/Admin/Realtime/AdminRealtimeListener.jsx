@@ -63,6 +63,7 @@ export default function AdminRealtimeListener() {
                 console.log("WebSocket connected:", socket.id);
             }
             // join_admin を送ることで、サーバー側の管理者向け通知ルームに参加します。
+            // join_adminで管理者用の部屋へ参加し、問い合わせ・通報・ユーザー更新などの通知を受け取ります。
             socket.emit("join_admin");
             // ここで条件を確認し、状況に合う処理だけを実行します。
             if (import.meta.env.DEV) {

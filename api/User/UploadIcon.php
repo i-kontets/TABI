@@ -110,6 +110,7 @@ try {
     }
 
     // S3へ保存するため、AWS設定を読み込み、S3クライアントを作成します。
+    // AWS設定を読み込み、S3へアップロードできるクライアントを作ります。秘密情報の値は画面へ返しません。
     $aws = loadAwsConfig();
     $s3 = $aws ? createS3Client($aws) : null;
     // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
@@ -126,9 +127,11 @@ try {
 
     $ext = $allowed[$mime];
     // ランダム文字列を含めたS3キーにすることで、同名ファイルの上書きや推測しやすいURLを避けます。
+    // ユーザーIDとランダム文字列を使ってS3キーを作り、他人がファイル名を推測しにくくします。
     $s3Key = sprintf("User/%d/profile/%s.%s", $userId, bin2hex(random_bytes(16)), $ext);
 
     // S3へ画像本体を保存します。ContentType を設定すると、ブラウザが画像として表示しやすくなります。
+    // S3へプロフィール画像を保存します。ContentTypeを設定し、画像として表示しやすい状態で保存します。
     $s3->putObject([
         "Bucket" => $aws["bucket"],
         "Key" => $s3Key,
@@ -137,6 +140,7 @@ try {
     ]);
 
     // DBには有効期限がある署名付きURLではなく、永続的に参照できるS3キーを保存します。
+    // DBにはS3キーだけを保存します。署名付きURLは期限切れになるため、保存用の値には使いません。
     $stmt = $pdo->prepare("UPDATE users SET icon_url = :icon_url, updated_at = :updated_at WHERE user_id = :user_id");
     // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $stmt->bindValue(":icon_url", $s3Key);
@@ -165,6 +169,7 @@ try {
         "message" => "ユーザーアイコンをアップロードしました。",
         // file_url はDBに保存したS3キー、image_url は画面表示用の一時URLです。
         "file_url" => $s3Key,
+        // フロントエンドがすぐ表示できるよう、保存したS3キーから一時的な署名付きURLを作ります。
         "image_url" => presignS3Url($s3, $aws["bucket"], $s3Key),
     ]);
 // エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。

@@ -110,6 +110,7 @@ function resolveUserIconUrl(?string $iconValue): ?string
         }
     }
 
+    // 署名付きURLを作ると、非公開のS3画像をブラウザで一時的に表示できます。期限が切れたら再生成が必要です。
     return $cache[$key] = ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $key) : null;
 }
 
@@ -353,6 +354,7 @@ try {
 
     // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($groupId) {
+        // WebSocket通知を送ります。DB更新後に呼ぶことで、他の画面へ「変更があった」ことを伝えます。
         sendRealtimeEvent("trip:" . $groupId, "chat_message_created", [
             "group_id" => (int) $groupId,
             "chat_id" => (int) $chatId,

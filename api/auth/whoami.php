@@ -88,6 +88,7 @@ function resolveUserIconUrl(?string $iconKey): ?string
         $aws = loadAwsConfig();
         $s3 = $aws ? createS3Client($aws) : null;
 
+        // 署名付きURLを作ると、非公開のS3画像をブラウザで一時的に表示できます。期限が切れたら再生成が必要です。
         return ($aws && $s3) ? presignS3Url($s3, $aws["bucket"], $iconKey) : null;
     // エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
     } catch (Throwable $error) {
@@ -121,6 +122,7 @@ function userColumnExists(PDO $pdo, string $column): bool
  */
 function notifyUserActiveUpdated(int $userId): void
 {
+    // WebSocket通知を送ります。DB更新後に呼ぶことで、他の画面へ「変更があった」ことを伝えます。
     $result = sendRealtimeEvent("admin:global", "user_active_updated", [
         "user_id" => $userId,
     ]);

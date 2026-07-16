@@ -389,6 +389,7 @@ function logSystemError(string $source, string $level, string $message, $detail 
 
                 // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
                 if (function_exists("sendRealtimeEvent")) {
+                    // WebSocket通知を送ります。DB更新後に呼ぶことで、他の画面へ「変更があった」ことを伝えます。
                     sendRealtimeEvent("admin:global", "system_error_created", [
                         "error_id" => $existingId,
                         "errorCode" => $errorCode,

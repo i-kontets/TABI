@@ -73,6 +73,7 @@ function resolveUserIconUrl(?string $iconUrl): ?string
     }
     $aws = loadAwsConfig();
     $s3 = $aws ? createS3Client($aws) : null;
+    // 署名付きURLを作ると、非公開のS3画像をブラウザで一時的に表示できます。期限が切れたら再生成が必要です。
     return ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $iconUrl) : null;
 }
 

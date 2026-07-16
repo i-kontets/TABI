@@ -89,6 +89,7 @@ try {
     $stmt->execute();
 
     $inquiryId = (int) $pdo->lastInsertId();
+    // WebSocket通知を送ります。DB更新後に呼ぶことで、他の画面へ「変更があった」ことを伝えます。
     sendRealtimeEvent("admin:global", "inquiry_created", [
         "id" => $inquiryId,
         "public_id" => $publicId,

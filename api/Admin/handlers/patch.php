@@ -27,6 +27,7 @@ function handle_admin_patch(PDO $pdo, string $resource, $id, array $input): void
         $status = $action === "delete" ? "deleted" : "suspended";
         $deletedAt = $action === "delete" ? "NOW()" : "NULL";
         $pdo->exec("UPDATE users SET status = " . $pdo->quote($status) . ", deleted_at = {$deletedAt}, updated_at = NOW() WHERE user_id = {$numericId}");
+        // WebSocket通知を送ります。DB更新後に呼ぶことで、他の画面へ「変更があった」ことを伝えます。
         sendRealtimeEvent("admin:global", $action === "delete" ? "user_deleted" : "user_updated", [
             "user_id" => $numericId,
         ]);

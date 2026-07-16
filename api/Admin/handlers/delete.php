@@ -24,6 +24,7 @@ function handle_admin_delete(PDO $pdo, string $resource, $id): void
     if ($resource === "notices") {
         // お知らせは削除フラグを立てる方式です。
         $pdo->exec("UPDATE admin_notices SET deleted_at = NOW() WHERE notice_id = {$numericId}");
+        // WebSocket通知を送ります。DB更新後に呼ぶことで、他の画面へ「変更があった」ことを伝えます。
         sendRealtimeEvent("admin:global", "notice_deleted", [
             "notice_id" => $numericId,
         ]);

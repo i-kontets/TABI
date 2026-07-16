@@ -196,6 +196,7 @@ try {
 
     $pdo->commit();
 
+    // WebSocket通知を送ります。DB更新後に呼ぶことで、他の画面へ「変更があった」ことを伝えます。
     sendRealtimeEvent("admin:global", "group_created", [
         "group_id" => $groupId,
         "trip_id" => $tripId,

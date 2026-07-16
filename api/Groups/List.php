@@ -151,6 +151,7 @@ try {
 
         // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if (!empty($row["group_icon"]) && $s3 && $bucket) {
+            // 署名付きURLを作ると、非公開のS3画像をブラウザで一時的に表示できます。期限が切れたら再生成が必要です。
             $imageUrl = presignS3Url($s3, $bucket, $row["group_icon"]);
         }
 

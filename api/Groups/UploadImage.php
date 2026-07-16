@@ -71,6 +71,7 @@ if (empty($_FILES["image"])) {
     ], 400);
 }
 
+// AWS/S3の流れ: 画像を受け取る → MIME種類とサイズを確認する → S3キーを作る → S3へ保存する → DBにはS3キーだけ保存する → 表示用に署名付きURLを返す。
 $file = $_FILES["image"];
 // Photos/Upload.php と同じ制限（JPEG / PNG / WebP、最大10MB）
 $allowed = [
@@ -165,6 +166,7 @@ try {
     $oldKey = $current["group_icon"] ?? null;
 
     // S3クライアントを準備する
+    // AWS SDKでS3へ接続する準備をします。設定不足ならアップロードを進めず、原因が分かるJSONを返します。
     $aws = loadAwsConfig();
     $s3 = $aws ? createS3Client($aws) : null;
 
@@ -180,6 +182,7 @@ try {
     // S3キー設計は AWS-S3.md に合わせる:
     //   groups/{group_id}/cover/YYYY/MM/DD/{ランダム文字列}.{拡張子}
     $ext = $allowed[$mime];
+    // S3キーは「S3の中の保存場所」です。利用者が推測しにくい名前にして、同名ファイルの上書きを避けます。
     $s3Key = sprintf(
         "Icon/%s.%s",
         bin2hex(random_bytes(16)),
@@ -187,6 +190,7 @@ try {
     );
 
     // S3へアップロード
+    // S3へ画像本体を送ります。ContentTypeを付けることで、ブラウザやS3が画像の種類を正しく判断できます。
     $s3->putObject([
         "Bucket" => $aws["bucket"],
         "Key" => $s3Key,
@@ -195,6 +199,7 @@ try {
     ]);
 
     // DBにはS3キーだけを保存する（署名付きURLは保存しない）
+    // DBには期限切れになる署名付きURLではなくS3キーを保存します。表示が必要な時にだけ、新しい署名付きURLへ変換します。
     $stmt = $pdo->prepare("
         UPDATE trips
         SET group_icon = :group_icon,
@@ -214,6 +219,7 @@ try {
     if ($oldKey && strpos($oldKey, "http://") !== 0 && strpos($oldKey, "https://") !== 0) {
         // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
         try {
+            // 古いS3画像を削除します。DB更新後に削除することで、新しい画像の保存に成功した状態を優先します。
             $s3->deleteObject([
                 "Bucket" => $aws["bucket"],
                 "Key" => $oldKey,
@@ -229,6 +235,7 @@ try {
         "success" => true,
         "message" => "グループ画像をアップロードしました。",
         "file_url" => $s3Key,
+        // 署名付きURLを作り、アップロード直後の画面で新しい画像を表示できるようにします。
         "image_url" => presignS3Url($s3, $aws["bucket"], $s3Key)
     ]);
 // エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。

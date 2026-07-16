@@ -50,6 +50,7 @@ function userColumnExists(PDO $pdo, string $column): bool
  */
 function notifyUserActiveUpdated(int $userId): void
 {
+    // WebSocket通知を送ります。DB更新後に呼ぶことで、他の画面へ「変更があった」ことを伝えます。
     $result = sendRealtimeEvent("admin:global", "user_active_updated", [
         "user_id" => $userId,
     ]);

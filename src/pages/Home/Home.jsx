@@ -309,6 +309,7 @@ function Home() {
                         formData.append("group_id", data.group.id);
 
                         // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
+                        // 旅行グループ作成後、選択された画像をS3保存用APIへ送ります。ここで送るのは画像ファイル本体とgroup_idです。
                         const uploadResponse = await fetch(
                             "/TABI/api/Groups/UploadImage.php",
                             {

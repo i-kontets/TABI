@@ -35,6 +35,7 @@ $config = file_exists($configPath) ? require $configPath : [];
 
 // DB access is fixed to the AWS RDS connection profile.
 // Secrets stay in env.php or server environment variables.
+// 現在はAWS RDS接続を使う前提です。ローカルDBへ切り替える場合は、この判定とenv.php側の設定を一緒に見直します。
 $appEnv = "aws";
 $awsConfig = $config["connections"]["aws"] ?? [];
 
@@ -59,6 +60,7 @@ if ($host === "" || $dbname === "" || $user === "") {
 // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
     // PDOでMySQLへ接続します。ATTR_TIMEOUT は、DB停止中に長く待ちすぎないための秒数です。
+    // PDOでAWS RDS上のMySQLへ接続します。タイムアウトを短めにし、DB停止時に画面が長く待たされないようにしています。
     $pdo = new PDO(
         "mysql:host={$host};dbname={$dbname};charset={$charset}",
         $user,
