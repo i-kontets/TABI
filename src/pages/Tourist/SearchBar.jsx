@@ -1,18 +1,12 @@
 import { useState } from 'react';
 import styles from './SearchBar.module.css';
 
-function SearchBar({ onSearch }) {
-    const [city, setCity] = useState('京都');
+function SearchBar({ initialValue = '京都', onSearch }) {
+    const [city, setCity] = useState(initialValue);
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        const keyword = city.trim();
-
-        if (!keyword) {
-            return;
-        }
-
-        onSearch(keyword);
+        onSearch(city);
     };
 
     return (
