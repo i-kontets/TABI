@@ -1,3 +1,13 @@
+/**
+ * 管理者向け画面の表示と、管理 API から取得したデータの操作を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: 管理 API から取得した一覧や詳細データ、画面上の検索条件や入力値を主に扱います。
+ */
 import { useCallback, useEffect, useState } from 'react';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Badge, Avatar, Card, Button, EmptyState } from '../../../components/Admin/ui/Ui';
@@ -7,20 +17,31 @@ import styles from './Managers.module.css';
 
 const ROLES = ['管理者', 'サポート', '閲覧のみ'];
 
+/**
+ * Managers は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function Managers() {
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [managers, setManagers] = useState([]);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [showForm, setShowForm] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [form, setForm] = useState({ name: '', email: '', role: 'サポート' });
 
+    // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
     const load = useCallback(() => fetchManagers().then((list) => setManagers([...list])), []);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         load();
     }, [load]);
 
     useAdminRealtimeRefresh(['admin:manager_created', 'admin:manager_updated', 'admin:manager_deleted'], load);
 
+    // handleAdd は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleAdd = async () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!form.name.trim() || !form.email.trim()) {
             window.alert('名前とメールアドレスは必須です。');
             return;
@@ -31,11 +52,14 @@ export default function Managers() {
         load();
     };
 
+    // handleToggle は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleToggle = async (m) => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (m.role === 'オーナー') {
             window.alert('オーナーは停止できません。');
             return;
         }
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!window.confirm(m.status === '停止中' ? 'アカウントを復旧しますか?' : 'このアカウントを停止しますか?')) return;
         await toggleManagerStatus(m.id);
         load();

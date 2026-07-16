@@ -1,9 +1,16 @@
+/**
+ * 複数の画面から使われる共通の表示部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import React from 'react';
 import styles from './ChatSidebar.module.css';
-
-function isImageAvatar(value) {
-  return typeof value === 'string' && (/^(https?:)?\/\//.test(value) || value.startsWith('/'));
-}
+import UserAvatar from '../UserAvatar';
 
 const ChatSidebar = ({ contacts, activeId, onSelect }) => {
   return (
@@ -24,13 +31,14 @@ const ChatSidebar = ({ contacts, activeId, onSelect }) => {
             onClick={() => onSelect(contact.id)}
           >
             <div className={styles.avatarWrapper}>
-              {isImageAvatar(contact.avatar) ? (
-                <img src={contact.avatar} alt={contact.name} className={styles.avatar} />
-              ) : (
-                <div className={styles.avatarFallback} aria-hidden="true">
-                  {String(contact.avatar || contact.name || '?').slice(0, 1)}
-                </div>
-              )}
+              <UserAvatar
+                src={contact.avatar}
+                name={contact.avatar || contact.name}
+                alt={contact.name}
+                className={styles.avatar}
+                fallbackClassName={styles.avatarFallback}
+                source="Chat sidebar user icon"
+              />
             </div>
             <div className={styles.info}>
               <div className={styles.headerRow}>

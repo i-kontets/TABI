@@ -1,3 +1,13 @@
+/**
+ * 旅行グループ内の話し合い、候補、投票などの画面表示を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useContext, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { TripContext } from "../../App";
@@ -22,6 +32,10 @@ const tabs = [
     { id: "poll", label: "投票" },
 ];
 
+/**
+ * Discussion は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function Discussion() {
     const { trip } = useContext(TripContext);
     const { groupId: pathGroupId } = useParams();
@@ -29,6 +43,7 @@ function Discussion() {
     const queryGroupId = new URLSearchParams(location.search).get("groupId");
     const groupId = pathGroupId || queryGroupId || trip.id || "1";
     const tripTitle = trip.name || tripNames[groupId] || "旅行";
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [activeTab, setActiveTab] = useState("chat");
 
     return (

@@ -1,9 +1,26 @@
 <?php
 
+/**
+ * 管理 API から使う補助サービス処理をまとめます。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
+/**
+ * post_json は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function post_json(string $url, array $payload): array
 {
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     $json = json_encode($payload, JSON_UNESCAPED_UNICODE);
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (function_exists("curl_init")) {
         $ch = curl_init($url);
         curl_setopt_array($ch, [
@@ -20,6 +37,7 @@ function post_json(string $url, array $payload): array
         $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($body === false) {
             throw new RuntimeException("GAS送信に失敗しました: " . $error);
         }
@@ -38,10 +56,12 @@ function post_json(string $url, array $payload): array
     ]);
     $body = file_get_contents($url, false, $context);
     $status = 0;
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (isset($http_response_header[0]) && preg_match("/\s(\d{3})\s/", $http_response_header[0], $matches)) {
         $status = (int) $matches[1];
     }
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($body === false) {
         throw new RuntimeException("GAS送信に失敗しました。");
     }
@@ -56,6 +76,7 @@ function send_inquiry_reply_via_gas(array $inquiry, string $message): array
     $gasUrl = app_config("GAS_INQUIRY_REPLY_URL", "");
     $gasToken = app_config("GAS_INQUIRY_REPLY_TOKEN", "");
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$gasUrl) {
         throw new RuntimeException("GAS_INQUIRY_REPLY_URLが設定されていません。GASをWebアプリとしてデプロイし、/exec のURLを設定してください。");
     }
@@ -70,11 +91,14 @@ function send_inquiry_reply_via_gas(array $inquiry, string $message): array
         "originalBody" => $inquiry["body"],
         "replyBody" => $message,
     ]);
+    // フロントエンドから送られた JSON 文字列を、PHP で扱える配列に変換します。
     $decoded = json_decode($response["body"], true);
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($response["status"] < 200 || $response["status"] >= 300) {
         throw new RuntimeException("GASがHTTP " . $response["status"] . "を返しました。");
     }
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (is_array($decoded) && isset($decoded["ok"]) && !$decoded["ok"]) {
         throw new RuntimeException($decoded["message"] ?? "GAS側で送信に失敗しました。");
     }

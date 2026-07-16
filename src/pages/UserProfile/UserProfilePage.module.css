@@ -1,0 +1,359 @@
+.page {
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    background: #f7f7f8;
+    color: #111827;
+    position: relative;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.03);
+}
+
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    height: 64px;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+    align-items: center;
+    padding: 0 12px;
+    box-sizing: border-box;
+    background: var(--header-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.headerTitle {
+    margin: 0;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1;
+    text-align: center;
+}
+
+.headerButton {
+    width: 44px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+.headerIcon,
+.footerIcon {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.menuArea {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.menu {
+    position: absolute;
+    top: 48px;
+    right: 0;
+    min-width: 168px;
+    padding: 6px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+}
+
+.menuItem {
+    width: 100%;
+    min-height: 40px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 800;
+    text-align: left;
+    padding: 0 10px;
+    cursor: pointer;
+}
+
+.menuItem:hover {
+    background: #fef2f2;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 16px 96px;
+}
+
+.profileCard,
+.sectionCard,
+.stateCard {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+}
+
+.profileCard {
+    padding: 24px 16px;
+    text-align: center;
+}
+
+.avatar {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #dfe7ff, #f4f7ff);
+    color: var(--sub-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    font-weight: 800;
+}
+
+.avatarImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.userName {
+    margin: 0;
+    color: #111827;
+    font-size: 22px;
+    line-height: 1.3;
+    font-weight: 800;
+}
+
+.registeredAt {
+    margin: 8px 0 0;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.sectionCard {
+    padding: 16px;
+}
+
+.sectionTitle {
+    margin: 0 0 10px;
+    color: var(--sub-color);
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.bio {
+    margin: 0;
+    color: #334155;
+    font-size: 14px;
+    line-height: 1.75;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.groupList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.groupItem {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.stateMessage {
+    margin: 24px 0 0;
+    color: #64748b;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.stateCard {
+    padding: 18px 16px;
+}
+
+.stateCard p {
+    margin: 0;
+    color: #dc2626;
+    font-size: 14px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.footer {
+    position: fixed;
+    left: 50%;
+    bottom: 0;
+    width: min(100%, 430px);
+    height: 70px;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    background-color: var(--main-color);
+    border-top: 1px solid var(--main-color);
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.footerItem {
+    flex: 1;
+    height: 100%;
+    border: 0;
+    background: transparent;
+    color: #737373;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+}
+
+.footerIcon {
+    width: 25px;
+    height: 25px;
+}
+
+.modalBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.35);
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.reportModal {
+    width: min(100%, 398px);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.24);
+}
+
+.reportTitle {
+    margin: 0;
+    color: #111827;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.reportLead {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.reportLabel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.reportSelect,
+.reportTextarea {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: #fff;
+    color: #111827;
+    font: inherit;
+    box-sizing: border-box;
+}
+
+.reportSelect {
+    height: 42px;
+    padding: 0 10px;
+}
+
+.reportTextarea {
+    resize: vertical;
+    min-height: 92px;
+    padding: 10px;
+    line-height: 1.5;
+}
+
+.reportError {
+    margin: 0;
+    color: #dc2626;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.reportActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.reportCancel,
+.reportSubmit {
+    min-height: 42px;
+    border-radius: 10px;
+    padding: 0 16px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.reportCancel {
+    border: 1px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+}
+
+.reportSubmit {
+    border: 0;
+    background: #dc2626;
+    color: #fff;
+}
+
+.reportCancel:disabled,
+.reportSubmit:disabled {
+    opacity: 0.65;
+    cursor: wait;
+}
+
+@media screen and (max-width: 430px) {
+    .page {
+        max-width: none;
+    }
+}

@@ -1,3 +1,14 @@
+/**
+ * 観光スポットの検索、一覧表示、詳細表示、お気に入り操作を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
+
 import { useCallback, useEffect, useState } from 'react';
 import Header from '../../components/header/Header';
 import BottomNav from '../../components/bottomNav/BottomNav';
@@ -8,16 +19,29 @@ import styles from './Tourist.module.css';
 
 const touristApiBase = `${import.meta.env.BASE_URL}api/tourist`;
 
+/**
+ * Tourist は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
+
 function Tourist() {
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [spots, setSpots] = useState([]);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [city, setCity] = useState('京都');
     const [message, setMessage] = useState('地域名を入力して観光地を検索してください。');
     const [isLoading, setIsLoading] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [selectedSpot, setSelectedSpot] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [detailMessage, setDetailMessage] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [isDetailLoading, setIsDetailLoading] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [favoriteIds, setFavoriteIds] = useState(new Set());
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [favoriteMessage, setFavoriteMessage] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
 
     const fetchFavoriteIds = useCallback(async () => {
@@ -45,6 +69,7 @@ function Tourist() {
     const fetchTouristSpots = useCallback(async (keyword) => {
         const searchCity = keyword.trim();
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!searchCity) {
             setSpots([]);
             setCity('');
@@ -55,6 +80,7 @@ function Tourist() {
         setIsLoading(true);
         setMessage('');
 
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             const params = new URLSearchParams({ city: searchCity });
             const response = await fetch(`${touristApiBase}/getTouristSpots.php?${params.toString()}`);
@@ -70,11 +96,13 @@ function Tourist() {
             setSpots(Array.isArray(data.spots) ? data.spots : []);
             setCity(data.city || searchCity);
             setMessage(data.message || '');
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
             console.error('観光地の取得に失敗しました。', error);
             setSpots([]);
             setCity(searchCity);
             setMessage('通信に失敗しました。時間をおいて再度お試しください。');
+        // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             setIsLoading(false);
         }
@@ -86,6 +114,7 @@ function Tourist() {
         setFavoriteMessage('');
         setIsDetailLoading(true);
 
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             const params = new URLSearchParams({ id: String(spot.tourist_spot_id) });
             const response = await fetch(`${touristApiBase}/getTouristSpotDetail.php?${params.toString()}`);
@@ -100,6 +129,7 @@ function Tourist() {
         } catch (error) {
             console.error('観光地詳細の取得に失敗しました。', error);
             setDetailMessage('通信に失敗しました。時間をおいて再度お試しください。');
+        // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             setIsDetailLoading(false);
         }
@@ -115,7 +145,9 @@ function Tourist() {
         setIsFavoriteLoading(true);
         setFavoriteMessage('');
 
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
+            // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
             const response = await fetch(
                 isFavorite
                     ? `${touristApiBase}/removeFavorite.php?tourist_spot_id=${spotId}`
@@ -133,6 +165,7 @@ function Tourist() {
             );
             const data = await response.json();
 
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (!response.ok || !data.success) {
                 setFavoriteMessage(data.message || 'お気に入り更新に失敗しました。');
                 return false;
@@ -141,6 +174,7 @@ function Tourist() {
             setFavoriteIds((currentIds) => {
                 const nextIds = new Set(currentIds);
 
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (isFavorite) {
                     nextIds.delete(spotId);
                 } else {

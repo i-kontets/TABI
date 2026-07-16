@@ -1,8 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+/**
+ * マイページとプロフィール編集、通知設定、問い合わせなどの個人設定画面を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
+import { createElement, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Modal from '../../components/Modal/Modal';
+import PasswordResetRequestModal from '../../components/PasswordReset/PasswordResetRequestModal';
 import styles from './MyPage.module.css';
 
+/**
+ * BellIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function BellIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -12,6 +27,10 @@ function BellIcon({ className }) {
     );
 }
 
+/**
+ * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function HomeIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -22,6 +41,10 @@ function HomeIcon({ className }) {
     );
 }
 
+/**
+ * UserIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function UserIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -31,6 +54,10 @@ function UserIcon({ className }) {
     );
 }
 
+/**
+ * PencilIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function PencilIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -40,6 +67,10 @@ function PencilIcon({ className }) {
     );
 }
 
+/**
+ * MailIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function MailIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -49,6 +80,10 @@ function MailIcon({ className }) {
     );
 }
 
+/**
+ * LockIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function LockIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -58,6 +93,10 @@ function LockIcon({ className }) {
     );
 }
 
+/**
+ * NoticeIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function NoticeIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -67,6 +106,10 @@ function NoticeIcon({ className }) {
     );
 }
 
+/**
+ * ShieldIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function ShieldIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -76,6 +119,10 @@ function ShieldIcon({ className }) {
     );
 }
 
+/**
+ * HelpIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function HelpIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -86,6 +133,10 @@ function HelpIcon({ className }) {
     );
 }
 
+/**
+ * DocumentIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function DocumentIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -97,6 +148,10 @@ function DocumentIcon({ className }) {
     );
 }
 
+/**
+ * LogoutIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function LogoutIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -107,6 +162,10 @@ function LogoutIcon({ className }) {
     );
 }
 
+/**
+ * ChevronRightIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function ChevronRightIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -115,11 +174,15 @@ function ChevronRightIcon({ className }) {
     );
 }
 
-function ItemRow({ icon: Icon, title, description, onClick }) {
+/**
+ * ItemRow は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
+function ItemRow({ icon, title, description, onClick }) {
     return (
         <button type="button" className={styles.itemRow} onClick={onClick}>
             <span className={styles.itemIconWrap}>
-                <Icon className={styles.itemIcon} />
+                {createElement(icon, { className: styles.itemIcon })}
             </span>
             <span className={styles.itemText}>
                 <span className={styles.itemTitle}>{title}</span>
@@ -130,6 +193,10 @@ function ItemRow({ icon: Icon, title, description, onClick }) {
     );
 }
 
+/**
+ * SectionCard は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function SectionCard({ title, children }) {
     return (
         <section className={styles.sectionCard} aria-label={title}>
@@ -139,30 +206,41 @@ function SectionCard({ title, children }) {
     );
 }
 
+/**
+ * MyPage は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function MyPage() {
     const navigate = useNavigate();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [user, setUser] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [isPasswordOpen, setIsPasswordOpen] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [isLogoutOpen, setIsLogoutOpen] = useState(false);
-    const [passwordMessage, setPasswordMessage] = useState('');
-    const [isSendingPasswordMail, setIsSendingPasswordMail] = useState(false);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         let isMounted = true;
 
+        // fetchUser は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const fetchUser = async () => {
+            // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
             try {
+                // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                 const response = await fetch('/TABI/api/Auth/whoami.php', {
                     method: 'GET',
                     credentials: 'include',
                 });
 
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (response.status === 401) {
                     navigate('/');
                     return;
                 }
 
                 const data = await response.json();
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (isMounted && data.success && data.user) {
                     const nextUser = {
                         ...data.user,
@@ -170,7 +248,9 @@ function MyPage() {
                     };
                     setUser(nextUser);
                 }
+            // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
             } catch {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (isMounted) {
                     setUser(null);
                 }
@@ -189,33 +269,19 @@ function MyPage() {
         return name.trim().slice(0, 1).toUpperCase();
     }, [user?.name]);
 
-    const handlePasswordReset = async () => {
-        setIsSendingPasswordMail(true);
-        setPasswordMessage('');
-
-        try {
-            // TODO: パスワード再設定APIが用意できたら、以下の仮成功処理を
-            // POST /api/password/reset-request body: { email: string } への呼び出しに差し替える。
-            await new Promise((resolve) => setTimeout(resolve, 450));
-            setPasswordMessage('再設定メールを送信しました。メールに記載されたリンクから新しいパスワードを設定してください。');
-        } finally {
-            setIsSendingPasswordMail(false);
-        }
-    };
-
+    // handleLogout は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleLogout = async () => {
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
+            // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
             await fetch('/TABI/api/Auth/logout.php', {
                 method: 'POST',
                 credentials: 'include',
             });
+        // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             navigate('/');
         }
-    };
-
-    const handleComingSoon = (label) => {
-        window.alert(label + 'は現在準備中です。');
     };
 
     return (
@@ -243,7 +309,6 @@ function MyPage() {
                             <p className={styles.userEmail}>{user?.email || '未設定'}</p>
                             <span className={styles.roleBadge}>{user?.role || '一般ユーザー'}</span>
                         </div>
-                        <ChevronRightIcon className={styles.profileChevron} />
                     </div>
 
                     <button
@@ -274,7 +339,6 @@ function MyPage() {
                         title="パスワードの変更"
                         description="登録メールに再設定リンクを送信します"
                         onClick={() => {
-                            setPasswordMessage('');
                             setIsPasswordOpen(true);
                         }}
                     />
@@ -311,12 +375,12 @@ function MyPage() {
                     <ItemRow
                         icon={DocumentIcon}
                         title="利用規約"
-                        onClick={() => handleComingSoon('利用規約')}
+                        onClick={() => navigate('/terms')}
                     />
                     <ItemRow
                         icon={DocumentIcon}
                         title="プライバシーポリシー"
-                        onClick={() => handleComingSoon('プライバシーポリシー')}
+                        onClick={() => navigate('/privacy-policy')}
                     />
                 </SectionCard>
 
@@ -348,37 +412,12 @@ function MyPage() {
                 </button>
             </footer>
 
-            <Modal isOpen={isPasswordOpen} onClose={() => setIsPasswordOpen(false)}>
-                <div className={styles.modalContent}>
-                    <h2 className={styles.modalTitle}>パスワードの変更</h2>
-                    <p className={styles.modalLead}>登録メールアドレスに再設定リンクを送信します。</p>
-
-                    <label className={styles.emailLabel}>
-                        登録メールアドレス
-                        <input className={styles.emailInput} value={user?.email || '未設定'} readOnly />
-                    </label>
-
-                    {passwordMessage && <p className={styles.successMessage}>{passwordMessage}</p>}
-
-                    <div className={styles.modalActions}>
-                        <button
-                            type="button"
-                            className={styles.secondaryButton}
-                            onClick={() => setIsPasswordOpen(false)}
-                        >
-                            閉じる
-                        </button>
-                        <button
-                            type="button"
-                            className={styles.primaryButton}
-                            onClick={handlePasswordReset}
-                            disabled={isSendingPasswordMail}
-                        >
-                            {isSendingPasswordMail ? '送信中...' : '再設定メールを送信'}
-                        </button>
-                    </div>
-                </div>
-            </Modal>
+            <PasswordResetRequestModal
+                isOpen={isPasswordOpen}
+                onClose={() => setIsPasswordOpen(false)}
+                initialEmail={user?.email || ''}
+                isEmailReadOnly
+            />
 
             <Modal isOpen={isLogoutOpen} onClose={() => setIsLogoutOpen(false)}>
                 <div className={styles.modalContent}>

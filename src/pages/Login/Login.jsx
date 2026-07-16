@@ -1,25 +1,51 @@
+/**
+ * ログイン画面の入力、認証 API への送信、ログイン後の画面遷移を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./Login.module.css";
+import PasswordResetRequestModal from "../../components/PasswordReset/PasswordResetRequestModal";
 
 import eyeIcon from "../../assets/icons/eye.svg";
 import eyeOffIcon from "../../assets/icons/eye_off.svg";
 
 // public/assets/login/ 直下にあるすべてのjpg,jpeg,png,webp画像を自動で読み込む
 const imageModules = import.meta.glob("/public/assets/login/*.{jpg,jpeg,png,webp}", { eager: true });
+// 配列のデータを1件ずつ画面表示用の形に変換します。
 const BACKGROUND_IMAGES = Object.values(imageModules).map((mod) => mod.default);
 
+/**
+ * Login は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function Login() {
     const navigate = useNavigate();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [email, setEmail] = useState("2410041@i-seifu.jp");
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [password, setPassword] = useState("2024gakusei");
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [showPassword, setShowPassword] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [errorMessage, setErrorMessage] = useState("");
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [isLoading, setIsLoading] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
+    const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
 
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [bgImage, setBgImage] = useState(BACKGROUND_IMAGES[0] || "");
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (BACKGROUND_IMAGES.length > 0) {
             const randomIndex = Math.floor(Math.random() * BACKGROUND_IMAGES.length);
             setBgImage(BACKGROUND_IMAGES[randomIndex]);
@@ -40,6 +66,7 @@ export default function Login() {
             return;
         }
 
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             // ローディング状態を有効化
             setIsLoading(true);
@@ -73,10 +100,12 @@ export default function Login() {
             // ホームページにリダイレクト
             navigate("/Home");
 
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
             // 通信エラーやパース エラーをキャッチ
             console.error(error);
             setErrorMessage("通信エラーが発生しました");
+        // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             // エラーの有無に関わらず、ローディング状態を無効化
             setIsLoading(false);
@@ -118,6 +147,14 @@ export default function Login() {
                             />
                         </div>
 
+                        <button
+                            type="button"
+                            className={styles.forgotPasswordLink}
+                            onClick={() => setIsPasswordResetOpen(true)}
+                        >
+                            パスワードを忘れた方はこちら
+                        </button>
+
                         {errorMessage && (
                             <p className={styles.errorMessage}>
                                 {errorMessage}
@@ -142,6 +179,12 @@ export default function Login() {
                     </button>
                 </div>
             </div>
+
+            <PasswordResetRequestModal
+                isOpen={isPasswordResetOpen}
+                onClose={() => setIsPasswordResetOpen(false)}
+                initialEmail={email}
+            />
         </div>
     );
 }

@@ -1,4 +1,16 @@
 <?php
+
+/**
+ * 旅行先候補やアンケートの作成、取得、投票を扱う API です。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
 // セッションを開始して、ログイン中ユーザーの情報を参照できるようにする
 session_start();
 
@@ -11,9 +23,11 @@ require_once __DIR__ . "/CandidateCommon.php";
 
 // このエンドポイントはPOSTのみ受け付ける
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     respond(405, ["success" => false, "message" => "許可されていないメソッドです"]);
 }
 
+// データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
     // JSON本文を連想配列に変換する。壊れていた場合は空配列にする
     $input = json_decode(file_get_contents("php://input"), true) ?: [];
@@ -39,6 +53,7 @@ try {
            AND (survey.deadline_at IS NULL OR survey.deadline_at >= NOW())
          LIMIT 1"
     );
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $optionStmt->execute([
         ":survey_id" => $surveyId,
         ":trip_id" => $trip["trip_id"],
@@ -47,6 +62,7 @@ try {
 
     // 選択肢が見つからない場合は、期限切れか不正なIDとして扱う
     if (!$optionStmt->fetch()) {
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         respond(400, ["success" => false, "message" => "回答期限切れ、または選択肢が正しくありません"]);
     }
 
@@ -57,6 +73,7 @@ try {
         "DELETE FROM trip_survey_votes
          WHERE survey_id = :survey_id AND user_id = :user_id"
     );
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $deleteStmt->execute([":survey_id" => $surveyId, ":user_id" => $userId]);
 
     // 新しい回答を記録する
@@ -66,6 +83,7 @@ try {
          VALUES
             (:survey_id, :option_id, :user_id, NOW())"
     );
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $insertStmt->execute([
         ":survey_id" => $surveyId,
         ":option_id" => $optionId,
@@ -77,6 +95,7 @@ try {
 
     // 正常終了をJSONで返す
     respond(200, ["success" => true]);
+// エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
 } catch (PDOException $error) {
     // 途中で失敗した場合は、登録済みの変更を元に戻す
     if (isset($pdo) && $pdo->inTransaction()) {

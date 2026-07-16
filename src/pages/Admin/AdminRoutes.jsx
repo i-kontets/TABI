@@ -1,3 +1,13 @@
+/**
+ * 管理者向け画面の表示と、管理 API から取得したデータの操作を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: 管理 API から取得した一覧や詳細データ、画面上の検索条件や入力値を主に扱います。
+ */
 import { Navigate, Routes, Route } from 'react-router-dom';
 
 import Dashboard from './Dashboard/Dashboard';
@@ -15,9 +25,12 @@ import NoticeForm from './Notices/NoticeForm';
 import SpotList from './Spots/SpotList';
 import SpotForm from './Spots/SpotForm';
 import Analytics from './Analytics/Analytics';
+import Activities from './Activities/Activities';
 import Managers from './Managers/Managers';
 import Logs from './Logs/Logs';
 import Settings from './Settings/Settings';
+import SystemErrors from './SystemErrors/SystemErrors';
+import AdminServiceGate from './AdminServiceGate';
 import AdminRealtimeListener from "./Realtime/AdminRealtimeListener";
 
 /**
@@ -27,7 +40,7 @@ import AdminRealtimeListener from "./Realtime/AdminRealtimeListener";
  */
 export default function AdminRoutes() {
     return (
-        <>
+        <AdminServiceGate>
             <AdminRealtimeListener />
             <Routes>
                 <Route index element={<Dashboard />} />
@@ -49,10 +62,12 @@ export default function AdminRoutes() {
                 <Route path="spots/new" element={<SpotForm />} />
                 <Route path="spots/:spotId/edit" element={<SpotForm />} />
                 <Route path="analytics" element={<Analytics />} />
+                <Route path="activities" element={<Activities />} />
                 <Route path="managers" element={<Managers />} />
                 <Route path="logs" element={<Logs />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="system-errors" element={<SystemErrors />} />
             </Routes>
-        </>
+        </AdminServiceGate>
     );
 }

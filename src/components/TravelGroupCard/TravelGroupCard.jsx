@@ -1,5 +1,19 @@
+/**
+ * 複数の画面から使われる共通の表示部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import styles from './TravelGroupCard.module.css';
 
+/**
+ * CalendarIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function CalendarIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -8,6 +22,10 @@ function CalendarIcon({ className }) {
     );
 }
 
+/**
+ * UsersIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function UsersIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -19,6 +37,10 @@ function UsersIcon({ className }) {
     );
 }
 
+/**
+ * ChevronRightIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function ChevronRightIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -33,6 +55,10 @@ const STATUS_CLASS = {
     "終了": "statusDone",
 };
 
+/**
+ * TravelGroupCard は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function TravelGroupCard({ group, onClick }) {
     const statusClass = styles[STATUS_CLASS[group.status]] ?? styles.statusPlanning;
 
