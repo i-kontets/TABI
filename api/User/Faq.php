@@ -18,6 +18,7 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // 共通設定や別ファイルの関数を読み込み、この API から使えるようにします。
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/faqSeedData.php";
 
 /**
  * respond は、この API 内で何度も使う処理をまとめた関数です。
@@ -43,6 +44,23 @@ try {
     // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!is_array($items)) {
         $items = [];
+    }
+
+    // FAQがまだDBに登録されていない場合だけ、初期FAQをDBへ保存してから画面へ返します。
+    if (count($items) === 0) {
+        $seedItems = tabiFaqSeedItems();
+        $now = (new DateTimeImmutable("now"))->format("Y-m-d H:i:s");
+        $seedStmt = $pdo->prepare("
+            INSERT INTO system_settings (setting_key, setting_value, updated_at)
+            VALUES ('faq_items', :setting_value, :updated_at)
+            ON DUPLICATE KEY UPDATE
+                setting_value = VALUES(setting_value),
+                updated_at = VALUES(updated_at)
+        ");
+        $seedStmt->bindValue(":setting_value", json_encode($seedItems, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $seedStmt->bindValue(":updated_at", $now);
+        $seedStmt->execute();
+        $items = $seedItems;
     }
 
     $keyword = trim((string) ($_GET["keyword"] ?? ""));
