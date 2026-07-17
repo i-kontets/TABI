@@ -120,6 +120,188 @@
     font: inherit;
 }
 
+.timeWheelField {
+    margin-top: 6px;
+}
+
+.timePickerField {
+    margin-top: 6px;
+}
+
+.timeInputButton {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+    background: #fff;
+    color: #222;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.timePickerOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.timePickerSheet {
+    width: 100%;
+    padding: 12px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    border-radius: 14px 14px 0 0;
+    background: #fff;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.14);
+    box-sizing: border-box;
+}
+
+.timePickerHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.timePickerTitle {
+    color: #222;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.timePickerDone {
+    min-height: 36px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: var(--sub-color);
+    color: var(--main-color);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.timeWheelWrapper {
+    height: 164px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.timeWheelColumn {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+}
+
+.timeWheelColumn + .timeWheelColumn {
+    border-left: 1px solid #eee;
+}
+
+.timeWheelOption {
+    color: #777;
+    font-size: 1rem;
+}
+
+.timeWheelHighlight {
+    background: var(--appointment-button-bg);
+    color: #000;
+}
+
+.timeWheelHighlightItem {
+    justify-content: center;
+    padding-right: 26px;
+    font-weight: 700;
+}
+
+.timeWheelUnit {
+    position: absolute;
+    top: 50%;
+    right: 26%;
+    z-index: 1;
+    transform: translateY(-50%);
+    color: #555;
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+
+.timeWheelValue {
+    margin-top: 6px;
+    color: #666;
+    font-size: 0.85rem;
+    text-align: right;
+}
+
+.peopleStepper {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    align-items: center;
+    width: min(100%, 180px);
+    min-height: 44px;
+    margin-top: 6px;
+    padding: 3px;
+    border: 1px solid var(--other-color);
+    border-radius: 6px;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.stepperButton {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    background: var(--sub-color);
+    color: var(--main-color);
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: transform 0.12s ease, opacity 0.12s ease, background-color 0.12s ease;
+}
+
+.stepperButton:active:not(:disabled) {
+    transform: scale(0.94);
+}
+
+.stepperButton:disabled {
+    color: #aaa;
+    cursor: not-allowed;
+    background: #f8f8f8;
+    opacity: 0.72;
+}
+
+.peopleValue {
+    display: inline-flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 0 8px;
+    color: #222;
+    font-weight: 700;
+}
+
+.peopleNumber {
+    min-width: 2ch;
+    font-size: 1.05rem;
+    text-align: right;
+}
+
+.peopleUnit {
+    font-size: 0.85rem;
+    color: #555;
+}
+
 .dateTimeTable {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

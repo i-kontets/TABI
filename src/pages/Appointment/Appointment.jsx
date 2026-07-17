@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { WheelPicker, WheelPickerWrapper } from '@ncdai/react-wheel-picker';
+import '@ncdai/react-wheel-picker/style.css';
 import BtmNav from '../../components/bottomNav/BottomNav';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import TrainIcon from '../../assets/icons/train.svg?react';
@@ -28,6 +30,132 @@ function AppointmentHeader({ title, onBack }) {
     );
 }
 
+function TimeWheelPicker({ hour, minute, hourOptions, minuteOptions, onHourChange, onMinuteChange }) {
+    const pickerClassNames = {
+        optionItem: styles.timeWheelOption,
+        highlightWrapper: styles.timeWheelHighlight,
+        highlightItem: styles.timeWheelHighlightItem,
+    };
+
+    return (
+        <div className={styles.timeWheelField}>
+            <WheelPickerWrapper className={styles.timeWheelWrapper}>
+                <div className={styles.timeWheelColumn} aria-label="時間">
+                    <WheelPicker
+                        value={hour}
+                        onValueChange={onHourChange}
+                        options={hourOptions}
+                        infinite
+                        visibleCount={7}
+                        optionItemHeight={36}
+                        classNames={pickerClassNames}
+                    />
+                    <span className={styles.timeWheelUnit}>時</span>
+                </div>
+                <div className={styles.timeWheelColumn} aria-label="分">
+                    <WheelPicker
+                        value={minute}
+                        onValueChange={onMinuteChange}
+                        options={minuteOptions}
+                        infinite
+                        visibleCount={7}
+                        optionItemHeight={36}
+                        classNames={pickerClassNames}
+                    />
+                    <span className={styles.timeWheelUnit}>分</span>
+                </div>
+            </WheelPickerWrapper>
+            <div className={styles.timeWheelValue} aria-live="polite">
+                {hour}:{minute}
+            </div>
+        </div>
+    );
+}
+
+function TimePickerField({ label, hour, minute, hourOptions, minuteOptions, onHourChange, onMinuteChange }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const selectedTime = `${hour}:${minute}`;
+
+    return (
+        <div className={styles.timePickerField}>
+            <button
+                type="button"
+                className={styles.timeInputButton}
+                onClick={() => setIsOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={isOpen}
+            >
+                <span>{selectedTime}</span>
+            </button>
+
+            {isOpen && (
+                <div className={styles.timePickerOverlay} onClick={() => setIsOpen(false)}>
+                    <div
+                        className={styles.timePickerSheet}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={`${label}を選択`}
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <div className={styles.timePickerHeader}>
+                            <div className={styles.timePickerTitle}>{label}</div>
+                            <button
+                                type="button"
+                                className={styles.timePickerDone}
+                                onClick={() => setIsOpen(false)}
+                            >
+                                決定
+                            </button>
+                        </div>
+                        <TimeWheelPicker
+                            hour={hour}
+                            minute={minute}
+                            hourOptions={hourOptions}
+                            minuteOptions={minuteOptions}
+                            onHourChange={onHourChange}
+                            onMinuteChange={onMinuteChange}
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function PeopleStepper({ value, onChange }) {
+    const currentValue = Number(value) || 1;
+
+    const updateValue = (nextValue) => {
+        onChange(Math.max(1, nextValue));
+    };
+
+    return (
+        <div className={styles.peopleStepper}>
+            <button
+                type="button"
+                className={styles.stepperButton}
+                onClick={() => updateValue(currentValue - 1)}
+                disabled={currentValue <= 1}
+                aria-label="人数を減らす"
+            >
+                -
+            </button>
+            <div className={styles.peopleValue} aria-live="polite">
+                <span className={styles.peopleNumber}>{currentValue}</span>
+                <span className={styles.peopleUnit}>名</span>
+            </div>
+            <button
+                type="button"
+                className={styles.stepperButton}
+                onClick={() => updateValue(currentValue + 1)}
+                aria-label="人数を増やす"
+            >
+                +
+            </button>
+        </div>
+    );
+}
+
 // Step 0: Search / list
 function AppointmentStep({ onProceed }) {
     const [type, setType] = useState(() => transportData.transports?.[0]?.type || '');
@@ -42,7 +170,8 @@ function AppointmentStep({ onProceed }) {
         const d = new Date();
         return d.toISOString().slice(0,10);
     });
-    const [hour, setHour] = useState('');
+    const [hour, setHour] = useState('09');
+    const [minute, setMinute] = useState('00');
     const [returnHour, setReturnHour] = useState('');
     const [people, setPeople] = useState(1);
     const [formError, setFormError] = useState('');
@@ -76,9 +205,18 @@ function AppointmentStep({ onProceed }) {
                 fromPlaceholder: '例: 東京',
                 toPlaceholder: '例: 新大阪',
             };
-    const hourOptions = useMemo(() => (
+    const hourValues = useMemo(() => (
         Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'))
     ), []);
+    const minuteValues = useMemo(() => (
+        Array.from({ length: 60 }, (_, index) => String(index).padStart(2, '0'))
+    ), []);
+    const hourOptions = useMemo(() => (
+        hourValues.map(value => ({ value, label: value }))
+    ), [hourValues]);
+    const minuteOptions = useMemo(() => (
+        minuteValues.map(value => ({ value, label: value }))
+    ), [minuteValues]);
 
     const transportsOfType = useMemo(() => {
         return transportData.transports.find(t => t.type === type) || { carriers: [] };
@@ -103,7 +241,8 @@ function AppointmentStep({ onProceed }) {
         setCarrier('');
         setFrom('');
         setTo('');
-        setHour('');
+        setHour('09');
+        setMinute('00');
         setReturnHour('');
         setResults(null);
     }
@@ -134,7 +273,7 @@ function AppointmentStep({ onProceed }) {
         const matches = [];
         const fromQuery = isRentalCar ? '' : from.trim();
         const toQuery = isRentalCar ? '' : to.trim();
-        const timeQuery = hour.trim().replace('時', '');
+        const timeQuery = isRentalCar ? hour.trim().replace('時', '') : `${hour}:${minute}`;
 
         transportData.transports.forEach(t => {
             if (t.type !== type) return;
@@ -146,7 +285,8 @@ function AppointmentStep({ onProceed }) {
                     const times = r.times?.slice() || [];
                     times.forEach(time => {
                         const paddedHour = time.split(':')[0];
-                        if (timeQuery && paddedHour !== timeQuery.padStart(2, '0')) return;
+                        if (isRentalCar && timeQuery && paddedHour !== timeQuery.padStart(2, '0')) return;
+                        if (!isRentalCar && timeQuery && time !== timeQuery) return;
                         matches.push({
                             type: t.type,
                             carrier: c.name,
@@ -254,7 +394,7 @@ function AppointmentStep({ onProceed }) {
                                 利用開始時間
                                 <select value={hour} onChange={e => setHour(e.target.value)} className={styles.select} required>
                                     <option value="">選択してください</option>
-                                    {hourOptions.map(value => (
+                                    {hourValues.map(value => (
                                         <option key={value} value={value}>{Number(value)}時</option>
                                     ))}
                                 </select>
@@ -267,7 +407,7 @@ function AppointmentStep({ onProceed }) {
                                 返却時間
                                 <select value={returnHour} onChange={e => setReturnHour(e.target.value)} className={styles.select} required>
                                     <option value="">選択してください</option>
-                                    {hourOptions.map(value => (
+                                    {hourValues.map(value => (
                                         <option key={value} value={value}>{Number(value)}時</option>
                                     ))}
                                 </select>
@@ -282,19 +422,22 @@ function AppointmentStep({ onProceed }) {
 
                             <label className={styles.label}>
                                 {labels.hour}
-                                <select value={hour} onChange={e => setHour(e.target.value)} className={styles.select} required>
-                                    <option value="">選択してください</option>
-                                    {hourOptions.map(value => (
-                                        <option key={value} value={value}>{Number(value)}時</option>
-                                    ))}
-                                </select>
+                                <TimePickerField
+                                    label={labels.hour}
+                                    hour={hour}
+                                    minute={minute}
+                                    hourOptions={hourOptions}
+                                    minuteOptions={minuteOptions}
+                                    onHourChange={setHour}
+                                    onMinuteChange={setMinute}
+                                />
                             </label>
                         </>
                     )}
 
                     <label className={styles.label}>
                         {labels.people}
-                        <input type="number" min="1" step="1" value={people} onChange={e => setPeople(e.target.value === '' ? '' : Number(e.target.value))} className={styles.input} required />
+                        <PeopleStepper value={people} onChange={setPeople} />
                     </label>
 
                     <div className={styles.actions}>
