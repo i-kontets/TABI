@@ -252,7 +252,7 @@ function Album() {
                 formData.append('album_id', albumId);
                 formData.append('user_id', userId);
                 formData.append('caption', photo.caption || '');
-                formData.append('shot_at', '');
+                
 
                 const hashtags = parseHashtags(photo.hashtags);
                 formData.append('hashtags', JSON.stringify(hashtags));  
@@ -354,6 +354,7 @@ function Album() {
             }
 
             const data = JSON.parse(responseText);
+            console.log('Delete.phpの返答:', data);
 
             if(!response.ok || !data.success){
                 throw new Error(
@@ -464,7 +465,11 @@ function Album() {
                                 <span>#未設定</span>
                             )}
                         </div>
-                        <p className={styles.postDate}>{photo.shot_at || '日付未設定'}</p>
+                        <p className={styles.postDate}>
+                        {photo.shot_at
+                            ? new Date(photo.shot_at.replace(' ', 'T')).toLocaleDateString('ja-JP')
+                            : '日付未設定'}
+                        </p>
                     </div>
                 </main>
             </div>
