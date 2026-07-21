@@ -21,6 +21,11 @@ const chatApiBase = `${import.meta.env.BASE_URL}api/Chat`;
 const pollingIntervalMs = 3000;
 const listPollingIntervalMs = 10000; // 一覧は10秒ごとで十分
 
+function isAbortError(error) {
+    // 画面移動や再取得でブラウザが通信を止めた場合は、故障ではなく正常な中断として扱います。
+    return error instanceof DOMException && error.name === 'AbortError';
+}
+
 async function parseApiResponse(response) {
     const data = await response.json().catch(() => null);
 
@@ -63,6 +68,10 @@ function mergeReadStatuses(messages, reads) {
 const Chat = () => {
     const location = useLocation();
     const pollingRef       = useRef(false);
+    const loadingContactsRef = useRef(false);
+    const loadingMessagesRef = useRef(false);
+    const mountedRef = useRef(true);
+    const initialLoadIdRef = useRef(0);
     const lastMessageIdRef = useRef(0);   // 差分ポーリング用：最後に受信したmessage_id
     const currentChatIdRef = useRef(null);
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
@@ -93,8 +102,24 @@ const Chat = () => {
         // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         : contacts.filter((contact) => contact.category === activeCategory);
 
+    useEffect(() => {
+        mountedRef.current = true;
+
+        return () => {
+            // 通信自体は止めず、画面を離れた後の古い結果だけを反映しないようにします。
+            mountedRef.current = false;
+        };
+    }, []);
+
     const loadContacts = useCallback(async (signal = undefined, options = {}) => {
         const { showNotice = true } = options;
+
+        // 同じ一覧取得が終わる前に次を始めると、Networkに同じAPIが並ぶため止めます。
+        if (loadingContactsRef.current) {
+            return [];
+        }
+
+        loadingContactsRef.current = true;
 
         // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
@@ -106,15 +131,19 @@ const Chat = () => {
             const data = await parseApiResponse(response);
             const nextContacts = data.contacts || [];
 
-            setContacts(nextContacts);
+            if (mountedRef.current) {
+                setContacts(nextContacts);
+            }
             return nextContacts;
         // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
             // ここで条件を確認し、状況に合う処理だけを実行します。
-            if (error.name !== 'AbortError' && showNotice) {
+            if (mountedRef.current && !isAbortError(error) && showNotice) {
                 setNotice(error.message);
             }
             return [];
+        } finally {
+            loadingContactsRef.current = false;
         }
     }, []);
 
@@ -131,7 +160,9 @@ const Chat = () => {
         });
         const data = await parseApiResponse(response);
 
-        setMessages((currentMessages) => mergeReadStatuses(currentMessages, data.reads || []));
+        if (mountedRef.current) {
+            setMessages((currentMessages) => mergeReadStatuses(currentMessages, data.reads || []));
+        }
     }, []);
 
     const loadMessages = useCallback(async (chatId, signal = undefined, options = {}) => {
@@ -141,11 +172,20 @@ const Chat = () => {
         // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!requestedChatId) {
             currentChatIdRef.current = null;
-            setMessages([]);
+            if (mountedRef.current) {
+                setMessages([]);
+            }
             return;
         }
 
         currentChatIdRef.current = requestedChatId;
+
+        // 同じチャットの全件取得が進行中なら、新しい取得を重ねずに既存の結果を待ちます。
+        if (loadingMessagesRef.current === requestedChatId) {
+            return;
+        }
+
+        loadingMessagesRef.current = requestedChatId;
 
         // ここで条件を確認し、状況に合う処理だけを実行します。
         if (showLoading) {
@@ -172,7 +212,7 @@ const Chat = () => {
             const resolvedChatId = Number(data.chat_id || requestedChatId);
 
             // ここで条件を確認し、状況に合う処理だけを実行します。
-            if (signal?.aborted || currentChatIdRef.current !== requestedChatId) {
+            if (signal?.aborted || !mountedRef.current || currentChatIdRef.current !== requestedChatId) {
                 return;
             }
 
@@ -187,15 +227,18 @@ const Chat = () => {
         // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
             // ここで条件を確認し、状況に合う処理だけを実行します。
-            if (error.name !== 'AbortError' && showNotice) {
+            if (mountedRef.current && !isAbortError(error) && showNotice) {
                 setMessages([]);
                 setNotice(error.message);
             }
         // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             // ここで条件を確認し、状況に合う処理だけを実行します。
-            if (!signal?.aborted && currentChatIdRef.current === requestedChatId && showLoading) {
+            if (!signal?.aborted && mountedRef.current && currentChatIdRef.current === requestedChatId && showLoading) {
                 setLoading(false);
+            }
+            if (loadingMessagesRef.current === requestedChatId) {
+                loadingMessagesRef.current = false;
             }
         }
     }, [markMessagesAsRead]);
@@ -245,26 +288,34 @@ const Chat = () => {
 
     // 初回：コンタクト一覧 + 最初のチャットメッセージを読み込む
     useEffect(() => {
-        const controller = new AbortController();
+        const initialLoadId = initialLoadIdRef.current + 1;
+        initialLoadIdRef.current = initialLoadId;
 
         // initialize は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const initialize = async () => {
             setLoading(true);
             setNotice('');
 
-            const nextContacts = await loadContacts(controller.signal);
+            const nextContacts = await loadContacts();
+            if (!mountedRef.current || initialLoadIdRef.current !== initialLoadId) {
+                return;
+            }
+
             const requestedId = requestedChatId ? Number(requestedChatId) : null;
             const firstChatId = requestedId || nextContacts[0]?.id || null;
 
             setActiveContactId(firstChatId);
-            await loadMessages(firstChatId, controller.signal, { showLoading: false });
+            await loadMessages(firstChatId, undefined, { showLoading: false });
 
             // ここで条件を確認し、状況に合う処理だけを実行します。
-            if (!controller.signal.aborted) setLoading(false);
+            if (mountedRef.current && initialLoadIdRef.current === initialLoadId) setLoading(false);
         };
 
         initialize();
-        return () => controller.abort();
+        return () => {
+            // Networkの赤い×を出さないため、画面を離れるだけではfetchを中断しません。
+            // 古い結果は上のinitialLoadIdRefとmountedRefで捨てるので、表示は上書きされません。
+        };
     }, [loadContacts, loadMessages, requestedChatId]);
 
     // 差分ポーリング：3秒ごとに新着メッセージを追記、10秒ごとにコンタクト一覧も更新

@@ -17,6 +17,11 @@ const reportApi = `${import.meta.env.BASE_URL}api/User/Report.php`;
 const pollingIntervalMs = 3000;
 const REPORT_REASONS = ["不適切な内容", "迷惑行為", "個人情報", "その他"];
 
+function isAbortError(error) {
+    // 画面移動や再取得で通信が止まっただけなら、利用者へ出すエラーとは分けて扱います。
+    return error instanceof DOMException && error.name === "AbortError";
+}
+
 // avatarが画像URLかどうか判定（URLでなければ頭文字テキストとして表示）
 function isImageAvatar(value) {
     return typeof value === "string" && (/^(https?:)?\/\//.test(value) || value.startsWith("/"));
@@ -101,11 +106,24 @@ function Chat({ active }) {
     const messageListRef = useRef(null);
     const textareaRef = useRef(null);
     const pollingRef = useRef(false);
+    const loadingMessagesRef = useRef(false);
+    const currentGroupIdRef = useRef(groupId);
+    const mountedRef = useRef(true);
+    const initialLoadIdRef = useRef(0);
     const longPressTimerRef = useRef(null);
     const lastMessageIdRef = useRef(0);   // 差分ポーリング用
 
     const applyReadStatuses = useCallback((reads) => {
         setMessages((currentMessages) => applyReadStatusesToMessages(currentMessages, reads));
+    }, []);
+
+    useEffect(() => {
+        mountedRef.current = true;
+
+        return () => {
+            // 通信自体を止めるとDevToolsに赤い×が残るため、画面を離れた後の反映だけ止めます。
+            mountedRef.current = false;
+        };
     }, []);
 
     const markMessagesAsRead = useCallback(async (targetChatId, signal) => {
@@ -120,11 +138,23 @@ function Chat({ active }) {
             signal,
         });
         const data = await parseApiResponse(response);
-        applyReadStatuses(data.reads || []);
+        if (mountedRef.current) {
+            applyReadStatuses(data.reads || []);
+        }
     }, [applyReadStatuses]);
 
     const loadMessages = useCallback(async (options = {}) => {
-        const { signal, showLoading = true, showNotice = true } = options;
+        const { signal, showLoading = true, showNotice = true, shouldApply = () => true } = options;
+        const requestedGroupId = groupId;
+
+        // 初回表示やWebSocket更新が近いタイミングで重なっても、同じ全件取得は1本だけにします。
+        if (loadingMessagesRef.current === requestedGroupId) {
+            return;
+        }
+
+        loadingMessagesRef.current = requestedGroupId;
+        currentGroupIdRef.current = requestedGroupId;
+
 
         // ここで条件を確認し、状況に合う処理だけを実行します。
         if (showLoading) {
@@ -150,6 +180,11 @@ function Chat({ active }) {
             const data = await parseApiResponse(response);
             const resolvedChatId = Number(data.chat_id);
 
+            // 取得中に別グループへ移動した場合、古い応答で今の画面を書き換えないようにします。
+            if (signal?.aborted || !mountedRef.current || !shouldApply() || currentGroupIdRef.current !== requestedGroupId) {
+                return;
+            }
+
             setChatId(resolvedChatId);
             setMemberCount(Number(data.member_count || data.contact?.memberCount || 0));
             const msgs = data.messages || [];
@@ -165,7 +200,7 @@ function Chat({ active }) {
         // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
             // ここで条件を確認し、状況に合う処理だけを実行します。
-            if (error.name !== "AbortError" && showNotice) {
+            if (mountedRef.current && shouldApply() && !isAbortError(error) && showNotice) {
                 setMessages([]);
                 setChatId(null);
                 setMemberCount(0);
@@ -174,8 +209,11 @@ function Chat({ active }) {
         // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             // ここで条件を確認し、状況に合う処理だけを実行します。
-            if (!signal?.aborted && showLoading) {
+            if (!signal?.aborted && mountedRef.current && shouldApply() && showLoading) {
                 setLoading(false);
+            }
+            if (loadingMessagesRef.current === requestedGroupId) {
+                loadingMessagesRef.current = false;
             }
         }
     }, [groupId, markMessagesAsRead]);
@@ -187,10 +225,14 @@ function Chat({ active }) {
             return undefined;
         }
 
-        const controller = new AbortController();
-        loadMessages({ signal: controller.signal });
+        const initialLoadId = initialLoadIdRef.current + 1;
+        initialLoadIdRef.current = initialLoadId;
+        loadMessages({ shouldApply: () => mountedRef.current && initialLoadIdRef.current === initialLoadId });
 
-        return () => controller.abort();
+        return () => {
+            // 画面移動時にfetchをabortしないことで、Network上の赤い×を発生させません。
+            // 古い結果はmountedRefとinitialLoadIdRefで画面へ反映しないようにします。
+        };
     }, [active, loadMessages]);
 
     // 差分ポーリング：Since.php で新着のみ取得してリストに追記
