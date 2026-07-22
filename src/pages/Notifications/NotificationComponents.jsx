@@ -65,8 +65,15 @@ function NotificationTabs({ tabs, activeTab, onChange }) {
 }
 
 function NotificationItem({ notification, timeLabel, onOpen }) {
+  const readStateLabel = notification.isRead ? '\u65e2\u8aad' : '\u672a\u8aad';
+
   return (
-    <button type="button" className={styles.notificationItem} onClick={() => onOpen(notification)}>
+    <button
+      type="button"
+      className={styles.notificationItem}
+      onClick={() => onOpen(notification)}
+      aria-label={`${notification.title}\u3001${readStateLabel}`}
+    >
       <CategoryIcon category={notification.category} />
       <span className={styles.itemBody}>
         <span className={styles.itemTitle}>{notification.title}</span>
@@ -95,7 +102,7 @@ function NotificationEmptyState({ title, body, actionLabel, onAction }) {
 
 function NotificationSkeleton() {
   return (
-    <div className={styles.skeletonList} aria-label="\u901a\u77e5\u3092\u8aad\u307f\u8fbc\u307f\u4e2d">
+    <div className={styles.skeletonList} aria-live="polite" aria-label="\u901a\u77e5\u3092\u8aad\u307f\u8fbc\u307f\u4e2d">
       {[0, 1, 2].map((item) => (
         <div key={item} className={styles.skeletonRow}>
           <span />

@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import Modal from '../../components/Modal/Modal';
 import PasswordResetRequestModal from '../../components/PasswordReset/PasswordResetRequestModal';
 import styles from './MyPage.module.css';
-import { fetchUnreadNotificationCount } from '../../api/notificationApi';
+import { useUnreadNotificationBadge } from '../../api/useUnreadNotificationBadge';
 
 /**
  * BellIcon は、このファイルの中心となる処理をまとめた関数です。
@@ -269,35 +269,8 @@ function MyPage() {
         const name = user?.name || '';
         return name.trim().slice(0, 1).toUpperCase();
     }, [user?.name]);
-    const [notificationBadgeText, setNotificationBadgeText] = useState(null);
-
-    useEffect(() => {
-        let isMounted = true;
-        const controller = new AbortController();
-
-        const fetchNotificationBadge = async () => {
-            try {
-                const data = await fetchUnreadNotificationCount({ signal: controller.signal });
-                const count = Number(data?.data?.unreadCount ?? 0);
-                const badgeText = data?.data?.badgeText || (count > 99 ? '99+' : String(count));
-
-                if (isMounted) {
-                    setNotificationBadgeText(count > 0 ? badgeText : null);
-                }
-            } catch (caughtError) {
-                if (isMounted && caughtError?.name !== 'AbortError') {
-                    setNotificationBadgeText(null);
-                }
-            }
-        };
-
-        fetchNotificationBadge();
-
-        return () => {
-            isMounted = false;
-            controller.abort();
-        };
-    }, []);
+    // ベルの未読件数は共通hookで取得し、通知画面で既読にした後も再取得できます。
+    const { badgeText: notificationBadgeText, unreadCount } = useUnreadNotificationBadge();
 
     // handleLogout は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleLogout = async () => {
@@ -319,7 +292,7 @@ function MyPage() {
             <header className={styles.header}>
                 <span className={styles.headerSpacer} />
                 <h1 className={styles.headerTitle}>マイページ</h1>
-                <button type="button" className={styles.noticeButton} onClick={() => navigate('/notifications')} aria-label="通知一覧">
+                <button type="button" className={styles.noticeButton} onClick={() => navigate('/notifications')} aria-label={unreadCount > 0 ? `通知、未読${unreadCount}件` : '通知'}>
                     <BellIcon className={styles.headerIcon} />
                     {notificationBadgeText && <span className={styles.noticeBadge}>{notificationBadgeText}</span>}
                 </button>

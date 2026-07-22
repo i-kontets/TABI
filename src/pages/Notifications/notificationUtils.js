@@ -60,6 +60,7 @@ function normalizeNotification(notification) {
   const recipientId = notification?.recipientId ?? notification?.recipient_id ?? notification?.id;
   const notificationId = notification?.notificationId ?? notification?.notification_id ?? notification?.id;
   const createdAt = notification?.createdAt || notification?.receivedAt || notification?.received_at || notification?.created_at || new Date().toISOString();
+  const detailData = parseDetailData(notification?.detailData ?? notification?.detail_data);
 
   return {
     ...notification,
@@ -67,12 +68,17 @@ function normalizeNotification(notification) {
     recipientId,
     notificationId,
     category,
+    subtype: notification?.subtype ?? notification?.notificationSubtype ?? notification?.notification_subtype ?? null,
     title: notification?.title || '\u901a\u77e5',
     body: notification?.body || '',
+    targetType: notification?.targetType ?? notification?.target_type ?? null,
+    targetId: notification?.targetId ?? notification?.target_id ?? null,
     isRead: Boolean(notification?.isRead ?? notification?.is_read),
     actionPath: notification?.actionPath ?? notification?.action_path ?? null,
-    detailData: parseDetailData(notification?.detailData ?? notification?.detail_data),
+    detailData,
+    readAt: notification?.readAt ?? notification?.read_at ?? null,
     createdAt,
+    expiresAt: notification?.expiresAt ?? notification?.expires_at ?? null,
   };
 }
 
@@ -129,6 +135,7 @@ function normalizeInternalActionPath(actionPath) {
   if (!trimmedPath || trimmedPath.startsWith('//')) return null;
   if (/^[a-z][a-z0-9+.-]*:/i.test(trimmedPath)) return null;
 
+  // actionPathはDB由来なので、外部URLや危険な形式を避けてTABI内部の既存ルートだけ許可します。
   const appPath = trimmedPath === '/TABI' ? '/' : trimmedPath.replace(/^\/TABI(?=\/|$)/, '') || '/';
   if (!appPath.startsWith('/')) return null;
 

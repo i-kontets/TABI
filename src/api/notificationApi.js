@@ -11,7 +11,10 @@ async function parseNotificationResponse(response) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok || data.success === false) {
-    throw new Error(data.message || '\u901a\u77e5API\u306e\u901a\u4fe1\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002');
+    const error = new Error(data.message || '\u901a\u77e5API\u306e\u901a\u4fe1\u306b\u5931\u6557\u3057\u307e\u3057\u305f\u3002');
+    error.status = response.status;
+    error.data = data;
+    throw error;
   }
 
   return data;
@@ -63,6 +66,7 @@ async function updateNotificationSettings(settings) {
 }
 
 async function fetchNotifications({ category = 'all', limit = 20, offset = 0, signal } = {}) {
+  // 通知一覧はDB上の履歴を正として表示するため、モックではなくPHP APIから取得します。
   const query = createNotificationQuery({ category, limit, offset });
   const response = await fetch(notificationApi.list + query, {
     method: 'GET',
@@ -74,6 +78,7 @@ async function fetchNotifications({ category = 'all', limit = 20, offset = 0, si
 }
 
 async function fetchUnreadNotificationCount({ signal } = {}) {
+  // ベルの数字と一覧画面の件数を同じAPIから取ることで、表示のずれを減らします。
   const response = await fetch(notificationApi.unreadCount, {
     method: 'GET',
     credentials: 'include',
@@ -84,6 +89,7 @@ async function fetchUnreadNotificationCount({ signal } = {}) {
 }
 
 async function markNotificationAsRead(recipientId) {
+  // 既読APIはnotification_idではなく、ユーザー宛レコードのrecipientIdを指定します。
   const query = createNotificationQuery({ recipientId });
   const response = await fetch(notificationApi.markRead + query, {
     method: 'PATCH',
@@ -94,6 +100,7 @@ async function markNotificationAsRead(recipientId) {
 }
 
 async function markAllNotificationsAsRead() {
+  // 一括既読はログインユーザーの未読通知をサーバー側でまとめて更新します。
   const response = await fetch(notificationApi.markAllRead, {
     method: 'PATCH',
     credentials: 'include',

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import { fetchNotifications, fetchUnreadNotificationCount, markAllNotificationsAsRead, markNotificationAsRead } from '../../api/notificationApi';
+import { notifyUnreadNotificationBadgeChanged } from '../../api/useUnreadNotificationBadge';
 import { NotificationEmptyState, NotificationItem, NotificationSkeleton, NotificationTabs } from './NotificationComponents';
 import {
   formatNotificationTime,
@@ -22,14 +23,15 @@ const TEXT = {
   filteredEmptyTitle: '\u8a72\u5f53\u3059\u308b\u901a\u77e5\u306f\u3042\u308a\u307e\u305b\u3093',
   unreadEmptyBody: '\u3059\u3079\u3066\u306e\u901a\u77e5\u3092\u78ba\u8a8d\u6e08\u307f\u3067\u3059\u3002',
   allEmptyBody: '\u65b0\u3057\u3044\u901a\u77e5\u304c\u5c4a\u304f\u3068\u3001\u3053\u3053\u306b\u8868\u793a\u3055\u308c\u307e\u3059\u3002',
-  filteredEmptyBody: '\u5225\u306e\u30ab\u30c6\u30b4\u30ea\u3092\u9078\u629e\u3057\u3066\u304f\u3060\u3055\u3044\u3002',
+  filteredEmptyBody: '\u3053\u306e\u30ab\u30c6\u30b4\u30ea\u306e\u901a\u77e5\u306f\u307e\u3060\u3042\u308a\u307e\u305b\u3093\u3002',
   loadErrorTitle: '\u901a\u77e5\u3092\u8aad\u307f\u8fbc\u3081\u307e\u305b\u3093\u3067\u3057\u305f',
-  loadError: '\u901a\u77e5\u3092\u8aad\u307f\u8fbc\u3081\u307e\u305b\u3093\u3067\u3057\u305f\u3002\u6642\u9593\u3092\u304a\u3044\u3066\u518d\u5ea6\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002',
+  loadError: '\u901a\u4fe1\u72b6\u614b\u3092\u78ba\u8a8d\u3057\u3066\u3001\u3082\u3046\u4e00\u5ea6\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002',
   readError: '\u901a\u77e5\u3092\u65e2\u8aad\u306b\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f\u3002\u6642\u9593\u3092\u304a\u3044\u3066\u518d\u5ea6\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002',
   readAllError: '\u901a\u77e5\u3092\u4e00\u62ec\u65e2\u8aad\u306b\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f\u3002\u6642\u9593\u3092\u304a\u3044\u3066\u518d\u5ea6\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002',
   loadMoreError: '\u8ffd\u52a0\u306e\u901a\u77e5\u3092\u8aad\u307f\u8fbc\u3081\u307e\u305b\u3093\u3067\u3057\u305f\u3002\u6642\u9593\u3092\u304a\u3044\u3066\u518d\u5ea6\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002',
   routeNotice: '\u95a2\u9023\u30da\u30fc\u30b8\u306f\u73fe\u5728\u958b\u3051\u307e\u305b\u3093\u3002\u901a\u77e5\u5185\u5bb9\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002',
   readAllSuccess: '\u3059\u3079\u3066\u306e\u901a\u77e5\u3092\u65e2\u8aad\u306b\u3057\u307e\u3057\u305f\u3002',
+  readAllNoUpdates: '\u672a\u8aad\u306e\u901a\u77e5\u306f\u3042\u308a\u307e\u305b\u3093\u3002',
   retry: '\u518d\u8aad\u307f\u8fbc\u307f',
   loadingMore: '\u8aad\u307f\u8fbc\u307f\u4e2d...',
   loadMore: '\u3055\u3089\u306b\u8aad\u307f\u8fbc\u3080',
@@ -60,6 +62,18 @@ function getEmptyBody(activeTab) {
   return TEXT.filteredEmptyBody;
 }
 
+function mergeNotifications(currentNotifications, nextNotifications) {
+  const knownRecipientIds = new Set(currentNotifications.map((item) => String(item.recipientId)));
+  const uniqueNext = nextNotifications.filter((item) => {
+    const key = String(item.recipientId);
+    if (knownRecipientIds.has(key)) return false;
+    knownRecipientIds.add(key);
+    return true;
+  });
+
+  return [...currentNotifications, ...uniqueNext];
+}
+
 export default function NotificationListPage() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
@@ -71,6 +85,9 @@ export default function NotificationListPage() {
   const [hasMore, setHasMore] = useState(false);
   const [offset, setOffset] = useState(0);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [, setReadingRecipientIds] = useState(() => new Set());
+  const [isMarkingAll, setIsMarkingAll] = useState(false);
+  const readingRecipientIdsRef = useRef(new Set());
 
   const groupedNotifications = useMemo(() => groupNotificationsByDate(notifications), [notifications]);
 
@@ -81,9 +98,13 @@ export default function NotificationListPage() {
   }, []);
 
   const loadFirstPage = useCallback(async (category, signal) => {
+    // タブとAPIのcategoryを同じ値にして、選択中カテゴリだけをDBから取り直します。
     setLoading(true);
     setError('');
     setNotice('');
+    setNotifications([]);
+    setOffset(0);
+    setHasMore(false);
 
     try {
       const [listData] = await Promise.all([
@@ -91,11 +112,18 @@ export default function NotificationListPage() {
         refreshUnreadCount(signal),
       ]);
       const nextNotifications = listData?.data?.notifications ?? [];
+      // APIが0件なら0件のまま表示し、確認用に残しているモック通知へは戻しません。
       setNotifications(nextNotifications.map(normalizeNotification));
       setOffset(nextNotifications.length);
       setHasMore(Boolean(listData?.data?.pagination?.hasMore));
+      notifyUnreadNotificationBadgeChanged();
     } catch (caughtError) {
       if (caughtError?.name !== 'AbortError') {
+        if (caughtError?.status === 401) {
+          navigate('/');
+          return;
+        }
+        // APIが失敗した時にモックへ戻すとDBの状態と食い違うため、空のままエラーを表示します。
         setNotifications([]);
         setHasMore(false);
         setOffset(0);
@@ -104,11 +132,12 @@ export default function NotificationListPage() {
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, [refreshUnreadCount]);
+  }, [navigate, refreshUnreadCount]);
 
   useEffect(() => {
     const controller = new AbortController();
-    loadFirstPage(activeTab, controller.signal);
+    // タブをすばやく切り替えた時、古いAPI通信の結果で新しいタブの表示を上書きしないよう中断します。
+    Promise.resolve().then(() => loadFirstPage(activeTab, controller.signal));
     return () => controller.abort();
   }, [activeTab, loadFirstPage]);
 
@@ -151,8 +180,13 @@ export default function NotificationListPage() {
       return;
     }
 
+    if (readingRecipientIdsRef.current.has(notification.recipientId)) return;
+
     const previousNotifications = notifications;
     const previousUnreadCount = unreadCount;
+    readingRecipientIdsRef.current.add(notification.recipientId);
+    setReadingRecipientIds((current) => new Set(current).add(notification.recipientId));
+    // 楽観的更新は、API完了を待たずに画面だけ先に既読表示へ変えることです。
     setNotifications((current) => current.map((item) => (item.id === notification.id ? { ...item, isRead: true } : item)));
     setUnreadCount((current) => Math.max(0, current - 1));
 
@@ -164,21 +198,40 @@ export default function NotificationListPage() {
         setNotifications((current) => current.filter((item) => item.id !== notification.id));
       }
 
+      notifyUnreadNotificationBadgeChanged();
       navigateByNotification(readNotification);
-    } catch {
+    } catch (caughtError) {
+      if (caughtError?.status === 401) {
+        navigate('/');
+        return;
+      }
+      // APIが失敗した時は、DBでは未読のままなので画面と件数も元へ戻します。
       setNotifications(previousNotifications);
       setUnreadCount(previousUnreadCount);
       setError(TEXT.readError);
+    } finally {
+      setReadingRecipientIds((current) => {
+        const next = new Set(current);
+        next.delete(notification.recipientId);
+        return next;
+      });
+      readingRecipientIdsRef.current.delete(notification.recipientId);
     }
   };
 
   const markAllAsRead = async () => {
-    if (unreadCount <= 0 || loading || isLoadingMore) return;
+    if (unreadCount <= 0) {
+      setNotice(TEXT.readAllNoUpdates);
+      return;
+    }
+
+    if (loading || isLoadingMore || isMarkingAll) return;
 
     const previousNotifications = notifications;
     const previousUnreadCount = unreadCount;
     setError('');
     setNotice('');
+    setIsMarkingAll(true);
     setUnreadCount(0);
     setNotifications((current) => (activeTab === 'unread' ? [] : current.map((item) => ({ ...item, isRead: true }))));
 
@@ -186,16 +239,24 @@ export default function NotificationListPage() {
       const data = await markAllNotificationsAsRead();
       const nextUnreadCount = Number(data?.data?.unreadCount ?? 0);
       setUnreadCount(Number.isFinite(nextUnreadCount) ? nextUnreadCount : 0);
-      setNotice(TEXT.readAllSuccess);
-    } catch {
+      setNotice(Number(data?.data?.updatedCount ?? 0) > 0 ? TEXT.readAllSuccess : TEXT.readAllNoUpdates);
+      notifyUnreadNotificationBadgeChanged();
+    } catch (caughtError) {
+      if (caughtError?.status === 401) {
+        navigate('/');
+        return;
+      }
       setNotifications(previousNotifications);
       setUnreadCount(previousUnreadCount);
       setError(TEXT.readAllError);
+      await loadFirstPage(activeTab);
+    } finally {
+      setIsMarkingAll(false);
     }
   };
 
   const loadMore = async () => {
-    if (!hasMore || isLoadingMore) return;
+    if (!hasMore || isLoadingMore || loading) return;
 
     setIsLoadingMore(true);
     setError('');
@@ -203,11 +264,16 @@ export default function NotificationListPage() {
     try {
       const listData = await fetchNotifications({ category: activeTab, limit: PAGE_SIZE, offset });
       const nextNotifications = (listData?.data?.notifications ?? []).map(normalizeNotification);
-      setNotifications((current) => [...current, ...nextNotifications]);
+      setNotifications((current) => mergeNotifications(current, nextNotifications));
       setOffset((current) => current + nextNotifications.length);
       setHasMore(Boolean(listData?.data?.pagination?.hasMore));
       await refreshUnreadCount();
-    } catch {
+      notifyUnreadNotificationBadgeChanged();
+    } catch (caughtError) {
+      if (caughtError?.status === 401) {
+        navigate('/');
+        return;
+      }
       setError(TEXT.loadMoreError);
     } finally {
       setIsLoadingMore(false);
@@ -263,9 +329,9 @@ export default function NotificationListPage() {
         {notice && <p className={styles.inlineNotice} role="status">{notice}</p>}
 
         {unreadCount > 0 && !loading && !error && (
-          <button type="button" className={styles.markAllButton} onClick={markAllAsRead} disabled={isLoadingMore}>
+          <button type="button" className={styles.markAllButton} onClick={markAllAsRead} disabled={isLoadingMore || isMarkingAll}>
             <CheckIcon className={styles.buttonIcon} />
-            {TEXT.markAll}
+            {isMarkingAll ? '\u65e2\u8aad\u306b\u3057\u3066\u3044\u307e\u3059...' : TEXT.markAll}
           </button>
         )}
       </main>
