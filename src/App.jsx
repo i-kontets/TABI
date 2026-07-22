@@ -41,6 +41,8 @@ import CottageChatPage from './pages/CottageChat/CottageChatPage.jsx';
 import AdminRoutes from './pages/Admin/AdminRoutes.jsx';
 import UserRealtimeListener from './pages/UserRealtimeListener.jsx';
 import Maintenance from './pages/Maintenance/Maintenance.jsx';
+import NotificationListPage from './pages/Notifications/NotificationListPage.jsx';
+import NotificationDetailPage from './pages/Notifications/NotificationDetailPage.jsx';
 import ServiceAvailabilityGate from './components/ServiceAvailabilityGate.jsx';
 import { isAdminPath, isMaintenancePath } from './services/serviceStatus.js';
 
@@ -70,6 +72,8 @@ function AppRoutes({ trip }) {
                 <Route path="/mypage/email-change" element={<EmailChangePage />} />
                 <Route path="/mypage/notification-settings" element={<NotificationSettingsPage />} />
                 <Route path="/mypage/notification-permission" element={<NotificationPermissionPage />} />
+                <Route path="/notifications" element={<NotificationListPage />} />
+                <Route path="/notifications/:notificationId" element={<NotificationDetailPage />} />
                 <Route path="/mypage/contact" element={<ContactPage />} />
                 <Route path="/mypage/faq" element={<FaqPage />} />
                 <Route path="/terms" element={<Terms />} />

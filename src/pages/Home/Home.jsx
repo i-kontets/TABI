@@ -8,12 +8,13 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TripContext } from "../../App";
 import TravelGroupCard from '../../components/TravelGroupCard/TravelGroupCard';
 import Modal from '../../components/Modal/Modal';
 import ImagePicker from '../../components/ImagePicker/ImagePicker';
+import notificationMockData from '../../data/notificationMockData';
 import styles from './Home.module.css';
 
 // ここから下は、画面内で使うアイコンを SVG で直接定義しています。
@@ -86,6 +87,8 @@ function Home() {
     const navigate = useNavigate();
     // TripContext には、選択中の旅行グループ情報を入れて次画面へ渡します。
     const { setTrip } = useContext(TripContext);
+    const unreadNotificationCount = useMemo(() => notificationMockData.filter((item) => !item.isRead).length, []);
+    const notificationBadgeLabel = unreadNotificationCount > 9 ? '9+' : String(unreadNotificationCount);
 
     // 画面に表示する旅行グループ一覧です。
     const [travelGroups, setTravelGroups] = useState([]);
@@ -379,9 +382,11 @@ function Home() {
                 <button
                     type="button"
                     className={styles.noticeButton}
-                    aria-label="通知"
+                    onClick={() => navigate('/notifications')}
+                    aria-label="通知一覧"
                 >
                     <BellIcon className={styles.headerIcon} />
+                    {unreadNotificationCount > 0 && <span className={styles.noticeBadge}>{notificationBadgeLabel}</span>}
                 </button>
             </header>
 
