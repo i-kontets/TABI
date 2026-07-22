@@ -73,7 +73,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/TABI/api': {
-        target: 'http://apache',
+        target: 'https://genshin.mond.jp',
         changeOrigin: true,
       },
     },

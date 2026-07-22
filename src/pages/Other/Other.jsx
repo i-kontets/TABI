@@ -1,4 +1,6 @@
-import { useNavigate } from 'react-router-dom';
+import { useContext } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { TripContext } from '../../App';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 import styles from './Other.module.css';
@@ -10,6 +12,8 @@ const supportItems = [
         description: '現在地や目的地の天気を確認',
         icon: '☀',
         tone: 'sky',
+        path: '/album',
+        withGroupId: true,
     },
     {
         id: 'Invoice',
@@ -54,6 +58,9 @@ function ArrowIcon() {
 
 export default function Other() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const { trip } = useContext(TripContext);
+    const groupId = searchParams.get('groupId') || trip.id;
 
     return (
         <>
@@ -69,6 +76,11 @@ export default function Other() {
                                 key={item.id}
                                 onClick={() => {
                                     if (item.path) {
+                                        if (item.withGroupId && groupId) {
+                                            navigate(`${item.path}?groupId=${encodeURIComponent(groupId)}`);
+                                            return;
+                                        }
+
                                         navigate(item.path);
                                     }
                                 }}

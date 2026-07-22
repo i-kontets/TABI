@@ -239,9 +239,6 @@ function Album() {
             return;
         }
 
-        //のちにuserIdとる予定
-        const userId = 1;
-        
         try{
             setUploading(true);
 
@@ -250,7 +247,6 @@ function Album() {
 
                 formData.append('image',photo.file);
                 formData.append('album_id', albumId);
-                formData.append('user_id', userId);
                 formData.append('caption', photo.caption || '');
                 
 
@@ -258,9 +254,10 @@ function Album() {
                 formData.append('hashtags', JSON.stringify(hashtags));  
 
                 const response = await fetch (
-                    'https://genshin.mond.jp/TABI/api/Photos/Upload.php',
+                    '/TABI/api/Photos/Upload.php',
                     {
                         method: 'POST',
+                        credentials: 'include',
                         body: formData,
                     }
                 );
