@@ -929,6 +929,14 @@ export function EmailChangePage() {
     );
 }
 
+const disabledNotificationSettings = {
+    chatNotification: false,
+    surveyDeadlineNotification: false,
+    scheduleReminderNotification: false,
+    memberJoinNotification: false,
+    splitBillNotification: false,
+};
+
 const notificationItems = [
     { key: 'chatNotification', title: 'チャット通知', description: '新しいメッセージを受信したとき', icon: ChatIcon },
     { key: 'surveyDeadlineNotification', title: 'アンケート締切通知', description: 'アンケートの締切が近づいたとき', icon: HelpIcon },
@@ -955,8 +963,8 @@ function detectBrowserName() {
 function devicePermissionNotice(permission) {
     if (permission === 'granted') {
         return {
-            title: 'この端末では通知が許可されています',
-            body: '下の設定で、受け取りたい通知の種類を変更できます。',
+            title: 'この端末では通知を受け取る準備ができています',
+            body: 'DBに保存されている通知設定を表示しています。下の設定で、受け取りたい通知の種類を変更できます。',
             buttonLabel: '',
         };
     }
@@ -964,7 +972,7 @@ function devicePermissionNotice(permission) {
     if (permission === 'default') {
         return {
             title: 'この端末では通知がまだ許可されていません',
-            body: '通知項目がONでも、端末で通知を許可するまで通知は届きません。',
+            body: '通知を許可すると、受け取りたい通知の種類を設定できます。DBに保存されている設定は変更しません。',
             buttonLabel: '通知を許可する',
         };
     }
@@ -972,14 +980,22 @@ function devicePermissionNotice(permission) {
     if (permission === 'denied') {
         return {
             title: 'この端末では通知が拒否されています',
-            body: '通知項目がONでも、この端末には通知が届きません。ブラウザまたは端末の設定からTABIの通知を許可してください。',
+            body: 'ブラウザまたは端末の設定から通知を許可すると、通知設定を変更できます。DBに保存されている設定は変更しません。',
             buttonLabel: '通知の設定方法を確認する',
+        };
+    }
+
+    if (permission === 'insecure-context') {
+        return {
+            title: 'プッシュ通知を利用するにはHTTPS環境が必要です',
+            body: 'この端末では通知設定を変更できません。DBに保存されている設定は変更しません。',
+            buttonLabel: '',
         };
     }
 
     return {
         title: 'この端末ではプッシュ通知を利用できません',
-        body: '下の設定は、通知に対応した別の端末で使用されます。',
+        body: 'この端末では通知設定を変更できません。下の設定は通知に対応した別の端末で使用されます。',
         buttonLabel: '',
     };
 }
@@ -999,7 +1015,7 @@ function currentNotificationPermission() {
 export function NotificationSettingsPage() {
     const navigate = useNavigate();
     const [devicePermission, setDevicePermission] = useState(currentNotificationPermission);
-    const [settings, setSettings] = useState(null);
+    const [savedSettings, setSavedSettings] = useState(null);
     const [loading, setLoading] = useState(true);
     const [savingKey, setSavingKey] = useState('');
     const [message, setMessage] = useState('');
@@ -1015,12 +1031,12 @@ export function NotificationSettingsPage() {
                 const data = await fetchNotificationSettings();
 
                 if (mounted) {
-                    setSettings(data.settings || {});
+                    setSavedSettings(data.settings || {});
                     setError('');
                 }
             } catch (err) {
                 if (mounted) {
-                    setSettings({});
+                    setSavedSettings({});
                     setError(err.message || '通知設定を取得できませんでした。');
                 }
             } finally {
@@ -1037,27 +1053,32 @@ export function NotificationSettingsPage() {
         };
     }, []);
 
+    const canEditNotificationSettings = devicePermission === 'granted';
+    const displayedSettings = canEditNotificationSettings && savedSettings ? savedSettings : disabledNotificationSettings;
+
+    // 未許可の端末では、通知が届くように見えないよう画面上だけ全OFF表示にします。DBに保存されているユーザー設定は変更しません。
+    // 現在端末の権限とユーザー全体の通知設定は別物で、別端末では通知が許可されている可能性があります。
     // 実際に通知できる条件は、対象のnotification_settingsがON、端末のNotification.permissionがgranted、user_devicesに有効なFCMトークンがあり、is_activeが1であることです。
     // ただし最終的な配信可否はフロントだけで決めず、通知送信時にPHPサーバー側でnotification_settingsとuser_devicesを確認します。
     const toggle = async (key) => {
-        if (loading || savingKey || !settings) {
+        if (!canEditNotificationSettings || loading || savingKey || !savedSettings) {
             return;
         }
 
-        const previous = settings;
-        const next = { ...settings, [key]: !settings[key] };
+        const previous = savedSettings;
+        const next = { ...savedSettings, [key]: !savedSettings[key] };
 
-        setSettings(next);
+        setSavedSettings(next);
         setSavingKey(key);
         setMessage('');
         setError('');
 
         try {
             const data = await updateNotificationSettings({ [key]: next[key] });
-            setSettings(data.settings || next);
+            setSavedSettings(data.settings || next);
             setMessage('通知設定を保存しました。');
         } catch (err) {
-            setSettings(previous);
+            setSavedSettings(previous);
             setError(err.message || '通知設定の保存に失敗しました。');
         } finally {
             setSavingKey('');
@@ -1077,13 +1098,13 @@ export function NotificationSettingsPage() {
                     </button>
                 )}
             </section>
-            <p className={styles.notificationSettingHelp}>この設定は、通知を許可した端末で受け取る通知の種類を選択するものです。</p>
+            <p className={styles.notificationSettingHelp}>この設定は、通知を許可した端末で受け取る通知の種類を選択するものです。現在の端末で通知を受け取れない場合は、画面上だけOFF表示になり、DBの設定値は維持されます。</p>
             <section className={styles.listCard}>
                 {loading && <div className={styles.inlineState}>通知設定を読み込んでいます。</div>}
                 {!loading && notificationItems.map((item) => {
                     const Icon = item.icon;
-                    const checked = Boolean(settings?.[item.key]);
-                    const disabled = Boolean(savingKey);
+                    const checked = Boolean(displayedSettings[item.key]);
+                    const disabled = !canEditNotificationSettings || Boolean(savingKey);
 
                     return (
                         <button key={item.key} type="button" className={styles.toggleRow} onClick={() => toggle(item.key)} disabled={disabled}>
