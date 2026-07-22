@@ -101,5 +101,30 @@ export default defineConfig({
     },
   },
 
+  worker: {
+    format: 'iife',
+    rolldownOptions: {
+      output: {
+        entryFileNames: 'firebase-messaging-sw.js',
+      },
+    },
+  },
+
+  build: {
+    rolldownOptions: {
+      input: {
+        main: resolve(currentDir, 'index.html'),
+        'firebase-messaging-sw': resolve(currentDir, 'src/firebase/firebase-messaging-sw.js'),
+      },
+      output: {
+        entryFileNames: (chunkInfo) => (
+          chunkInfo.name === 'firebase-messaging-sw'
+            ? 'firebase-messaging-sw.js'
+            : 'assets/[name]-[hash].js'
+        ),
+      },
+    },
+  },
+
   base: '/TABI/',
 })

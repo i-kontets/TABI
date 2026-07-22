@@ -883,6 +883,36 @@ INSERT INTO `system_errors` VALUES (1,'test','error','Dashboard表示テスト',
 UNLOCK TABLES;
 
 --
+-- Table structure for table `notification_settings`
+--
+
+DROP TABLE IF EXISTS `notification_settings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `notification_settings` (
+  `user_id` int NOT NULL COMMENT '通知設定を持つユーザーID',
+  `chat_notification_enabled` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'チャット通知を受け取るか',
+  `survey_deadline_notification_enabled` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'アンケート締切通知を受け取るか',
+  `schedule_reminder_notification_enabled` tinyint(1) NOT NULL DEFAULT '1' COMMENT '予定リマインド通知を受け取るか',
+  `member_join_notification_enabled` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'メンバー参加通知を受け取るか',
+  `split_bill_notification_enabled` tinyint(1) NOT NULL DEFAULT '1' COMMENT '割り勘更新通知を受け取るか',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '作成日時',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新日時',
+  PRIMARY KEY (`user_id`),
+  CONSTRAINT `fk_notification_settings_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ユーザーごとの通知受信設定';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `notification_settings`
+--
+
+LOCK TABLES `notification_settings` WRITE;
+/*!40000 ALTER TABLE `notification_settings` DISABLE KEYS */;
+/*!40000 ALTER TABLE `notification_settings` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `system_settings`
 --
 
@@ -1231,12 +1261,25 @@ DROP TABLE IF EXISTS `user_devices`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `user_devices` (
   `device_id` bigint NOT NULL AUTO_INCREMENT COMMENT 'デバイス識別ID',
-  `user_id` bigint NOT NULL COMMENT '所有ユーザーID',
-  `push_token` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'プッシュ通知用トークン',
-  `platform` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'OS（iOS / Android / Web）',
-  `last_login_at` datetime DEFAULT NULL COMMENT '最終ログイン日時',
-  PRIMARY KEY (`device_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `user_id` int NOT NULL COMMENT '所有ユーザーID',
+  `push_token` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'FCM登録トークン',
+  `token_hash` char(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL COMMENT 'FCM登録トークンのSHA-256ハッシュ',
+  `platform` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'web' COMMENT 'プラットフォーム（web / android / ios）',
+  `app_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'pwa' COMMENT 'アプリ種別（pwa / native）',
+  `device_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '端末名',
+  `browser` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'ブラウザ名',
+  `user_agent` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'ユーザーエージェント',
+  `is_active` tinyint(1) NOT NULL DEFAULT '1' COMMENT '通知送信対象として有効か',
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '作成日時',
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新日時',
+  `last_used_at` datetime DEFAULT NULL COMMENT '最後に登録・利用した日時',
+  `revoked_at` datetime DEFAULT NULL COMMENT '無効化日時',
+  PRIMARY KEY (`device_id`),
+  UNIQUE KEY `uk_user_devices_token_hash` (`token_hash`),
+  KEY `idx_user_devices_user_active` (`user_id`,`is_active`),
+  KEY `idx_user_devices_platform_app` (`platform`,`app_type`),
+  CONSTRAINT `fk_user_devices_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ユーザー端末とFCM登録トークン管理';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -1245,7 +1288,7 @@ CREATE TABLE `user_devices` (
 
 LOCK TABLES `user_devices` WRITE;
 /*!40000 ALTER TABLE `user_devices` DISABLE KEYS */;
-INSERT INTO `user_devices` VALUES (1,1,'test_web_push_2410026','Web','2026-06-22 15:00:00'),(2,2,'test_web_push_2410041','Web','2026-06-22 15:00:00'),(3,3,'test_web_push_2410008','Web','2026-06-22 15:00:00'),(4,4,'test_web_push_2410017','Web','2026-06-22 15:00:00'),(5,5,'test_web_push_2410019','Web','2026-06-22 15:00:00'),(6,6,'test_web_push_2410027','Web','2026-06-22 15:00:00'),(7,7,'test_web_push_2410056','Web','2026-06-22 15:00:00');
+INSERT INTO `user_devices` (`device_id`,`user_id`,`push_token`,`token_hash`,`platform`,`app_type`,`device_name`,`browser`,`user_agent`,`is_active`,`created_at`,`updated_at`,`last_used_at`,`revoked_at`) VALUES (1,1,'test_web_push_2410026','68f068cb140080dc85ba04e9cc71ff509b6f2e65fb04e2d252360eff3b229aec','web','pwa','sample web device','Web',NULL,0,'2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00'),(2,2,'test_web_push_2410041','1b5c4703f21aa746f0ca1a8112b2e9d7790eb7832afa725a14c0eeeeaf7e8aaf','web','pwa','sample web device','Web',NULL,0,'2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00'),(3,3,'test_web_push_2410008','9133cb74a09d7068488013e118f4d65f4677a0beded7cf329d0299b7faea1f93','web','pwa','sample web device','Web',NULL,0,'2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00'),(4,4,'test_web_push_2410017','52c8d1b4e3987a49d95dfbdedd110c45ccfb7351779a3d3ebe6c46ce292d7465','web','pwa','sample web device','Web',NULL,0,'2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00'),(5,5,'test_web_push_2410019','7c1631e0899ff4391215c17d4a2f5d6eb4e6d4faec3a70b6bc1a9d71c1cf764e','web','pwa','sample web device','Web',NULL,0,'2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00'),(6,6,'test_web_push_2410027','6adb4f78ca025a7ff9bcb14287b41847084baae7b2d3cc29b0c32dfea5c56fe8','web','pwa','sample web device','Web',NULL,0,'2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00'),(7,7,'test_web_push_2410056','e718d99048293da4125be99cbc7039485cb9bfb7138dffad1c17c738514bc58b','web','pwa','sample web device','Web',NULL,0,'2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00','2026-06-22 15:00:00');
 /*!40000 ALTER TABLE `user_devices` ENABLE KEYS */;
 UNLOCK TABLES;
 

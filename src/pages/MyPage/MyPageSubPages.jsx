@@ -11,6 +11,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ImagePicker from '../../components/ImagePicker/ImagePicker';
+import { registerNotificationDevice, fetchNotificationSettings, updateNotificationSettings } from '../../api/notificationApi';
+import { requestFirebasePushToken } from '../../firebase/firebasePushToken';
 import styles from './MyPageSubPages.module.css';
 
 const api = {
@@ -18,7 +20,6 @@ const api = {
     uploadIcon: '/TABI/api/User/UploadIcon.php',
     emailSend: '/TABI/api/User/EmailChangeSendCode.php',
     emailVerify: '/TABI/api/User/EmailChangeVerify.php',
-    notifications: '/TABI/api/User/NotificationSettings.php',
     inquiry: '/TABI/api/User/Inquiry.php',
     faq: '/TABI/api/User/Faq.php',
 };
@@ -929,76 +930,119 @@ export function EmailChangePage() {
 }
 
 const notificationItems = [
-    { key: 'chat', title: 'チャット通知', description: '新しいメッセージを受信したとき', icon: ChatIcon },
-    { key: 'survey_deadline', title: 'アンケート締切通知', description: 'アンケートの締切が近づいたとき', icon: HelpIcon },
-    { key: 'schedule_reminder', title: '予定リマインド通知', description: '予定の開始前にリマインドします', icon: CalendarIcon },
-    { key: 'member_join', title: 'メンバー参加通知', description: '旅行グループにメンバーが参加したとき', icon: GroupIcon },
-    { key: 'split_bill', title: '割り勘更新通知', description: '割り勘の内容が更新されたとき', icon: WalletIcon },
+    { key: 'chatNotification', title: 'チャット通知', description: '新しいメッセージを受信したとき', icon: ChatIcon },
+    { key: 'surveyDeadlineNotification', title: 'アンケート締切通知', description: 'アンケートの締切が近づいたとき', icon: HelpIcon },
+    { key: 'scheduleReminderNotification', title: '予定リマインド通知', description: '予定の開始前にリマインドします', icon: CalendarIcon },
+    { key: 'memberJoinNotification', title: 'メンバー参加通知', description: '旅行グループにメンバーが参加したとき', icon: GroupIcon },
+    { key: 'splitBillNotification', title: '割り勘更新通知', description: '割り勘の内容が更新されたとき', icon: WalletIcon },
 ];
 
+function detectBrowserName() {
+    if (typeof navigator === 'undefined') {
+        return null;
+    }
+
+    const userAgent = navigator.userAgent || '';
+
+    if (userAgent.includes('Edg/')) return 'Edge';
+    if (userAgent.includes('Chrome/')) return 'Chrome';
+    if (userAgent.includes('Firefox/')) return 'Firefox';
+    if (userAgent.includes('Safari/')) return 'Safari';
+
+    return 'Browser';
+}
+
+function currentNotificationPermission() {
+    if (typeof window === 'undefined' || typeof Notification === 'undefined') {
+        return 'unsupported';
+    }
+
+    if (!window.isSecureContext) {
+        return 'insecure-context';
+    }
+
+    return Notification.permission;
+}
+
 export function NotificationSettingsPage() {
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [settings, setSettings] = useState({});
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
+    const [settings, setSettings] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [savingKey, setSavingKey] = useState('');
     const [message, setMessage] = useState('');
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [error, setError] = useState('');
 
-    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         let mounted = true;
-        // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-        fetch(api.notifications, { credentials: 'include' })
-            // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
-            .then(parseJson)
-            // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
-            .then((data) => {
-                // ここで条件を確認し、状況に合う処理だけを実行します。
-                if (mounted && data.settings) {
-                    setSettings((prev) => ({ ...prev, ...data.settings }));
+
+        const loadSettings = async () => {
+            try {
+                const data = await fetchNotificationSettings();
+
+                if (mounted) {
+                    setSettings(data.settings || {});
+                    setError('');
                 }
-            })
-            .catch(() => {});
+            } catch (err) {
+                if (mounted) {
+                    setSettings({});
+                    setError(err.message || '通知設定を取得できませんでした。');
+                }
+            } finally {
+                if (mounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        loadSettings();
+
         return () => {
             mounted = false;
         };
     }, []);
 
-    // toggle は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const toggle = async (key) => {
+        if (loading || savingKey || !settings) {
+            return;
+        }
+
+        const previous = settings;
         const next = { ...settings, [key]: !settings[key] };
+
         setSettings(next);
+        setSavingKey(key);
         setMessage('');
-        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
+        setError('');
+
         try {
-            // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-            await fetch(api.notifications, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ settings: next }),
-            // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
-            }).then(parseJson);
+            const data = await updateNotificationSettings({ [key]: next[key] });
+            setSettings(data.settings || next);
             setMessage('通知設定を保存しました。');
-        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
-        } catch {
-            setError('通知設定の保存に失敗しました。');
+        } catch (err) {
+            setSettings(previous);
+            setError(err.message || '通知設定の保存に失敗しました。');
+        } finally {
+            setSavingKey('');
         }
     };
 
     return (
         <PageShell title="通知設定">
             <section className={styles.listCard}>
-                {notificationItems.map((item) => {
+                {loading && <div className={styles.inlineState}>通知設定を読み込んでいます。</div>}
+                {!loading && notificationItems.map((item) => {
                     const Icon = item.icon;
+                    const checked = Boolean(settings?.[item.key]);
+                    const disabled = Boolean(savingKey);
+
                     return (
-                        <button key={item.key} type="button" className={styles.toggleRow} onClick={() => toggle(item.key)}>
+                        <button key={item.key} type="button" className={styles.toggleRow} onClick={() => toggle(item.key)} disabled={disabled}>
                             <span className={styles.rowIconWrap}><Icon className={styles.rowIcon} /></span>
                             <span className={styles.rowText}>
                                 <span className={styles.rowTitle}>{item.title}</span>
                                 <span className={styles.rowDescription}>{item.description}</span>
                             </span>
-                            <span className={[styles.switch, settings[item.key] ? styles.switchOn : ''].join(' ')} aria-hidden="true"><span /></span>
+                            <span className={[styles.switch, checked ? styles.switchOn : ''].join(' ')} aria-hidden="true"><span /></span>
                         </button>
                     );
                 })}
@@ -1009,51 +1053,79 @@ export function NotificationSettingsPage() {
     );
 }
 
-/**
- * permissionLabel は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
-function permissionLabel(permission) {
-    // ここで条件を確認し、状況に合う処理だけを実行します。
-    if (permission === 'granted') return { title: 'プッシュ通知は許可されています', body: 'TABIからの通知を受信できます。' };
-    // ここで条件を確認し、状況に合う処理だけを実行します。
-    if (permission === 'denied') return { title: 'プッシュ通知はブロックされています', body: 'ブラウザまたは端末の通知設定から許可してください。' };
-    // ここで条件を確認し、状況に合う処理だけを実行します。
-    if (permission === 'default') return { title: 'プッシュ通知は未許可です', body: '通知を受け取るには許可が必要です。' };
-    return { title: '通知許可状況を判定できません', body: 'このブラウザでは通知APIを利用できない可能性があります。' };
+function permissionLabel(status) {
+    if (status === 'ready') return { title: 'プッシュ通知を受け取れます', body: '通知許可と端末登録が完了しています。' };
+    if (status === 'granted') return { title: 'プッシュ通知は許可されています', body: '通知を受け取るには、この端末をTABIに登録してください。' };
+    if (status === 'denied') return { title: 'プッシュ通知はブロックされています', body: 'ブラウザまたは端末の通知設定から許可してください。' };
+    if (status === 'default') return { title: 'プッシュ通知は未許可です', body: '通知を受け取るには許可が必要です。' };
+    if (status === 'insecure-context') return { title: '安全な接続が必要です', body: 'プッシュ通知はHTTPSまたはlocalhostで利用できます。' };
+    if (status === 'service-worker-error') return { title: '通知の準備が完了していません', body: 'Service Workerを登録できる環境で再度お試しください。' };
+    if (status === 'token-error') return { title: '通知登録に失敗しました', body: 'FCMトークンを取得できませんでした。時間をおいて再度お試しください。' };
+    if (status === 'device-save-error') return { title: '端末登録に失敗しました', body: '通知許可は取得できましたが、端末情報を保存できませんでした。' };
+
+    return { title: '通知を利用できない環境です', body: 'このブラウザでは通知機能を利用できない可能性があります。' };
 }
 
 export function NotificationPermissionPage() {
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [permission, setPermission] = useState(() => (typeof Notification === 'undefined' ? 'unknown' : Notification.permission));
-    const status = permissionLabel(permission);
+    const [status, setStatus] = useState(currentNotificationPermission);
+    const [processing, setProcessing] = useState(false);
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
+    const label = permissionLabel(status);
+    const disabled = processing || ['ready', 'denied', 'unsupported', 'insecure-context'].includes(status);
 
-    // requestPermission は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
+    useEffect(() => {
+        setStatus(currentNotificationPermission());
+    }, []);
+
     const requestPermission = async () => {
-        // ここで条件を確認し、状況に合う処理だけを実行します。
-        if (typeof Notification === 'undefined' || !Notification.requestPermission) {
-            setPermission('unknown');
-            return;
+        setProcessing(true);
+        setMessage('');
+        setError('');
+
+        try {
+            const result = await requestFirebasePushToken();
+            setStatus(result.status || result.permission || 'unsupported');
+
+            if (!result.success || !result.token) {
+                setError('通知登録を完了できませんでした。');
+                return;
+            }
+
+            await registerNotificationDevice({
+                token: result.token,
+                platform: 'web',
+                appType: 'pwa',
+                browser: detectBrowserName(),
+            });
+
+            setStatus('ready');
+            setMessage('この端末で通知を受け取れるようになりました。');
+        } catch (err) {
+            setStatus('device-save-error');
+            setError(err.message || '端末情報の保存に失敗しました。');
+        } finally {
+            setProcessing(false);
         }
-        const next = await Notification.requestPermission();
-        setPermission(next);
     };
 
     return (
         <PageShell title="通知許可状況">
             <section className={styles.permissionHero}>
                 <div className={styles.permissionIcon}><BellIcon className={styles.permissionSvg} /></div>
-                <h2>{status.title}</h2>
-                <p>{status.body}</p>
+                <h2>{label.title}</h2>
+                <p>{label.body}</p>
             </section>
             <section className={styles.card}>
                 <h2 className={styles.cardTitle}>許可の確認方法</h2>
                 <p className={styles.lead}>端末の設定アプリやブラウザ設定から、TABI の通知が「許可」になっているか確認してください。</p>
-                <button type="button" className={styles.secondaryButton} onClick={requestPermission}>
-                    通知を許可する
+                <button type="button" className={styles.secondaryButton} onClick={requestPermission} disabled={disabled}>
+                    {processing ? '通知を登録しています' : '通知を許可する'}
                 </button>
                 <p className={styles.note}>ブラウザ仕様により、設定アプリを直接開けない場合があります。</p>
             </section>
+            <StatusMessage>{message}</StatusMessage>
+            <StatusMessage type="error">{error}</StatusMessage>
         </PageShell>
     );
 }
