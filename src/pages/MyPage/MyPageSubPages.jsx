@@ -952,6 +952,38 @@ function detectBrowserName() {
     return 'Browser';
 }
 
+function devicePermissionNotice(permission) {
+    if (permission === 'granted') {
+        return {
+            title: 'この端末では通知が許可されています',
+            body: '下の設定で、受け取りたい通知の種類を変更できます。',
+            buttonLabel: '',
+        };
+    }
+
+    if (permission === 'default') {
+        return {
+            title: 'この端末では通知がまだ許可されていません',
+            body: '通知項目がONでも、端末で通知を許可するまで通知は届きません。',
+            buttonLabel: '通知を許可する',
+        };
+    }
+
+    if (permission === 'denied') {
+        return {
+            title: 'この端末では通知が拒否されています',
+            body: '通知項目がONでも、この端末には通知が届きません。ブラウザまたは端末の設定からTABIの通知を許可してください。',
+            buttonLabel: '通知の設定方法を確認する',
+        };
+    }
+
+    return {
+        title: 'この端末ではプッシュ通知を利用できません',
+        body: '下の設定は、通知に対応した別の端末で使用されます。',
+        buttonLabel: '',
+    };
+}
+
 function currentNotificationPermission() {
     if (typeof window === 'undefined' || typeof Notification === 'undefined') {
         return 'unsupported';
@@ -965,6 +997,8 @@ function currentNotificationPermission() {
 }
 
 export function NotificationSettingsPage() {
+    const navigate = useNavigate();
+    const [devicePermission, setDevicePermission] = useState(currentNotificationPermission);
     const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(true);
     const [savingKey, setSavingKey] = useState('');
@@ -972,6 +1006,8 @@ export function NotificationSettingsPage() {
     const [error, setError] = useState('');
 
     useEffect(() => {
+        // ページ表示だけでは通知許可を要求せず、現在の端末・ブラウザの権限状態だけを読み取ります。
+        setDevicePermission(currentNotificationPermission());
         let mounted = true;
 
         const loadSettings = async () => {
@@ -1001,6 +1037,8 @@ export function NotificationSettingsPage() {
         };
     }, []);
 
+    // 実際に通知できる条件は、対象のnotification_settingsがON、端末のNotification.permissionがgranted、user_devicesに有効なFCMトークンがあり、is_activeが1であることです。
+    // ただし最終的な配信可否はフロントだけで決めず、通知送信時にPHPサーバー側でnotification_settingsとuser_devicesを確認します。
     const toggle = async (key) => {
         if (loading || savingKey || !settings) {
             return;
@@ -1026,8 +1064,20 @@ export function NotificationSettingsPage() {
         }
     };
 
+    const notice = devicePermissionNotice(devicePermission);
+
     return (
         <PageShell title="通知設定">
+            <section className={styles.card}>
+                <h2 className={styles.cardTitle}>{notice.title}</h2>
+                <p className={styles.lead}>{notice.body}</p>
+                {notice.buttonLabel && (
+                    <button type="button" className={styles.secondaryButton} onClick={() => navigate('/mypage/notification-permission')}>
+                        {notice.buttonLabel}
+                    </button>
+                )}
+            </section>
+            <p className={styles.notificationSettingHelp}>この設定は、通知を許可した端末で受け取る通知の種類を選択するものです。</p>
             <section className={styles.listCard}>
                 {loading && <div className={styles.inlineState}>通知設定を読み込んでいます。</div>}
                 {!loading && notificationItems.map((item) => {
@@ -1054,12 +1104,14 @@ export function NotificationSettingsPage() {
 }
 
 function permissionLabel(status) {
-    if (status === 'ready') return { title: 'プッシュ通知を受け取れます', body: '通知許可と端末登録が完了しています。' };
-    if (status === 'granted') return { title: 'プッシュ通知は許可されています', body: '通知を受け取るには、この端末をTABIに登録してください。' };
-    if (status === 'denied') return { title: 'プッシュ通知はブロックされています', body: 'ブラウザまたは端末の通知設定から許可してください。' };
-    if (status === 'default') return { title: 'プッシュ通知は未許可です', body: '通知を受け取るには許可が必要です。' };
+    if (status === 'ready') return { title: 'この端末ではプッシュ通知を受け取れます', body: '現在使用しているブラウザ・端末の通知許可と端末登録が完了しています。' };
+    if (status === 'granted') return { title: 'この端末ではプッシュ通知が許可されています', body: 'これはユーザーアカウント全体ではなく、現在使用しているブラウザ・端末の権限です。通知を受け取るには、この端末をTABIに登録してください。' };
+    if (status === 'denied') return { title: 'この端末ではプッシュ通知が拒否されています', body: 'これは現在使用しているブラウザ・端末の権限です。ブラウザまたは端末の通知設定から許可してください。' };
+    if (status === 'default') return { title: 'この端末ではプッシュ通知が未許可です', body: 'これは現在使用しているブラウザ・端末の権限です。通知を受け取るには許可が必要です。' };
     if (status === 'insecure-context') return { title: '安全な接続が必要です', body: 'プッシュ通知はHTTPSまたはlocalhostで利用できます。' };
     if (status === 'service-worker-error') return { title: '通知の準備が完了していません', body: 'Service Workerを登録できる環境で再度お試しください。' };
+    if (status === 'messaging-unsupported') return { title: '通知を利用できない環境です', body: 'このブラウザではFirebase Messagingを利用できない可能性があります。' };
+    if (status === 'vapid-key-missing') return { title: '通知設定の準備が不足しています', body: 'Web Pushに必要な公開鍵の設定を確認してください。' };
     if (status === 'token-error') return { title: '通知登録に失敗しました', body: 'FCMトークンを取得できませんでした。時間をおいて再度お試しください。' };
     if (status === 'device-save-error') return { title: '端末登録に失敗しました', body: '通知許可は取得できましたが、端末情報を保存できませんでした。' };
 

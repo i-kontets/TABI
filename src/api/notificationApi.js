@@ -1,6 +1,6 @@
-﻿const notificationApi = {
+const notificationApi = {
   device: '/TABI/api/Notifications/RegisterDevice.php',
-  settings: '/TABI/api/User/NotificationSettings.php',
+  settings: '/TABI/api/Notifications/Settings.php',
 };
 
 async function parseNotificationResponse(response) {
