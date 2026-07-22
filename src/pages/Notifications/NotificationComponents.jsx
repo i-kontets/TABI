@@ -39,7 +39,7 @@ function CategoryIcon({ category }) {
   const Icon = iconMap[category] || MegaphoneIcon;
 
   return (
-    <span className={[styles.categoryIcon, styles[`tone_${meta.tone}`]].join(' ')} aria-hidden="true">
+    <span className={[styles.categoryIcon, styles['tone_' + meta.tone]].join(' ')} aria-hidden="true">
       <Icon className={className} />
     </span>
   );
@@ -47,7 +47,7 @@ function CategoryIcon({ category }) {
 
 function NotificationTabs({ tabs, activeTab, onChange }) {
   return (
-    <div className={styles.tabs} role="tablist" aria-label="通知カテゴリ">
+    <div className={styles.tabs} role="tablist" aria-label="\u901a\u77e5\u30ab\u30c6\u30b4\u30ea">
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -74,7 +74,7 @@ function NotificationItem({ notification, timeLabel, onOpen }) {
       </span>
       <span className={styles.itemMeta}>
         <span className={styles.itemTime}>{timeLabel}</span>
-        {!notification.isRead && <span className={styles.unreadDot} aria-label="未読" />}
+        {!notification.isRead && <span className={styles.unreadDot} aria-label="\u672a\u8aad" />}
       </span>
     </button>
   );
@@ -95,7 +95,7 @@ function NotificationEmptyState({ title, body, actionLabel, onAction }) {
 
 function NotificationSkeleton() {
   return (
-    <div className={styles.skeletonList} aria-label="通知を読み込み中">
+    <div className={styles.skeletonList} aria-label="\u901a\u77e5\u3092\u8aad\u307f\u8fbc\u307f\u4e2d">
       {[0, 1, 2].map((item) => (
         <div key={item} className={styles.skeletonRow}>
           <span />

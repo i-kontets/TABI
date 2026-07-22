@@ -65,6 +65,7 @@
 .tab:focus-visible,
 .notificationItem:focus-visible,
 .markAllButton:focus-visible,
+.loadMoreButton:focus-visible,
 .primaryButton:focus-visible,
 .secondaryButton:focus-visible {
   outline: 3px solid rgba(68, 85, 141, 0.35);
@@ -249,6 +250,7 @@
 }
 
 .markAllButton,
+.loadMoreButton,
 .primaryButton,
 .secondaryButton {
   width: 100%;
@@ -264,6 +266,7 @@
 }
 
 .markAllButton,
+.loadMoreButton,
 .secondaryButton {
   border: 1px solid #cfd8eb;
   background: #fff;
@@ -274,6 +277,12 @@
   border: 0;
   background: #0f5fd4;
   color: #fff;
+}
+
+.markAllButton:disabled,
+.loadMoreButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
 }
 
 .buttonIcon {

@@ -8,14 +8,14 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TripContext } from "../../App";
 import TravelGroupCard from '../../components/TravelGroupCard/TravelGroupCard';
 import Modal from '../../components/Modal/Modal';
 import ImagePicker from '../../components/ImagePicker/ImagePicker';
-import notificationMockData from '../../data/notificationMockData';
 import styles from './Home.module.css';
+import { fetchUnreadNotificationCount } from '../../api/notificationApi';
 
 // ここから下は、画面内で使うアイコンを SVG で直接定義しています。
 // 画像素材を別ファイルに分けず、必要な見た目をこのコンポーネント内で完結させます。
@@ -87,8 +87,35 @@ function Home() {
     const navigate = useNavigate();
     // TripContext には、選択中の旅行グループ情報を入れて次画面へ渡します。
     const { setTrip } = useContext(TripContext);
-    const unreadNotificationCount = useMemo(() => notificationMockData.filter((item) => !item.isRead).length, []);
-    const notificationBadgeLabel = unreadNotificationCount > 9 ? '9+' : String(unreadNotificationCount);
+    const [notificationBadgeText, setNotificationBadgeText] = useState(null);
+
+    useEffect(() => {
+        let isMounted = true;
+        const controller = new AbortController();
+
+        const fetchNotificationBadge = async () => {
+            try {
+                const data = await fetchUnreadNotificationCount({ signal: controller.signal });
+                const count = Number(data?.data?.unreadCount ?? 0);
+                const badgeText = data?.data?.badgeText || (count > 99 ? '99+' : String(count));
+
+                if (isMounted) {
+                    setNotificationBadgeText(count > 0 ? badgeText : null);
+                }
+            } catch (caughtError) {
+                if (isMounted && caughtError?.name !== 'AbortError') {
+                    setNotificationBadgeText(null);
+                }
+            }
+        };
+
+        fetchNotificationBadge();
+
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
+    }, []);
 
     // 画面に表示する旅行グループ一覧です。
     const [travelGroups, setTravelGroups] = useState([]);
@@ -386,7 +413,7 @@ function Home() {
                     aria-label="通知一覧"
                 >
                     <BellIcon className={styles.headerIcon} />
-                    {unreadNotificationCount > 0 && <span className={styles.noticeBadge}>{notificationBadgeLabel}</span>}
+                    {notificationBadgeText && <span className={styles.noticeBadge}>{notificationBadgeText}</span>}
                 </button>
             </header>
 
