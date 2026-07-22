@@ -1,4 +1,16 @@
 <?php
+
+/**
+ * 旅行先候補やアンケートの作成、取得、投票を扱う API です。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
 // セッションを開始して、ログイン状態や回答済み判定に使う
 session_start();
 
@@ -11,9 +23,11 @@ require_once __DIR__ . "/CandidateCommon.php";
 
 // このエンドポイントはGETのみ受け付ける
 if ($_SERVER["REQUEST_METHOD"] !== "GET") {
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     respond(405, ["success" => false, "message" => "許可されていないメソッドです"]);
 }
 
+// データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
     // group_id を取得し、未指定なら1を使う
     $groupId = filter_input(INPUT_GET, "group_id", FILTER_VALIDATE_INT) ?: 1;
@@ -30,6 +44,7 @@ try {
          WHERE trip_id = :trip_id
          ORDER BY created_at DESC, survey_id DESC"
     );
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $surveyStmt->execute([":trip_id" => $trip["trip_id"]]);
     // 取得したアンケート一覧を配列で受け取る
     $surveys = $surveyStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -77,6 +92,7 @@ try {
 
     // アンケート一覧をまとめて返す
     respond(200, ["success" => true, "surveys" => $surveys]);
+// エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
 } catch (PDOException $error) {
     // DB処理に失敗したら500を返す
     respond(500, ["success" => false, "message" => "アンケートを取得できませんでした"]);

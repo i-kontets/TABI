@@ -1,8 +1,21 @@
 <?php
 
+/**
+ * 管理画面で表示するデータをデータベースから取り出す処理をまとめます。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
 // users 一覧は、プロフィールや利用状況の補助情報をまとめて管理画面向けに整形します。
 function fetch_users(PDO $pdo): array
 {
+    // users を中心に、プロフィール・端末ログイン情報・グループ参加・投稿数をJOINでまとめて取得します。
+    // COUNT や MAX を使うため、ユーザー1人につき1行になるよう GROUP BY しています。
     $sql = "
         SELECT
             u.user_id,
@@ -27,6 +40,7 @@ function fetch_users(PDO $pdo): array
     ";
     $rows = $pdo->query($sql)->fetchAll();
 
+    // DBのカラム名やステータス値を、React側がそのまま表示しやすいキー名と日本語ラベルに変換します。
     return array_map(function ($row) {
         return [
             "id" => (int) $row["user_id"],
@@ -50,6 +64,8 @@ function fetch_users(PDO $pdo): array
 // メンバー数や旅行期間、旅程数、アルバム数などを集計して返します。
 function fetch_groups(PDO $pdo): array
 {
+    // グループ一覧では、グループ基本情報に加えてメンバー数・旅程数・アルバム数を集計します。
+    // LEFT JOIN を使うことで、まだ旅程やアルバムがないグループも一覧から落ちないようにしています。
     $groups = $pdo->query("
         SELECT
             g.group_id,
@@ -74,6 +90,7 @@ function fetch_groups(PDO $pdo): array
         ORDER BY g.group_id DESC
     ")->fetchAll();
 
+    // 各グループのメンバー名と役割を、グループごとに後から取得します。
     $memberStmt = $pdo->prepare("
         SELECT u.user_id, u.name, gm.role_in_group
         FROM group_members gm
@@ -83,6 +100,7 @@ function fetch_groups(PDO $pdo): array
     ");
 
     return array_map(function ($row) use ($memberStmt) {
+        // グループごとにメンバー取得SQLを実行し、管理画面の詳細表示で使う配列へ整形します。
         $memberStmt->execute(["group_id" => $row["group_id"]]);
         $members = array_map(fn($member) => [
             "id" => (int) $member["user_id"],
@@ -327,11 +345,13 @@ function activity_type(?string $targetType): string
 // activity_time は、履歴表示用に mm/dd HH:ii 相当の短い表記へ丸めます。
 function activity_time(?string $value): string
 {
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$value) {
         return "-";
     }
 
     $timestamp = strtotime($value);
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$timestamp) {
         return "-";
     }
@@ -340,17 +360,19 @@ function activity_time(?string $value): string
 }
 
 // 最近の管理アクティビティを、種類ごとに集めて 1 つのタイムラインにまとめます。
-function fetch_recent_activities(PDO $pdo): array
+function fetch_recent_activities(PDO $pdo, ?int $limit = 8): array
 {
     $activities = [];
+    $queryLimit = $limit === null ? 100 : max(10, $limit + 2);
 
     $logRows = $pdo->query("
         SELECT l.activity_log_id, l.action_text, l.target_type, l.created_at, u.name AS manager_name
         FROM admin_activity_logs l
         LEFT JOIN users u ON u.user_id = l.manager_user_id
         ORDER BY l.created_at DESC, l.activity_log_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
     foreach ($logRows as $row) {
         $activities[] = [
             "id" => "log-" . $row["activity_log_id"],
@@ -365,8 +387,9 @@ function fetch_recent_activities(PDO $pdo): array
         SELECT inquiry_id, title, created_at
         FROM admin_inquiries
         ORDER BY created_at DESC, inquiry_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
     foreach ($inquiryRows as $row) {
         $activities[] = [
             "id" => "inquiry-" . $row["inquiry_id"],
@@ -381,8 +404,9 @@ function fetch_recent_activities(PDO $pdo): array
         SELECT report_id, reason, reported_at
         FROM admin_reports
         ORDER BY reported_at DESC, report_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
     foreach ($reportRows as $row) {
         $activities[] = [
             "id" => "report-" . $row["report_id"],
@@ -398,8 +422,9 @@ function fetch_recent_activities(PDO $pdo): array
         FROM users
         WHERE deleted_at IS NULL
         ORDER BY created_at DESC, user_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
     foreach ($userRows as $row) {
         $activities[] = [
             "id" => "user-" . $row["user_id"],
@@ -414,8 +439,9 @@ function fetch_recent_activities(PDO $pdo): array
         SELECT group_id, group_name, created_at
         FROM user_groups
         ORDER BY created_at DESC, group_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
     foreach ($groupRows as $row) {
         $activities[] = [
             "id" => "group-" . $row["group_id"],
@@ -431,8 +457,9 @@ function fetch_recent_activities(PDO $pdo): array
         FROM admin_notices
         WHERE deleted_at IS NULL
         ORDER BY created_at DESC, notice_id DESC
-        LIMIT 10
+        LIMIT {$queryLimit}
     ")->fetchAll();
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
     foreach ($noticeRows as $row) {
         $activities[] = [
             "id" => "notice-" . $row["notice_id"],
@@ -444,7 +471,10 @@ function fetch_recent_activities(PDO $pdo): array
     }
 
     usort($activities, fn($a, $b) => strcmp($b["sortAt"], $a["sortAt"]));
-    $activities = array_slice($activities, 0, 8);
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if ($limit !== null) {
+        $activities = array_slice($activities, 0, $limit);
+    }
 
     return array_map(function ($activity) {
         unset($activity["sortAt"]);
@@ -453,8 +483,66 @@ function fetch_recent_activities(PDO $pdo): array
 }
 
 // 今日のアクティブユーザー数を取得します。
+function fetch_pending_support_items(PDO $pdo): array
+{
+    $items = [];
+
+    $inquiryRows = $pdo->query("
+        SELECT inquiry_id, public_id, title, created_at
+        FROM admin_inquiries
+        WHERE status IS NULL OR status NOT IN ('working', 'resolved')
+        ORDER BY created_at DESC, inquiry_id DESC
+    ")->fetchAll();
+
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
+    foreach ($inquiryRows as $row) {
+        $items[] = [
+            "id" => "inquiry-" . $row["inquiry_id"],
+            "type" => "inquiry",
+            "title" => $row["title"],
+            "status" => "未対応",
+            "createdAt" => format_dt($row["created_at"]),
+            "sortAt" => $row["created_at"],
+            "to" => "/admin/inquiries/" . $row["public_id"],
+        ];
+    }
+
+    $reportRows = $pdo->query("
+        SELECT report_id, report_type, reason, reported_at
+        FROM admin_reports
+        WHERE status IS NULL OR status NOT IN ('reviewing', 'resolved')
+        ORDER BY reported_at DESC, report_id DESC
+    ")->fetchAll();
+
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
+    foreach ($reportRows as $row) {
+        $title = trim((string) ($row["report_type"] ?: $row["reason"] ?: "通報"));
+        $items[] = [
+            "id" => "report-" . $row["report_id"],
+            "type" => "report",
+            "title" => $title,
+            "status" => "未対応",
+            "createdAt" => format_dt($row["reported_at"]),
+            "sortAt" => $row["reported_at"],
+            "to" => "/admin/reports/r" . $row["report_id"],
+        ];
+    }
+
+    usort($items, fn($a, $b) => strcmp($b["sortAt"], $a["sortAt"]));
+
+    return array_map(function ($item) {
+        unset($item["sortAt"]);
+        return $item;
+    }, $items);
+}
+
+/**
+ * admin_column_exists は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function admin_column_exists(PDO $pdo, string $table, string $column): bool
 {
+    // SQL を準備し、あとから値を安全に入れられる形にします。
     $stmt = $pdo->prepare("
         SELECT COUNT(*)
         FROM INFORMATION_SCHEMA.COLUMNS
@@ -462,6 +550,7 @@ function admin_column_exists(PDO $pdo, string $table, string $column): bool
           AND TABLE_NAME = :table_name
           AND COLUMN_NAME = :column_name
     ");
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $stmt->execute([
         "table_name" => $table,
         "column_name" => $column,
@@ -470,6 +559,10 @@ function admin_column_exists(PDO $pdo, string $table, string $column): bool
     return (int) $stmt->fetchColumn() > 0;
 }
 
+/**
+ * tokyo_day_range は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function tokyo_day_range(int $offsetDays = 0): array
 {
     $timezone = new DateTimeZone("Asia/Tokyo");
@@ -482,13 +575,365 @@ function tokyo_day_range(int $offsetDays = 0): array
     ];
 }
 
+/**
+ * fetch_system_error_summary は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
+function fetch_system_error_summary(PDO $pdo): array
+{
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if (!admin_column_exists($pdo, "system_errors", "error_id")) {
+        return ["value" => 0, "today" => 0];
+    }
+
+    [$start, $end] = tokyo_day_range();
+    $countExpr = admin_column_exists($pdo, "system_errors", "occurrence_count")
+        ? "COALESCE(occurrence_count, 1)"
+        : "1";
+    $occurredAtExpr = admin_column_exists($pdo, "system_errors", "last_occurred_at")
+        ? "COALESCE(last_occurred_at, created_at)"
+        : "created_at";
+
+    // SQL を準備し、あとから値を安全に入れられる形にします。
+    $stmt = $pdo->prepare("
+        SELECT
+            SUM({$countExpr}) AS unresolved_count,
+            SUM(CASE WHEN {$occurredAtExpr} >= :start_at AND {$occurredAtExpr} < :end_at THEN {$countExpr} ELSE 0 END) AS today_count
+        FROM system_errors
+        WHERE status = 'unresolved'
+    ");
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
+    $stmt->execute([
+        "start_at" => $start,
+        "end_at" => $end,
+    ]);
+    $row = $stmt->fetch() ?: [];
+
+    return [
+        "value" => (int) ($row["unresolved_count"] ?? 0),
+        "today" => (int) ($row["today_count"] ?? 0),
+    ];
+}
+
+/**
+ * redact_system_error_value は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
+function redact_system_error_value(string $key, $value)
+{
+    $lowerKey = strtolower($key);
+    $sensitivePatterns = ["password", "token", "secret", "key", "authorization", "cookie", "session", "db_", "aws"];
+
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
+    foreach ($sensitivePatterns as $pattern) {
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+        if (str_contains($lowerKey, $pattern)) {
+            return "********";
+        }
+    }
+
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if (is_array($value)) {
+        $redacted = [];
+        // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
+        foreach ($value as $childKey => $childValue) {
+            $redacted[$childKey] = redact_system_error_value((string) $childKey, $childValue);
+        }
+        return $redacted;
+    }
+
+    return $value;
+}
+
+/**
+ * mask_system_error_text は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
+function mask_system_error_text(string $value): string
+{
+    // 表示用の文字列だけをマスキングし、DBに保存済みのログ本文は書き換えません。
+    $value = preg_replace('/([A-Z0-9._%+\-]{2})[A-Z0-9._%+\-]*(@[A-Z0-9.\-]+\.[A-Z]{2,})/iu', '$1***$2', $value);
+    $value = preg_replace('/\b0\d{1,4}[- ]?\d{1,4}[- ]?\d{3,4}\b/u', '[MASKED_PHONE]', $value);
+    $value = preg_replace('/(authorization\s*[:=]\s*bearer\s+)[^\s,"\']+/iu', '$1[MASKED]', $value);
+    $value = preg_replace('/([?&](?:token|key|secret|signature|gas_token|mail_token|session|sid)=)[^&\s"\']+/iu', '$1[MASKED]', $value);
+
+    return $value;
+}
+
+/**
+ * summarize_system_error_detail は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
+function summarize_system_error_detail(?string $detail): string
+{
+    $detail = trim((string) $detail);
+
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if ($detail === "") {
+        return "";
+    }
+
+    // フロントエンドから送られた JSON 文字列を、PHP で扱える配列に変換します。
+    $decoded = json_decode($detail, true);
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if (is_array($decoded)) {
+        $redacted = [];
+        // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
+        foreach ($decoded as $key => $value) {
+            $redacted[$key] = redact_system_error_value((string) $key, $value);
+        }
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
+        $detail = json_encode($redacted, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    }
+
+    $detail = mask_system_error_text($detail);
+
+    return mb_strlen($detail) > 1200 ? mb_substr($detail, 0, 1200) . "..." : $detail;
+}
+
+/**
+ * system_error_status_label は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
+function system_error_status_label(?string $status): string
+{
+    return [
+        "unresolved" => "未対応",
+        "working" => "対応中",
+        "resolved" => "解決済み",
+    ][$status] ?? ($status ?: "-");
+}
+
+/**
+ * system_error_status_code は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
+function system_error_status_code(string $status): string
+{
+    return [
+        "未対応" => "unresolved",
+        "対応中" => "working",
+        "解決済み" => "resolved",
+    ][$status] ?? $status;
+}
+
+/**
+ * fetch_system_errors は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
+function fetch_system_errors(PDO $pdo, array $params = []): array
+{
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if (!admin_column_exists($pdo, "system_errors", "error_id")) {
+        return [
+            "items" => [],
+            "page" => 1,
+            "totalPages" => 1,
+            "total" => 0,
+            "limit" => 25,
+            "pagination" => [
+                "currentPage" => 1,
+                "perPage" => 25,
+                "totalItems" => 0,
+                "totalPages" => 1,
+                "hasPreviousPage" => false,
+                "hasNextPage" => false,
+            ],
+        ];
+    }
+
+    // page と limit は画面から来る値なので、安全な整数に丸めてからSQLへ渡します。
+    $requestedPage = filter_var($params["page"] ?? 1, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1]]);
+    $requestedLimit = filter_var($params["limit"] ?? 25, FILTER_VALIDATE_INT, ["options" => ["min_range" => 1]]);
+    $page = $requestedPage ?: 1;
+    $limit = min($requestedLimit ?: 25, 100);
+
+    $countExpr = admin_column_exists($pdo, "system_errors", "occurrence_count")
+        ? "COALESCE(occurrence_count, 1)"
+        : "1";
+    $occurredAtExpr = admin_column_exists($pdo, "system_errors", "last_occurred_at")
+        ? "COALESCE(last_occurred_at, created_at)"
+        : "created_at";
+    $firstOccurredAtExpr = admin_column_exists($pdo, "system_errors", "first_occurred_at")
+        ? "COALESCE(first_occurred_at, created_at)"
+        : "created_at";
+    $resolvedAtSelect = admin_column_exists($pdo, "system_errors", "resolved_at")
+        ? "resolved_at"
+        : "NULL";
+
+    $where = [];
+    $bindings = [];
+
+    $status = trim((string) ($params["status"] ?? ""));
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if ($status !== "" && $status !== "all") {
+        $where[] = "status = :status";
+        $bindings["status"] = system_error_status_code($status);
+    }
+
+    $severity = trim((string) ($params["severity"] ?? ""));
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if ($severity !== "" && $severity !== "all") {
+        $where[] = "level = :severity";
+        $bindings["severity"] = $severity;
+    }
+
+    $source = trim((string) ($params["source"] ?? ""));
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if ($source !== "" && $source !== "all") {
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+        if ($source === "other") {
+            $where[] = "source NOT IN ('frontend', 'backend', 'auth', 'database', 'API')";
+        } else {
+            $where[] = "source = :source";
+            $bindings["source"] = $source;
+        }
+    }
+
+    $startDate = trim((string) ($params["start_date"] ?? ""));
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if ($startDate !== "" && preg_match('/^\d{4}-\d{2}-\d{2}$/', $startDate)) {
+        $where[] = "{$occurredAtExpr} >= :start_date";
+        $bindings["start_date"] = $startDate . " 00:00:00";
+    }
+
+    $endDate = trim((string) ($params["end_date"] ?? ""));
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if ($endDate !== "" && preg_match('/^\d{4}-\d{2}-\d{2}$/', $endDate)) {
+        $where[] = "{$occurredAtExpr} < :end_date";
+        $bindings["end_date"] = (new DateTimeImmutable($endDate))->modify("+1 day")->format("Y-m-d 00:00:00");
+    }
+
+    $keyword = trim((string) ($params["keyword"] ?? ""));
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+    if ($keyword !== "") {
+        // 検索対象は実在するカラムだけに限定し、値はプレースホルダーで安全に渡します。
+        $keywordColumns = ["message", "detail", "url"];
+        // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
+        foreach (["error_code", "error_type", "page_path", "request_url", "stack_trace"] as $column) {
+            // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+            if (admin_column_exists($pdo, "system_errors", $column)) {
+                $keywordColumns[] = $column;
+            }
+        }
+        $keywordConditions = [];
+        // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
+        foreach ($keywordColumns as $index => $column) {
+            $placeholder = "keyword_{$index}";
+            $keywordConditions[] = "{$column} LIKE :{$placeholder}";
+            $bindings[$placeholder] = "%" . $keyword . "%";
+        }
+        $where[] = "(" . implode(" OR ", $keywordConditions) . ")";
+    }
+
+    $whereSql = $where ? "WHERE " . implode(" AND ", $where) : "";
+
+    // SQL を準備し、あとから値を安全に入れられる形にします。
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM system_errors {$whereSql}");
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
+    foreach ($bindings as $key => $value) {
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
+        $countStmt->bindValue(":{$key}", $value);
+    }
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
+    $countStmt->execute();
+    $total = (int) $countStmt->fetchColumn();
+    $totalPages = max(1, (int) ceil($total / $limit));
+    $page = min($page, $totalPages);
+
+    // OFFSET は「何件読み飛ばすか」です。DB側で25件ずつ取得するため、画面に不要な全件取得を避けます。
+    $offset = ($page - 1) * $limit;
+
+    // SQL を準備し、あとから値を安全に入れられる形にします。
+    $stmt = $pdo->prepare("
+        SELECT
+            error_id,
+            source,
+            level,
+            message,
+            detail,
+            url,
+            status,
+            error_type,
+            error_code,
+            page_path,
+            request_url,
+            http_status,
+            {$countExpr} AS occurrence_count,
+            {$firstOccurredAtExpr} AS first_occurred_at,
+            {$occurredAtExpr} AS occurred_at,
+            {$resolvedAtSelect} AS resolved_at,
+            created_at
+        FROM system_errors
+        {$whereSql}
+        ORDER BY {$occurredAtExpr} DESC, error_id DESC
+        LIMIT :limit OFFSET :offset
+    ");
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
+    foreach ($bindings as $key => $value) {
+        // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
+        $stmt->bindValue(":{$key}", $value);
+    }
+    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
+    $stmt->bindValue(":limit", $limit, PDO::PARAM_INT);
+    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
+    $stmt->bindValue(":offset", $offset, PDO::PARAM_INT);
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
+    $stmt->execute();
+
+    $items = array_map(fn($row) => [
+        "id" => "se" . $row["error_id"],
+        "source" => $row["source"] ?: "-",
+        "level" => $row["level"] ?: "error",
+        "message" => mask_system_error_text($row["message"] ?: "-"),
+        "detail" => summarize_system_error_detail($row["detail"] ?? ""),
+        "url" => mask_system_error_text($row["request_url"] ?: ($row["url"] ?: "")),
+        "pagePath" => mask_system_error_text($row["page_path"] ?: ""),
+        "errorType" => $row["error_type"] ?: "",
+        "errorCode" => $row["error_code"] ?: "",
+        "httpStatus" => $row["http_status"] !== null ? (int) $row["http_status"] : null,
+        "occurrenceCount" => (int) $row["occurrence_count"],
+        "firstOccurredAt" => format_dt($row["first_occurred_at"] ?: $row["created_at"]),
+        "firstOccurredAtIso" => format_dt_iso_tokyo($row["first_occurred_at"] ?: $row["created_at"]),
+        "lastOccurredAt" => format_dt($row["occurred_at"] ?: $row["created_at"]),
+        "lastOccurredAtIso" => format_dt_iso_tokyo($row["occurred_at"] ?: $row["created_at"]),
+        "occurredAt" => format_dt($row["occurred_at"] ?: $row["created_at"]),
+        "occurredAtIso" => format_dt_iso_tokyo($row["occurred_at"] ?: $row["created_at"]),
+        "resolvedAt" => format_dt($row["resolved_at"] ?? null),
+        "resolvedAtIso" => format_dt_iso_tokyo($row["resolved_at"] ?? null),
+        "status" => system_error_status_label($row["status"] ?? ""),
+    ], $stmt->fetchAll());
+
+    return [
+        "items" => $items,
+        "page" => $page,
+        "totalPages" => $totalPages,
+        "total" => $total,
+        "limit" => $limit,
+        "pagination" => [
+            "currentPage" => $page,
+            "perPage" => $limit,
+            "totalItems" => $total,
+            "totalPages" => $totalPages,
+            "hasPreviousPage" => $page > 1,
+            "hasNextPage" => $page < $totalPages,
+        ],
+    ];
+}
+
+/**
+ * fetch_today_active_users は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function fetch_today_active_users(PDO $pdo): int
 {
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!admin_column_exists($pdo, "users", "last_active_at")) {
         return 0;
     }
 
     [$start, $end] = tokyo_day_range();
+    // SQL を準備し、あとから値を安全に入れられる形にします。
     $stmt = $pdo->prepare("
         SELECT COUNT(*) AS active_users
         FROM users
@@ -497,6 +942,7 @@ function fetch_today_active_users(PDO $pdo): int
           AND status = 'active'
           AND deleted_at IS NULL
     ");
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $stmt->execute([
         "start_at" => $start,
         "end_at" => $end,
@@ -511,6 +957,7 @@ function fetch_active_user_trend(PDO $pdo): array
     $labels = [];
     $data = [];
     $hasLastActiveAt = admin_column_exists($pdo, "users", "last_active_at");
+    // SQL を準備し、あとから値を安全に入れられる形にします。
     $stmt = $hasLastActiveAt ? $pdo->prepare("
         SELECT COUNT(*) AS active_users
         FROM users
@@ -524,11 +971,13 @@ function fetch_active_user_trend(PDO $pdo): array
         [$start, $end] = tokyo_day_range(-$i);
         $labels[] = $i === 0 ? "今日" : "{$i}日前";
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if (!$stmt) {
             $data[] = 0;
             continue;
         }
 
+        // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
         $stmt->execute([
             "start_at" => $start,
             "end_at" => $end,
@@ -558,6 +1007,7 @@ function fetch_active_user_trend(PDO $pdo): array
     $rows = $stmt->fetchAll();
 
     $countsByDate = [];
+    // 複数のデータを1件ずつ取り出し、同じ確認や変換を繰り返します。
     foreach ($rows as $row) {
         $countsByDate[$row["activity_date"]] = (int) $row["active_users"];
     }

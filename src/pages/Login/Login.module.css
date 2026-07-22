@@ -70,6 +70,23 @@
     font-size: 18px;
 }
 
+.forgotPasswordLink {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--sub-color);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+    margin: -2px 0 8px;
+}
+
+.forgotPasswordLink:hover {
+    text-decoration: underline;
+}
+
 .btn {
     width: 100%;
     padding: 10px;

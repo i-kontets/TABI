@@ -1,4 +1,16 @@
 <?php
+
+/**
+ * 旅行先候補やアンケートの作成、取得、投票を扱う API です。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
 // セッション開始：ユーザーのログイン状態などを管理するため
 session_start();
 
@@ -20,15 +32,16 @@ if ($_SERVER["REQUEST_METHOD"] !== "GET") {
     ]);
 }
 
+// データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
     // リクエストパラメータから group_id を取得（デフォルト値は1）
     // FILTER_VALIDATE_INT でintegerのバリデーションを実施
     $groupId = filter_input(INPUT_GET, "group_id", FILTER_VALIDATE_INT) ?: 1;
-    
+
     // グループIDから対応する旅行情報を取得
     // 最新の旅行1件を取得（update順、作成順でソート）
     $trip = findTrip($pdo, $groupId);
-    
+
     // セッションから user_id を取得（ログイン中のユーザーID）
     // ログインしていない場合は 0 をデフォルト値とする（ログインなしでも候補一覧は取得可能）
     $userId = isset($_SESSION["user_id"]) ? (int) $_SESSION["user_id"] : 0;
@@ -60,6 +73,7 @@ try {
             candidate.created_at
          ORDER BY candidate.candidate_type, candidate.created_at DESC, candidate.candidate_id DESC"
     );
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $stmt->execute([
         ":user_id" => $userId,
         ":trip_id" => (string) $trip["trip_id"],
@@ -82,6 +96,7 @@ try {
         "trip" => $trip,
         "candidates" => $candidates,
     ]);
+// エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
 } catch (PDOException $error) {
     // データベースエラー発生時の処理：500エラーを返す
     respond(500, [

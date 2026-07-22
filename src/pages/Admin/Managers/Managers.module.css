@@ -56,3 +56,30 @@
     color: #1f2937;
     box-sizing: border-box;
 }
+
+@media (min-width: 601px) {
+    .list {
+        gap: 10px;
+    }
+
+    .row {
+        padding: 14px 16px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .row {
+        min-height: 76px;
+        box-sizing: border-box;
+    }
+
+    .field {
+        max-width: 780px;
+    }
+}

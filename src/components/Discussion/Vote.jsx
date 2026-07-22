@@ -1,3 +1,13 @@
+/**
+ * 旅行グループ内の話し合い、候補、投票などの画面表示を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import Modal from "../Modal/Modal";
@@ -23,12 +33,14 @@ function oneWeekLaterValue() {
 
 // API呼び出しで共通化したJSON取得関数
 async function requestJson(url, options) {
+    // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
     const response = await fetch(url, {
         credentials: "include",
         ...options,
     });
     const data = await response.json();
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!response.ok || !data.success) {
         throw new Error(data.message || "処理に失敗しました");
     }
@@ -38,6 +50,7 @@ async function requestJson(url, options) {
 
 // DBの日時文字列を日本語表示向けに整形する
 function formatDeadline(value) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!value) {
         return "期限なし";
     }
@@ -88,6 +101,7 @@ function Vote({ active }) {
 
     // 初回表示時と groupId 変更時にデータを取得する
     useEffect(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!active) {
             return undefined;
         }
@@ -99,12 +113,15 @@ function Vote({ active }) {
         let cancelled = false;
 
         loadData()
+            // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
             .then(() => {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!cancelled) {
                     setLoading(false);
                 }
             })
             .catch((error) => {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!cancelled) {
                     setCandidates([]);
                     setSurveys([]);
@@ -127,6 +144,7 @@ function Vote({ active }) {
 
     // 現在のカテゴリに合う候補だけを絞り込む
     const selectableCandidates = useMemo(
+        // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         () => candidates.filter((candidate) => candidate.candidate_type === category),
         [candidates, category],
     );
@@ -136,6 +154,7 @@ function Vote({ active }) {
             const leftDone = left.is_expired || left.options?.some((option) => option.has_voted);
             const rightDone = right.is_expired || right.options?.some((option) => option.has_voted);
 
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (leftDone === rightDone) {
                 return 0;
             }
@@ -163,6 +182,7 @@ function Vote({ active }) {
     // チェックボックスのON/OFFを切り替える
     const toggleCandidate = (candidateId) => {
         setSelectedIds((current) => current.includes(candidateId)
+            // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
             ? current.filter((id) => id !== candidateId)
             : [...current, candidateId]);
     };
@@ -178,6 +198,7 @@ function Vote({ active }) {
         }
 
         setSubmitting(true);
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             // 作成APIへ送信する。タイトル未入力時は自動で質問文を補う
             await requestJson(`${import.meta.env.BASE_URL}api/Trips/CreateSurvey.php`, {
@@ -194,8 +215,10 @@ function Vote({ active }) {
             setCreateOpen(false);
             setNotice("アンケートを作成しました");
             await loadData();
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
             setNotice(error.message);
+        // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             setSubmitting(false);
         }
@@ -203,6 +226,7 @@ function Vote({ active }) {
 
     // 既存アンケートに投票する
     const vote = async (surveyId, optionId) => {
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             // 投票APIへ送信する
             await requestJson(`${import.meta.env.BASE_URL}api/Trips/VoteSurvey.php`, {
@@ -216,6 +240,7 @@ function Vote({ active }) {
             });
             setNotice("回答しました");
             await loadData();
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
             setNotice(error.message);
         }

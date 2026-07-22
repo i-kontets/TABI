@@ -48,6 +48,10 @@ const supportItems = [
 
 ];
 
+/**
+ * ArrowIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function ArrowIcon() {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -56,6 +60,10 @@ function ArrowIcon() {
     );
 }
 
+/**
+ * Other は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function Other() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
