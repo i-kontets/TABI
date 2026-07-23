@@ -1,6 +1,21 @@
+/**
+ * Firebase Messaging 用の Service Worker をブラウザへ登録するファイルです。
+ * Service Worker は、画面を閉じていてもバックグラウンドで通知を受け取る係です。
+ *
+ * 主な流れ:
+ * 1. Service Worker に対応したブラウザ環境かを確認する
+ * 2. 開発モード(npm run dev)では登録をスキップする
+ * 3. 本番では /TABI/ スコープで Service Worker を登録し、登録情報を返す
+ *
+ * 扱うデータ: Service Worker のファイルURLと登録情報(Registration)。
+ */
+// Viteの機能(?worker&url)でService WorkerファイルのURLを取得します。
 import firebaseMessagingServiceWorkerUrl
     from './firebase-messaging-sw.js?worker&url';
 
+/**
+ * Service Worker を登録します。使えない環境・失敗時は null を返します(例外は投げません)。
+ */
 async function registerFirebaseServiceWorker() {
     // Service Workerはブラウザ専用の機能なので、ブラウザ以外では何もしません。
     if (typeof window === 'undefined' || typeof navigator === 'undefined') {
