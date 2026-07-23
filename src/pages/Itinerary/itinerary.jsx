@@ -225,6 +225,9 @@ export default function Itinerary() {
 
       {/* 旅行期間ウィジェット */}
       <div className={styles.WidgetFrame}>
+        <div className={styles.WidgetTitle}>
+          旅行期間
+        </div>
         <div className={styles.WidgetText}>
           {tripPeriod?.startDate && tripPeriod?.endDate
             ? `${formatDate(tripPeriod.startDate)} - ${formatDate(tripPeriod.endDate)}`
