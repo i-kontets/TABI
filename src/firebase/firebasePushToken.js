@@ -1,11 +1,30 @@
+/**
+ * プッシュ通知の許可をユーザーへ求め、FCMトークンを取得するファイルです。
+ *
+ * 主な流れ:
+ * 1. ブラウザが通知・Service Worker・安全な接続(HTTPS)に対応しているか確認する
+ * 2. 通知許可が未決定なら、ユーザー操作をきっかけに許可ダイアログを表示する
+ * 3. 許可されたら Service Worker を登録し、FCMトークンを取得して返す
+ *
+ * 扱うデータ: 通知許可の状態(granted/denied等)とFCMトークン(秘密情報扱い)。
+ */
 import { getToken } from 'firebase/messaging';
 import { getFirebaseMessaging } from './firebaseMessaging';
 import { registerFirebaseServiceWorker } from './registerFirebaseServiceWorker';
 
+/**
+ * 失敗結果を統一した形式で作るヘルパーです。
+ * status には失敗理由(unsupported / denied / token-error など)が入ります。
+ */
 function failed(status, permission = null) {
     return { success: false, status, permission, token: null };
 }
 
+/**
+ * 通知許可を求めてFCMトークンを取得します。
+ * 成功時: { success: true, status: 'ready', permission, token }
+ * 失敗時: { success: false, status: 理由, permission, token: null }
+ */
 async function requestFirebasePushToken() {
     // 通知許可ダイアログはページ表示時ではなく、ユーザーがボタンを押した時だけ出します。
     if (typeof window === 'undefined' || typeof navigator === 'undefined') {

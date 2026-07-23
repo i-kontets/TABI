@@ -2,50 +2,57 @@
  * アプリ全体のルーティングと、旅行グループ情報を共有する大元の画面を担当します。
  *
  * 主な流れ:
- * 1. 必要な部品や API 関数を読み込む
- * 2. 画面表示やデータ取得に必要な値を準備する
- * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ * 1. 全ページのコンポーネントを読み込み、URLと画面の対応表(Routes)を定義する
+ * 2. 選択中の旅行グループ(trip)を Context に入れ、どの画面からでも参照できるようにする
+ * 3. サービス稼働状態のチェック(ServiceAvailabilityGate)を通してから各画面を表示する
  *
- * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ * 扱うデータ: 選択中の旅行グループ { id, name }(TripContext 経由で全画面に共有)。
  */
+// React の状態管理フックを読み込みます。
 import { useState } from 'react'
+// ルーティング(URLと画面の対応付け)用の部品を読み込みます。
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+// 画面をまたいで値を共有するための Context 作成関数を読み込みます。
 import { createContext } from 'react';
 import './App.css'
 
-import Newreg from './pages/newreg/Newreg';
-import Login from './pages/Login/Login';
-import ResetPassword from './pages/ResetPassword/ResetPassword.jsx';
-import Home from './pages/Home/Home';
-import MyPage from './pages/MyPage/MyPage';
+// ===== 各ページコンポーネントの読み込み =====
+import Newreg from './pages/newreg/Newreg';                    // 新規会員登録
+import Login from './pages/Login/Login';                        // ログイン
+import ResetPassword from './pages/ResetPassword/ResetPassword.jsx'; // パスワード再設定
+import Home from './pages/Home/Home';                           // ホーム(グループ一覧)
+import MyPage from './pages/MyPage/MyPage';                     // マイページ
+// マイページ配下のサブページ群(プロフィール編集・メール変更・通知設定など)
 import { ProfileEditPage, UserEditPage, EmailChangePage, NotificationSettingsPage, NotificationPermissionPage, ContactPage, FaqPage } from './pages/MyPage/MyPageSubPages';
-import Terms from './pages/Terms/Terms.jsx';
-import PrivacyPolicy from './pages/PrivacyPolicy/PrivacyPolicy.jsx';
-import UserProfilePage from './pages/UserProfile/UserProfilePage.jsx';
-import Itinerary from './pages/Itinerary/Itinerary.jsx';
-import ItineraryEdit from './pages/Itinerary/ItineraryEdit.jsx';
-import Tripmap from './pages/Tripmap/Tripmap';
-import Schedule from './pages/Schedule/Schedule.jsx';
-import Chat from './pages/Chat/Chat';
-import Album from './pages/Album/album.jsx';
-import Invoice from './pages/Invoice/Invoice';
-import Appointment from './pages/Appointment/Appointment.jsx';
-import Discussion from './pages/Discussion/Discussion';
-import CheckList from './pages/CheckList/CheckList';
-import Other from './pages/Other/Other.jsx';
+import Terms from './pages/Terms/Terms.jsx';                    // 利用規約
+import PrivacyPolicy from './pages/PrivacyPolicy/PrivacyPolicy.jsx'; // プライバシーポリシー
+import UserProfilePage from './pages/UserProfile/UserProfilePage.jsx'; // 他ユーザーの公開プロフィール
+import Itinerary from './pages/Itinerary/Itinerary.jsx';        // 旅程(しおり)表示
+import ItineraryEdit from './pages/Itinerary/ItineraryEdit.jsx'; // 旅程編集
+import Tripmap from './pages/Tripmap/Tripmap';                  // 旅行マップ
+import Schedule from './pages/Schedule/Schedule.jsx';           // スケジュール
+import Chat from './pages/Chat/Chat';                           // グループチャット
+import Album from './pages/Album/album.jsx';                    // アルバム(写真共有)
+import Invoice from './pages/Invoice/Invoice';                  // 割り勘・精算
+import Appointment from './pages/Appointment/Appointment.jsx';  // 日程調整
+import Discussion from './pages/Discussion/Discussion';         // 話し合い(候補・投票)
+import CheckList from './pages/CheckList/CheckList';            // 持ち物チェックリスト
+import Other from './pages/Other/Other.jsx';                    // その他メニュー
 // import TouristRanking from './pages/TouristRanking/TouristRanking';
-import Candidates from './pages/Candidates/Candidates';
-import CandidateDetail from './pages/Candidates/CandidateDetail.jsx';
-import Tourist from './pages/Tourist/Tourist';
-import CottageChatPage from './pages/CottageChat/CottageChatPage.jsx';
-import AdminRoutes from './pages/Admin/AdminRoutes.jsx';
-import UserRealtimeListener from './pages/UserRealtimeListener.jsx';
-import Maintenance from './pages/Maintenance/Maintenance.jsx';
-import NotificationListPage from './pages/Notifications/NotificationListPage.jsx';
-import NotificationDetailPage from './pages/Notifications/NotificationDetailPage.jsx';
-import ServiceAvailabilityGate from './components/ServiceAvailabilityGate.jsx';
-import { isAdminPath, isMaintenancePath } from './services/serviceStatus.js';
+import Candidates from './pages/Candidates/Candidates';         // 行き先候補一覧
+import CandidateDetail from './pages/Candidates/CandidateDetail.jsx'; // 候補の詳細
+import Tourist from './pages/Tourist/Tourist';                  // 観光スポット一覧
+import CottageChatPage from './pages/CottageChat/CottageChatPage.jsx'; // コテージ(宿)チャット
+import AdminRoutes from './pages/Admin/AdminRoutes.jsx';        // 管理画面のルーティング一式
+import UserRealtimeListener from './pages/UserRealtimeListener.jsx'; // WebSocketのリアルタイム受信係
+import Maintenance from './pages/Maintenance/Maintenance.jsx';  // メンテナンス画面
+import NotificationListPage from './pages/Notifications/NotificationListPage.jsx';   // 通知一覧
+import NotificationDetailPage from './pages/Notifications/NotificationDetailPage.jsx'; // 通知詳細
+import ServiceAvailabilityGate from './components/ServiceAvailabilityGate.jsx'; // DB稼働状態の門番
+import { isAdminPath, isMaintenancePath } from './services/serviceStatus.js';   // パス判定ヘルパー
 
+// 選択中の旅行グループ情報を全画面で共有するための Context です。
+// 各画面は useContext(TripContext) で { trip, setTrip } を受け取れます。
 // eslint-disable-next-line react-refresh/only-export-components
 export const TripContext = createContext();
 

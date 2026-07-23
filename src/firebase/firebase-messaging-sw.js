@@ -1,3 +1,14 @@
+/**
+ * バックグラウンドで通知を受け取る Service Worker 本体のファイルです。
+ * 通常の画面(タブ)とは別のプロセスで動くため、Firebaseの初期化もここで別途行います。
+ *
+ * 主な流れ:
+ * 1. 環境変数からFirebase設定を読み込み、不足があればエラーにする
+ * 2. Service Worker 内でFirebaseアプリを初期化する
+ * 3. Messaging を有効化し、バックグラウンド通知を受け取れる状態にする
+ *
+ * 扱うデータ: Firebaseの接続設定(画面側の firebaseConfig.js と同じ値)。
+ */
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getMessaging } from 'firebase/messaging/sw';
 

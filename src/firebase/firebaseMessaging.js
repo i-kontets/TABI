@@ -1,6 +1,19 @@
+/**
+ * Firebase Messaging(プッシュ通知の受信機能)を安全に取得するためのファイルです。
+ *
+ * 主な流れ:
+ * 1. ブラウザ環境かどうか、Messagingに対応しているかを確認する
+ * 2. 対応していれば Messaging インスタンスを返し、非対応なら null を返す
+ * 3. 呼び出し側は null かどうかで通知機能の有無を判断できる
+ *
+ * 扱うデータ: Firebaseアプリのインスタンス(firebaseConfig.js から取得)。
+ */
 import { getMessaging, isSupported } from 'firebase/messaging';
 import { firebaseApp } from './firebaseConfig';
 
+/**
+ * Messagingインスタンスを返します。使えない環境では null を返します(例外は投げません)。
+ */
 async function getFirebaseMessaging() {
     // Firebase Messagingはブラウザの機能を使うため、ブラウザ以外では動かしません。
     if (typeof window === 'undefined' || typeof navigator === 'undefined') {

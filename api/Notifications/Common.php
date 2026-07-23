@@ -3,24 +3,48 @@
 declare(strict_types=1);
 
 /**
- * 通知履歴APIだけで使う小さな共通処理です。
- * user_idはリクエストから受け取らず、ログイン中のセッションだけを信頼します。
+ * 通知履歴API(List / UnreadCount / MarkRead / MarkAllRead)だけで使う小さな共通処理集です。
+ *
+ * 主な流れ:
+ * 1. 各通知APIから require され、レスポンス返却・認証確認・入力値検証の関数を提供する
+ * 2. user_idはリクエストから受け取らず、ログイン中のセッションだけを信頼する
+ * 3. DBの行データをフロントエンド向けの形式へ変換する
+ *
+ * 扱うデータ: セッションのユーザーID、$_GET のパラメータ、notification系テーブルの行。
+ */
+
+/**
+ * 処理結果をJSONで出力し、そこで処理を終了(exit)する共通関数です。
+ * $status にはHTTPステータスコード(200=成功、400=入力エラー等)を指定します。
  */
 function notificationRespond(array $payload, int $status = 200): void
 {
+    // HTTPステータスコードを設定します。
     http_response_code($status);
+    // 日本語をそのまま(\uXXXXにエスケープせず)出力し、URLの / もエスケープしません。
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    // レスポンスを返したら以降の処理は行いません。
     exit;
 }
 
+/**
+ * ログイン済みかを確認し、ログイン中ユーザーのIDを返します。
+ * 未ログインの場合は401エラーを返して終了します。
+ */
 function notificationRequireLoginUserId(): int
 {
+    // セッションにuser_idがなければ未ログインと判断します。
     if (!isset($_SESSION["user_id"])) {
         notificationRespond(["success" => false, "message" => "ログインが必要です。"], 401);
     }
+    // セッションの値を整数に変換して返します。
     return (int) $_SESSION["user_id"];
 }
 
+/**
+ * HTTPメソッドが期待どおりかを確認します。
+ * 例: GET専用APIにPOSTで来た場合は405エラーで終了します。
+ */
 function notificationRequireMethod(string $expectedMethod): void
 {
     if (($_SERVER["REQUEST_METHOD"] ?? "") !== $expectedMethod) {
@@ -28,19 +52,31 @@ function notificationRequireMethod(string $expectedMethod): void
     }
 }
 
+/**
+ * 別ドメインのサイトからの書き込みリクエスト(CSRF攻撃)を拒否します。
+ * リクエスト元(Origin/Referer)のホスト名と自サイトのホスト名を比較します。
+ */
 function notificationRejectIfCrossOrigin(): void
 {
+    // 自サイトのホスト名と、リクエスト元の情報を取得します。
     $host = $_SERVER["HTTP_HOST"] ?? "";
     $origin = $_SERVER["HTTP_ORIGIN"] ?? "";
     $referer = $_SERVER["HTTP_REFERER"] ?? "";
+    // Originヘッダーを優先し、なければRefererを使います。
     $source = $origin !== "" ? $origin : $referer;
+    // どちらも取得できない場合(ブラウザ以外からの呼び出し等)は判定できないため通します。
     if ($source === "" || $host === "") return;
+    // リクエスト元URLからホスト名部分だけを取り出して比較します(大文字小文字は区別しません)。
     $sourceHost = parse_url($source, PHP_URL_HOST);
     if ($sourceHost !== null && strcasecmp($sourceHost, $host) !== 0) {
         notificationRespond(["success" => false, "message" => "不正な送信元です。"], 403);
     }
 }
 
+/**
+ * 値が「1以上の整数」であることを検証して返します。
+ * 不正な値の場合は、項目名($name)入りのエラーメッセージで400終了します。
+ */
 function notificationReadPositiveInt($value, string $name): int
 {
     $intValue = filter_var($value, FILTER_VALIDATE_INT);
@@ -48,13 +84,20 @@ function notificationReadPositiveInt($value, string $name): int
     return (int) $intValue;
 }
 
+/**
+ * URLの ?limit= (1回で返す件数)を読み取ります。既定値20、上限50件です。
+ */
 function notificationReadLimit(): int
 {
     $limit = filter_var($_GET["limit"] ?? 20, FILTER_VALIDATE_INT);
+    // 1未満や50超、数値でない場合はエラーにします(大量取得によるDB負荷を防ぐため)。
     if ($limit === false || $limit < 1 || $limit > 50) notificationRespond(["success" => false, "message" => "limitの値が正しくありません。"], 400);
     return (int) $limit;
 }
 
+/**
+ * URLの ?offset= (何件目から取得するか)を読み取ります。既定値0です。
+ */
 function notificationReadOffset(): int
 {
     $offset = filter_var($_GET["offset"] ?? 0, FILTER_VALIDATE_INT);
@@ -62,6 +105,10 @@ function notificationReadOffset(): int
     return (int) $offset;
 }
 
+/**
+ * URLの ?category= (通知の絞り込み種別)を読み取ります。既定値は "all"(全件)です。
+ * 許可された値以外が来た場合は400エラーで終了します。
+ */
 function notificationReadCategory(): string
 {
     $category = (string) ($_GET["category"] ?? "all");
@@ -69,13 +116,24 @@ function notificationReadCategory(): string
     return $category;
 }
 
+/**
+ * カテゴリに応じたWHERE句の追加SQLと、プレースホルダの値を組み立てて返します。
+ * 戻り値: [追加SQL文字列, プレースホルダ配列] の2要素配列。
+ */
 function notificationCategorySql(string $category): array
 {
+    // "unread" は既読フラグでの絞り込みです。
     if ($category === "unread") return [" AND nr.is_read = 0", []];
+    // 通知種別(chat/schedule/survey/system)での絞り込みです。値はプレースホルダで渡します。
     if (in_array($category, ["chat", "schedule", "survey", "system"], true)) return [" AND n.notification_type = :category", [":category" => $category]];
+    // "all" の場合は絞り込みなしです。
     return ["", []];
 }
 
+/**
+ * DBに文字列として保存されている詳細データ(detail_data)をJSONとして解析して返します。
+ * 空・解析失敗・配列以外の場合は null を返し、フロントエンドが壊れないようにします。
+ */
 function notificationDecodeDetailData($value)
 {
     if ($value === null || $value === "") return null;
@@ -84,8 +142,13 @@ function notificationDecodeDetailData($value)
     return $decoded;
 }
 
+/**
+ * 通知タップ時の遷移先パス(action_path)を安全な形に検証して返します。
+ * 不正な値(外部URLなど)は null にして返します。
+ */
 function notificationSafeActionPath($path): ?string
 {
+    // 文字列以外・空文字は遷移先なしとして扱います。
     if ($path === null || $path === "" || !is_string($path)) return null;
     $path = trim($path);
     if ($path === "") return null;
@@ -94,6 +157,10 @@ function notificationSafeActionPath($path): ?string
     return $path;
 }
 
+/**
+ * DBの1行(スネークケースのカラム名)を、フロントエンド向けの形式(キャメルケース)へ変換します。
+ * 型も合わせて整えます(IDは数値、is_readは真偽値、など)。
+ */
 function notificationRowToResponse(array $row): array
 {
     return [
@@ -103,17 +170,26 @@ function notificationRowToResponse(array $row): array
     ];
 }
 
+/**
+ * 通知の宛先レコード1件を「本人宛であること」を条件に取得します。
+ * 見つからない場合(他人の通知や存在しないIDの場合)は null を返します。
+ */
 function notificationFetchRecipient(PDO $pdo, int $recipientId, int $userId): ?array
 {
     // recipient_id and user_id are both required to protect other users' notifications.
+    // recipient_id だけでなく user_id も条件に入れることで、他ユーザーの通知を守ります。
     $stmt = $pdo->prepare("SELECT recipient_id, is_read, read_at FROM notification_recipients WHERE recipient_id = :recipient_id AND user_id = :user_id LIMIT 1");
     $stmt->bindValue(":recipient_id", $recipientId, PDO::PARAM_INT);
     $stmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
     $stmt->execute();
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    // fetch は見つからないと false を返すため、null に統一して返します。
     return $row ?: null;
 }
 
+/**
+ * 指定ユーザーの未読通知件数をDBから数えて返します。
+ */
 function notificationUnreadCount(PDO $pdo, int $userId): int
 {
     // 期限切れ通知は現在画面に出ないため、未読件数にも含めません。
@@ -123,6 +199,10 @@ function notificationUnreadCount(PDO $pdo, int $userId): int
     return (int) $stmt->fetchColumn();
 }
 
+/**
+ * バッジ(アイコン上の赤い数字)用の表示文字列を作ります。
+ * 0件なら null(バッジ非表示)、100件以上は "99+" と表示します。
+ */
 function notificationBadgeText(int $unreadCount): ?string
 {
     if ($unreadCount <= 0) return null;

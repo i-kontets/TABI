@@ -1,0 +1,18 @@
+# TABIのPHP CLI・Composer・MySQL接続確認用コンテナ
+FROM php:8.3-cli
+
+# Composerがパッケージを展開するためのunzipと、
+# PHPのZIP・MySQL接続機能を追加する
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libzip-dev \
+        unzip \
+    && docker-php-ext-install \
+        pdo_mysql \
+        zip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Composer公式イメージからComposer本体だけをコピーする
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+
+WORKDIR /app

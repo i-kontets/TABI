@@ -15,7 +15,7 @@ import TravelGroupCard from '../../components/TravelGroupCard/TravelGroupCard';
 import Modal from '../../components/Modal/Modal';
 import ImagePicker from '../../components/ImagePicker/ImagePicker';
 import styles from './Home.module.css';
-import { fetchUnreadNotificationCount } from '../../api/notificationApi';
+import { useUnreadNotificationBadge } from '../../api/useUnreadNotificationBadge';
 
 // ここから下は、画面内で使うアイコンを SVG で直接定義しています。
 // 画像素材を別ファイルに分けず、必要な見た目をこのコンポーネント内で完結させます。
@@ -87,35 +87,8 @@ function Home() {
     const navigate = useNavigate();
     // TripContext には、選択中の旅行グループ情報を入れて次画面へ渡します。
     const { setTrip } = useContext(TripContext);
-    const [notificationBadgeText, setNotificationBadgeText] = useState(null);
-
-    useEffect(() => {
-        let isMounted = true;
-        const controller = new AbortController();
-
-        const fetchNotificationBadge = async () => {
-            try {
-                const data = await fetchUnreadNotificationCount({ signal: controller.signal });
-                const count = Number(data?.data?.unreadCount ?? 0);
-                const badgeText = data?.data?.badgeText || (count > 99 ? '99+' : String(count));
-
-                if (isMounted) {
-                    setNotificationBadgeText(count > 0 ? badgeText : null);
-                }
-            } catch (caughtError) {
-                if (isMounted && caughtError?.name !== 'AbortError') {
-                    setNotificationBadgeText(null);
-                }
-            }
-        };
-
-        fetchNotificationBadge();
-
-        return () => {
-            isMounted = false;
-            controller.abort();
-        };
-    }, []);
+    // ベルの未読件数は通知履歴APIから取り、0件ならバッジを出しません。
+    const { badgeText: notificationBadgeText, unreadCount } = useUnreadNotificationBadge();
 
     // 画面に表示する旅行グループ一覧です。
     const [travelGroups, setTravelGroups] = useState([]);
@@ -410,7 +383,7 @@ function Home() {
                     type="button"
                     className={styles.noticeButton}
                     onClick={() => navigate('/notifications')}
-                    aria-label="通知一覧"
+                    aria-label={unreadCount > 0 ? `通知、未読${unreadCount}件` : '通知'}
                 >
                     <BellIcon className={styles.headerIcon} />
                     {notificationBadgeText && <span className={styles.noticeBadge}>{notificationBadgeText}</span>}
