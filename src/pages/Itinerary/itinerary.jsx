@@ -11,14 +11,11 @@
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useContext, useState, useEffect } from "react";
 import { TripContext } from "../../App";
-import BottomNav from "../../components/BottomNav/BottomNav";
 import BtmNav from "../../components/bottomNav/BottomNav";
 import Header from "../../components/header/Header";
 import Modal from "../../components/Modal/Modal";
 import InviteModal from "../../components/Modal/InviteModal";
 import styles from "./itinerary.module.css";
-import Edit from "../../assets/icons/edit.svg?react";
-import Group from "../../assets/icons/group.svg?react";
 
 /**
  * Itinerary は、このファイルの中心となる処理をまとめた関数です。
@@ -39,20 +36,14 @@ export default function Itinerary() {
 
   // 招待モーダルの管理状態
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [isLiquidationOpen, setIsLiquidationOpen] = useState(false);
-  // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-  const [isLiquidationOpen, setIsLiquidationOpen] = useState(false);  
 
   // 旅行グループにはいっているメンバーの取得
   useEffect(() => {
-    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!groupId) return;
 
-    // fetchMembers は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const fetchMembers = async () => {
-      // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
       try {
-        const response = await fetch("/TABI/api/Auth/Members.php", {
+        const response = await fetch("/TABI/api/Groups/Members.php", {
           method: "POST",
           credentials: "include",
           headers: {
@@ -62,26 +53,11 @@ export default function Itinerary() {
             group_id: groupId,
           }),
         });
-        // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-        const response = await fetch("/TABI/api/Groups/Members.php", {
-  method: "POST",
-  credentials: "include",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    group_id: groupId,
-  }),
-});
 
-const text = await response.text();
-console.log(text);
-
-const data = JSON.parse(text);
+        const data = await response.json();
 
         if (data.success && Array.isArray(data.members)) {
           setMembers(
-            // 配列のデータを1件ずつ画面表示用の形に変換します。
             data.members.map((member) => ({
               ...member,
               name: member.name,
@@ -89,23 +65,17 @@ const data = JSON.parse(text);
               color: member.color ?? "#b5ead7",
             }))
           );
-
         } else {
           setMembers([]);
-
         }
-      // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
       } catch (error) {
         console.error(error);
-
         setMembers([]);
-
       }
     };
 
     fetchMembers();
-
-  }, [groupId]);
+  }, [groupId, setMembers]);
 
   useEffect(() => {
     if (!groupId) return;
@@ -137,7 +107,7 @@ const data = JSON.parse(text);
     };
 
     fetchTripPeriod();
-  }, [groupId]);
+  }, [groupId, setTripPeriod]);
 
   // 移動手段のデータ
   const appointmentList = [
@@ -160,15 +130,12 @@ const data = JSON.parse(text);
   ];
 
   // 未清算のデータ
-  const liquidationList = [
-
-  ];
+  const liquidationList = [];
 
   const closeInviteModal = () => {
     setIsInviteModalOpen(false);
   };
 
-  // handleAppointmentClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
   const handleAppointmentClick = () => {
     // データがない → Appointment.jsxへ
     navigate("/Appointment");
@@ -198,10 +165,6 @@ const data = JSON.parse(text);
 
     return diffDays;
   };
-
-    // データがない　→　Appointment.jsxへ
-     navigate('/Appointment')
-  }
 
   return (
     <div>
