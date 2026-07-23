@@ -1,6 +1,18 @@
+/**
+ * マイページとプロフィール編集、通知設定、問い合わせなどの個人設定画面を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ImagePicker from '../../components/ImagePicker/ImagePicker';
+import { registerNotificationDevice, fetchNotificationSettings, updateNotificationSettings } from '../../api/notificationApi';
+import { requestFirebasePushToken } from '../../firebase/firebasePushToken';
 import styles from './MyPageSubPages.module.css';
 
 const api = {
@@ -8,63 +20,118 @@ const api = {
     uploadIcon: '/TABI/api/User/UploadIcon.php',
     emailSend: '/TABI/api/User/EmailChangeSendCode.php',
     emailVerify: '/TABI/api/User/EmailChangeVerify.php',
-    notifications: '/TABI/api/User/NotificationSettings.php',
     inquiry: '/TABI/api/User/Inquiry.php',
     faq: '/TABI/api/User/Faq.php',
 };
 
+/**
+ * BackIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function BackIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7" /></svg>;
 }
 
+/**
+ * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function HomeIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 10.5V20h13v-9.5" /><path d="M9.5 20v-5h5v5" /></svg>;
 }
 
+/**
+ * UserIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function UserIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /><path d="M4.5 20a7.5 7.5 0 0 1 15 0" /></svg>;
 }
 
+/**
+ * BellIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function BellIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16v-5a6 6 0 0 0-12 0v5l-2 2h16l-2-2Z" /><path d="M10 20h4" /></svg>;
 }
 
+/**
+ * MailIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function MailIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16v12H4V6Z" /><path d="m4 7 8 6 8-6" /></svg>;
 }
 
+/**
+ * ChatIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function ChatIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v10H8l-3 3V5Z" /><path d="M9 10h6" /></svg>;
 }
 
+/**
+ * CalendarIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function CalendarIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v15H5V5Z" /><path d="M8 3v4M16 3v4M5 10h14" /></svg>;
 }
 
+/**
+ * GroupIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function GroupIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /><path d="M3.5 20a5.5 5.5 0 0 1 11 0" /><path d="M17 11a2.5 2.5 0 1 0 0-5" /><path d="M16 15.5A5 5 0 0 1 20.5 20" /></svg>;
 }
 
+/**
+ * WalletIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function WalletIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v12H4V7Z" /><path d="M16 12h4v4h-4a2 2 0 0 1 0-4Z" /><path d="M6 7V5h10v2" /></svg>;
 }
 
+/**
+ * ShieldIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function ShieldIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 19 6v5c0 4.5-2.7 8.2-7 10-4.3-1.8-7-5.5-7-10V6l7-3Z" /><path d="m9 12 2 2 4-4" /></svg>;
 }
 
+/**
+ * HelpIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function HelpIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 18h.01" /><path d="M9.2 9a3 3 0 1 1 5.1 2.1c-.9.8-1.8 1.3-2.1 2.9" /><circle cx="12" cy="12" r="9" /></svg>;
 }
 
+/**
+ * ChevronIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function ChevronIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7" /></svg>;
 }
 
+/**
+ * normalizeUser は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function normalizeUser(user) {
     return user || null;
 }
 
+/**
+ * emptyUser は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function emptyUser() {
     return {
         user_id: null,
@@ -81,17 +148,24 @@ function emptyUser() {
     };
 }
 
+/**
+ * formatPhoneNumber は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function formatPhoneNumber(value) {
     const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (digits.length <= 3) {
         return digits;
     }
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (digits.length <= 7) {
         return `${digits.slice(0, 3)}-${digits.slice(3)}`;
     }
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (digits.length <= 11) {
         return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 11)}`;
     }
@@ -101,37 +175,54 @@ function formatPhoneNumber(value) {
 
 async function parseJson(response) {
     const data = await response.json().catch(() => ({}));
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!response.ok || data.success === false) {
         throw new Error(data.message || '通信に失敗しました。');
     }
     return data;
 }
 
+/**
+ * useCurrentUser は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function useCurrentUser() {
     const navigate = useNavigate();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [user, setUser] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [loading, setLoading] = useState(true);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         let mounted = true;
+        // load は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const load = async () => {
+            // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
             try {
+                // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                 const response = await fetch(api.profile, { credentials: 'include' });
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (response.status === 401) {
                     localStorage.removeItem('loginUser');
                     navigate('/');
                     return;
                 }
                 const data = await parseJson(response);
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (mounted) {
                     const next = normalizeUser(data.user);
                     setUser(next);
                 }
+            // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
             } catch {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (mounted) {
                     setUser(null);
                 }
+            // 成功・失敗に関係なく最後に必要な後片付けを行います。
             } finally {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (mounted) {
                     setLoading(false);
                 }
@@ -146,6 +237,10 @@ function useCurrentUser() {
     return { user, setUser, loading };
 }
 
+/**
+ * PageShell は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function PageShell({ title, children, onBack }) {
     const navigate = useNavigate();
     return (
@@ -174,9 +269,13 @@ function PageShell({ title, children, onBack }) {
     );
 }
 
-function Field({ label, children, hint }) {
+/**
+ * Field は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
+function Field({ label, children, hint, className }) {
     return (
-        <label className={styles.field}>
+        <label className={[styles.field, className].filter(Boolean).join(' ')}>
             <span className={styles.label}>{label}</span>
             {children}
             {hint && <span className={styles.hint}>{hint}</span>}
@@ -184,26 +283,39 @@ function Field({ label, children, hint }) {
     );
 }
 
+/**
+ * StatusMessage は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function StatusMessage({ type = 'success', children }) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!children) {
         return null;
     }
     return <p className={type === 'error' ? styles.errorMessage : styles.successMessage}>{children}</p>;
 }
 
+/**
+ * profilePreviewValue は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function profilePreviewValue(currentUser, selectedIcon) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (selectedIcon) {
         return selectedIcon;
     }
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (currentUser.icon_url) {
         return { previewUrl: currentUser.icon_url };
     }
     return null;
 }
 
+// 画像ファイルをプロフィール画像アップロードAPIへ送る関数です。AWS/S3の認証や保存処理はバックエンド側だけで行います。
 async function uploadUserIcon(file) {
     const body = new FormData();
     body.append('image', file);
+    // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
     const response = await fetch(api.uploadIcon, {
         method: 'POST',
         credentials: 'include',
@@ -214,6 +326,7 @@ async function uploadUserIcon(file) {
 }
 
 async function saveProfile(payload) {
+    // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
     const response = await fetch(api.profile, {
         method: 'POST',
         credentials: 'include',
@@ -226,24 +339,34 @@ async function saveProfile(payload) {
 export function ProfileEditPage() {
     const { user, setUser } = useCurrentUser();
     const currentUser = user || emptyUser();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [name, setName] = useState(currentUser.name);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [bio, setBio] = useState(currentUser.self_introduction || '');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [selectedIcon, setSelectedIcon] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [saving, setSaving] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [message, setMessage] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [error, setError] = useState('');
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         setName(currentUser.name || '');
         setBio(currentUser.self_introduction || '');
     }, [user]);
 
+    // handleSave は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleSave = async () => {
         setSaving(true);
         setMessage('');
         setError('');
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             let iconUrl = currentUser.icon_key || '';
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (selectedIcon?.file) {
                 iconUrl = await uploadUserIcon(selectedIcon.file);
             }
@@ -252,8 +375,10 @@ export function ProfileEditPage() {
             setUser(next);
             setSelectedIcon(null);
             setMessage('プロフィールを保存しました。');
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (err) {
             setError(err.message);
+        // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             setSaving(false);
         }
@@ -303,12 +428,18 @@ export function ProfileEditPage() {
 export function UserEditPage() {
     const { user, setUser } = useCurrentUser();
     const currentUser = user || emptyUser();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [form, setForm] = useState(currentUser);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [selectedIcon, setSelectedIcon] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [message, setMessage] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [error, setError] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [saving, setSaving] = useState(false);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         setForm({
             ...currentUser,
@@ -316,15 +447,20 @@ export function UserEditPage() {
         });
     }, [user]);
 
+    // update は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const update = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+    // updatePhoneNumber は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const updatePhoneNumber = (value) => update('phone_number', formatPhoneNumber(value));
 
+    // handleSave は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleSave = async () => {
         setSaving(true);
         setMessage('');
         setError('');
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             let iconUrl = form.icon_key || '';
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (selectedIcon?.file) {
                 iconUrl = await uploadUserIcon(selectedIcon.file);
             }
@@ -334,8 +470,10 @@ export function UserEditPage() {
             setUser(next);
             setSelectedIcon(null);
             setMessage('ユーザー情報を保存しました。');
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (err) {
             setError(err.message);
+        // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             setSaving(false);
         }
@@ -392,30 +530,32 @@ export function UserEditPage() {
                 </Field>
             </section>
 
-            <section className={styles.userEditCard}>
+            <section className={[styles.userEditCard, styles.userEditDetailCard].join(' ')}>
                 <h2 className={styles.userEditSectionTitle}>詳細情報</h2>
-                <div className={styles.userEditFields}>
-                    <Field label="生年月日">
-                        <input className={styles.input} type="date" value={form.birthday || ''} onChange={(event) => update('birthday', event.target.value)} />
+                <div className={[styles.userEditFields, styles.userEditDetailFields].join(' ')}>
+                    <Field label="生年月日" className={styles.formGroup}>
+                        <div className={[styles.formControl, styles.dateInputWrapper].join(' ')}>
+                            <input className={styles.dateInput} type="date" value={form.birthday || ''} onChange={(event) => update('birthday', event.target.value)} />
+                        </div>
                     </Field>
-                    <Field label="性別">
-                        <select className={styles.input} value={form.gender || ''} onChange={(event) => update('gender', event.target.value)}>
+                    <Field label="性別" className={styles.formGroup}>
+                        <select className={styles.formControl} value={form.gender || ''} onChange={(event) => update('gender', event.target.value)}>
                             <option value="">未設定</option>
                             <option value="男性">男性</option>
                             <option value="女性">女性</option>
                             <option value="その他">その他</option>
                         </select>
                     </Field>
-                    <Field label="国・地域">
-                        <select className={styles.input} value={form.country_code || 'JP'} onChange={(event) => update('country_code', event.target.value)}>
+                    <Field label="国・地域" className={styles.formGroup}>
+                        <select className={styles.formControl} value={form.country_code || 'JP'} onChange={(event) => update('country_code', event.target.value)}>
                             <option value="JP">日本</option>
                             <option value="US">アメリカ</option>
                             <option value="KR">韓国</option>
                             <option value="TW">台湾</option>
                         </select>
                     </Field>
-                    <Field label="言語">
-                        <select className={styles.input} value={form.language_code || 'ja'} onChange={(event) => update('language_code', event.target.value)}>
+                    <Field label="言語" className={styles.formGroup}>
+                        <select className={styles.formControl} value={form.language_code || 'ja'} onChange={(event) => update('language_code', event.target.value)}>
                             <option value="ja">日本語</option>
                             <option value="en">English</option>
                         </select>
@@ -432,16 +572,29 @@ export function UserEditPage() {
     );
 }
 
+/**
+ * isEmail は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function isEmail(value) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+/**
+ * maskEmail は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function maskEmail(value) {
     const [local, domain] = String(value || '').split('@');
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!local || !domain) return value || '';
     return `${local.slice(0, Math.min(3, local.length))}***@${domain}`;
 }
 
+/**
+ * formatCountdown は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function formatCountdown(seconds) {
     const safe = Math.max(0, seconds);
     const minutes = String(Math.floor(safe / 60)).padStart(2, '0');
@@ -449,6 +602,10 @@ function formatCountdown(seconds) {
     return `${minutes}:${rest}`;
 }
 
+/**
+ * StepIndicator は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function StepIndicator({ step }) {
     return (
         <div className={styles.emailSteps} aria-label="メールアドレス変更の進行状況">
@@ -468,21 +625,35 @@ export function EmailChangePage() {
     const navigate = useNavigate();
     const { user, setUser } = useCurrentUser();
     const currentUser = user || emptyUser();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [step, setStep] = useState(1);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [newEmail, setNewEmail] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [confirmEmail, setConfirmEmail] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [codeDigits, setCodeDigits] = useState(Array(6).fill(''));
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [expiresAt, setExpiresAt] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [resendAvailableAt, setResendAvailableAt] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [changedAt, setChangedAt] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [maskedSentEmail, setMaskedSentEmail] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [sending, setSending] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [verifying, setVerifying] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [error, setError] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [fieldError, setFieldError] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [nowMs, setNowMs] = useState(Date.now());
     const codeRefs = useRef([]);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         const timer = window.setInterval(() => setNowMs(Date.now()), 1000);
         return () => window.clearInterval(timer);
@@ -497,16 +668,21 @@ export function EmailChangePage() {
     const resendSeconds = resendMs ? Math.max(0, Math.ceil((resendMs - nowMs) / 1000)) : 0;
     const isExpired = step === 2 && remainingSeconds <= 0;
 
+    // validateEmailInput は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const validateEmailInput = () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!normalizedNewEmail || !normalizedConfirmEmail) {
             return '新しいメールアドレスと確認用メールアドレスを入力してください。';
         }
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!isEmail(normalizedNewEmail)) {
             return 'メールアドレスの形式を確認してください。';
         }
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (normalizedNewEmail !== normalizedConfirmEmail) {
             return '新しいメールアドレスと確認用メールアドレスが一致しません。';
         }
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (currentUser.email && normalizedNewEmail.toLowerCase() === String(currentUser.email).toLowerCase()) {
             return '現在のメールアドレスとは別のメールアドレスを入力してください。';
         }
@@ -517,18 +693,23 @@ export function EmailChangePage() {
     const canSend = !!currentUser.email && !emailValidation && !sending;
     const canVerify = code.length === 6 && !isExpired && !verifying;
 
+    // clearCode は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const clearCode = () => {
         setCodeDigits(Array(6).fill(''));
     };
 
+    // handleSendCode は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleSendCode = async () => {
         const validation = validateEmailInput();
         setFieldError(validation);
         setError('');
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (validation || sending || resendSeconds > 0) return;
 
         setSending(true);
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
+            // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
             const response = await fetch(api.emailSend, {
                 method: 'POST',
                 credentials: 'include',
@@ -542,15 +723,19 @@ export function EmailChangePage() {
             setResendAvailableAt(data.resendAvailableAt || null);
             setStep(2);
             window.setTimeout(() => codeRefs.current[0]?.focus(), 80);
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (err) {
             setError(err.message);
+        // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             setSending(false);
         }
     };
 
+    // handleCodeChange は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleCodeChange = (index, value) => {
         const digits = value.replace(/\D/g, '');
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (digits.length > 1) {
             const next = Array(6).fill('');
             digits.slice(0, 6).split('').forEach((digit, digitIndex) => {
@@ -565,23 +750,30 @@ export function EmailChangePage() {
             next[index] = digits;
             return next;
         });
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (digits && index < 5) {
             codeRefs.current[index + 1]?.focus();
         }
     };
 
+    // handleCodeKeyDown は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleCodeKeyDown = (index, event) => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (event.key === 'Backspace' && !codeDigits[index] && index > 0) {
             codeRefs.current[index - 1]?.focus();
         }
     };
 
+    // handleVerify は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleVerify = async () => {
         setError('');
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!canVerify) return;
 
         setVerifying(true);
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
+            // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
             const response = await fetch(api.emailVerify, {
                 method: 'POST',
                 credentials: 'include',
@@ -593,17 +785,22 @@ export function EmailChangePage() {
             setUser(next);
             setChangedAt(data.changedAt || new Date().toLocaleString('ja-JP'));
             setStep(3);
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (err) {
             setError(err.message);
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (err.message.includes('上限') || err.message.includes('期限')) {
                 clearCode();
             }
+        // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             setVerifying(false);
         }
     };
 
+    // handleBack は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleBack = () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (step === 2) {
             clearCode();
             setError('');
@@ -732,64 +929,191 @@ export function EmailChangePage() {
     );
 }
 
+const disabledNotificationSettings = {
+    chatNotification: false,
+    surveyDeadlineNotification: false,
+    scheduleReminderNotification: false,
+    memberJoinNotification: false,
+    splitBillNotification: false,
+};
+
 const notificationItems = [
-    { key: 'chat', title: 'チャット通知', description: '新しいメッセージを受信したとき', icon: ChatIcon },
-    { key: 'survey_deadline', title: 'アンケート締切通知', description: 'アンケートの締切が近づいたとき', icon: HelpIcon },
-    { key: 'schedule_reminder', title: '予定リマインド通知', description: '予定の開始前にリマインドします', icon: CalendarIcon },
-    { key: 'member_join', title: 'メンバー参加通知', description: '旅行グループにメンバーが参加したとき', icon: GroupIcon },
-    { key: 'split_bill', title: '割り勘更新通知', description: '割り勘の内容が更新されたとき', icon: WalletIcon },
+    { key: 'chatNotification', title: 'チャット通知', description: '新しいメッセージを受信したとき', icon: ChatIcon },
+    { key: 'surveyDeadlineNotification', title: 'アンケート締切通知', description: 'アンケートの締切が近づいたとき', icon: HelpIcon },
+    { key: 'scheduleReminderNotification', title: '予定リマインド通知', description: '予定の開始前にリマインドします', icon: CalendarIcon },
+    { key: 'memberJoinNotification', title: 'メンバー参加通知', description: '旅行グループにメンバーが参加したとき', icon: GroupIcon },
+    { key: 'splitBillNotification', title: '割り勘更新通知', description: '割り勘の内容が更新されたとき', icon: WalletIcon },
 ];
 
+function detectBrowserName() {
+    if (typeof navigator === 'undefined') {
+        return null;
+    }
+
+    const userAgent = navigator.userAgent || '';
+
+    if (userAgent.includes('Edg/')) return 'Edge';
+    if (userAgent.includes('Chrome/')) return 'Chrome';
+    if (userAgent.includes('Firefox/')) return 'Firefox';
+    if (userAgent.includes('Safari/')) return 'Safari';
+
+    return 'Browser';
+}
+
+function devicePermissionNotice(permission) {
+    if (permission === 'granted') {
+        return {
+            title: 'この端末では通知を受け取る準備ができています',
+            body: 'DBに保存されている通知設定を表示しています。下の設定で、受け取りたい通知の種類を変更できます。',
+            buttonLabel: '',
+        };
+    }
+
+    if (permission === 'default') {
+        return {
+            title: 'この端末では通知がまだ許可されていません',
+            body: '通知を許可すると、受け取りたい通知の種類を設定できます。DBに保存されている設定は変更しません。',
+            buttonLabel: '通知を許可する',
+        };
+    }
+
+    if (permission === 'denied') {
+        return {
+            title: 'この端末では通知が拒否されています',
+            body: 'ブラウザまたは端末の設定から通知を許可すると、通知設定を変更できます。DBに保存されている設定は変更しません。',
+            buttonLabel: '通知の設定方法を確認する',
+        };
+    }
+
+    if (permission === 'insecure-context') {
+        return {
+            title: 'プッシュ通知を利用するにはHTTPS環境が必要です',
+            body: 'この端末では通知設定を変更できません。DBに保存されている設定は変更しません。',
+            buttonLabel: '',
+        };
+    }
+
+    return {
+        title: 'この端末ではプッシュ通知を利用できません',
+        body: 'この端末では通知設定を変更できません。下の設定は通知に対応した別の端末で使用されます。',
+        buttonLabel: '',
+    };
+}
+
+function currentNotificationPermission() {
+    if (typeof window === 'undefined' || typeof Notification === 'undefined') {
+        return 'unsupported';
+    }
+
+    if (!window.isSecureContext) {
+        return 'insecure-context';
+    }
+
+    return Notification.permission;
+}
+
 export function NotificationSettingsPage() {
-    const [settings, setSettings] = useState({});
+    const navigate = useNavigate();
+    const [devicePermission, setDevicePermission] = useState(currentNotificationPermission);
+    const [savedSettings, setSavedSettings] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [savingKey, setSavingKey] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
 
     useEffect(() => {
+        // ページ表示だけでは通知許可を要求せず、現在の端末・ブラウザの権限状態だけを読み取ります。
+        setDevicePermission(currentNotificationPermission());
         let mounted = true;
-        fetch(api.notifications, { credentials: 'include' })
-            .then(parseJson)
-            .then((data) => {
-                if (mounted && data.settings) {
-                    setSettings((prev) => ({ ...prev, ...data.settings }));
+
+        const loadSettings = async () => {
+            try {
+                const data = await fetchNotificationSettings();
+
+                if (mounted) {
+                    setSavedSettings(data.settings || {});
+                    setError('');
                 }
-            })
-            .catch(() => {});
+            } catch (err) {
+                if (mounted) {
+                    setSavedSettings({});
+                    setError(err.message || '通知設定を取得できませんでした。');
+                }
+            } finally {
+                if (mounted) {
+                    setLoading(false);
+                }
+            }
+        };
+
+        loadSettings();
+
         return () => {
             mounted = false;
         };
     }, []);
 
+    const canEditNotificationSettings = devicePermission === 'granted';
+    const displayedSettings = canEditNotificationSettings && savedSettings ? savedSettings : disabledNotificationSettings;
+
+    // 未許可の端末では、通知が届くように見えないよう画面上だけ全OFF表示にします。DBに保存されているユーザー設定は変更しません。
+    // 現在端末の権限とユーザー全体の通知設定は別物で、別端末では通知が許可されている可能性があります。
+    // 実際に通知できる条件は、対象のnotification_settingsがON、端末のNotification.permissionがgranted、user_devicesに有効なFCMトークンがあり、is_activeが1であることです。
+    // ただし最終的な配信可否はフロントだけで決めず、通知送信時にPHPサーバー側でnotification_settingsとuser_devicesを確認します。
     const toggle = async (key) => {
-        const next = { ...settings, [key]: !settings[key] };
-        setSettings(next);
+        if (!canEditNotificationSettings || loading || savingKey || !savedSettings) {
+            return;
+        }
+
+        const previous = savedSettings;
+        const next = { ...savedSettings, [key]: !savedSettings[key] };
+
+        setSavedSettings(next);
+        setSavingKey(key);
         setMessage('');
+        setError('');
+
         try {
-            await fetch(api.notifications, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ settings: next }),
-            }).then(parseJson);
+            const data = await updateNotificationSettings({ [key]: next[key] });
+            setSavedSettings(data.settings || next);
             setMessage('通知設定を保存しました。');
-        } catch {
-            setError('通知設定の保存に失敗しました。');
+        } catch (err) {
+            setSavedSettings(previous);
+            setError(err.message || '通知設定の保存に失敗しました。');
+        } finally {
+            setSavingKey('');
         }
     };
 
+    const notice = devicePermissionNotice(devicePermission);
+
     return (
         <PageShell title="通知設定">
+            <section className={styles.card}>
+                <h2 className={styles.cardTitle}>{notice.title}</h2>
+                <p className={styles.lead}>{notice.body}</p>
+                {notice.buttonLabel && (
+                    <button type="button" className={styles.secondaryButton} onClick={() => navigate('/mypage/notification-permission')}>
+                        {notice.buttonLabel}
+                    </button>
+                )}
+            </section>
+            <p className={styles.notificationSettingHelp}>この設定は、通知を許可した端末で受け取る通知の種類を選択するものです。現在の端末で通知を受け取れない場合は、画面上だけOFF表示になり、DBの設定値は維持されます。</p>
             <section className={styles.listCard}>
-                {notificationItems.map((item) => {
+                {loading && <div className={styles.inlineState}>通知設定を読み込んでいます。</div>}
+                {!loading && notificationItems.map((item) => {
                     const Icon = item.icon;
+                    const checked = Boolean(displayedSettings[item.key]);
+                    const disabled = !canEditNotificationSettings || Boolean(savingKey);
+
                     return (
-                        <button key={item.key} type="button" className={styles.toggleRow} onClick={() => toggle(item.key)}>
+                        <button key={item.key} type="button" className={styles.toggleRow} onClick={() => toggle(item.key)} disabled={disabled}>
                             <span className={styles.rowIconWrap}><Icon className={styles.rowIcon} /></span>
                             <span className={styles.rowText}>
                                 <span className={styles.rowTitle}>{item.title}</span>
                                 <span className={styles.rowDescription}>{item.description}</span>
                             </span>
-                            <span className={[styles.switch, settings[item.key] ? styles.switchOn : ''].join(' ')} aria-hidden="true"><span /></span>
+                            <span className={[styles.switch, checked ? styles.switchOn : ''].join(' ')} aria-hidden="true"><span /></span>
                         </button>
                     );
                 })}
@@ -800,73 +1124,125 @@ export function NotificationSettingsPage() {
     );
 }
 
-function permissionLabel(permission) {
-    if (permission === 'granted') return { title: 'プッシュ通知は許可されています', body: 'TABIからの通知を受信できます。' };
-    if (permission === 'denied') return { title: 'プッシュ通知はブロックされています', body: 'ブラウザまたは端末の通知設定から許可してください。' };
-    if (permission === 'default') return { title: 'プッシュ通知は未許可です', body: '通知を受け取るには許可が必要です。' };
-    return { title: '通知許可状況を判定できません', body: 'このブラウザでは通知APIを利用できない可能性があります。' };
+function permissionLabel(status) {
+    if (status === 'ready') return { title: 'この端末ではプッシュ通知を受け取れます', body: '現在使用しているブラウザ・端末の通知許可と端末登録が完了しています。' };
+    if (status === 'granted') return { title: 'この端末ではプッシュ通知が許可されています', body: 'これはユーザーアカウント全体ではなく、現在使用しているブラウザ・端末の権限です。通知を受け取るには、この端末をTABIに登録してください。' };
+    if (status === 'denied') return { title: 'この端末ではプッシュ通知が拒否されています', body: 'これは現在使用しているブラウザ・端末の権限です。ブラウザまたは端末の通知設定から許可してください。' };
+    if (status === 'default') return { title: 'この端末ではプッシュ通知が未許可です', body: 'これは現在使用しているブラウザ・端末の権限です。通知を受け取るには許可が必要です。' };
+    if (status === 'insecure-context') return { title: '安全な接続が必要です', body: 'プッシュ通知はHTTPSまたはlocalhostで利用できます。' };
+    if (status === 'service-worker-error') return { title: '通知の準備が完了していません', body: 'Service Workerを登録できる環境で再度お試しください。' };
+    if (status === 'messaging-unsupported') return { title: '通知を利用できない環境です', body: 'このブラウザではFirebase Messagingを利用できない可能性があります。' };
+    if (status === 'vapid-key-missing') return { title: '通知設定の準備が不足しています', body: 'Web Pushに必要な公開鍵の設定を確認してください。' };
+    if (status === 'token-error') return { title: '通知登録に失敗しました', body: 'FCMトークンを取得できませんでした。時間をおいて再度お試しください。' };
+    if (status === 'device-save-error') return { title: '端末登録に失敗しました', body: '通知許可は取得できましたが、端末情報を保存できませんでした。' };
+
+    return { title: '通知を利用できない環境です', body: 'このブラウザでは通知機能を利用できない可能性があります。' };
 }
 
 export function NotificationPermissionPage() {
-    const [permission, setPermission] = useState(() => (typeof Notification === 'undefined' ? 'unknown' : Notification.permission));
-    const status = permissionLabel(permission);
+    const [status, setStatus] = useState(currentNotificationPermission);
+    const [processing, setProcessing] = useState(false);
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
+    const label = permissionLabel(status);
+    const disabled = processing || ['ready', 'denied', 'unsupported', 'insecure-context'].includes(status);
+
+    useEffect(() => {
+        setStatus(currentNotificationPermission());
+    }, []);
 
     const requestPermission = async () => {
-        if (typeof Notification === 'undefined' || !Notification.requestPermission) {
-            setPermission('unknown');
-            return;
+        setProcessing(true);
+        setMessage('');
+        setError('');
+
+        try {
+            const result = await requestFirebasePushToken();
+            setStatus(result.status || result.permission || 'unsupported');
+
+            if (!result.success || !result.token) {
+                setError('通知登録を完了できませんでした。');
+                return;
+            }
+
+            await registerNotificationDevice({
+                token: result.token,
+                platform: 'web',
+                appType: 'pwa',
+                browser: detectBrowserName(),
+            });
+
+            setStatus('ready');
+            setMessage('この端末で通知を受け取れるようになりました。');
+        } catch (err) {
+            setStatus('device-save-error');
+            setError(err.message || '端末情報の保存に失敗しました。');
+        } finally {
+            setProcessing(false);
         }
-        const next = await Notification.requestPermission();
-        setPermission(next);
     };
 
     return (
         <PageShell title="通知許可状況">
             <section className={styles.permissionHero}>
                 <div className={styles.permissionIcon}><BellIcon className={styles.permissionSvg} /></div>
-                <h2>{status.title}</h2>
-                <p>{status.body}</p>
+                <h2>{label.title}</h2>
+                <p>{label.body}</p>
             </section>
             <section className={styles.card}>
                 <h2 className={styles.cardTitle}>許可の確認方法</h2>
                 <p className={styles.lead}>端末の設定アプリやブラウザ設定から、TABI の通知が「許可」になっているか確認してください。</p>
-                <button type="button" className={styles.secondaryButton} onClick={requestPermission}>
-                    通知を許可する
+                <button type="button" className={styles.secondaryButton} onClick={requestPermission} disabled={disabled}>
+                    {processing ? '通知を登録しています' : '通知を許可する'}
                 </button>
                 <p className={styles.note}>ブラウザ仕様により、設定アプリを直接開けない場合があります。</p>
             </section>
+            <StatusMessage>{message}</StatusMessage>
+            <StatusMessage type="error">{error}</StatusMessage>
         </PageShell>
     );
 }
 
 export function ContactPage() {
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [category, setCategory] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [subject, setSubject] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [body, setBody] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [message, setMessage] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [error, setError] = useState('');
 
+    // handleSubmit は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleSubmit = async () => {
         setMessage('');
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!subject.trim()) {
             setError('件名を入力してください。');
             return;
         }
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!body.trim()) {
             setError('内容を入力してください。');
             return;
         }
         setError('');
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
+            // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
             await fetch(api.inquiry, {
                 method: 'POST',
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ category, subject, body }),
+            // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
             }).then(parseJson);
             setMessage('お問い合わせを送信しました。');
             setSubject('');
             setBody('');
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (err) {
             setError(err.message || 'お問い合わせの送信に失敗しました。');
         }
@@ -903,19 +1279,30 @@ export function ContactPage() {
 const faqTabs = ['すべて', 'アカウント', 'グループ', '通知', 'その他'];
 
 export function FaqPage() {
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [keyword, setKeyword] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [tab, setTab] = useState('すべて');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [openIndex, setOpenIndex] = useState(0);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [items, setItems] = useState([]);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [error, setError] = useState('');
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         const params = new URLSearchParams();
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (keyword) params.set('keyword', keyword);
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (tab !== 'すべて') params.set('category', tab);
 
+        // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
         fetch(api.faq + '?' + params.toString(), { credentials: 'include' })
+            // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
             .then(parseJson)
+            // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
             .then((data) => {
                 setItems(Array.isArray(data.items) ? data.items : []);
                 setError('');

@@ -1,3 +1,13 @@
+/**
+ * 管理画面で共通して使うヘッダー、レイアウト、カードなどの部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useEffect, useRef, useState } from 'react';
 import styles from './Ui.module.css';
 
@@ -91,6 +101,7 @@ export function Tabs({ tabs, active, onChange }) {
 /* ============ ページネーション ============ */
 
 export function Pagination({ page, totalPages, onChange }) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (totalPages <= 1) return null;
     const pages = [];
     for (let i = 1; i <= Math.min(totalPages, 5); i++) pages.push(i);
@@ -215,16 +226,22 @@ export function Button({ children, variant = 'primary', onClick, type = 'button'
 /* ============ 折れ線グラフ (SVG) ============ */
 
 export function LineChart({ data, labels = [], height = 120, padding }) {
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [activeIndex, setActiveIndex] = useState(null);
     const wrapRef = useRef(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [chartWidth, setChartWidth] = useState(320);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         const node = wrapRef.current;
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!node) return undefined;
 
+        // updateWidth は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const updateWidth = () => {
             const nextWidth = Math.round(node.getBoundingClientRect().width);
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (nextWidth > 0) {
                 setChartWidth(nextWidth);
             }
@@ -232,6 +249,7 @@ export function LineChart({ data, labels = [], height = 120, padding }) {
 
         updateWidth();
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (typeof ResizeObserver === 'undefined') {
             window.addEventListener('resize', updateWidth);
             return () => window.removeEventListener('resize', updateWidth);
@@ -239,6 +257,7 @@ export function LineChart({ data, labels = [], height = 120, padding }) {
 
         const observer = new ResizeObserver((entries) => {
             const nextWidth = Math.round(entries[0]?.contentRect.width ?? 0);
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (nextWidth > 0) {
                 setChartWidth(nextWidth);
             }
@@ -261,10 +280,12 @@ export function LineChart({ data, labels = [], height = 120, padding }) {
     const range = max - min || 1;
     const availableWidth = Math.max(0, w - pad.left - pad.right);
     const step = data.length > 1 ? availableWidth / (data.length - 1) : 0;
+    // 配列のデータを1件ずつ画面表示用の形に変換します。
     const points = data.map((v, i) => ({
         x: pad.left + i * step,
         y: pad.top + (h - pad.top - pad.bottom) * (1 - (v - min) / range),
     }));
+    // 配列のデータを1件ずつ画面表示用の形に変換します。
     const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
     const activePoint = activeIndex == null ? null : points[activeIndex];
     const activeValue = activeIndex == null ? null : data[activeIndex];
@@ -338,6 +359,7 @@ export function LineChart({ data, labels = [], height = 120, padding }) {
 const DONUT_COLORS = ['#2f6ceb', '#5b8def', '#8fb3f5', '#c3d5fa', '#e8f0fe'];
 
 export function DonutChart({ items, centerLabel, centerValue }) {
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [activeIndex, setActiveIndex] = useState(null);
     const total = items.reduce((a, it) => a + it.value, 0) || 1;
     const r = 40;

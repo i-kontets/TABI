@@ -1,3 +1,13 @@
+/**
+ * アプリ全体のルーティングと、旅行グループ情報を共有する大元の画面を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
 import { useState } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { createContext } from 'react';
@@ -31,6 +41,8 @@ import CottageChatPage from './pages/CottageChat/CottageChatPage.jsx';
 import AdminRoutes from './pages/Admin/AdminRoutes.jsx';
 import UserRealtimeListener from './pages/UserRealtimeListener.jsx';
 import Maintenance from './pages/Maintenance/Maintenance.jsx';
+import NotificationListPage from './pages/Notifications/NotificationListPage.jsx';
+import NotificationDetailPage from './pages/Notifications/NotificationDetailPage.jsx';
 import ServiceAvailabilityGate from './components/ServiceAvailabilityGate.jsx';
 import { isAdminPath, isMaintenancePath } from './services/serviceStatus.js';
 

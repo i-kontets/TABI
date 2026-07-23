@@ -1,3 +1,13 @@
+/**
+ * チャットメッセージの表示や入力に使う共通部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './MessageBubble.module.css';
@@ -12,7 +22,9 @@ const MessageBubble = ({ message, memberCount = 0 }) => {
     const senderUserId = Number(message.sender_user_id || message.user_id || 0);
     const canOpenProfile = senderUserId > 0;
 
+    // openProfile は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const openProfile = () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (canOpenProfile) {
             navigate(`/user/${senderUserId}`);
         }

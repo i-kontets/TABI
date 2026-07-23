@@ -1,3 +1,13 @@
+/**
+ * 日程候補の確認や決定に使う画面部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Step, Stepper } from 'react-form-stepper';
@@ -36,6 +46,10 @@ const initialRoute = transportData.transports?.[0]?.carriers?.[0]?.routes?.[0] |
 const latestBookingStorageKey = 'tabiLatestBooking';
 const savedRoutesStorageKey = 'tabiMyRoutes';
 
+/**
+ * ProgressTracker は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function ProgressTracker({ step, setStep }) {
     return (
         <div className={styles.progressTracker}>
@@ -64,6 +78,10 @@ function ProgressTracker({ step, setStep }) {
     );
 }
 
+/**
+ * AppointmentHeader は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function AppointmentHeader({ title, onBack }) {
     return (
         <header className={styles.header}>
@@ -77,28 +95,40 @@ function AppointmentHeader({ title, onBack }) {
 
 // Step 0: Search / list
 function AppointmentStep({ onProceed }) {
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [type, setType] = useState(() => transportData.transports?.[0]?.type || '');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [carrier, setCarrier] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [from, setFrom] = useState(() => initialRoute.from || '');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [to, setTo] = useState(() => initialRoute.to || '');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [date, setDate] = useState(() => {
         const d = new Date();
         return d.toISOString().slice(0,10);
     });
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [hour, setHour] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [people, setPeople] = useState(1);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [formError, setFormError] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [results, setResults] = useState(null);
 
     const transportsOfType = useMemo(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (type) return transportData.transports.find(t => t.type === type) || { carriers: [] };
         const map = new Map();
         transportData.transports.forEach(t => {
             (t.carriers || []).forEach(c => {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!map.has(c.name)) {
                     map.set(c.name, { ...c });
                 } else {
                     const existing = map.get(c.name);
+                    // 配列のデータを1件ずつ画面表示用の形に変換します。
                     existing.routes = Array.from(new Set([...(existing.routes || []), ...(c.routes || [])].map(r => JSON.stringify(r)))).map(s => JSON.parse(s));
                     map.set(c.name, existing);
                 }
@@ -112,13 +142,16 @@ function AppointmentStep({ onProceed }) {
     const routePool = useMemo(() => {
         const pool = [];
         carriers.forEach(c => {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (carrier && c.name !== carrier) return;
             (c.routes || []).forEach(r => pool.push({ ...r, carrier: c.name }));
         });
         return pool;
     }, [carriers, carrier]);
 
+    // 配列のデータを1件ずつ画面表示用の形に変換します。
     const fromOptions = useMemo(() => Array.from(new Set(routePool.map(r => r.from))), [routePool]);
+    // 配列のデータを1件ずつ画面表示用の形に変換します。
     const toOptions = useMemo(() => Array.from(new Set(routePool.filter(r => (from ? r.from === from : true)).map(r => r.to))), [routePool, from]);
 
     // Prefer synchronous updates on user interactions to avoid mobile picker race conditions
@@ -132,15 +165,21 @@ function AppointmentStep({ onProceed }) {
         setTo(firstRoute.to || '');
     }
 
+    /**
+     * handleCarrierChange は、このファイルの中心となる処理をまとめた関数です。
+     * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+     */
     function handleCarrierChange(value) {
         setCarrier(value);
         const t = transportData.transports.find(tt => tt.type === type) || { carriers: [] };
+        // c は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const c = (t.carriers || []).find(cc => cc.name === value) || { routes: [] };
         const firstRoute = c.routes?.[0] || {};
         setFrom(firstRoute.from || '');
         setTo(firstRoute.to || '');
     }
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         // ensure date has a sensible default when type changes if not set
         if (!date) {
@@ -149,8 +188,13 @@ function AppointmentStep({ onProceed }) {
         }
     }, [type]);
 
+    /**
+     * handleSearch は、このファイルの中心となる処理をまとめた関数です。
+     * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+     */
     function handleSearch(e) {
         e && e.preventDefault && e.preventDefault();
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!type || !from || !to || !date || hour === '' || !people || Number(people) < 1) {
             setFormError('種類・出発地・到着地・出発日・出発時間・人数を正しく入力してください。');
             setResults(null);
@@ -159,14 +203,19 @@ function AppointmentStep({ onProceed }) {
         setFormError('');
         const matches = [];
         transportData.transports.forEach(t => {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (t.type !== type) return;
             (t.carriers || []).forEach(c => {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (carrier && c.name !== carrier) return;
                 (c.routes || []).forEach(r => {
+                    // ここで条件を確認し、状況に合う処理だけを実行します。
                     if (from && r.from !== from) return;
+                    // ここで条件を確認し、状況に合う処理だけを実行します。
                     if (to && r.to !== to) return;
                     const times = r.times?.slice() || [];
                     times.forEach(time => {
+                        // ここで条件を確認し、状況に合う処理だけを実行します。
                         if (Number(time.split(':')[0]) !== Number(hour)) return;
                         matches.push({
                             type: t.type,
@@ -184,6 +233,7 @@ function AppointmentStep({ onProceed }) {
         setResults({ items: matches });
     }
 
+    // proceedBooking は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const proceedBooking = (it) => {
         onProceed && onProceed({ item: it, date, people });
     }
@@ -295,18 +345,26 @@ function AppointmentStep({ onProceed }) {
 
 // Step 1: Confirmation
 function ConfirmationStep({ item, date, people, onConfirm }) {
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [boarding, setBoarding] = useState(stops.boarding?.[0] || '');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [alighting, setAlighting] = useState(stops.alighting?.[0] || '');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [selectedTime, setSelectedTime] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [isLoading, setIsLoading] = useState(false);
     const timeoutRef = useRef(null);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (item?.times && item.times.length > 0) setSelectedTime(item.times[0]);
     }, [item]);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         return () => {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
     }, []);
@@ -315,7 +373,9 @@ function ConfirmationStep({ item, date, people, onConfirm }) {
     const pricePerPerson = item?.price ?? (item?.type ? (fareMap[item.type] || 0) : 0);
     const totalPrice = pricePerPerson * (people || 1);
 
+    // confirm は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const confirm = () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (isLoading) return;
         const booking = { item, people: people || 1, date, time: selectedTime, boarding, alighting, pricePerPerson, totalPrice };
         setIsLoading(true);
@@ -387,6 +447,7 @@ function DecisionStep({ booking }) {
     const bookingNumber = booking?.number || ('R' + Date.now().toString(36).toUpperCase());
     const navigate = useNavigate();
 
+    // completeBooking は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const completeBooking = () => {
         localStorage.setItem(latestBookingStorageKey, JSON.stringify(booking));
         navigate('/Itinerary', { state: { booking } });
@@ -435,19 +496,28 @@ function DecisionStep({ booking }) {
     );
 }
 
+/**
+ * AppointmentPage は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function AppointmentPage() {
     const location = useLocation();
     const navigate = useNavigate();
     const routeDraft = location.state?.bookingDraft || null;
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [step, setStep] = useState(() => routeDraft ? 1 : 0); // 0: search, 1: confirm, 2: decision
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [bookingDraft, setBookingDraft] = useState(routeDraft);
 
+    // handleProceedFromSearch は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleProceedFromSearch = ({ item, date, people }) => {
         setBookingDraft({ item, date, people });
         setStep(1);
     };
 
+    // handleConfirm は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleConfirm = (booking) => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (booking.item?.type === '電車') {
             const savedRoutes = JSON.parse(localStorage.getItem(savedRoutesStorageKey) || '[]');
             const savedRoute = {
@@ -467,13 +537,17 @@ export default function AppointmentPage() {
         setStep(2);
     };
 
+    // handleJump は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleJump = (i) => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (i <= step) setStep(i);
     };
 
     const stepTitles = ['予約画面', '乗降地を選択', '予約内容の確認'];
 
+    // handleBack は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleBack = () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (step === 0) {
             window.history.back();
             return;

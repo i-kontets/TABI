@@ -325,6 +325,12 @@ body {
     flex-shrink: 0;
 }
 
+/* 一覧の丸アイコンにも管理人画像を入れます。文字アイコンと同じ枠に収めるためです。 */
+.ci-avatar.ci-avatar-image {
+    object-fit: cover;
+    display: block;
+}
+
 .ci-body {
     flex: 1;
     min-width: 0;
@@ -451,6 +457,27 @@ body {
     min-width: 0;
 }
 
+.chat-header-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #E8EEF6;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 700;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* 管理人アイコン画像を丸枠いっぱいに表示します。画像サイズが大きくてもヘッダーの高さを変えないためです。 */
+.chat-header-avatar-image {
+    object-fit: cover;
+    display: block;
+}
+
 .chat-title {
     margin: 0 0 1px;
     font-size: 14px;
@@ -558,6 +585,12 @@ body {
 
 .msg-avatar.mgr {
     background: #6B7CB0;
+}
+
+/* メッセージ内の登録済みアイコンも、文字アイコンと同じ丸い大きさで表示します。 */
+.msg-avatar.msg-avatar-image {
+    object-fit: cover;
+    display: block;
 }
 
 /* 吹き出しブロック */

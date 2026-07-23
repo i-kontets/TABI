@@ -6,13 +6,21 @@
     box-shadow: 0 6px 18px rgba(68, 85, 141, 0.08);
 }
 
+.cardInner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: start;
+    padding: 14px;
+}
+
 .cardButton {
     display: grid;
     grid-template-columns: 44px minmax(0, 1fr);
     gap: 12px;
     box-sizing: border-box;
     width: 100%;
-    padding: 14px;
+    padding: 0;
     color: inherit;
     text-align: left;
     background: transparent;
@@ -43,11 +51,40 @@
     min-width: 0;
 }
 
+.headerRow {
+    display: flex;
+    align-items: flex-start;
+}
+
 .body h3 {
     margin: 0;
     color: var(--sub-color);
     font-size: 17px;
     line-height: 1.35;
+}
+
+.favoriteButton {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: var(--sub-color);
+    background: #ffffff;
+    border: 1px solid var(--other-color);
+    border-radius: 50%;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.favoriteButton:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.favoriteActive {
+    color: #ffffff;
+    background: var(--sub-color);
 }
 
 .body p {

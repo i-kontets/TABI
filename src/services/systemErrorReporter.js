@@ -1,3 +1,13 @@
+/**
+ * 画面側で起きたエラーをサーバーへ送るための処理をまとめます。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
 import {
     isAdminPath,
     isMaintenanceCode,
@@ -35,30 +45,49 @@ const sensitiveQueryKeys = new Set([
     'password',
 ]);
 
+/**
+ * loadUnresolvedRecoveryKeys は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function loadUnresolvedRecoveryKeys() {
+    // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
     try {
         const savedKeys = JSON.parse(sessionStorage.getItem(unresolvedRecoveryStorageKey) || '[]');
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (Array.isArray(savedKeys)) {
             savedKeys.forEach((key) => {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (typeof key === 'string' && key !== '') {
                     unresolvedRecoveryKeys.add(key);
                 }
             });
         }
+    // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
     } catch {
         /* 保存済みデータが壊れていても、エラー監視自体は止めないようにします。 */
     }
 }
 
+/**
+ * saveUnresolvedRecoveryKeys は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function saveUnresolvedRecoveryKeys() {
+    // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
     try {
         sessionStorage.setItem(unresolvedRecoveryStorageKey, JSON.stringify([...unresolvedRecoveryKeys]));
+    // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
     } catch {
         /* sessionStorage が使えない環境でも、画面を開いている間の Set だけで動かします。 */
     }
 }
 
+/**
+ * rememberUnresolvedRecoveryKey は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function rememberUnresolvedRecoveryKey(recoveryKey) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!recoveryKey) {
         return;
     }
@@ -67,7 +96,12 @@ function rememberUnresolvedRecoveryKey(recoveryKey) {
     saveUnresolvedRecoveryKeys();
 }
 
+/**
+ * forgetUnresolvedRecoveryKey は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function forgetUnresolvedRecoveryKey(recoveryKey) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!recoveryKey) {
         return;
     }
@@ -76,47 +110,74 @@ function forgetUnresolvedRecoveryKey(recoveryKey) {
     saveUnresolvedRecoveryKeys();
 }
 
+/**
+ * hasUnresolvedRecoveryKey は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function hasUnresolvedRecoveryKey(recoveryKey) {
     return recoveryKey !== '' && unresolvedRecoveryKeys.has(recoveryKey);
 }
 
+/**
+ * notifyAdminSystemErrorChanged は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function notifyAdminSystemErrorChanged(type, detail = {}) {
     const eventDetail = { ...detail, type };
     window.dispatchEvent(new CustomEvent(`admin:${type}`, { detail: eventDetail }));
 
+    // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
     try {
         const channel = new BroadcastChannel(systemErrorBroadcastChannel);
         channel.postMessage(eventDetail);
         channel.close();
+    // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
     } catch {
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             localStorage.setItem('tabi:last-system-error-event', JSON.stringify({
                 ...eventDetail,
                 notifiedAt: Date.now(),
             }));
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch {
             /* 通知だけの失敗なので、エラー登録や解消処理そのものは止めません。 */
         }
     }
 }
 
+/**
+ * notifyAdminSystemErrorSaved は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function notifyAdminSystemErrorSaved(detail = {}) {
     notifyAdminSystemErrorChanged('system_error_created', detail);
 }
 
+/**
+ * notifyAdminSystemErrorResolved は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function notifyAdminSystemErrorResolved(detail = {}) {
     notifyAdminSystemErrorChanged('system_error_resolved', detail);
 }
 
+/**
+ * stripUrlSecrets は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function stripUrlSecrets(value) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!value || typeof value !== 'string') {
         return '';
     }
 
+    // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
     try {
         const url = new URL(value, window.location.origin);
         const safeParams = new URLSearchParams();
         [...url.searchParams.entries()]
+            // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
             .filter(([key]) => {
                 const normalizedKey = key.trim();
                 return !removableQueryKeys.has(normalizedKey) && !sensitiveQueryKeys.has(normalizedKey.toLowerCase());
@@ -126,34 +187,48 @@ function stripUrlSecrets(value) {
         const query = safeParams.toString();
 
         return `${url.origin}${url.pathname.replace(/\/+$/, '')}${query ? `?${query}` : ''}`;
+    // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
     } catch {
         return value.replace(/[?#].*$/, '').replace(/\/+$/, '');
     }
 }
 
+/**
+ * normalizeRequestPath は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function normalizeRequestPath(value) {
     const sanitized = stripUrlSecrets(value);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!sanitized) {
         return '';
     }
 
+    // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
     try {
         const url = new URL(sanitized, window.location.origin);
         const path = `/${url.pathname.replace(/^\/+/, '').replace(/\/+$/, '')}`;
         return `${path}${url.search || ''}`;
+    // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
     } catch {
         return `/${sanitized.replace(/[?#].*$/, '').replace(/^\/+/, '')}`;
     }
 }
 
+/**
+ * readFetchMethod は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function readFetchMethod(args) {
     const init = args[1] || {};
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (init.method) {
         return String(init.method).toUpperCase();
     }
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (typeof args[0] === 'object' && args[0]?.method) {
         return String(args[0].method).toUpperCase();
     }
@@ -161,6 +236,10 @@ function readFetchMethod(args) {
     return 'GET';
 }
 
+/**
+ * buildFingerprint は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function buildFingerprint(payload) {
     return [
         payload.errorCode || 'UNKNOWN',
@@ -171,6 +250,10 @@ function buildFingerprint(payload) {
     ].join('|');
 }
 
+/**
+ * buildRecoveryKey は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function buildRecoveryKey(payload) {
     /* 自動解消用の安定キーです。HTTPステータスやエラーメッセージは、失敗時と成功時で変わるため含めません。 */
     return [
@@ -182,10 +265,15 @@ function buildRecoveryKey(payload) {
     ].join('|');
 }
 
+/**
+ * shouldSuppress は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function shouldSuppress(fingerprint) {
     const now = Date.now();
     const lastSentAt = recentFingerprints.get(fingerprint) || 0;
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (now - lastSentAt < suppressMs) {
         return true;
     }
@@ -194,6 +282,10 @@ function shouldSuppress(fingerprint) {
     return false;
 }
 
+/**
+ * isIgnoredError は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function isIgnoredError(error) {
     const name = error?.name || '';
     const message = String(error?.message || error || '');
@@ -204,6 +296,10 @@ function isIgnoredError(error) {
     );
 }
 
+/**
+ * isSystemErrorInternalEndpoint は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function isSystemErrorInternalEndpoint(requestUrl) {
     return (
         requestUrl.includes('/api/SystemErrors/Report.php') ||
@@ -211,6 +307,10 @@ function isSystemErrorInternalEndpoint(requestUrl) {
     );
 }
 
+/**
+ * shouldTrackApiRequest は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function shouldTrackApiRequest(requestUrl) {
     return (
         requestUrl.includes('/api/') &&
@@ -246,10 +346,12 @@ export function reportSystemError(payload = {}) {
 
     sanitizedPayload.fingerprint = payload.fingerprint || buildFingerprint(sanitizedPayload);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (shouldSuppress(sanitizedPayload.fingerprint)) {
         return;
     }
 
+    // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
     fetch(endpoint, {
         method: 'POST',
         credentials: 'include',
@@ -259,8 +361,11 @@ export function reportSystemError(payload = {}) {
         },
         body: JSON.stringify(sanitizedPayload),
     })
+        // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
         .then((response) => response.json().catch(() => null))
+        // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
         .then((data) => {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (data?.success) {
                 notifyAdminSystemErrorSaved({
                     error_id: data.error_id || null,
@@ -273,6 +378,10 @@ export function reportSystemError(payload = {}) {
         .catch(() => {});
 }
 
+/**
+ * resolveSystemError は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function resolveSystemError(payload = {}) {
     const pagePath = payload.pagePath || window.location.pathname;
     const requestUrl = stripUrlSecrets(payload.requestUrl || '');
@@ -304,9 +413,12 @@ function resolveSystemError(payload = {}) {
         },
         body: JSON.stringify(sanitizedPayload),
     })
+        // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
         .then((response) => response.json().catch(() => null))
+        // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
         .then((data) => {
             const resolvedCount = Number(data?.resolvedCount ?? data?.resolved_count ?? 0);
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (data?.success && resolvedCount > 0) {
                 forgetUnresolvedRecoveryKey(sanitizedPayload.recoveryKey);
                 notifyAdminSystemErrorResolved({
@@ -338,10 +450,12 @@ export function installSystemErrorListeners() {
             errorCode: 'API_HTTP_ERROR',
         });
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!isSystemErrorInternalEndpoint(requestUrl) && !requestUrl.includes('/api/system/status.php') && response.status === 503) {
             const data = await response.clone().json().catch(() => null);
             const maintenanceCode = data?.status || data?.code || data?.reason;
 
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (isMaintenanceCode(maintenanceCode) && !isAdminPath() && !isMaintenancePath()) {
                 saveReturnPath();
                 saveMaintenanceReason(maintenanceCode);
@@ -350,6 +464,7 @@ export function installSystemErrorListeners() {
             }
         }
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (shouldTrackApiRequest(requestUrl) && response.status >= 500 && response.status !== 503) {
             /* API失敗時は、あとで同じAPIが成功したか判定できるよう recoveryKey も保存します。 */
             const failurePayload = {
@@ -391,7 +506,9 @@ export function installSystemErrorListeners() {
         const target = event.target;
         const isResourceError = target && target !== window;
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (isResourceError) {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (target.tagName === 'IMG') {
                 return;
             }
@@ -406,6 +523,7 @@ export function installSystemErrorListeners() {
             return;
         }
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (isIgnoredError(event.error)) {
             return;
         }
@@ -422,6 +540,7 @@ export function installSystemErrorListeners() {
     window.addEventListener('unhandledrejection', (event) => {
         const reason = event.reason;
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (isIgnoredError(reason)) {
             return;
         }

@@ -1,13 +1,27 @@
+/**
+ * 複数の画面から使われる共通の表示部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import React from 'react';
 import styles from './ChatHeader.module.css';
 import UserAvatar from '../UserAvatar';
 
 const ChatHeader = ({ contact, reservation, onMobileBack }) => {
+  // ここで条件を確認し、状況に合う処理だけを実行します。
   if (!contact) return null;
 
+  // formatMonthDay は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
   const formatMonthDay = (dateString) => {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!dateString) return '';
     const parts = dateString.split('/');
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (parts.length >= 3) {
       return `${parseInt(parts[1], 10)}月${parseInt(parts[2], 10)}日`;
     }
@@ -17,6 +31,11 @@ const ChatHeader = ({ contact, reservation, onMobileBack }) => {
   const periodParts = reservation?.period?.split('〜') || [];
   const checkInDate = formatMonthDay(periodParts[0]);
   const checkOutDate = formatMonthDay(periodParts[1]);
+  // ホテルチャットの表示名はコテージ名ですが、丸アイコンの相手は管理人です。
+  // 画像が読めない時の文字アイコンも管理人名を使い、コテージ名の先頭文字にならないようにします。
+  const avatarFallbackName = contact.category === 'hotel'
+    ? (contact.manager_name || contact.name)
+    : (contact.avatar || contact.name);
 
   return (
     <div className={styles.headerContainer}>
@@ -30,7 +49,7 @@ const ChatHeader = ({ contact, reservation, onMobileBack }) => {
 
         <UserAvatar
           src={contact.avatar}
-          name={contact.avatar || contact.name}
+          name={avatarFallbackName}
           alt={contact.name}
           className={styles.avatar}
           fallbackClassName={styles.avatarFallback}
@@ -47,7 +66,7 @@ const ChatHeader = ({ contact, reservation, onMobileBack }) => {
           {/* オンライン表示テキストは削除しました */}
         </div>
       </div>
-      
+
       {reservation && (
         <div className={styles.reservationCard}>
           <div className={styles.cardHeader}>
@@ -64,7 +83,7 @@ const ChatHeader = ({ contact, reservation, onMobileBack }) => {
                 <span className={styles.dateValue}>{checkInDate || '未定'}</span>
                 <span className={styles.timeValue}>{reservation.checkIn}</span>
               </div>
-              
+
               <div className={styles.dateArrow}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12"></line>

@@ -1,3 +1,13 @@
+/**
+ * 旅行スケジュールを時間軸に沿って表示する画面部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useContext, useState } from 'react';
 import { Stepper } from 'react-form-stepper';
 import { TripContext } from '../../App';
@@ -14,8 +24,13 @@ const days = [
     { id: 'day5', date: '7/2(木)' },
 ];
 
+/**
+ * SchedulePage は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function SchedulePage() {
     const { tripName } = useContext(TripContext);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [selectedDay, setSelectedDay] = useState('day1');
     const selectedDayIndex = days.findIndex((day) => day.id === selectedDay);
     const rootStyles = getComputedStyle(document.documentElement);

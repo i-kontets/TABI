@@ -1,3 +1,13 @@
+/**
+ * 旅程の確認や編集を行う画面です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { DayPicker } from 'react-day-picker';
@@ -9,6 +19,7 @@ import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import Check from '../../assets/icons/check.svg?react';
 import Close from '../../assets/icons/close.svg?react';
 
+// formatJapaneseDate は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
 const formatJapaneseDate = (date) =>
     date.toLocaleDateString('ja-JP', {
         year: 'numeric',
@@ -17,12 +28,18 @@ const formatJapaneseDate = (date) =>
         weekday: 'short',
     });
 
+/**
+ * itineraryEdit は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function itineraryEdit() {
     const navigate = useNavigate();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [selectedRange, setSelectedRange] = useState({
         from: new Date(2026, 3, 15),
         to: new Date(2026, 3, 23),
     });
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [formValues, setFormValues] = useState({
         title: '三重旅行',
         destination: '志摩市',
@@ -33,8 +50,10 @@ function itineraryEdit() {
         navigate('/Itinerary');
     };
 
+    // sanitizeMembers は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const sanitizeMembers = (value) => value.replace(/[^0-9]/g, '');
 
+    // handleChange は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleChange = (event) => {
         const { name, value } = event.target;
         setFormValues((current) => ({
@@ -43,6 +62,7 @@ function itineraryEdit() {
         }));
     };
 
+    // handleSubmit は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleSubmit = (event) => {
         event.preventDefault();
         const period = selectedRange?.from

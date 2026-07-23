@@ -1,3 +1,13 @@
+/**
+ * React の画面または部品として、表示内容とユーザー操作を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TripContext } from "../../App";
@@ -5,6 +15,7 @@ import TravelGroupCard from '../../components/TravelGroupCard/TravelGroupCard';
 import Modal from '../../components/Modal/Modal';
 import ImagePicker from '../../components/ImagePicker/ImagePicker';
 import styles from './Home.module.css';
+import { fetchUnreadNotificationCount } from '../../api/notificationApi';
 
 // ここから下は、画面内で使うアイコンを SVG で直接定義しています。
 // 画像素材を別ファイルに分けず、必要な見た目をこのコンポーネント内で完結させます。
@@ -16,6 +27,10 @@ function PlusIcon({ className }) {
     );
 }
 
+/**
+ * BellIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function BellIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -25,6 +40,10 @@ function BellIcon({ className }) {
     );
 }
 
+/**
+ * LogoutIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function LogoutIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -35,6 +54,10 @@ function LogoutIcon({ className }) {
     );
 }
 
+/**
+ * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function HomeIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -45,6 +68,10 @@ function HomeIcon({ className }) {
     );
 }
 
+/**
+ * UserIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function UserIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -60,6 +87,35 @@ function Home() {
     const navigate = useNavigate();
     // TripContext には、選択中の旅行グループ情報を入れて次画面へ渡します。
     const { setTrip } = useContext(TripContext);
+    const [notificationBadgeText, setNotificationBadgeText] = useState(null);
+
+    useEffect(() => {
+        let isMounted = true;
+        const controller = new AbortController();
+
+        const fetchNotificationBadge = async () => {
+            try {
+                const data = await fetchUnreadNotificationCount({ signal: controller.signal });
+                const count = Number(data?.data?.unreadCount ?? 0);
+                const badgeText = data?.data?.badgeText || (count > 99 ? '99+' : String(count));
+
+                if (isMounted) {
+                    setNotificationBadgeText(count > 0 ? badgeText : null);
+                }
+            } catch (caughtError) {
+                if (isMounted && caughtError?.name !== 'AbortError') {
+                    setNotificationBadgeText(null);
+                }
+            }
+        };
+
+        fetchNotificationBadge();
+
+        return () => {
+            isMounted = false;
+            controller.abort();
+        };
+    }, []);
 
     // 画面に表示する旅行グループ一覧です。
     const [travelGroups, setTravelGroups] = useState([]);
@@ -69,7 +125,9 @@ function Home() {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     // 作成フォームの入力値です。
     const [newName, setNewName] = useState("");
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [newStartDate, setNewStartDate] = useState("");
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [newEndDate, setNewEndDate] = useState("");
 
     // ImagePicker で確定した画像情報を保持します。
@@ -81,7 +139,9 @@ function Home() {
     useEffect(() => {
         let isMounted = true;
 
+        // fetchGroups は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const fetchGroups = async () => {
+            // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
             try {
                 // 自分が参加している旅行グループ一覧を取得します。
                 // credentials: include を付けることで、ログイン中のセッション情報も一緒に送ります。
@@ -105,6 +165,7 @@ function Home() {
                 // 期待するのは success と groups を持つオブジェクトです。
                 const data = await response.json();
 
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!isMounted) {
                     // 画面が閉じた後の state 更新は避けます。
                     return;
@@ -115,6 +176,7 @@ function Home() {
                 // ここでやっているのは表示用の整形だけで、DB の内容は変更しません。
                 if (data.success && Array.isArray(data.groups)) {
                     setTravelGroups(
+                        // 配列のデータを1件ずつ画面表示用の形に変換します。
                         data.groups.map((group, index) => ({
                             ...group,
                             image: group.image_url ?? null,
@@ -125,12 +187,14 @@ function Home() {
                     // 画面が壊れないことを優先し、エラー表示ではなく空一覧にします。
                     setTravelGroups([]);
                 }
+            // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
             } catch {
                 // 通信エラー時も画面を壊さず、空一覧として処理します。
                 // 利用者からは「参加中の旅行グループがない」状態に見せます。
                 if (isMounted) {
                     setTravelGroups([]);
                 }
+            // 成功・失敗に関係なく最後に必要な後片付けを行います。
             } finally {
                 // 取得が終わったので、読み込み中表示を解除します。
                 // ここで false にすることで、ローディング表示を止めます。
@@ -162,6 +226,7 @@ function Home() {
 
     // ログアウト API を呼び、成功したらローカルのログイン情報も消してログイン画面へ戻します。
     const handleLogout = async () => {
+        // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
         const response = await fetch(
             "/TABI/api/auth/logout.php",
             {
@@ -172,6 +237,7 @@ function Home() {
 
         const data = await response.json();
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (data.success) {
             // サーバー側のログアウトに加えて、端末側のログイン情報も消します。
             localStorage.removeItem("loginUser");
@@ -179,7 +245,9 @@ function Home() {
         }
     };
 
+    // resetSelectedImage は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const resetSelectedImage = (revokePreview) => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (revokePreview && selectedImage?.previewUrl) {
             // previewUrl はブラウザが持つ一時的なローカル URL なので、不要になったら解放します。
             URL.revokeObjectURL(selectedImage.previewUrl);
@@ -190,6 +258,7 @@ function Home() {
     // ImagePicker から新しい画像が返ってきたときの受け口です。
     // 以前のプレビューURLを解放してから、最新の画像情報に差し替えます。
     const handleImageChange = (nextImage) => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (selectedImage?.previewUrl) {
             URL.revokeObjectURL(selectedImage.previewUrl);
         }
@@ -216,11 +285,13 @@ function Home() {
         event.preventDefault();
 
         const name = newName.trim();
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!name) {
             // グループ名が空なら送信しません。
             return;
         }
 
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             // グループ名と日付を API へ送り、新しい旅行グループを作成します。
             // start_date / end_date は未入力なら null にして、空値として扱えるようにします。
@@ -250,13 +321,16 @@ function Home() {
             // API の返却 JSON を読み込みます。
             const data = await response.json();
 
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (data.success && data.group) {
                 // トリミング済み画像がある場合だけ、追加で画像アップロードを行います。
                 // 画像が無いときは、そのままカードの既定画像を使います。
                 let cardImage = selectedImage?.previewUrl ?? null;
                 const imageFile = selectedImage?.file ?? null;
 
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (imageFile) {
+                    // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
                     try {
                         // 画像ファイルとグループ ID を一緒に送って、保存先を紐づけます。
                         // FormData を使うことで、画像ファイルを multipart 形式で送れます。
@@ -264,6 +338,8 @@ function Home() {
                         formData.append("image", imageFile);
                         formData.append("group_id", data.group.id);
 
+                        // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
+                        // 旅行グループ作成後、選択された画像をS3保存用APIへ送ります。ここで送るのは画像ファイル本体とgroup_idです。
                         const uploadResponse = await fetch(
                             "/TABI/api/Groups/UploadImage.php",
                             {
@@ -275,10 +351,12 @@ function Home() {
 
                         const uploadData = await uploadResponse.json();
 
+                        // ここで条件を確認し、状況に合う処理だけを実行します。
                         if (uploadData.success && uploadData.image_url) {
                             // アップロード成功時は、S3 の URL をカード画像として使います。
                             cardImage = uploadData.image_url;
                         }
+                    // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
                     } catch {
                         // アップロード失敗時でも、作成直後の一覧表示は崩さずプレビュー画像を残します。
                         // 次回読み込み時に画像が無ければ、カード側の既定表示に任せます。
@@ -304,12 +382,12 @@ function Home() {
 
             // 作成失敗なら、API が返したメッセージを優先して表示します。
             alert(data.message ?? "旅行グループの作成に失敗しました。");
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch {
             // 通信失敗や予期しない例外が起きた場合のメッセージです。
             alert("旅行グループの作成に失敗しました。通信環境を確認してください。");
         }
     };
-
 
     // ここから下は画面描画です。
     // 上で準備した状態を使って、ヘッダー、一覧、作成モーダル、フッターを表示します。
@@ -331,9 +409,11 @@ function Home() {
                 <button
                     type="button"
                     className={styles.noticeButton}
-                    aria-label="通知"
+                    onClick={() => navigate('/notifications')}
+                    aria-label="通知一覧"
                 >
                     <BellIcon className={styles.headerIcon} />
+                    {notificationBadgeText && <span className={styles.noticeBadge}>{notificationBadgeText}</span>}
                 </button>
             </header>
 

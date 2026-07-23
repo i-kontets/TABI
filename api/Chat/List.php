@@ -1,21 +1,47 @@
 <?php
+
+/**
+ * チャットの一覧、メッセージ取得、送信、既読、画像アップロードを扱う API です。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
+// セッションを開始し、ログイン中のユーザー情報をサーバー側で使えるようにします。
 session_start();
+// フロントエンドへ返すデータ形式や通信ルールを、HTTP ヘッダーとして伝えます。
 header("Content-Type: application/json; charset=UTF-8");
 
+// 共通設定や別ファイルの関数を読み込み、この API から使えるようにします。
 require_once __DIR__ . "/../config/db.php";
+// 共通設定や別ファイルの関数を読み込み、この API から使えるようにします。
 require_once __DIR__ . "/../Groups/S3Common.php";
 
+/**
+ * respond は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function respond(array $payload, int $status = 200): void
 {
     http_response_code($status);
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
+/**
+ * firstCharacter は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function firstCharacter(string $value): string
 {
     $value = trim($value);
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($value === "") {
         return "?";
     }
@@ -23,8 +49,13 @@ function firstCharacter(string $value): string
     return function_exists("mb_substr") ? mb_substr($value, 0, 1) : substr($value, 0, 1);
 }
 
+/**
+ * formatTime は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function formatTime(?string $value): string
 {
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$value) {
         return "";
     }
@@ -32,19 +63,26 @@ function formatTime(?string $value): string
     return (new DateTimeImmutable($value))->format("H:i");
 }
 
+/**
+ * resolveUserIconUrl は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function resolveUserIconUrl(?string $iconValue): ?string
 {
     static $initialized = false, $s3 = null, $aws = null, $cache = [];
 
     $iconValue = trim((string) $iconValue);
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($iconValue === "") {
         return null;
     }
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (strpos($iconValue, "http://") === 0 || strpos($iconValue, "https://") === 0) {
         $path = parse_url($iconValue, PHP_URL_PATH);
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if (!$path) {
             return null;
         }
@@ -54,34 +92,46 @@ function resolveUserIconUrl(?string $iconValue): ?string
 
     $key = ltrim($iconValue, "/");
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($key === "") {
         return null;
     }
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (array_key_exists($key, $cache)) {
         return $cache[$key];
     }
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$initialized) {
         $initialized = true;
 
+        // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
         try {
             $aws = loadAwsConfig();
             $s3 = $aws ? createS3Client($aws) : null;
+        // エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
         } catch (Throwable $error) {
             $s3 = null;
         }
     }
 
+    // 署名付きURLを作ると、非公開のS3画像をブラウザで一時的に表示できます。期限が切れたら再生成が必要です。
     return $cache[$key] = ($s3 && $aws) ? presignS3Url($s3, $aws["bucket"], $key) : null;
 }
 
+/**
+ * normalizeCategory は、この API 内で何度も使う処理をまとめた関数です。
+ * 引数として受け取った値をもとに、確認・取得・更新などの結果を返します。
+ */
 function normalizeCategory(?string $chatType): string
 {
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($chatType === "hotel") {
         return "hotel";
     }
 
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($chatType === "friend" || $chatType === "direct" || $chatType === "support") {
         return "friend";
     }
@@ -89,14 +139,18 @@ function normalizeCategory(?string $chatType): string
     return "group";
 }
 
+// ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
 if ($_SERVER["REQUEST_METHOD"] !== "GET") {
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     respond([
         "success" => false,
         "message" => "GETで送信してください。"
     ], 405);
 }
 
+// ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
 if (!isset($_SESSION["user_id"])) {
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     respond([
         "success" => false,
         "message" => "ログインが必要です。"
@@ -104,8 +158,13 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 $userId = (int) $_SESSION["user_id"];
+// このAPIはログイン中のユーザーIDを読むだけで、セッション自体は変更しません。
+// ここでロックを外すと、メッセージ取得や既読処理などの別APIが同時に進めます。
+session_write_close();
 
+// データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
+    // SQL を準備し、あとから値を安全に入れられる形にします。
     $stmt = $pdo->prepare("
         SELECT
             c.chat_id,
@@ -115,6 +174,7 @@ try {
             t.title AS trip_title,
             tc.candidate_name,
             tc.img_url AS candidate_img_url,
+            other_user.user_id AS other_user_id,
             other_user.name AS other_user_name,
             other_user.icon_url AS other_user_icon_url,
             latest.body AS last_message,
@@ -169,16 +229,22 @@ try {
             t.title,
             tc.candidate_name,
             tc.img_url,
+            other_user.user_id,
             other_user.name,
             other_user.icon_url,
             latest.body,
             latest.sent_at
         ORDER BY COALESCE(latest.sent_at, c.created_at) DESC, c.chat_id DESC
     ");
+    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $stmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
+    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $stmt->bindValue(":other_user_id", $userId, PDO::PARAM_INT);
+    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $stmt->bindValue(":unread_user_id", $userId, PDO::PARAM_INT);
+    // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $stmt->bindValue(":read_user_id", $userId, PDO::PARAM_INT);
+    // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $stmt->execute();
 
     $contacts = [];
@@ -188,6 +254,7 @@ try {
         $memberCount = (int) $chat["member_count"];
         $category = normalizeCategory($chat["chat_type"] ?? null);
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($category !== "hotel" && $memberCount <= 2) {
             $category = "friend";
         }
@@ -195,16 +262,25 @@ try {
         $name = $chat["trip_title"] ?: "チャット #" . $chatId;
         $avatar = "";
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
+        $managerIconUrl = resolveUserIconUrl($chat["other_user_icon_url"] ?? null) ?: "";
+        $managerName = $chat["other_user_name"] ?: "";
+
         if ($category === "hotel") {
             $name = $chat["candidate_name"] ?: $name;
-            $avatar = $chat["candidate_img_url"] ?: "";
+            // ホテルチャットの丸アイコンはコテージ名ではなく、相手である管理人ユーザーのDBアイコンを使います。
+            // chat_membersで自分以外の参加者を管理人として取り、users.icon_urlのS3キーを表示用URLに変換しています。
+            $avatar = $managerIconUrl ?: ($chat["candidate_img_url"] ?: "");
         } elseif ($category === "friend") {
-            $name = $chat["other_user_name"] ?: $name;
-            $avatar = resolveUserIconUrl($chat["other_user_icon_url"] ?? null) ?: "";
+            $name = $managerName ?: $name;
+            $avatar = $managerIconUrl;
         }
 
+        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
         if ($avatar === "") {
-            $avatar = firstCharacter($name);
+            // 管理人アイコンがDBに未登録、または画像URLを作れない時だけ文字アイコンに戻します。
+            // ホテル名の先頭文字ではなく相手名を優先し、チャット名と相手アイコンを混同しないようにします。
+            $avatar = firstCharacter($category === "hotel" ? ($managerName ?: $name) : $name);
         }
 
         $contacts[] = [
@@ -213,6 +289,9 @@ try {
             "name" => $name,
             "category" => $category,
             "avatar" => $avatar,
+            "manager_user_id" => isset($chat["other_user_id"]) ? (int)$chat["other_user_id"] : null,
+            "manager_name" => $managerName,
+            "manager_icon_url" => $managerIconUrl,
             "lastMessage" => $chat["last_message"] ?: "",
             "time" => formatTime($chat["last_sent_at"]),
             "unread" => (int) $chat["unread_count"],
@@ -222,11 +301,14 @@ try {
         ];
     }
 
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     respond([
         "success" => true,
         "contacts" => $contacts
     ]);
+// エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
 } catch (Throwable $error) {
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     respond([
         "success" => false,
         "message" => "チャット一覧の取得に失敗しました。"
