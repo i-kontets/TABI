@@ -16,6 +16,11 @@ dist-ssr
 .env
 .env.*
 !.env.example
+TABI-Secrets/
+*.service-account.json
+firebase-service-account*.json
+.fcm-token-cache*
+fcm-debug*.log
 
 # Local AI tool files
 .aider.chat.history.md
