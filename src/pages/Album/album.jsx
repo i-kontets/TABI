@@ -434,8 +434,8 @@ function Album() {
 
         const hashtagList = parseHashtags(photo.hashtags);
         const isFavorite = Boolean(photo.favorite);
-        const uploaderName = String(photo.uploaded_by || photo.uploader || '投稿者不明');
-        const locationName = String(photo.place || photo.location || photo.spot_name || '場所未設定');
+        const uploaderName = String(photo.uploader_name || '投稿者不明');
+        
 
         return (
             <div className={styles.detailOverlay}>
@@ -471,7 +471,6 @@ function Album() {
                         <div className={styles.ownerAvatar}>{uploaderName.slice(0, 1)}</div>
                         <div className={styles.ownerText}>
                             <p className={styles.ownerName}>{uploaderName}</p>
-                            <p className={styles.ownerLocation}>{locationName}</p>
                         </div>
                     </div>
 
