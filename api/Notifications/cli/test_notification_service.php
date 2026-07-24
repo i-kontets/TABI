@@ -1,5 +1,18 @@
 <?php
 
+
+/**
+ * 通知サービスのDB登録やFCM送信の流れをコマンドラインから確認するためのCLIスクリプトです。
+ *
+ * 使用画面・機能: 通知機能の開発確認、FCM送信テスト
+ * 呼び出し元: 現在のコード内では直接のfetch呼び出しを確認できません。
+ * URL: /api/Notifications/cli/test_notification_service.php
+ * HTTPメソッド: コード内でHTTPメソッドの明示判定なし
+ * 入力: コマンドライン引数($argv)
+ * 使用DB: delivered_at
+ * 認証情報や秘密鍵などの実値はコメントに残さず、処理の目的だけを説明します。
+ */
+
 declare(strict_types=1);
 
 if (PHP_SAPI !== 'cli') {
@@ -18,6 +31,20 @@ require_once __DIR__ . '/../Fcm/FcmSendService.php';
 require_once __DIR__ . '/../Service/NotificationRepository.php';
 require_once __DIR__ . '/../Service/NotificationSettingsResolver.php';
 require_once __DIR__ . '/../Service/NotificationService.php';
+
+/**
+
+ * CLI実行時の引数や表示内容を整理し、通知テストを実行しやすくします。
+
+ *
+
+ * @param なし
+
+ * @return string 宣言された型に合わせて処理結果を返します。
+
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+
+ */
 
 function notificationServiceCliUsage(): string
 {
@@ -41,6 +68,20 @@ Environment for --send:
 
 TEXT;
 }
+
+/**
+
+ * CLI実行時の引数や表示内容を整理し、通知テストを実行しやすくします。
+
+ *
+
+ * @param array $argv 呼び出し元から渡される処理対象の値です。
+
+ * @return array 宣言された型に合わせて処理結果を返します。
+
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+
+ */
 
 function notificationServiceCliParseArgs(array $argv): array
 {
@@ -80,6 +121,20 @@ function notificationServiceCliParseArgs(array $argv): array
     return $parsed;
 }
 
+/**
+
+ * CLI実行時の引数や表示内容を整理し、通知テストを実行しやすくします。
+
+ *
+
+ * @param array $args 呼び出し元から渡される処理対象の値です。
+
+ * @return string 宣言された型に合わせて処理結果を返します。
+
+ * エラー時はHTTPステータス、ログ、または共通レスポンスで呼び出し元へ伝えます。
+
+ */
+
 function notificationServiceCliMode(array $args): string
 {
     $enabledModes = array_filter([$args['dryRun'], $args['createOnly'], $args['send']]);
@@ -95,6 +150,20 @@ function notificationServiceCliMode(array $args): string
 
     return 'send';
 }
+
+/**
+
+ * CLI実行時の引数や表示内容を整理し、通知テストを実行しやすくします。
+
+ *
+
+ * @param int $userId 呼び出し元から渡される処理対象の値です。
+
+ * @return array 宣言された型に合わせて処理結果を返します。
+
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+
+ */
 
 function notificationServiceCliTestInput(int $userId): array
 {
@@ -115,6 +184,22 @@ function notificationServiceCliTestInput(int $userId): array
         'expiresAt' => date('Y-m-d H:i:s', time() + 7 * 24 * 60 * 60),
     ];
 }
+
+/**
+
+ * CLI実行時の引数や表示内容を整理し、通知テストを実行しやすくします。
+
+ *
+
+ * @param array $payload 呼び出し元から渡される処理対象の値です。
+
+ * @param int $exitCode 呼び出し元から渡される処理対象の値です。
+
+ * @return void 宣言された型に合わせて処理結果を返します。
+
+ * エラー時はHTTPステータス、ログ、または共通レスポンスで呼び出し元へ伝えます。
+
+ */
 
 function notificationServiceCliPrintJson(array $payload, int $exitCode): void
 {

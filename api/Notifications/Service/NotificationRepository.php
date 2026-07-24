@@ -1,5 +1,18 @@
 <?php
 
+
+/**
+ * 通知本体や受信者情報をDBへ登録・取得する通知リポジトリです。
+ *
+ * 使用画面・機能: 通知登録、通知設定判定、プッシュ通知連携
+ * 呼び出し元: 現在のコード内では直接のfetch呼び出しを確認できません。
+ * URL: /api/Notifications/Service/NotificationRepository.php
+ * HTTPメソッド: コード内でHTTPメソッドの明示判定なし
+ * 入力: コード内で明示された外部入力なし
+ * 使用DB: notification_recipients、notifications、users
+ * 認証情報や秘密鍵などの実値はコメントに残さず、処理の目的だけを説明します。
+ */
+
 declare(strict_types=1);
 
 /**
