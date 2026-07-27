@@ -1,3 +1,13 @@
+/**
+ * 日程候補の確認や決定に使う画面部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import BtmNav from '../bottomNav/BottomNav';
@@ -5,26 +15,41 @@ import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import styles from '../../pages/Appointment/Appointment.module.css';
 import transportData from '../../pages/Appointment/Appointment.json';
 
+/**
+ * AppointmentComponent は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function AppointmentComponent() {
     const navigate = useNavigate();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [type, setType] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [carrier, setCarrier] = useState(''); // 空文字は「すべて」
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [from, setFrom] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [to, setTo] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [date, setDate] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [people, setPeople] = useState(1);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [formError, setFormError] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [results, setResults] = useState(null);
 
     const transportsOfType = useMemo(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (type) return transportData.transports.find(t => t.type === type) || { carriers: [] };
         const map = new Map();
         transportData.transports.forEach(t => {
             (t.carriers || []).forEach(c => {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!map.has(c.name)) {
                     map.set(c.name, { ...c });
                 } else {
                     const existing = map.get(c.name);
+                    // 配列のデータを1件ずつ画面表示用の形に変換します。
                     existing.routes = Array.from(new Set([...(existing.routes || []), ...(c.routes || [])].map(r => JSON.stringify(r)))).map(s => JSON.parse(s));
                     map.set(c.name, existing);
                 }
@@ -39,13 +64,16 @@ function AppointmentComponent() {
     const routePool = useMemo(() => {
         const pool = [];
         carriers.forEach(c => {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (carrier && c.name !== carrier) return;
             (c.routes || []).forEach(r => pool.push({ ...r, carrier: c.name }));
         });
         return pool;
     }, [carriers, carrier]);
 
+    // 配列のデータを1件ずつ画面表示用の形に変換します。
     const fromOptions = useMemo(() => Array.from(new Set(routePool.map(r => r.from))), [routePool]);
+    // 配列のデータを1件ずつ画面表示用の形に変換します。
     const toOptions = useMemo(() => Array.from(new Set(routePool.filter(r => (from ? r.from === from : true)).map(r => r.to))), [routePool, from]);
 
     // reset dependent selects when upstream changes
@@ -56,6 +84,10 @@ function AppointmentComponent() {
 
     const BackClick = () => navigate(-1);
 
+    /**
+     * handleSearch は、このファイルの中心となる処理をまとめた関数です。
+     * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+     */
     function handleSearch(e) {
         e.preventDefault();
         // required validations
@@ -68,13 +100,18 @@ function AppointmentComponent() {
         // build results from JSON matching filters
         const matches = [];
         transportData.transports.forEach(t => {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (t.type !== type) return;
             (t.carriers || []).forEach(c => {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (carrier && c.name !== carrier) return;
                 (c.routes || []).forEach(r => {
+                    // ここで条件を確認し、状況に合う処理だけを実行します。
                     if (from && r.from !== from) return;
+                    // ここで条件を確認し、状況に合う処理だけを実行します。
                     if (to && r.to !== to) return;
                     const times = r.times.slice();
+                    // ここで条件を確認し、状況に合う処理だけを実行します。
                     if (!times || times.length === 0) return;
                     matches.push({ type: t.type, carrier: c.name, from: r.from, to: r.to, times });
                 });
@@ -84,6 +121,7 @@ function AppointmentComponent() {
         setResults({ items: matches });
     }
 
+    // proceedBooking は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const proceedBooking = (it) => {
         navigate('/confirmation', { state: { item: it, date, people } });
     }

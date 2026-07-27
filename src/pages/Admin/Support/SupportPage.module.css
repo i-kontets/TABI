@@ -1,0 +1,36 @@
+.typeTabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.typeTab {
+    min-height: 42px;
+    border: 1px solid #dbe2ef;
+    border-radius: 12px;
+    background: #fff;
+    color: #5f6b85;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.typeTabActive {
+    border-color: #2f6ceb;
+    background: #eef4ff;
+    color: #2f6ceb;
+}
+
+@media (min-width: 601px) {
+    .typeTabs {
+        max-width: 520px;
+        margin-bottom: 16px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .typeTabs {
+        max-width: 420px;
+    }
+}

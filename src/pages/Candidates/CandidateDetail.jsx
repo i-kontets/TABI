@@ -1,9 +1,23 @@
+/**
+ * 旅行先候補の一覧や詳細を表示し、候補選びを進める画面です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Minimap from '../../components/Minimap/Minimap';
 import styles from './CandidateDetail.module.css';
 import { getCandidatePlaceById, typeLabels } from './candidateData';
 
+/**
+ * BackIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function BackIcon() {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -12,6 +26,10 @@ function BackIcon() {
     );
 }
 
+/**
+ * PlusIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function PlusIcon() {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -20,6 +38,10 @@ function PlusIcon() {
     );
 }
 
+/**
+ * StarIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function StarIcon() {
     return (
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ width: '14px', height: '14px', color: '#ffb800', marginRight: '4px', verticalAlign: 'middle' }}>
@@ -28,6 +50,10 @@ function StarIcon() {
     );
 }
 
+/**
+ * CandidateDetail は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function CandidateDetail() {
     const navigate = useNavigate();
     const { candidateId } = useParams();
@@ -38,14 +64,18 @@ function CandidateDetail() {
         return candidateFromState || getCandidatePlaceById(candidateId);
     }, [candidateFromState, candidateId]);
 
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [activeImageIndex, useStateImageIndex] = useState(0);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [isAdded, setIsAdded] = useState(false);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         useStateImageIndex(0);
         setIsAdded(false);
     }, [candidateId]);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!candidate) {
         return (
             <main className={styles.page}>
@@ -68,9 +98,10 @@ function CandidateDetail() {
         );
     }
 
+    // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
     const gallery = candidate.images?.length ? candidate.images : [candidate.image].filter(Boolean);
     const currentImage = gallery[Math.min(activeImageIndex, gallery.length - 1)];
-    
+
     const infoRows = [
         { label: 'カテゴリ', value: typeLabels[candidate.type] || candidate.type },
         { label: '評価', value: candidate.rating ? <><StarIcon />{candidate.rating} / 5</> : '未設定' },
@@ -80,6 +111,7 @@ function CandidateDetail() {
         { label: '料金', value: candidate.price || '未設定' },
     ];
 
+    // handleAdd は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleAdd = () => {
         setIsAdded(!isAdded);
     };

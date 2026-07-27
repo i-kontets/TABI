@@ -1,5 +1,5 @@
 # Logs
-logs
+
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -16,6 +16,11 @@ dist-ssr
 .env
 .env.*
 !.env.example
+TABI-Secrets/
+*.service-account.json
+firebase-service-account*.json
+.fcm-token-cache*
+fcm-debug*.log
 
 # Local AI tool files
 .aider.chat.history.md
@@ -40,7 +45,8 @@ composer.phar
 *.sw?
 
 api/config/env.php
-api/api/config/env.php
+*env.php
+api/config/realtime.php
 
 # Android / Gradle
 android/.gradle/

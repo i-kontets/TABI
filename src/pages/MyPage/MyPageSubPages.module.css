@@ -251,6 +251,289 @@
     color: var(--sub-color);
 }
 
+.emailChangeCard,
+.emailCompleteCard {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+    padding: 22px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 17px;
+}
+
+.emailCompleteCard {
+    text-align: center;
+    align-items: stretch;
+}
+
+.emailInfoBox,
+.emailNoteBox,
+.emailSuccessBox,
+.emailHelpBox {
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    line-height: 1.65;
+}
+
+.emailInfoBox {
+    background: #f2f6ff;
+    color: #1d3f9d;
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.emailInfoBox div,
+.emailSuccessBox div,
+.emailHelpBox div {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.emailInfoBox span,
+.emailSuccessBox span,
+.emailHelpBox span {
+    overflow-wrap: anywhere;
+}
+
+.emailNoteBox {
+    display: block;
+    background: #f7f8fc;
+    color: #101a44;
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.emailNoteBox strong,
+.emailSuccessBox strong,
+.emailHelpBox strong {
+    color: #101a44;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.emailNoteBox ul,
+.emailHelpBox ul {
+    margin: 6px 0 0;
+    padding-left: 18px;
+}
+
+.emailSuccessBox {
+    background: #eef9ef;
+    color: #166534;
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.emailSuccessBox strong {
+    color: #15803d;
+}
+
+.emailCheckIcon {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 auto;
+    border: 2px solid #16a34a;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #16a34a;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.emailHelpBox {
+    border: 1px solid #d8deea;
+    background: #fff;
+    color: #101a44;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.emailSteps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    position: relative;
+    margin: 2px 18px 8px;
+}
+
+.emailSteps::before {
+    content: "";
+    position: absolute;
+    top: 17px;
+    left: 18%;
+    right: 18%;
+    height: 1px;
+    background: #dfe4ee;
+}
+
+.emailStepItem {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+}
+
+.emailStepCircle {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #e7eaf2;
+    color: #747d91;
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.emailStepActive {
+    background: var(--fab-color);
+    color: #fff;
+}
+
+.emailStepLabel {
+    color: #747d91;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.emailStepLabelActive {
+    color: #14215d;
+}
+
+.codeField {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.codeField p {
+    margin: 0;
+    color: #101a44;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.codeInputs {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.codeInputs input {
+    width: 100%;
+    aspect-ratio: 1 / 1.12;
+    min-height: 52px;
+    border: 1px solid #d8deea;
+    border-radius: 10px;
+    background: #fff;
+    color: #111827;
+    font-size: 22px;
+    font-weight: 900;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.emailTimer {
+    margin: -4px 0 0;
+    color: #101a44;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.textButton {
+    align-self: flex-start;
+    border: 0;
+    background: transparent;
+    color: #142bb3;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.textButton:disabled {
+    color: #8a94a6;
+    cursor: default;
+    text-decoration: none;
+}
+
+.completeMark {
+    width: 114px;
+    height: 114px;
+    margin: 18px auto 4px;
+    border-radius: 50%;
+    background: #dff3da;
+    color: #2f934f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 58px;
+    font-weight: 500;
+}
+
+.emailCompleteCard h2 {
+    margin: 0;
+    color: #101a44;
+    font-size: 17px;
+    font-weight: 900;
+    line-height: 1.5;
+}
+
+.emailCompleteCard p {
+    margin: 0;
+    color: #101a44;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.8;
+}
+
+.completeInfoCard {
+    border: 1px solid #d8deea;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: left;
+    display: grid;
+    gap: 6px;
+}
+
+.completeInfoCard strong {
+    color: #101a44;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.completeInfoCard span {
+    color: #101a44;
+    font-size: 14px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.emailInfoIcon {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 auto;
+    border: 2px solid #1d4ed8;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 900;
+}
+
 .toggleRow {
     width: 100%;
     min-height: 72px;
@@ -598,6 +881,107 @@
     color: #667085;
 }
 
+.userEditDetailCard {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.userEditDetailFields {
+    width: 100%;
+    min-width: 0;
+}
+
+.formGroup {
+    /* 親もwidth: 100%とmin-width: 0にして、iPhone Safariのdate入力が内側で縮めずカード外へ広がるのを防ぎます。 */
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.formControl {
+    /*
+     * 生年月日inputとselectで同じ箱を使います。
+     * box-sizing: border-boxならpaddingとborderがwidth: 100%の内側に入るため、親要素から右にはみ出しません。
+     */
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 54px;
+    margin: 0;
+    padding: 0 14px;
+    box-sizing: border-box;
+    border: 1px solid #d5dceb;
+    border-radius: 14px;
+    background-color: #fff;
+    color: #111827;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.dateInputWrapper {
+    /*
+     * 枠線と角丸はinputではなくラッパーで描きます。
+     * iPhone Safariのdate入力が独自の最小幅を持っても、見た目の箱はselectと同じ幅のままになります。
+     */
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    overflow: hidden;
+}
+
+.dateInput {
+    /*
+     * ネイティブdate inputはラッパーの内側だけで100%にします。
+     * border-boxにすることで、左右paddingを含めても親の幅を超えません。
+     */
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 100%;
+    margin: 0;
+    padding: 0 14px;
+    box-sizing: border-box;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: #111827;
+    font: inherit;
+    line-height: normal;
+    text-align: center;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.dateInput:focus {
+    outline: none;
+}
+
+.dateInput::-webkit-date-and-time-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 1px 0 0;
+    text-align: center;
+}
+
+.dateInput::-webkit-datetime-edit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 .userEditBioTextarea {
     min-height: 118px;
     border-radius: 12px;
@@ -612,4 +996,17 @@
     margin-bottom: 18px;
     font-size: 15px;
     box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+}
+
+.notificationSettingHelp {
+    margin: 0 2px;
+    color: #5f6b85;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.7;
+}
+
+.toggleRow:disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
 }

@@ -1,22 +1,43 @@
-import { useEffect, useState } from 'react';
+/**
+ * 管理者向け画面の表示と、管理 API から取得したデータの操作を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: 管理 API から取得した一覧や詳細データ、画面上の検索条件や入力値を主に扱います。
+ */
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
 import { Badge, Card, DetailRow, Button, EmptyState } from '../../../components/Admin/ui/Ui';
 import { fetchInquiry, updateInquiry, replyInquiry } from '../../../services/admin';
+import { useAdminRealtimeRefresh } from '../Realtime/useAdminRealtimeRefresh';
 import styles from './Inquiries.module.css';
 
 const STATUS_OPTIONS = ['未対応', '対応中', '対応済み'];
 
+/**
+ * InquiryDetail は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function InquiryDetail() {
     const { inquiryId } = useParams();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [inquiry, setInquiry] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [status, setStatus] = useState('未対応');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [memo, setMemo] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [reply, setReply] = useState('');
 
-    useEffect(() => {
+    const loadInquiry = useCallback(() => {
+        // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
         fetchInquiry(inquiryId).then((i) => {
             setInquiry(i);
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (i) {
                 setStatus(i.status);
                 setMemo(i.memo || '');
@@ -24,15 +45,25 @@ export default function InquiryDetail() {
         });
     }, [inquiryId]);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
+    useEffect(() => {
+        loadInquiry();
+    }, [loadInquiry]);
+
+    useAdminRealtimeRefresh(['admin:inquiry_updated'], loadInquiry);
+
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!inquiry) {
         return (
-            <AdminLayout title="お問い合わせ詳細" back>
+            <AdminLayout title="お問い合わせ詳細" back backTo="/admin/support?type=inquiries">
                 <EmptyState message="お問い合わせが見つかりません" />
             </AdminLayout>
         );
     }
 
+    // handleReply は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleReply = async () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!reply.trim()) {
             window.alert('返信内容を入力してください。');
             return;
@@ -45,6 +76,7 @@ export default function InquiryDetail() {
         window.alert('返信しました。');
     };
 
+    // handleSaveMemo は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleSaveMemo = async () => {
         const updated = await updateInquiry(inquiry.id, { status, memo });
         setInquiry({ ...updated });
@@ -52,7 +84,7 @@ export default function InquiryDetail() {
     };
 
     return (
-        <AdminLayout title="お問い合わせ詳細" back>
+        <AdminLayout title="お問い合わせ詳細" back backTo="/admin/support?type=inquiries">
             <div className={styles.detailHead}>
                 <Badge label={inquiry.status} />
                 <span className={styles.detailTitle}>{inquiry.title}</span>

@@ -1,3 +1,13 @@
+/**
+ * 複数の画面から使われる共通の表示部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import styles from './bottomNav.module.css';
 import timeIcon from '../../assets/icons/time.svg';
@@ -6,6 +16,10 @@ import AppsIcon from '../../assets/icons/apps.svg';
 import Tbook from '../../assets/icons/Tbook.svg';
 import Meet from '../../assets/icons/speaker_notes.svg';
 
+/**
+ * BottomNav は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function BottomNav() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -21,7 +35,9 @@ function BottomNav() {
         { id: 'other', label: 'その他機能', path: '/Other', icon: AppsIcon },
     ];
 
+    // handleNavigation は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleNavigation = (path) => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (path.startsWith('/group/')) {
             navigate(path);
             return;

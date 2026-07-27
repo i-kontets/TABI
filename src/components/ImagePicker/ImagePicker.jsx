@@ -1,3 +1,13 @@
+/**
+ * 画像を選択したりプレビューしたりする入力部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useRef, useState } from 'react';
 import styles from './ImagePicker.module.css';
 
@@ -10,8 +20,32 @@ const DEFAULT_ASPECT_RATIO = 140 / 110;
 
 // 画像をドラッグしたとき、切り抜き枠からはみ出さないように移動量を制限します。
 // cropSize は枠の大きさ、dispSize は実際に表示している画像サイズです。
-const clampOffset = (value, cropSize, dispSize) =>
-    Math.min(0, Math.max(cropSize - dispSize, value));
+const OFFSET_EPSILON = 0.5;
+
+// clampOffset は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
+const clampOffset = (value, cropSize, dispSize) => {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
+    if (dispSize <= cropSize + OFFSET_EPSILON) {
+        return (cropSize - dispSize) / 2;
+    }
+
+    return Math.min(0, Math.max(cropSize - dispSize, value));
+};
+
+// clampScale は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
+const clampScale = (value, meta) =>
+    Math.min(meta.maxScale, Math.max(meta.minScale, value));
+
+// clampLayout は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
+const clampLayout = (layout, meta) => {
+    const zoom = clampScale(layout.zoom, meta);
+
+    return {
+        zoom,
+        tx: clampOffset(layout.tx, meta.cropW, meta.natW * zoom),
+        ty: clampOffset(layout.ty, meta.cropH, meta.natH * zoom),
+    };
+};
 
 // ここから下は、このコンポーネント内で使うアイコンを SVG で直接定義しています。
 // 画像ファイルを別で用意せず、表示に必要な見た目をこの中で完結させます。
@@ -43,6 +77,7 @@ function ImagePicker({
     fileName = "image.jpg",
     // 切り抜き枠の縦横比（幅 ÷ 高さ）。既定は Home カード画像と同じ長方形です。
     aspectRatio = DEFAULT_ASPECT_RATIO,
+    circular = false,
     editorTitle = label,
     previewAlt = "画像プレビュー",
     addLabel = "画像を追加",
@@ -53,7 +88,9 @@ function ImagePicker({
     // editorLayout は画像の移動量と拡大率を表し、どこを切り抜くかを決めます。
     // editorMeta は元画像の実寸など、切り抜き計算に必要な情報を保持します。
     const [editorSrc, setEditorSrc] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [editorLayout, setEditorLayout] = useState({ tx: 0, ty: 0, zoom: 1 });
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [editorMeta, setEditorMeta] = useState(null);
 
     // ファイル選択ダイアログを開くための参照です。
@@ -75,11 +112,13 @@ function ImagePicker({
         // 同じファイルを選び直せるよう、入力値は毎回リセットします。
         event.target.value = "";
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!file || !file.type.startsWith("image/")) {
             // 画像以外は受け付けません。
             return;
         }
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (editorSrc) {
             // 既に別画像を編集中なら、古い一時 URL を解放します。
             URL.revokeObjectURL(editorSrc);
@@ -98,6 +137,7 @@ function ImagePicker({
         const img = editorImgRef.current;
         const crop = editorCropRef.current;
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!img || !crop) {
             // 要素がまだ取れない場合は、計算できないので何もしません。
             return;
@@ -110,15 +150,16 @@ function ImagePicker({
         const natW = img.naturalWidth;
         const natH = img.naturalHeight;
         // 長方形の枠全体を画像が覆うよう、基準倍率を計算します（cover 相当）。
-        const baseScale = Math.max(cropW / natW, cropH / natH);
+        const minScale = Math.max(cropW / natW, cropH / natH);
+        const maxScale = minScale * 4;
 
         // 元画像サイズと基準倍率を保存し、以後のドラッグやズーム計算に使います。
-        setEditorMeta({ natW, natH, baseScale, cropW, cropH });
+        setEditorMeta({ natW, natH, minScale, maxScale, cropW, cropH });
         // 画像が中央に来るように初期オフセットを設定します。
         setEditorLayout({
-            tx: (cropW - natW * baseScale) / 2,
-            ty: (cropH - natH * baseScale) / 2,
-            zoom: 1,
+            tx: clampOffset((cropW - natW * minScale) / 2, cropW, natW * minScale),
+            ty: clampOffset((cropH - natH * minScale) / 2, cropH, natH * minScale),
+            zoom: minScale,
         });
     };
 
@@ -126,6 +167,7 @@ function ImagePicker({
     const applyZoom = (getNextZoom) => {
         const meta = editorMeta;
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!meta) {
             // 画像メタ情報がなければ、ズーム計算はできません。
             return;
@@ -133,13 +175,14 @@ function ImagePicker({
 
         setEditorLayout((prev) => {
             // ズームは 1 倍から 4 倍までに制限します。
-            const zoom = Math.min(4, Math.max(1, getNextZoom(prev.zoom)));
-            const k1 = meta.baseScale * prev.zoom;
-            const k2 = meta.baseScale * zoom;
+            const zoom = clampScale(getNextZoom(prev.zoom), meta);
+            const k1 = clampScale(prev.zoom, meta);
+            const k2 = zoom;
             const halfW = meta.cropW / 2;
             const halfH = meta.cropH / 2;
             // 現在の表示中心が、元画像上のどの位置を見ているかを計算します。
             const cx = (halfW - prev.tx) / k1;
+            // cy は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
             const cy = (halfH - prev.ty) / k1;
 
             return {
@@ -165,6 +208,7 @@ function ImagePicker({
         const pointers = pointersRef.current;
         const meta = editorMeta;
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!meta || !pointers.has(event.pointerId)) {
             // 画像情報が無い、または追跡対象でない指なら何もしません。
             return;
@@ -179,6 +223,7 @@ function ImagePicker({
             let other = null;
 
             for (const [id, point] of pointers) {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (id !== event.pointerId) {
                     other = point;
                 }
@@ -187,6 +232,7 @@ function ImagePicker({
             const prevDist = Math.hypot(prevPoint.x - other.x, prevPoint.y - other.y);
             const nextDist = Math.hypot(nextPoint.x - other.x, nextPoint.y - other.y);
 
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (prevDist > 0) {
                 applyZoom((prevZoom) => prevZoom * (nextDist / prevDist));
             }
@@ -199,7 +245,7 @@ function ImagePicker({
         const dy = nextPoint.y - prevPoint.y;
 
         setEditorLayout((prev) => {
-            const k = meta.baseScale * prev.zoom;
+            const k = clampScale(prev.zoom, meta);
 
             return {
                 ...prev,
@@ -216,6 +262,7 @@ function ImagePicker({
 
     // 編集をやめて、元の選択画面へ戻ります。
     const closeEditor = () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (editorSrc) {
             // 一時 URL は使い終わるので解放します。
             URL.revokeObjectURL(editorSrc);
@@ -232,13 +279,14 @@ function ImagePicker({
         const img = editorImgRef.current;
         const meta = editorMeta;
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!img || !meta) {
             // 画像が読み込まれていなければ、まだ切り抜きはできません。
             return;
         }
 
-        const { tx, ty, zoom } = editorLayout;
-        const k = meta.baseScale * zoom;
+        const { tx, ty, zoom } = clampLayout(editorLayout, meta);
+        const k = zoom;
 
         // 書き出しサイズは幅を固定し、高さは枠の縦横比から求めます。
         const outputWidth = CROPPED_IMAGE_WIDTH;
@@ -265,6 +313,7 @@ function ImagePicker({
 
         canvas.toBlob(
             (blob) => {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!blob) {
                     return;
                 }
@@ -282,10 +331,11 @@ function ImagePicker({
 
     // 編集中の画像を描画するための style を計算します。
     // 実寸が分かるまでは非表示にして、ちらつきを防ぎます。
-    const editorImgStyle = editorMeta
+    const safeEditorLayout = editorMeta ? clampLayout(editorLayout, editorMeta) : null;
+    const editorImgStyle = editorMeta && safeEditorLayout
         ? {
-            width: `${editorMeta.natW * editorMeta.baseScale * editorLayout.zoom}px`,
-            transform: `translate(${editorLayout.tx}px, ${editorLayout.ty}px)`,
+            width: `${editorMeta.natW * safeEditorLayout.zoom}px`,
+            transform: `translate(${safeEditorLayout.tx}px, ${safeEditorLayout.ty}px)`,
         }
         : { opacity: 0 };
 
@@ -308,7 +358,7 @@ function ImagePicker({
 
                 <div className={styles.row}>
                     {/* 親から渡されたプレビュー画像を表示します。 */}
-                    <div className={styles.preview}>
+                    <div className={[styles.preview, circular ? styles.previewCircle : ''].join(' ')}>
                         {previewUrl ? (
                             <img
                                 src={previewUrl}
@@ -359,7 +409,7 @@ function ImagePicker({
                     {/* ここが画像を実際に切り抜く作業領域です。 */}
                     <div className={styles.editorStage}>
                         <div
-                            className={styles.editorCrop}
+                            className={[styles.editorCrop, circular ? styles.editorCropCircle : ''].join(' ')}
                             style={{ aspectRatio }}
                             ref={editorCropRef}
                             onPointerDown={handleEditorPointerDown}
@@ -384,10 +434,10 @@ function ImagePicker({
                         <input
                             type="range"
                             className={styles.editorSlider}
-                            min="1"
-                            max="4"
-                            step="0.01"
-                            value={editorLayout.zoom}
+                            min={editorMeta?.minScale ?? 1}
+                            max={editorMeta?.maxScale ?? 4}
+                            step={editorMeta ? Math.max((editorMeta.maxScale - editorMeta.minScale) / 300, 0.001) : 0.01}
+                            value={safeEditorLayout?.zoom ?? editorLayout.zoom}
                             onChange={(event) => {
                                 const nextZoom = Number(event.target.value);
                                 applyZoom(() => nextZoom);

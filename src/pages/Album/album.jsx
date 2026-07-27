@@ -1,3 +1,13 @@
+/**
+ * 旅行アルバムの写真や思い出を表示する画面です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useState, useContext, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { TripContext } from '../../App';
@@ -8,34 +18,43 @@ import styles from './album.module.css';
 const MAX_HASHTAG_COUNT = 5;
 const MAX_HASHTAG_LENGTH = 20;
 
+// parseHashtags は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
 const parseHashtags = (value) =>
     String(value || '')
         .replace(/＃/g, '#')
         .replace(/\u3000/g, ' ')
         .split(/\s+/)
+        // 配列のデータを1件ずつ画面表示用の形に変換します。
         .map((tag) => tag.replace(/^[#＃]+/, '').trim())
+        // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         .filter(Boolean);
 
+// formatHashtags は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
 const formatHashtags = (value) => {
     const uniqueTags = [];
 
     parseHashtags(value).forEach((tag) => {
         const normalizedTag = tag.slice(0, MAX_HASHTAG_LENGTH);
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!uniqueTags.includes(normalizedTag) && uniqueTags.length < MAX_HASHTAG_COUNT) {
             uniqueTags.push(normalizedTag);
         }
     });
 
+    // 配列のデータを1件ずつ画面表示用の形に変換します。
     return uniqueTags.map((tag) => `#${tag}`).join(' ');
 };
 
+// getHashtagNotice は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
 const getHashtagNotice = (value) => {
     const tags = parseHashtags(value);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (tags.some((tag) => tag.length > MAX_HASHTAG_LENGTH)) {
         return `1タグ${MAX_HASHTAG_LENGTH}文字までです`;
     }
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (tags.length > MAX_HASHTAG_COUNT) {
         return `タグは${MAX_HASHTAG_COUNT}個までです`;
     }
@@ -43,6 +62,7 @@ const getHashtagNotice = (value) => {
     return '';
 };
 
+// truncateHashtagPreview は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
 const truncateHashtagPreview = (value) => {
     const text = String(value || '');
     return text.length > MAX_HASHTAG_LENGTH
@@ -50,6 +70,10 @@ const truncateHashtagPreview = (value) => {
         : text;
 };
 
+/**
+ * Album は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function Album() {
     // App.jsxで管理している旅行名を、Context経由で受け取っています。
     const { tripName } = useContext(TripContext);
@@ -81,28 +105,35 @@ function Album() {
     const [searchParams] = useSearchParams();
     const groupId = searchParams.get('groupId');
 
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [albumId,setAlbumId] = useState(null);
 
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [uploading, setUploading] = useState(false);
 
-
-
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!groupId) return;
 
+        // fetchAlbum は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const fetchAlbum = async () => {
+            // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
             try {
+                // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                 const response = await fetch(
                     `https://genshin.mond.jp/TABI/api/Photos/GetAlbum.php?group_id=${groupId}`
                 );
 
                 const data = await response.json();
 
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!data.success) {
                     throw new Error(data.message || 'アルバムの取得に失敗しました');
                 }
 
                 setAlbumId(data.album.album_id);
+            // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
             } catch (error) {
                 console.error(error);
             }
@@ -110,23 +141,28 @@ function Album() {
 
         fetchAlbum();
     }, [groupId]);
-    
+
 
     // DBからアルバム写真を取得します。
     useEffect(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!albumId) return;
         const timerId = window.setTimeout(async () => {
+            // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
             try {
+                // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                 const response = await fetch(
                     `https://genshin.mond.jp/TABI/api/Photos/List.php?album_id=${albumId}`
                 );
                 const data = await response.json();
 
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!data.success) {
                     throw new Error(data.message || '写真の取得に失敗しました');
                 }
 
                 setPhotos(data.photos || []);
+            // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
             } catch (error) {
                 console.error(error);
             }
@@ -137,6 +173,7 @@ function Album() {
 
     // 追加画面に切り替わったタイミングで、自動的にファイル選択を開きます。
     useEffect(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (view !== 'add') return;
 
         const timerId = window.setTimeout(() => {
@@ -148,6 +185,7 @@ function Album() {
 
     // 追加画面の「+」ボタンから、手動でファイル選択を開く処理です。
     const openFilePicker = () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!fileInputRef.current) return;
         fileInputRef.current.value = '';
         fileInputRef.current.click();
@@ -156,6 +194,7 @@ function Album() {
     // ファイル選択で画像が選ばれたときに呼ばれる処理です。
     const handleFileSelect = (event) => {
         const files = Array.from(event.target.files || []);
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (files.length === 0) return;
 
         // 選ばれたFileオブジェクトを、画面表示しやすい写真データの形に変換します。
@@ -176,8 +215,10 @@ function Album() {
     const removePendingPhoto = (photoId) => {
         setPendingPhotos((currentPhotos) => {
             const targetPhoto = currentPhotos.find((photo) => photo.id === photoId);
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (targetPhoto) URL.revokeObjectURL(targetPhoto.src);
 
+            // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
             const nextPhotos = currentPhotos.filter((photo) => photo.id !== photoId);
             setActivePendingPhotoId((currentId) =>
                 currentId === photoId ? nextPhotos[0]?.id || null : currentId
@@ -192,6 +233,7 @@ function Album() {
     // 追加予定写真のキャプション入力を更新します。
     const updatePendingPhotoCaption = (photoId, caption) => {
         setPendingPhotos((currentPhotos) =>
+            // 配列のデータを1件ずつ画面表示用の形に変換します。
             currentPhotos.map((photo) =>
                 photo.id === photoId ? { ...photo, caption } : photo
             )
@@ -201,6 +243,7 @@ function Album() {
     // 追加予定写真のハッシュタグ入力を更新します。入力中はIMEを壊さないよう整形しません。
     const updatePendingPhotoHashtags = (photoId, hashtags) => {
         setPendingPhotos((currentPhotos) =>
+            // 配列のデータを1件ずつ画面表示用の形に変換します。
             currentPhotos.map((photo) =>
                 photo.id === photoId ? { ...photo, hashtags } : photo
             )
@@ -210,6 +253,7 @@ function Album() {
     // 入力欄を離れたタイミングで、検索しやすいハッシュタグ形式に整えます。
     const normalizePendingPhotoHashtags = (photoId) => {
         setPendingPhotos((currentPhotos) =>
+            // 配列のデータを1件ずつ画面表示用の形に変換します。
             currentPhotos.map((photo) =>
                 photo.id === photoId ? { ...photo, hashtags: formatHashtags(photo.hashtags) } : photo
             )
@@ -227,8 +271,10 @@ function Album() {
 
     // 選択中の写真をアルバムに追加確定する処理です。
     const addPendingPhotos = async() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (pendingPhotos.length === 0) return;
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if(!albumId){
             alert("アルバムIdが取得できていません")
             return;
@@ -236,7 +282,8 @@ function Album() {
 
         //のちにuserIdとる予定
         const userId = 1;
-        
+
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try{
             setUploading(true);
 
@@ -249,6 +296,7 @@ function Album() {
                 formData.append('caption', photo.caption || '');
                 formData.append('shot_at', '');
 
+                // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                 const response = await fetch (
                     'https://genshin.mond.jp/TABI/api/Photos/Upload.php',
                     {
@@ -259,6 +307,7 @@ function Album() {
 
                 const data = await response.json();
 
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if(!response.ok || !data.success){
                     throw new Error(data.message || '画像アップロードに失敗しました');
                 }
@@ -272,10 +321,12 @@ function Album() {
                 setView('list');
 
                 window.location.reload();
-            
+
+            // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
             }catch (error){
                 console.error(error);
                 alert(error.message || '画像アップロードに失敗しました');
+            // 成功・失敗に関係なく最後に必要な後片付けを行います。
             }finally{
                 setUploading(false)
             } 
@@ -291,6 +342,7 @@ function Album() {
     // 写真のお気に入り状態を切り替える処理です。
     const toggleFavorite = (photoId) => {
         setPhotos((currentPhotos) =>
+            // 配列のデータを1件ずつ画面表示用の形に変換します。
             currentPhotos.map((photo) =>
                 photo.id === photoId ? { ...photo, favorite: !photo.favorite } : photo
             )
@@ -305,13 +357,16 @@ function Album() {
 
     // 詳細表示中の写真をアルバムから削除する処理です。
     const removeSelectedPhoto = () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (selectedIndex === null) return;
 
         const selectedPhoto = photos[selectedIndex];
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (selectedPhoto?.image_url?.startsWith('blob:')) {
             URL.revokeObjectURL(selectedPhoto.image_url);
         }
 
+        // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         setPhotos((currentPhotos) => currentPhotos.filter((_, index) => index !== selectedIndex));
         setSelectedIndex(null);
         setIsMenuOpen(false);
@@ -321,9 +376,11 @@ function Album() {
     // viewがdetailかつ選択されている画像があるなら、投稿詳細風の画面を表示します。
     if (view === 'detail' && selectedIndex !== null) {
         const photo = photos[selectedIndex];
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!photo) return null;
 
         const hashtags = String(photo.hashtags || '');
+        // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         const hashtagList = hashtags.split(/\s+/).filter(Boolean);
         const isFavorite = Boolean(photo.favorite);
         const uploaderName = String(photo.uploaded_by || photo.uploader || '投稿者不明');
