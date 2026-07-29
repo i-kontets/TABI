@@ -9,12 +9,13 @@
  * 扱うデータ: 選択中の旅行グループ { id, name }(TripContext 経由で全画面に共有)。
  */
 // React の状態管理フックを読み込みます。
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 // ルーティング(URLと画面の対応付け)用の部品を読み込みます。
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // 画面をまたいで値を共有するための Context 作成関数を読み込みます。
 import { createContext } from 'react';
 import './App.css'
+import ItineraryJoin from './pages/Itinerary/ItineraryJoin.jsx';
 
 // ===== 各ページコンポーネントの読み込み =====
 import Newreg from './pages/newreg/Newreg';                    // 新規会員登録
@@ -27,7 +28,7 @@ import { ProfileEditPage, UserEditPage, EmailChangePage, NotificationSettingsPag
 import Terms from './pages/Terms/Terms.jsx';                    // 利用規約
 import PrivacyPolicy from './pages/PrivacyPolicy/PrivacyPolicy.jsx'; // プライバシーポリシー
 import UserProfilePage from './pages/UserProfile/UserProfilePage.jsx'; // 他ユーザーの公開プロフィール
-import Itinerary from './pages/Itinerary/Itinerary.jsx';        // 旅程(しおり)表示
+import Itinerary from './pages/Itinerary/itinerary.jsx';        // 旅程(しおり)表示
 import ItineraryEdit from './pages/Itinerary/ItineraryEdit.jsx'; // 旅程編集
 import Tripmap from './pages/Tripmap/Tripmap';                  // 旅行マップ
 import Schedule from './pages/Schedule/Schedule.jsx';           // スケジュール
@@ -49,7 +50,6 @@ import Maintenance from './pages/Maintenance/Maintenance.jsx';  // メンテナ�
 import NotificationListPage from './pages/Notifications/NotificationListPage.jsx';   // 通知一覧
 import NotificationDetailPage from './pages/Notifications/NotificationDetailPage.jsx'; // 通知詳細
 import ServiceAvailabilityGate from './components/ServiceAvailabilityGate.jsx'; // DB稼働状態の門番
-import { isAdminPath, isMaintenancePath } from './services/serviceStatus.js';   // パス判定ヘルパー
 
 // 選択中の旅行グループ情報を全画面で共有するための Context です。
 // 各画面は useContext(TripContext) で { trip, setTrip } を受け取れます。
@@ -61,6 +61,72 @@ function App() {
     const [members, setMembers] = useState([]);
     const [tripPeriod, setTripPeriod] = useState(null);
 
+    const fetchMembers = useCallback(async (groupId) => {
+        if (!groupId) {
+            setMembers([]);
+            return {
+                success: false,
+                status: "missing-group-id",
+                members: [],
+            };
+        }
+
+        try {
+            const response = await fetch("/TABI/api/auth/Members.php", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    group_id: groupId,
+                }),
+            });
+
+            if (response.status === 401) {
+                setMembers([]);
+                return {
+                    success: false,
+                    status: "login-required",
+                    members: [],
+                };
+            }
+
+            const data = await response.json();
+
+            if (data.success && Array.isArray(data.members)) {
+                const normalizedMembers = data.members.map((member) => ({
+                    ...member,
+                    name: member.name ?? "",
+                    initial: member.initial ?? member.name?.charAt(0) ?? "?",
+                    color: member.color ?? "#b5ead7",
+                }));
+
+                setMembers(normalizedMembers);
+                return {
+                    success: true,
+                    status: "ready",
+                    members: normalizedMembers,
+                };
+            }
+
+            setMembers([]);
+            return {
+                success: false,
+                status: "empty",
+                members: [],
+            };
+        } catch (error) {
+            console.error(error);
+            setMembers([]);
+            return {
+                success: false,
+                status: "error",
+                members: [],
+            };
+        }
+    }, []);
+
     return (
         <TripContext.Provider
             value={{
@@ -68,6 +134,7 @@ function App() {
                 setTrip,
                 members,
                 setMembers,
+                fetchMembers,
                 tripPeriod,
                 setTripPeriod,
             }}
@@ -88,6 +155,7 @@ function App() {
                     <Route path="/mypage/contact" element={<ContactPage />} />
                     <Route path="/mypage/faq" element={<FaqPage />} />
                     <Route path="/Itinerary" element={<Itinerary />} />
+                    <Route path="/ItineraryJoin" element={<ItineraryJoin />} />
                     <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
                     <Route path="/Tripmap" element={<Tripmap />} />
                     <Route path="/schedule" element={<Schedule />} />

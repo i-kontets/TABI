@@ -19,7 +19,7 @@ try {
   $stmt = $pdo->prepare("
     SELECT start_date, end_date
     FROM trips
-    WHERE trip_id = ?
+    WHERE group_id = ?
   ");
   $stmt->execute([$group_id]);
 
