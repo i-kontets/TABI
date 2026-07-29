@@ -9,6 +9,7 @@
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import styles from "./Modal.module.css";
 
 /**
@@ -23,6 +24,7 @@ function Modal({ isOpen, onClose, children }) {
             return;
         }
 
+        // モーダル中は背景ページを動かさないため、body のスクロールだけ一時停止します。
         const { overflow } = document.body.style;
         document.body.style.overflow = "hidden";
 
@@ -31,12 +33,31 @@ function Modal({ isOpen, onClose, children }) {
         };
     }, [isOpen]);
 
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
+        // Escape キーで閉じられるようにして、キーボード操作でも戻れるようにします。
+        const handleKeyDown = (event) => {
+            if (event.key === "Escape") {
+                onClose();
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [isOpen, onClose]);
+
     // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!isOpen) {
         return null;
     }
 
-    return (
+    return createPortal(
         <div className={styles.modalOverlay} onClick={onClose}>
             <div
                 className={styles.modal}
@@ -46,7 +67,8 @@ function Modal({ isOpen, onClose, children }) {
             >
                 {children}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
