@@ -10,6 +10,7 @@
  */
 import { useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import MainBottomNav from '../../components/mainBottomNav/MainBottomNav';
 import { CategoryIcon, NotificationEmptyState } from './NotificationComponents';
 import { formatNotificationDateTime, getNotificationAction, normalizeInternalActionPath, normalizeNotification } from './notificationUtils';
 import styles from './Notifications.module.css';
@@ -122,6 +123,8 @@ export default function NotificationDetailPage() {
           {/* 一覧へ戻るボタン付きの空状態を表示します */}
           <NotificationEmptyState title={TEXT.notFoundTitle} body={TEXT.notFoundBody} actionLabel={TEXT.backToList} onAction={() => navigate('/notifications')} />
         </main>
+        {/* 通知詳細でも同じ共通フッターを使い、通知画面ではどの項目もアクティブにしません。 */}
+        <MainBottomNav activeItemId="" />
       </div>
     );
   }
@@ -201,6 +204,8 @@ export default function NotificationDetailPage() {
         {/* 遷移できなかったときのメッセージ(role="status" で読み上げにも対応) */}
         {notice && <p className={styles.inlineNotice} role="status">{notice}</p>}
       </main>
+      {/* 通知詳細は通知専用タブではないため、どのフッター項目もアクティブにしません。 */}
+      <MainBottomNav activeItemId="" />
     </div>
   );
 }
