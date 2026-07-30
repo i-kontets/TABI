@@ -15,7 +15,7 @@ $config = file_exists($configPath) ? require $configPath : [];
 // lolipop : ロリポップ向け設定
 // aws     : AWS RDS 向け設定
 // どの環境に向けて接続するかを、コードを書き換えずに切り替えるための仕組みです。
-$appEnv = $config["APP_ENV"] ?? getenv("APP_ENV") ?: "local";
+$appEnv = $config["APP_ENV"] ?? getenv("APP_ENV") ?: "aws";
 
 // env.php に connections が定義されていれば、環境ごとの設定を優先して使います。
 // ここでの想定は、env.php に複数環境の接続情報をまとめておく形です。

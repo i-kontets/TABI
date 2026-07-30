@@ -10,8 +10,7 @@
 }
 
 .dayPanel {
-  position: relative;
-  padding: 8px 10px 4px;
+  padding: 32px 18px 22px;
   border: 1px solid color-mix(in srgb, var(--other-color) 78%, #ffffff);
   border-radius: 999px;
   background: #ffffff;
@@ -20,28 +19,37 @@
 
 .dayStepper {
   position: relative;
-  z-index: 1;
-  padding: 0;
-  pointer-events: none;
-}
-
-.dayStepper > div {
-  padding: 0;
-}
-
-.stepperDayLayer {
-  position: absolute;
-  inset: 30px 33px auto;
-  z-index: 2;
   display: grid;
-  grid-auto-flow: column;
-  pointer-events: none;
+  align-items: start;
 }
 
-.stepperDayText {
+.dayStep {
+  position: relative;
+  border: 0;
+  background: transparent;
+  color: var(--sub-color);
+  cursor: pointer;
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 0;
+  min-width: 0;
+  font: inherit;
+}
+
+.dayStep:focus-visible {
+  outline: 2px solid var(--sub-color);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+.dayStepCircle {
+  position: relative;
+  z-index: 1;
   width: 38px;
   height: 38px;
-  justify-self: center;
+  border-radius: 50%;
+  background: var(--other-color);
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -51,39 +59,44 @@
   line-height: 1;
 }
 
-.stepperDayTextActive {
+.dayStepActive .dayStepCircle,
+.dayStepCompleted .dayStepCircle {
+  background: var(--sub-color);
   color: #ffffff;
 }
 
-.stepperDayLabel {
+.dayStepPrefix {
   font-size: 8px;
   font-weight: 700;
   text-transform: lowercase;
 }
 
-.stepperDayNumber {
+.dayStepNumber {
   font-size: 14px;
   font-weight: 800;
 }
 
-.stepperClickLayer {
+.dayStepDate {
+  color: #000000;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dayStepConnector {
   position: absolute;
-  inset: 8px 10px 4px;
-  z-index: 3;
-  display: grid;
-  grid-auto-flow: column;
-}
-
-.stepperClickTarget {
-  border: 0;
+  top: 18px;
+  right: calc(50% + 22px);
+  width: calc(100% - 44px);
+  height: 2px;
   border-radius: 999px;
-  background: transparent;
-  cursor: pointer;
+  background: var(--other-color);
 }
 
-.stepperClickTarget:focus-visible {
-  outline: 2px solid var(--sub-color);
-  outline-offset: -2px;
+.dayStepActive .dayStepConnector,
+.dayStepCompleted .dayStepConnector {
+  background: var(--sub-color);
 }
 
 .createButton {

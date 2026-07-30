@@ -1,5 +1,4 @@
 import { useContext, useState } from 'react';
-import { Stepper } from 'react-form-stepper';
 import { TripContext } from '../../App';
 import ScheduleTimeAxis from '../../components/Schedule/ScheduleTimeAxis';
 import BottomNav from '../../components/bottomNav/BottomNav';
@@ -20,10 +19,6 @@ export default function SchedulePage() {
     const { tripName } = useContext(TripContext);
     const [selectedDay, setSelectedDay] = useState('day1');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const selectedDayIndex = days.findIndex((day) => day.id === selectedDay);
-    const rootStyles = getComputedStyle(document.documentElement);
-    const subColor = rootStyles.getPropertyValue('--sub-color').trim();
-    const otherColor = rootStyles.getPropertyValue('--other-color').trim();
 
     return (
         <div className={styles.container}>
@@ -31,59 +26,29 @@ export default function SchedulePage() {
 
             <main className={styles.content}>
                 <section className={styles.dayPanel} aria-label="日付選択">
-                    <Stepper
-                        steps={days.map((day) => ({ label: day.date }))}
-                        activeStep={selectedDayIndex}
-                        connectorStateColors
-                        className={styles.dayStepper}
-                        styleConfig={{
-                            activeBgColor: subColor,
-                            activeTextColor: '#ffffff',
-                            completedBgColor: subColor,
-                            completedTextColor: '#ffffff',
-                            inactiveBgColor: otherColor,
-                            inactiveTextColor: subColor,
-                            size: '38px',
-                            circleFontSize: '0',
-                            labelFontSize: '12px',
-                            borderRadius: '999px',
-                            fontWeight: 700,
-                        }}
-                        connectorStyleConfig={{
-                            activeColor: subColor,
-                            completedColor: subColor,
-                            disabledColor: otherColor,
-                            size: 2,
-                            stepSize: '38px',
-                        }}
-                    />
-
-                    <div className={styles.stepperDayLayer} style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }} aria-hidden="true">
+                    <div className={styles.dayStepper} style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
                         {days.map((day, index) => {
                             const isActive = selectedDay === day.id;
+                            const isCompleted = days.findIndex((item) => item.id === selectedDay) > index;
 
                             return (
-                                <span
+                                <button
                                     key={day.id}
-                                    className={`${styles.stepperDayText} ${isActive ? styles.stepperDayTextActive : ''}`}
+                                    className={`${styles.dayStep} ${isActive ? styles.dayStepActive : ''} ${isCompleted ? styles.dayStepCompleted : ''}`}
+                                    type="button"
+                                    onClick={() => setSelectedDay(day.id)}
+                                    aria-label={`${day.date}の予定を表示`}
+                                    aria-current={isActive ? 'step' : undefined}
                                 >
-                                    <span className={styles.stepperDayLabel}>day</span>
-                                    <span className={styles.stepperDayNumber}>{index + 1}</span>
-                                </span>
+                                    {index > 0 && <span className={styles.dayStepConnector} aria-hidden="true" />}
+                                    <span className={styles.dayStepCircle}>
+                                        <span className={styles.dayStepPrefix}>day</span>
+                                        <span className={styles.dayStepNumber}>{index + 1}</span>
+                                    </span>
+                                    <span className={styles.dayStepDate}>{day.date}</span>
+                                </button>
                             );
                         })}
-                    </div>
-
-                    <div className={styles.stepperClickLayer} style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }} aria-label="日付を切り替え">
-                        {days.map((day) => (
-                            <button
-                                key={day.id}
-                                className={styles.stepperClickTarget}
-                                type="button"
-                                onClick={() => setSelectedDay(day.id)}
-                                aria-label={`${day.date}の予定を表示`}
-                            />
-                        ))}
                     </div>
                 </section>
 
