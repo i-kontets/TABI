@@ -10,7 +10,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import BottomNav from '../../components/bottomNav/BottomNav';
+import MainBottomNav from '../../components/mainBottomNav/MainBottomNav';
 import { fetchNotifications, fetchUnreadNotificationCount, markAllNotificationsAsRead, markNotificationAsRead } from '../../api/notificationApi';
 import { notifyUnreadNotificationBadgeChanged } from '../../api/useUnreadNotificationBadge';
 import { NotificationEmptyState, NotificationItem, NotificationSkeleton, NotificationTabs } from './NotificationComponents';
@@ -414,8 +414,8 @@ export default function NotificationListPage() {
         )}
       </main>
 
-      {/* 画面下部の共通ナビゲーションバー */}
-      <BottomNav />
+      {/* 通知画面は専用タブを持たないため、Homeを勝手にアクティブにせず共通フッターだけ表示します。 */}
+      <MainBottomNav activeItemId="" />
     </div>
   );
 }

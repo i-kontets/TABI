@@ -35,6 +35,22 @@ function realtime_config(string $key, $default = null)
     return $realtimeConfig[$key] ?? $default;
 }
 
+/**
+
+ * DBの値や入力値を、フロントエンドへ返しやすい形式に変換します。
+
+ *
+
+ * @param string $key 呼び出し元から渡される処理対象の値です。
+
+ * @param $default = null 呼び出し元から渡される処理対象の値です。
+
+ * @return 戻り値の型は明示されていません。echo、配列、または副作用で結果を扱います。
+
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+
+ */
+
 function realtime_app_config(string $key, $default = null)
 {
     if (function_exists("app_config")) {

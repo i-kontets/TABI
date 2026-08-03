@@ -12,6 +12,13 @@
  */
 
 // users 一覧は、プロフィールや利用状況の補助情報をまとめて管理画面向けに整形します。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_users(PDO $pdo): array
 {
     // users を中心に、プロフィール・端末ログイン情報・グループ参加・投稿数をJOINでまとめて取得します。
@@ -62,6 +69,13 @@ function fetch_users(PDO $pdo): array
 
 // グループ一覧を取得します。
 // メンバー数や旅行期間、旅程数、アルバム数などを集計して返します。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_groups(PDO $pdo): array
 {
     // グループ一覧では、グループ基本情報に加えてメンバー数・旅程数・アルバム数を集計します。
@@ -130,6 +144,13 @@ function fetch_groups(PDO $pdo): array
 
 // 投稿一覧を取得します。
 // 投稿本文だけでなく、投稿者・所属グループ・通報件数も合わせて返します。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_posts(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -173,6 +194,13 @@ function fetch_posts(PDO $pdo): array
 
 // 通報一覧を取得します。
 // 対象ユーザー、通報者、通報理由、管理メモなど、処理に必要な情報をひとまとめにします。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_reports(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -206,6 +234,13 @@ function fetch_reports(PDO $pdo): array
 
 // お問い合わせ一覧を取得します。
 // 返信に必要なユーザー名やメールアドレスも一緒に返します。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_inquiries(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -232,6 +267,13 @@ function fetch_inquiries(PDO $pdo): array
 
 // お知らせ一覧を取得します。
 // 削除済みを除外して、公開状態や配信期間が分かる形に整えます。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_notices(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -256,6 +298,13 @@ function fetch_notices(PDO $pdo): array
 
 // 観光スポット一覧を取得します。
 // 緯度経度や公開状態を含めて返し、管理画面でそのまま使える形にします。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_spots(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -279,6 +328,13 @@ function fetch_spots(PDO $pdo): array
 
 // 管理者一覧を取得します。
 // 権限レベルを役割名に変換し、最終ログイン日時も付けて返します。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_managers(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -302,6 +358,13 @@ function fetch_managers(PDO $pdo): array
 
 // 管理操作ログを取得します。
 // 誰が何をしたかを時系列で追えるようにする監査用データです。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_logs(PDO $pdo): array
 {
     $rows = $pdo->query("
@@ -321,6 +384,13 @@ function fetch_logs(PDO $pdo): array
 }
 
 // activity_type は、ログやタイムライン上で使う種別キーへ変換します。
+/**
+ * DBの値や入力値を、フロントエンドへ返しやすい形式に変換します。
+ *
+ * @param ?string $targetType 呼び出し元から渡される処理対象の値です。
+ * @return string 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function activity_type(?string $targetType): string
 {
     return [
@@ -343,6 +413,13 @@ function activity_type(?string $targetType): string
 }
 
 // activity_time は、履歴表示用に mm/dd HH:ii 相当の短い表記へ丸めます。
+/**
+ * DBの値や入力値を、フロントエンドへ返しやすい形式に変換します。
+ *
+ * @param ?string $value 呼び出し元から渡される処理対象の値です。
+ * @return string 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function activity_time(?string $value): string
 {
     // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
@@ -360,6 +437,14 @@ function activity_time(?string $value): string
 }
 
 // 最近の管理アクティビティを、種類ごとに集めて 1 つのタイムラインにまとめます。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @param ?int $limit = 8 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_recent_activities(PDO $pdo, ?int $limit = 8): array
 {
     $activities = [];
@@ -483,6 +568,13 @@ function fetch_recent_activities(PDO $pdo, ?int $limit = 8): array
 }
 
 // 今日のアクティブユーザー数を取得します。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_pending_support_items(PDO $pdo): array
 {
     $items = [];
@@ -952,6 +1044,13 @@ function fetch_today_active_users(PDO $pdo): int
 }
 
 // 過去7日間の日別アクティブユーザー数を取得します。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_active_user_trend(PDO $pdo): array
 {
     $labels = [];
@@ -1029,6 +1128,13 @@ function fetch_active_user_trend(PDO $pdo): array
 }
 
 // PWAプッシュ通知の許可状況を、push_token の有無で集計します。
+/**
+ * DBや設定値から必要なデータを取得し、画面側で扱える配列に整えます。
+ *
+ * @param PDO $pdo 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function fetch_notification_permissions(PDO $pdo): array
 {
     $row = $pdo->query("

@@ -1,5 +1,18 @@
 <?php
 
+
+/**
+ * 通知APIで共通利用する認証確認、入力値取得、通知データ整形をまとめた共通ファイルです。
+ *
+ * 使用画面・機能: 通知一覧、通知設定、通知バッジ、FCM端末登録
+ * 呼び出し元: 現在のコード内では直接のfetch呼び出しを確認できません。
+ * URL: /api/Notifications/Common.php
+ * HTTPメソッド: コード内でHTTPメソッドの明示判定なし
+ * 入力: URLクエリ($_GET)、ログイン情報($_SESSION)
+ * 使用DB: notification_recipients、notifications
+ * 認証情報や秘密鍵などの実値はコメントに残さず、処理の目的だけを説明します。
+ */
+
 declare(strict_types=1);
 
 /**

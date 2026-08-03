@@ -24,6 +24,14 @@ require_once __DIR__ . "/../Admin/includes/config.php";
 require_once __DIR__ . "/../Admin/services/realtime.php";
 
 // レスポンスをJSONで返して終了する共通関数
+/**
+ * APIレスポンスをJSON形式で返し、HTTPステータスもここでそろえます。
+ *
+ * @param array $payload 呼び出し元から渡される処理対象の値です。
+ * @param int $status = 200 呼び出し元から渡される処理対象の値です。
+ * @return void 宣言された型に合わせて処理結果を返します。
+ * エラー時はHTTPステータス、ログ、または共通レスポンスで呼び出し元へ伝えます。
+ */
 function respond(array $payload, int $status = 200): void
 {
     http_response_code($status);
@@ -33,6 +41,13 @@ function respond(array $payload, int $status = 200): void
 }
 
 // 「YYYY-MM-DD」形式の日付かどうかを検証する
+/**
+ * 入力された値が後続処理で使える形式かを確認します。
+ *
+ * @param ?string $value 呼び出し元から渡される処理対象の値です。
+ * @return bool 宣言された型に合わせて処理結果を返します。
+ * エラー時はHTTPステータス、ログ、または共通レスポンスで呼び出し元へ伝えます。
+ */
 function isValidDate(?string $value): bool
 {
     // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。

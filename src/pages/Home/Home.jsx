@@ -14,6 +14,7 @@ import { TripContext } from "../../App";
 import TravelGroupCard from '../../components/TravelGroupCard/TravelGroupCard';
 import Modal from '../../components/Modal/Modal';
 import ImagePicker from '../../components/ImagePicker/ImagePicker';
+import MainBottomNav from '../../components/mainBottomNav/MainBottomNav';
 import styles from './Home.module.css';
 import { useUnreadNotificationBadge } from '../../api/useUnreadNotificationBadge';
 
@@ -50,33 +51,6 @@ function LogoutIcon({ className }) {
             <path d="M10 5H5v14h5" />
             <path d="M14 8l4 4-4 4" />
             <path d="M8 12h10" />
-        </svg>
-    );
-}
-
-/**
- * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
-function HomeIcon({ className }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 11.5 12 4l9 7.5" />
-            <path d="M5.5 10.5V20h13v-9.5" />
-            <path d="M9.5 20v-5h5v5" />
-        </svg>
-    );
-}
-
-/**
- * UserIcon は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
-function UserIcon({ className }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
-            <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
         </svg>
     );
 }
@@ -490,28 +464,8 @@ function Home() {
                 </form>
             </Modal>
 
-            {/* 画面下部のナビゲーションです。ホームとマイページを切り替えます。 */}
-            <footer className={styles.footer}>
-                <button
-                    type="button"
-                    className={`${styles.footerItem} ${styles.footerItemActive}`}
-                    onClick={() => navigate('/Home')}
-                    aria-label="ホーム"
-                >
-                    <HomeIcon className={styles.footerIcon} />
-                    <span>ホーム</span>
-                </button>
-
-                <button
-                    type="button"
-                    className={styles.footerItem}
-                    onClick={() => navigate('/mypage')}
-                    aria-label="マイページ"
-                >
-                    <UserIcon className={styles.footerIcon} />
-                    <span>マイページ</span>
-                </button>
-            </footer>
+            {/* Home・マイページ・通知画面で同じフッターを使い、リンク先と見た目のずれを防ぎます。 */}
+            <MainBottomNav />
         </div>
     );
 }

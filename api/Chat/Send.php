@@ -28,6 +28,13 @@ require_once __DIR__ . "/../Groups/S3Common.php";
 
 // 文字列の先頭1文字を取り出す。
 // ユーザー名のアイコン代わりに使うため、マルチバイト文字にも対応する。
+/**
+ * DBの値や入力値を、フロントエンドへ返しやすい形式に変換します。
+ *
+ * @param string $value 呼び出し元から渡される処理対象の値です。
+ * @return string 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function firstCharacter(string $value): string
 {
     return function_exists("mb_substr")
@@ -37,6 +44,13 @@ function firstCharacter(string $value): string
 
 // 文字数を数える。
 // 日本語などのマルチバイト文字を含んでも、入力上限の判定を正しく行うために使う。
+/**
+ * DBの値や入力値を、フロントエンドへ返しやすい形式に変換します。
+ *
+ * @param string $value 呼び出し元から渡される処理対象の値です。
+ * @return int 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function textLength(string $value): int
 {
     return function_exists("mb_strlen")
@@ -61,6 +75,13 @@ function formatDateLabel(DateTimeImmutable $date): string
 }
 
 // 送信は POST のみ受け付ける。
+/**
+ * 同じ処理を複数箇所へ書かないために、このAPI内の共通処理としてまとめています。
+ *
+ * @param ?string $iconValue 呼び出し元から渡される処理対象の値です。
+ * @return ?string 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function resolveUserIconUrl(?string $iconValue): ?string
 {
     static $initialized = false, $s3 = null, $aws = null, $cache = [];
