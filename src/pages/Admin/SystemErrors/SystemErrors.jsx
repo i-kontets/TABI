@@ -1,3 +1,13 @@
+/**
+ * 管理者向け画面の表示と、管理 API から取得したデータの操作を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: 管理 API から取得した一覧や詳細データ、画面上の検索条件や入力値を主に扱います。
+ */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
@@ -17,14 +27,23 @@ const SEVERITY_OPTIONS = ['', 'critical', 'error', 'warning', 'info'];
 const SOURCE_OPTIONS = ['', 'frontend', 'backend', 'auth', 'database', 'API', 'other'];
 const PER_PAGE = 25;
 
+/**
+ * readPositiveInt は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function readPositiveInt(value, fallback) {
     const parsed = Number.parseInt(value, 10);
     return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+/**
+ * buildQueryParams は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function buildQueryParams(searchParams, overrides = {}) {
     const next = new URLSearchParams(searchParams);
     Object.entries(overrides).forEach(([key, value]) => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (value === undefined || value === null || value === '') {
             next.delete(key);
         } else {
@@ -34,16 +53,29 @@ function buildQueryParams(searchParams, overrides = {}) {
     return next;
 }
 
+/**
+ * visiblePages は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function visiblePages(currentPage, totalPages) {
     const pages = new Set([1, totalPages, currentPage - 1, currentPage, currentPage + 1]);
+    // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
     return [...pages].filter((page) => page >= 1 && page <= totalPages).sort((a, b) => a - b);
 }
 
+/**
+ * SystemErrors は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function SystemErrors() {
     const [searchParams, setSearchParams] = useSearchParams();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [result, setResult] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [isLoading, setIsLoading] = useState(true);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [errorMessage, setErrorMessage] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [openedId, setOpenedId] = useState('');
     const queryString = searchParams.toString();
 
@@ -66,8 +98,10 @@ export default function SystemErrors() {
 
         // 一覧は件数が増えるため、Reactで全件を持たずAPIへページ番号と検索条件を渡します。
         fetchSystemErrors({ ...filters, limit: PER_PAGE })
+            // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
             .then((nextResult) => {
                 setResult(nextResult);
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (nextResult.page !== filters.page) {
                     setSearchParams(buildQueryParams(new URLSearchParams(queryString), { page: nextResult.page }), { replace: true });
                 }
@@ -76,17 +110,20 @@ export default function SystemErrors() {
             .finally(() => setIsLoading(false));
     }, [filters, queryString, setSearchParams]);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         loadErrors();
     }, [loadErrors]);
 
     useAdminRealtimeRefresh(['admin:system_error_created', 'admin:system_error_resolved'], loadErrors);
 
+    // updateFilter は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const updateFilter = (key, value) => {
         // 検索条件を変えたときは、古いページ番号だと0件になりやすいので1ページ目へ戻します。
         setSearchParams(buildQueryParams(new URLSearchParams(queryString), { [key]: value, page: 1 }));
     };
 
+    // changePage は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const changePage = (page) => {
         setSearchParams(buildQueryParams(new URLSearchParams(queryString), { page }));
     };

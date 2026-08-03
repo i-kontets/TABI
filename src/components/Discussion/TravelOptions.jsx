@@ -1,3 +1,13 @@
+/**
+ * 旅行グループ内の話し合い、候補、投票などの画面表示を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 // React Hooks と React Router のインポート
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -17,9 +27,9 @@ const categoryLabels = {
 
 /**
  * 候補に紐づいた画像またはアイコンを表示するコンポーネント
- * 
+ *
  * @param {Object} candidate 候補オブジェクト（candidate_type, img_url を含む）
- * 
+ *
  * 処理：
  * 1. img_url が存在する場合：画像タグで表示
  * 2. img_url が空の場合：候補タイプに応じたアイコン（⌂, ⌖, ◇, 🍴）を表示
@@ -43,10 +53,10 @@ function CandidateVisual({ candidate }) {
 
 /**
  * バックエンドAPI（GetCandidates.php）から候補・旅行情報を取得する非同期関数
- * 
+ *
  * @param {string} groupId グループID
  * @returns {Promise<Object>} { candidates: [], trip: {} } の形式で、候補一覧と旅行情報を返す
- * 
+ *
  * 処理：
  * 1. GetCandidates.php へGETリクエストを送信
  * 2. レスポンスをJSON形式でパース
@@ -75,7 +85,7 @@ async function requestCandidates(groupId) {
 
 /**
  * 旅行候補一覧を表示するメインコンポーネント
- * 
+ *
  * 機能：
  * - 複数のカテゴリー（旅行先、スポット、宿泊先、食べたい物）の候補を表示
  * - タブで候補のカテゴリーを切り替え
@@ -86,28 +96,29 @@ function TravelOptions({ active }) {
     // URL パラメータから groupId を取得（デフォルト値は "1"）
     const { groupId = "1" } = useParams();
     const navigate = useNavigate();
-    
+
     // 状態管理
     // activeCategory: 現在選択されているカテゴリー（destination, spot, hotel, restaurant）
     const [activeCategory, setActiveCategory] = useState("destination");
-    
+
     // candidates: 取得した候補データの配列
     const [candidates, setCandidates] = useState([]);
-    
+
     // tripTitle: 旅行タイトル（API から取得）
     const [tripTitle, setTripTitle] = useState("");
-    
+
     // selectedCandidate: モーダルで表示する選択された候補オブジェクト（null の場合モーダルは非表示）
     const [selectedCandidate, setSelectedCandidate] = useState(null);
-    
+
     // loading: API通信中かどうかを示すフラグ（true = 読み込み中）
     const [loading, setLoading] = useState(true);
-    
+
     // notice: ユーザーへの通知メッセージ
     const [notice, setNotice] = useState("");
-    
+
     // コンポーネント マウント時に候補・旅行データを初期取得する処理
     useEffect(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!active) {
             return undefined;
         }
@@ -123,6 +134,7 @@ function TravelOptions({ active }) {
         requestCandidates(groupId)
             // 取得成功時
             .then((data) => {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (cancelled) {
                     return;
                 }
@@ -133,6 +145,7 @@ function TravelOptions({ active }) {
             })
             // 取得失敗時
             .catch(() => {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (cancelled) {
                     return;
                 }
@@ -142,6 +155,7 @@ function TravelOptions({ active }) {
             })
             // 成功・失敗の両方で実行
             .finally(() => {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!cancelled) {
                     // ローディング状態を終了
                     setLoading(false);
@@ -157,6 +171,7 @@ function TravelOptions({ active }) {
     // 現在のカテゴリーに属する候補のみをフィルタリングする処理
     // activeCategory が変更されたときのみ再計算される
     const visibleCandidates = useMemo(
+        // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         () => candidates.filter((candidate) => candidate.candidate_type === activeCategory),
         [activeCategory, candidates],
     );
@@ -169,6 +184,7 @@ function TravelOptions({ active }) {
         setNotice("");
     };
 
+    // openCandidateSearch は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const openCandidateSearch = () => {
         navigate(`/Candidates?groupId=${encodeURIComponent(groupId)}`);
     };

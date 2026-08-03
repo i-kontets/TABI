@@ -881,6 +881,107 @@
     color: #667085;
 }
 
+.userEditDetailCard {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.userEditDetailFields {
+    width: 100%;
+    min-width: 0;
+}
+
+.formGroup {
+    /* 親もwidth: 100%とmin-width: 0にして、iPhone Safariのdate入力が内側で縮めずカード外へ広がるのを防ぎます。 */
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.formControl {
+    /*
+     * 生年月日inputとselectで同じ箱を使います。
+     * box-sizing: border-boxならpaddingとborderがwidth: 100%の内側に入るため、親要素から右にはみ出しません。
+     */
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 54px;
+    margin: 0;
+    padding: 0 14px;
+    box-sizing: border-box;
+    border: 1px solid #d5dceb;
+    border-radius: 14px;
+    background-color: #fff;
+    color: #111827;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.dateInputWrapper {
+    /*
+     * 枠線と角丸はinputではなくラッパーで描きます。
+     * iPhone Safariのdate入力が独自の最小幅を持っても、見た目の箱はselectと同じ幅のままになります。
+     */
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    overflow: hidden;
+}
+
+.dateInput {
+    /*
+     * ネイティブdate inputはラッパーの内側だけで100%にします。
+     * border-boxにすることで、左右paddingを含めても親の幅を超えません。
+     */
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 100%;
+    margin: 0;
+    padding: 0 14px;
+    box-sizing: border-box;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: #111827;
+    font: inherit;
+    line-height: normal;
+    text-align: center;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.dateInput:focus {
+    outline: none;
+}
+
+.dateInput::-webkit-date-and-time-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 1px 0 0;
+    text-align: center;
+}
+
+.dateInput::-webkit-datetime-edit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
 .userEditBioTextarea {
     min-height: 118px;
     border-radius: 12px;
@@ -895,4 +996,17 @@
     margin-bottom: 18px;
     font-size: 15px;
     box-shadow: 0 8px 18px rgba(37, 99, 235, 0.22);
+}
+
+.notificationSettingHelp {
+    margin: 0 2px;
+    color: #5f6b85;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.7;
+}
+
+.toggleRow:disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
 }

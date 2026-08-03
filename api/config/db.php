@@ -1,4 +1,16 @@
 <?php
+
+/**
+ * データベースへ接続するための設定と PDO 接続を作るファイルです。
+ *
+ * 主な流れ:
+ * 1. リクエストやセッションなど、処理に必要な情報を読み取る
+ * 2. 入力値や権限を確認し、必要に応じてデータベースへ問い合わせる
+ * 3. 処理結果を JSON などの形でフロントエンドへ返す
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+
 /**
  * TABI 全体で使用するデータベース接続ファイルです。
  *
@@ -11,6 +23,7 @@
  */
 header("Content-Type: application/json; charset=UTF-8");
 
+// 共通設定や別ファイルの関数を読み込み、この API から使えるようにします。
 require_once __DIR__ . "/serviceSchedule.php";
 
 // status.php やエラー記録APIなど、DB停止中でも呼び出したいAPIはここで除外します。
@@ -22,6 +35,7 @@ $config = file_exists($configPath) ? require $configPath : [];
 
 // DB access is fixed to the AWS RDS connection profile.
 // Secrets stay in env.php or server environment variables.
+// 現在はAWS RDS接続を使う前提です。ローカルDBへ切り替える場合は、この判定とenv.php側の設定を一緒に見直します。
 $appEnv = "aws";
 $awsConfig = $config["connections"]["aws"] ?? [];
 
@@ -34,6 +48,7 @@ $charset = $awsConfig["DB_CHARSET"] ?? "utf8mb4";
 // 接続に最低限必要な情報がない場合は、SQLを実行する前にエラーとして終了します。
 if ($host === "" || $dbname === "" || $user === "") {
     http_response_code(500);
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     echo json_encode([
         "success" => false,
         "message" => "AWS RDS config is missing",
@@ -42,8 +57,10 @@ if ($host === "" || $dbname === "" || $user === "") {
     exit;
 }
 
+// データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
     // PDOでMySQLへ接続します。ATTR_TIMEOUT は、DB停止中に長く待ちすぎないための秒数です。
+    // PDOでAWS RDS上のMySQLへ接続します。タイムアウトを短めにし、DB停止時に画面が長く待たされないようにしています。
     $pdo = new PDO(
         "mysql:host={$host};dbname={$dbname};charset={$charset}",
         $user,
@@ -54,7 +71,9 @@ try {
             PDO::ATTR_TIMEOUT => 3,
         ]
     );
+// エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
 } catch (PDOException $e) {
+    // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if (!$serviceGuardExempt) {
         // 接続失敗時だけ、現在時刻が稼働予定内かどうかを見て「予定停止」か「予定外障害」かを分けます。
         $serviceStatus = tabiEvaluateServiceSchedule();
@@ -63,9 +82,12 @@ try {
         $checkedAt = (new DateTimeImmutable("now", new DateTimeZone("Asia/Tokyo")))->format(DateTimeInterface::ATOM);
 
         http_response_code(503);
+        // フロントエンドへ返すデータ形式や通信ルールを、HTTP ヘッダーとして伝えます。
         header("Cache-Control: no-store, no-cache, must-revalidate");
+        // フロントエンドへ返すデータ形式や通信ルールを、HTTP ヘッダーとして伝えます。
         header("Pragma: no-cache");
 
+        // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         echo json_encode([
             "success" => false,
             // code/status はフロントエンドが専用画面へ切り替えるために使う状態名です。
@@ -88,6 +110,7 @@ try {
 
     http_response_code(500);
 
+    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
     echo json_encode([
         "success" => false,
         "message" => "DB connection failed",

@@ -1,3 +1,13 @@
+/**
+ * 新規登録画面の入力、登録 API への送信、登録後の案内を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import PasswordInput from "../../components/Zxcvbn/Password";
@@ -7,11 +17,17 @@ import styles from "./Newreg.module.css";
 
 // public/assets/login/ 直下にあるすべてのjpg,jpeg,png,webp画像を自動で読み込む
 const imageModules = import.meta.glob("/public/assets/login/*.{jpg,jpeg,png,webp}", { eager: true });
+// 配列のデータを1件ずつ画面表示用の形に変換します。
 const BACKGROUND_IMAGES = Object.values(imageModules).map((mod) => mod.default);
 const SCROLL_BOTTOM_TOLERANCE = 8;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * getRandomBackgroundImage は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function getRandomBackgroundImage() {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (BACKGROUND_IMAGES.length === 0) {
         return "";
     }
@@ -31,18 +47,29 @@ const POLICY_CONTENT = {
     },
 };
 
+/**
+ * paragraphToText は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function paragraphToText(paragraph) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (typeof paragraph === "string") {
         return paragraph;
     }
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (paragraph?.parts) {
+        // 配列のデータを1件ずつ画面表示用の形に変換します。
         return paragraph.parts.map((part) => part.text).join("");
     }
 
     return "";
 }
 
+/**
+ * PolicyRow は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function PolicyRow({ title, confirmed, onOpen }) {
     return (
         <button type="button" className={styles.policyRow} onClick={onOpen}>
@@ -63,28 +90,44 @@ function PolicyRow({ title, confirmed, onOpen }) {
     );
 }
 
+/**
+ * Newreg は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function Newreg() {
     const navigate = useNavigate();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [name, setName] = useState("");
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [email, setEmail] = useState("");
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [touched, setTouched] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [passwordData, setPasswordData] = useState({
         password: "",
         confirm: "",
         isValid: false,
     });
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [termsConfirmed, setTermsConfirmed] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [privacyConfirmed, setPrivacyConfirmed] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [agreed, setAgreed] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [activePolicy, setActivePolicy] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [reachedBottom, setReachedBottom] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [errorMessage, setErrorMessage] = useState("");
     const policyBodyRef = useRef(null);
 
     // 背景画像用のステート（初期表示ごとにランダムで1枚選ぶ）
     const [bgImage] = useState(getRandomBackgroundImage);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!activePolicy) {
             return undefined;
         }
@@ -92,7 +135,9 @@ export default function Newreg() {
         const originalOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
 
+        // handleKeyDown は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const handleKeyDown = (event) => {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (event.key === "Escape") {
                 setActivePolicy(null);
             }
@@ -106,9 +151,11 @@ export default function Newreg() {
         };
     }, [activePolicy]);
 
+    // checkPolicyScroll は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const checkPolicyScroll = () => {
         const body = policyBodyRef.current;
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!body) {
             return;
         }
@@ -117,7 +164,9 @@ export default function Newreg() {
         setReachedBottom(remaining <= SCROLL_BOTTOM_TOLERANCE);
     };
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!activePolicy) {
             return undefined;
         }
@@ -127,24 +176,30 @@ export default function Newreg() {
         return () => cancelAnimationFrame(animationFrameId);
     }, [activePolicy]);
 
+    // openPolicy は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const openPolicy = (policyType) => {
         setReachedBottom(false);
         setActivePolicy(policyType);
     };
 
+    // closePolicy は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const closePolicy = () => {
         setActivePolicy(null);
     };
 
+    // confirmActivePolicy は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const confirmActivePolicy = () => {
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!reachedBottom || !activePolicy) {
             return;
         }
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (activePolicy === "terms") {
             setTermsConfirmed(true);
         }
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (activePolicy === "privacy") {
             setPrivacyConfirmed(true);
         }
@@ -164,14 +219,18 @@ export default function Newreg() {
         setTouched(true);
         setErrorMessage("");
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!isFormValid) {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (!hasConfirmedPolicies || !agreed) {
                 setErrorMessage("利用規約とプライバシーポリシーを確認し、同意してください。");
             }
             return;
         }
 
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
+            // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
             const response = await fetch("/TABI/api/auth/register.php", {
                 method: "POST",
                 headers: {
@@ -188,6 +247,7 @@ export default function Newreg() {
 
             const data = await response.json();
 
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (!response.ok || !data.success) {
                 setErrorMessage(data.message || "登録に失敗しました。");
                 return;
@@ -195,6 +255,7 @@ export default function Newreg() {
 
             localStorage.setItem("loginUser", JSON.stringify(data.user));
             navigate("/Home");
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
             console.error("登録エラー:", error);
             setErrorMessage("通信環境を確認してください。");

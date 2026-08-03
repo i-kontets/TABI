@@ -1,4 +1,14 @@
 /**
+ * メンテナンス画面や管理画面など、サービス利用可否の判定をまとめます。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: アプリの設定値や、他のファイルから受け取る値を主に扱います。
+ */
+/**
  * サービス全体の稼働状態を確認するための共通処理です。
  *
  * ユーザー画面と管理者画面の両方から使われます。
@@ -9,6 +19,10 @@ const statusEndpoint = `${import.meta.env.BASE_URL}api/system/status.php`;
 export const maintenanceReturnPathKey = 'tabi_return_path';
 export const maintenanceReasonKey = 'tabi_maintenance_reason';
 
+/**
+ * normalizeServiceStatus は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function normalizeServiceStatus(data = {}, fallbackStatus = 'DATABASE_UNAVAILABLE') {
     // status/code/reason のどれで返ってきても、画面側では reason と status の両方で読めるようにします。
     const statusCode = data.status || data.code || data.reason || fallbackStatus;
@@ -46,6 +60,7 @@ export async function fetchServiceStatus() {
     });
     const data = await response.json().catch(() => null);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!response.ok || !data?.success) {
         // status.php 自体が失敗した場合も、画面側ではDB利用不可として扱える形に整えます。
         return normalizeServiceStatus(data || {}, data?.status || data?.code || 'DATABASE_UNAVAILABLE');
@@ -100,6 +115,7 @@ export function saveReturnPath(pathname = window.location.pathname, search = win
     const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     const path = pathname.startsWith(base) ? pathname.slice(base.length) || '/' : pathname;
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (
         path.toLowerCase().startsWith('/maintenance') ||
         path.toLowerCase().startsWith('/admin') ||
@@ -115,6 +131,7 @@ export function saveReturnPath(pathname = window.location.pathname, search = win
 export function getReturnPath() {
     const saved = sessionStorage.getItem(maintenanceReturnPathKey);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (saved && saved.startsWith('/') && !saved.startsWith('//') && !saved.toLowerCase().startsWith('/admin')) {
         return saved;
     }

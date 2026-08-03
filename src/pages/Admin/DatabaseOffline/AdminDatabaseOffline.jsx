@@ -1,3 +1,13 @@
+/**
+ * 管理者向け画面の表示と、管理 API から取得したデータの操作を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: 管理 API から取得した一覧や詳細データ、画面上の検索条件や入力値を主に扱います。
+ */
 import styles from './AdminDatabaseOffline.module.css';
 
 const NAV_ITEMS = [
@@ -12,12 +22,18 @@ const NAV_ITEMS = [
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
 
+/**
+ * formatNextOpenAt は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function formatNextOpenAt(value) {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!value) {
         return '未定';
     }
 
     const date = new Date(value);
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (Number.isNaN(date.getTime())) {
         return '未定';
     }
@@ -32,10 +48,12 @@ function formatNextOpenAt(value) {
         hour12: false,
     });
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (dayDiff === 0) {
         return `本日 ${time} ～`;
     }
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (dayDiff === 1) {
         return `明日 ${time} ～`;
     }
@@ -49,6 +67,10 @@ function formatNextOpenAt(value) {
     return `${dateText}（${WEEKDAYS[date.getDay()]}） ${time} ～`;
 }
 
+/**
+ * ServerPowerIllustration は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function ServerPowerIllustration() {
     return (
         <svg className={styles.illustration} viewBox="0 0 360 260" role="img" aria-label="DB停止中のサーバー">
@@ -95,34 +117,66 @@ function ServerPowerIllustration() {
     );
 }
 
+/**
+ * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function HomeIcon() {
     return <path d="M3 10.5 12 3l9 7.5V21h-6v-6h-6v6H3v-10.5Z" />;
 }
 
+/**
+ * UserIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function UserIcon() {
     return <><circle cx="12" cy="8" r="3.5" /><path d="M4.5 20c1.2-3.2 4-5 7.5-5s6.3 1.8 7.5 5" /></>;
 }
 
+/**
+ * GroupIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function GroupIcon() {
     return <><circle cx="8.5" cy="9" r="3" /><circle cx="16" cy="10.5" r="2.4" /><path d="M2.8 19c.9-2.6 3-4 5.7-4s4.8 1.4 5.7 4" /><path d="M16.5 15.4c2 .3 3.6 1.5 4.4 3.6" /></>;
 }
 
+/**
+ * ChatIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function ChatIcon() {
     return <path d="M4 5.5h16v11H9l-5 4v-15Z" />;
 }
 
+/**
+ * MailIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function MailIcon() {
     return <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></>;
 }
 
+/**
+ * AlertIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function AlertIcon() {
     return <><path d="M12 3 2.8 20h18.4L12 3Z" /><path d="M12 9v5M12 17h.01" /></>;
 }
 
+/**
+ * GearIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function GearIcon() {
     return <><circle cx="12" cy="12" r="3" /><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4 1a7.7 7.7 0 0 0-2.6-1.5L14 2.5h-4L9.6 5a7.7 7.7 0 0 0-2.6 1.5l-2.4-1-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-1a7.7 7.7 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.7 7.7 0 0 0 2.6-1.5l2.4 1 2-3.4-2-1.6Z" /></>;
 }
 
+/**
+ * DisabledNavIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function DisabledNavIcon({ children }) {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -131,6 +185,10 @@ function DisabledNavIcon({ children }) {
     );
 }
 
+/**
+ * AdminDatabaseOffline は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function AdminDatabaseOffline({ status }) {
     const isScheduledStop = status?.reason === 'SCHEDULED_DB_STOP' || status?.reason === 'OUTSIDE_SERVICE_HOURS';
     const title = isScheduledStop

@@ -1,3 +1,13 @@
+/**
+ * 他ユーザーの公開プロフィールを取得して表示する画面です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './UserProfilePage.module.css';
@@ -6,6 +16,10 @@ const profileApi = `${import.meta.env.BASE_URL}api/User/PublicProfile.php`;
 const reportApi = `${import.meta.env.BASE_URL}api/User/Report.php`;
 const REPORT_REASONS = ['迷惑行為', '不適切な内容', 'なりすまし', 'その他'];
 
+/**
+ * BackIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function BackIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -14,6 +28,10 @@ function BackIcon({ className }) {
     );
 }
 
+/**
+ * MoreIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function MoreIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -24,6 +42,10 @@ function MoreIcon({ className }) {
     );
 }
 
+/**
+ * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function HomeIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -34,6 +56,10 @@ function HomeIcon({ className }) {
     );
 }
 
+/**
+ * UserIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function UserIcon({ className }) {
     return (
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -43,50 +69,73 @@ function UserIcon({ className }) {
     );
 }
 
+/**
+ * UserProfilePage は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function UserProfilePage() {
     const { userId } = useParams();
     const navigate = useNavigate();
     const menuRef = useRef(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [profile, setProfile] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [loading, setLoading] = useState(true);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [error, setError] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [menuOpen, setMenuOpen] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [reportOpen, setReportOpen] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [reportReason, setReportReason] = useState(REPORT_REASONS[0]);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [reportDetail, setReportDetail] = useState('');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [reportSending, setReportSending] = useState(false);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [reportMessage, setReportMessage] = useState('');
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         const controller = new AbortController();
 
+        // loadProfile は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const loadProfile = async () => {
             setLoading(true);
             setError('');
 
+            // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
             try {
+                // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                 const response = await fetch(`${profileApi}?user_id=${encodeURIComponent(userId)}`, {
                     credentials: 'include',
                     signal: controller.signal,
                 });
                 const data = await response.json().catch(() => null);
 
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (response.status === 401) {
                     navigate('/');
                     return;
                 }
 
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!response.ok || !data?.success) {
                     throw new Error(data?.message || 'プロフィールを取得できませんでした。');
                 }
 
                 setProfile(data.user);
+            // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
             } catch (fetchError) {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (fetchError.name !== 'AbortError') {
                     setProfile(null);
                     setError(fetchError.message || 'プロフィールを取得できませんでした。');
                 }
+            // 成功・失敗に関係なく最後に必要な後片付けを行います。
             } finally {
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (!controller.signal.aborted) {
                     setLoading(false);
                 }
@@ -98,8 +147,11 @@ export default function UserProfilePage() {
         return () => controller.abort();
     }, [navigate, userId]);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
+        // handlePointerDown は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const handlePointerDown = (event) => {
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (!menuRef.current?.contains(event.target)) {
                 setMenuOpen(false);
             }
@@ -115,6 +167,7 @@ export default function UserProfilePage() {
 
     const commonGroups = Array.isArray(profile?.common_groups) ? profile.common_groups : [];
 
+    // handleReportClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleReportClick = () => {
         setMenuOpen(false);
         setReportMessage('');
@@ -123,14 +176,18 @@ export default function UserProfilePage() {
         setReportOpen(true);
     };
 
+    // submitReport は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const submitReport = async (event) => {
         event.preventDefault();
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!profile || reportSending) return;
 
         setReportSending(true);
         setReportMessage('');
 
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
+            // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
             const response = await fetch(reportApi, {
                 method: 'POST',
                 headers: {
@@ -146,14 +203,17 @@ export default function UserProfilePage() {
             });
             const data = await response.json().catch(() => null);
 
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if (!response.ok || !data?.success) {
                 throw new Error(data?.message || '通報を送信できませんでした。');
             }
 
             setReportOpen(false);
             window.alert('通報を送信しました。');
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (submitError) {
             setReportMessage(submitError.message || '通報を送信できませんでした。');
+        // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
             setReportSending(false);
         }

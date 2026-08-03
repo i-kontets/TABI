@@ -1,3 +1,13 @@
+/**
+ * 旅行費用の支払い・回収状況を表示して管理する画面です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useContext, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { TripContext } from "../../App";
@@ -41,12 +51,12 @@ const emptyForm = {
 function formatYen(value) {
     const number = Number(value);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if(Number.isNaN(number)){
 
         return "0円";
 
     }
-
 
     return `${number.toLocaleString()}円`;
 }
@@ -58,6 +68,7 @@ function normalizeGroupData(data) {
             : defaultMembers;
 
     const memberIds =
+        // 配列のデータを1件ずつ画面表示用の形に変換します。
         members.map(member => member.id);
 
     const pay =
@@ -65,6 +76,7 @@ function normalizeGroupData(data) {
             ? data.pay
             : [];
     return {
+        // 配列のデータを1件ずつ画面表示用の形に変換します。
         pay: pay.map((payItem) => {
             let invoiceMembers = [];
 
@@ -82,9 +94,11 @@ function normalizeGroupData(data) {
                 }
             */
 
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if(Array.isArray(payItem.members)){
 
                 invoiceMembers =
+                    // 配列のデータを1件ずつ画面表示用の形に変換します。
                     payItem.members.map(member => ({
 
                         id: member.id,
@@ -107,6 +121,7 @@ function normalizeGroupData(data) {
                         ? payItem.participantIds
                         : memberIds;
                 invoiceMembers =
+                    // 配列のデータを1件ずつ画面表示用の形に変換します。
                     participantIds.map(id => ({
                         id,
                         amount:
@@ -153,6 +168,7 @@ function normalizeGroupData(data) {
 
         // メンバー情報
         members:
+            // 配列のデータを1件ずつ画面表示用の形に変換します。
             members.map(member => ({
                 id: member.id,
                 name: member.name,
@@ -175,6 +191,7 @@ function createEmptyGroupData(){
 
 // groupIdを統一
 function normalizeGroupId(groupId){
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if(groupId == null || groupId === ""){
         return 1;
 
@@ -182,6 +199,7 @@ function normalizeGroupId(groupId){
     const numericGroupId =
         Number(groupId);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if(
         Number.isInteger(numericGroupId)
         &&
@@ -202,6 +220,7 @@ function normalizeInvoiceFile(data){
             groups:
                 Object.fromEntries(
                     Object.entries(data.groups)
+                    // 配列のデータを1件ずつ画面表示用の形に変換します。
                     .map(([groupId,groupData]) => [
                         normalizeGroupId(groupId),
                         normalizeGroupData(groupData)
@@ -219,6 +238,10 @@ function normalizeInvoiceFile(data){
     };
 }
 
+/**
+ * Invoice は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function Invoice() {
 
     const location = useLocation();
@@ -268,13 +291,17 @@ export default function Invoice() {
         請求データを取得する
     */
     useEffect(()=>{
+        // loadInvoices は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const loadInvoices = async()=>{
+            // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
             try{
                 const response =
+                    // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                     await fetch(
                         `${import.meta.env.BASE_URL}api/invoices`
                     );
 
+                // ここで条件を確認し、状況に合う処理だけを実行します。
                 if(!response.ok){
                     throw new Error(
                         "Invoice取得失敗"
@@ -299,6 +326,7 @@ export default function Invoice() {
 
             }
 
+            // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
             catch{
                 // API取得失敗時はjsonを利用
                 const data =
@@ -334,6 +362,7 @@ export default function Invoice() {
 
         useMemo(()=>{
 
+            // 配列のデータを1件ずつ画面表示用の形に変換します。
             return invoiceData.members.map(
 
                 (member)=>{
@@ -342,6 +371,7 @@ export default function Invoice() {
                     const details =
 
                         invoiceData.pay
+                        // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
                         .filter(
                             payItem =>
                                 payItem.members.some(
@@ -352,6 +382,7 @@ export default function Invoice() {
                                 )
                         )
 
+                        // 配列のデータを1件ずつ画面表示用の形に変換します。
                         .map(
                             payItem=>{
                                 // メンバー個人の金額取得
@@ -364,7 +395,7 @@ export default function Invoice() {
                                     );
 
                                 return {
-                                    
+
                                     id:
                                         payItem.id,
                                     storeName:
@@ -384,6 +415,7 @@ export default function Invoice() {
                     const totalAmount =
                         details.reduce(
                             (sum,detail)=>{
+                                // ここで条件を確認し、状況に合う処理だけを実行します。
                                 if(detail.isPaid){
                                     return sum;
                                 }
@@ -442,6 +474,7 @@ export default function Invoice() {
                 nextAllData
             );
             const response =
+                // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                 await fetch(
                     `${import.meta.env.BASE_URL}api/invoices`,
                     {
@@ -456,6 +489,7 @@ export default function Invoice() {
                             )
                     }
                 );
+            // ここで条件を確認し、状況に合う処理だけを実行します。
             if(!response.ok){
                 throw new Error(
                     "保存失敗"
@@ -495,6 +529,7 @@ export default function Invoice() {
                             isSelected
                             ?
                             currentForm.selectedMemberIds
+                            // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
                             .filter(
                                 id =>
                                     id !== memberId
@@ -548,6 +583,7 @@ export default function Invoice() {
             山田 5000円
         */
         const members =
+            // 配列のデータを1件ずつ画面表示用の形に変換します。
             form.selectedMemberIds.map(
                 id => ({
                     id:id,
@@ -581,10 +617,12 @@ export default function Invoice() {
                 newInvoice
             ]
         };
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try{
             await saveInvoiceData(nextData);
             handleCloseForm();
         }
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         catch{
             alert(
                 "請求データの保存に失敗しました。"
@@ -602,6 +640,7 @@ export default function Invoice() {
                 "支払い完了にしますか？\n完了後は編集できません。"
             );
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if(!isConfirmed){
             return;
         }
@@ -609,8 +648,10 @@ export default function Invoice() {
         const nextData = {
             ...invoiceData,
             members:
+                // 配列のデータを1件ずつ画面表示用の形に変換します。
                 invoiceData.members.map(
                     member=>{
+                        // ここで条件を確認し、状況に合う処理だけを実行します。
                         if(
                             member.id !== memberId
                             ||
@@ -628,9 +669,11 @@ export default function Invoice() {
                     }
                 )
         };
+        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try{
             await saveInvoiceData(nextData);
         }
+        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         catch{
             alert(
                 "支払い完了の保存に失敗しました。"
@@ -689,7 +732,7 @@ export default function Invoice() {
 
                                     // 未払いなら残額へ加算
                                     return sum + payMember.amount;
-                                
+
                                 }, 0);
 
                                 return (
@@ -698,7 +741,7 @@ export default function Invoice() {
                                         <p className={styles.perPersonAmount}>
                                             総額{formatYen(item.totalAmount)}
                                         </p>
-                                        
+
                                         <p className={styles.participantCount}>
                                             {item.participantCount}人
                                         </p>

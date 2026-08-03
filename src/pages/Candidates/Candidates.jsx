@@ -1,9 +1,23 @@
+/**
+ * 旅行先候補の一覧や詳細を表示し、候補選びを進める画面です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import styles from './Candidates.module.css';
 import { candidatePlaces, categories, typeLabels } from './candidateData';
 
+/**
+ * SearchIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function SearchIcon() {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -12,6 +26,10 @@ function SearchIcon() {
     );
 }
 
+/**
+ * BackIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function BackIcon() {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -20,6 +38,10 @@ function BackIcon() {
     );
 }
 
+/**
+ * HeartIcon は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function HeartIcon() {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -28,13 +50,21 @@ function HeartIcon() {
     );
 }
 
+/**
+ * Candidates は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 function Candidates() {
     const navigate = useNavigate();
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [keyword, setKeyword] = useState('京都');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [submittedArea, setSubmittedArea] = useState('京都');
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [selectedCategory, setSelectedCategory] = useState('all');
 
     const filteredPlaces = useMemo(() => {
+        // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         return candidatePlaces.filter((place) => {
             const matchesArea = submittedArea.trim() === '' || place.city.includes(submittedArea.trim()) || place.area.includes(submittedArea.trim());
             const matchesCategory = selectedCategory === 'all' || place.type === selectedCategory;
@@ -42,11 +72,13 @@ function Candidates() {
         });
     }, [selectedCategory, submittedArea]);
 
+    // handleSubmit は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleSubmit = (event) => {
         event.preventDefault();
         setSubmittedArea(keyword);
     };
 
+    // openDetail は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const openDetail = (place) => {
         navigate(`/Candidates/${place.id}`, { state: { place } });
     };

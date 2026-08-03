@@ -1,3 +1,13 @@
+/**
+ * 管理者向け画面の表示と、管理 API から取得したデータの操作を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: 管理 API から取得した一覧や詳細データ、画面上の検索条件や入力値を主に扱います。
+ */
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../../components/Admin/AdminLayout';
@@ -20,6 +30,7 @@ const ACTIVITY_LINKS = {
     notice: '/admin/notices',
 };
 
+// todayLabel は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
 const todayLabel = () => new Intl.DateTimeFormat('ja-JP', {
     // ダッシュボードの日付表示は、サーバーの場所に左右されないよう日本時間に固定します。
     year: 'numeric',
@@ -55,19 +66,28 @@ const REALTIME_EVENTS = [
 const RESPONSE_PREVIEW_LIMIT = 4;
 const ACTIVITY_PREVIEW_LIMIT = 8;
 
+/**
+ * Dashboard は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function Dashboard() {
     // analytics はサマリーカードやグラフ用、activities は最近の出来事、pendingSupportItems は対応が必要な一覧です。
     const [analytics, setAnalytics] = useState(null);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [activities, setActivities] = useState([]);
+    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [pendingSupportItems, setPendingSupportItems] = useState([]);
 
     const loadDashboard = useCallback(() => {
         // 3種類のAPIをまとめて読み直し、管理画面の表示データを最新にします。
         fetchAnalytics().then(setAnalytics);
+        // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
         fetchActivities().then(setActivities);
+        // API などの非同期処理が終わった後に、受け取った結果を次の処理へ渡します。
         fetchPendingSupportItems().then(setPendingSupportItems);
     }, []);
 
+    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         // 初回表示時に一度だけダッシュボード用データを取得します。
         loadDashboard();
@@ -76,6 +96,7 @@ export default function Dashboard() {
     // WebSocket経由で変更通知を受け取ったら、画面を手動更新しなくても最新状態にします。
     useAdminRealtimeRefresh(REALTIME_EVENTS, loadDashboard);
 
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!analytics) return <AdminLayout title="TABI Admin"><div /></AdminLayout>;
 
     const { summary, activeUserTrend, userAttributes } = analytics;

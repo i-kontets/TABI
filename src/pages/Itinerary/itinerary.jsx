@@ -1,3 +1,13 @@
+/**
+ * 旅程の確認や編集を行う画面です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useContext, useState, useEffect } from "react";
 import { TripContext } from "../../App";
@@ -10,6 +20,10 @@ import styles from './itinerary.module.css';
 import Edit from '../../assets/icons/edit.svg?react';
 import Group from '../../assets/icons/group.svg?react';
 
+/**
+ * Itinerary は、このファイルの中心となる処理をまとめた関数です。
+ * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
+ */
 export default function Itinerary() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -19,6 +33,7 @@ export default function Itinerary() {
 
   // 招待モーダルの管理状態
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
   const [isLiquidationOpen, setIsLiquidationOpen] = useState(false);  
 
   // メンバー情報
@@ -26,10 +41,14 @@ export default function Itinerary() {
 
   // User取得処理
   useEffect(() => {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!groupId) return;
 
+    // fetchMembers は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const fetchMembers = async () => {
+      // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
       try {
+        // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
         const response = await fetch("/TABI/api/Groups/Members.php", {
   method: "POST",
   credentials: "include",
@@ -46,8 +65,10 @@ console.log(text);
 
 const data = JSON.parse(text);
 
+        // ここで条件を確認し、状況に合う処理だけを実行します。
         if (data.success && Array.isArray(data.members)) {
           setMembers(
+            // 配列のデータを1件ずつ画面表示用の形に変換します。
             data.members.map((member) => ({
               ...member,
               name: member.name,
@@ -58,6 +79,7 @@ const data = JSON.parse(text);
         } else {
           setMembers([]);
         }
+      // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
       } catch (error) {
         console.error(error);
         setMembers([]);
@@ -92,15 +114,17 @@ const data = JSON.parse(text);
 
   ];
 
+  // closeInviteModal は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
   const closeInviteModal = () => {
   setIsInviteModalOpen(false);
   };
 
+  // handleAppointmentClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
   const handleAppointmentClick = () => {
     // データがない　→　Appointment.jsxへ
      navigate('/Appointment')
   }
-  
+
   return (
     <div>
       <Header />
@@ -143,7 +167,6 @@ const data = JSON.parse(text);
                   {member.initial}
                 </span>
               ))}
-
 
               <button
                 className={styles.inviteBtn}

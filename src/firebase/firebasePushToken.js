@@ -1,0 +1,99 @@
+/**
+ * プッシュ通知の許可をユーザーへ求め、FCMトークンを取得するファイルです。
+ *
+ * 主な流れ:
+ * 1. ブラウザが通知・Service Worker・安全な接続(HTTPS)に対応しているか確認する
+ * 2. 通知許可が未決定なら、ユーザー操作をきっかけに許可ダイアログを表示する
+ * 3. 許可されたら Service Worker を登録し、FCMトークンを取得して返す
+ *
+ * 扱うデータ: 通知許可の状態(granted/denied等)とFCMトークン(秘密情報扱い)。
+ */
+import { getToken } from 'firebase/messaging';
+import { getFirebaseMessaging } from './firebaseMessaging';
+import { registerFirebaseServiceWorker } from './registerFirebaseServiceWorker';
+
+/**
+ * 失敗結果を統一した形式で作るヘルパーです。
+ * status には失敗理由(unsupported / denied / token-error など)が入ります。
+ */
+function failed(status, permission = null) {
+    return { success: false, status, permission, token: null };
+}
+
+/**
+ * 通知許可を求めてFCMトークンを取得します。
+ * 成功時: { success: true, status: 'ready', permission, token }
+ * 失敗時: { success: false, status: 理由, permission, token: null }
+ */
+async function requestFirebasePushToken() {
+    // 通知許可ダイアログはページ表示時ではなく、ユーザーがボタンを押した時だけ出します。
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+        return failed('unsupported');
+    }
+
+    if (typeof Notification === 'undefined' || !Notification.requestPermission) {
+        return failed('unsupported');
+    }
+
+    if (!('serviceWorker' in navigator)) {
+        return failed('service-worker-error', Notification.permission);
+    }
+
+    if (!window.isSecureContext) {
+        return failed('insecure-context', Notification.permission);
+    }
+
+    let permission = Notification.permission;
+
+    if (permission === 'default') {
+        // ブラウザの決まりで、通知許可はユーザー操作をきっかけに要求する必要があります。
+        permission = await Notification.requestPermission();
+    }
+
+    if (permission === 'denied') {
+        // 拒否済みの場合は何度も許可要求せず、端末やブラウザ設定での変更を案内します。
+        return failed('denied', permission);
+    }
+
+    if (permission !== 'granted') {
+        return failed('default', permission);
+    }
+
+    try {
+        // FCMトークン取得には、Firebase Messaging用のService Worker登録が必要です。
+        const serviceWorkerRegistration = await registerFirebaseServiceWorker();
+
+        if (!serviceWorkerRegistration) {
+            return failed('service-worker-error', permission);
+        }
+
+        const messaging = await getFirebaseMessaging();
+
+        if (!messaging) {
+            return failed('messaging-unsupported', permission);
+        }
+
+        const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+
+        if (typeof vapidKey !== 'string' || vapidKey.trim() === '') {
+            return failed('vapid-key-missing', permission);
+        }
+
+        // VAPIDキーは、このWebアプリが正しくWeb Pushを使うための公開鍵です。
+        const token = await getToken(messaging, {
+            vapidKey,
+            serviceWorkerRegistration,
+        });
+
+        if (!token) {
+            return failed('token-error', permission);
+        }
+
+        // FCMトークンは秘密情報に近い扱いにし、ログや画面には出しません。
+        return { success: true, status: 'ready', permission, token };
+    } catch {
+        return failed('token-error', permission);
+    }
+}
+
+export { requestFirebasePushToken };

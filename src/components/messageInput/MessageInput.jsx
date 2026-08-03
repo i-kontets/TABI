@@ -1,3 +1,13 @@
+/**
+ * チャットメッセージの表示や入力に使う共通部品です。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
 import React, { useEffect, useRef } from 'react';
 import styles from './MessageInput.module.css';
 
@@ -7,11 +17,13 @@ const MessageInput = ({ value = '', onChange, onSubmit, onImageUpload, disabled 
 
   // value が空になったとき（送信後）に高さをリセット
   useEffect(() => {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (value === '' && textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
   }, [value]);
 
+  // handleChange は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
   const handleChange = (event) => {
     onChange(event);
     // テキスト量に合わせて高さを自動調整
@@ -22,20 +34,26 @@ const MessageInput = ({ value = '', onChange, onSubmit, onImageUpload, disabled 
 
   // Enter で送信、Shift+Enter で改行
   const handleKeyDown = (event) => {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
+      // ここで条件を確認し、状況に合う処理だけを実行します。
       if (value.trim() && !disabled) {
         onSubmit(event);
       }
     }
   };
 
+  // handleImageButtonClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
   const handleImageButtonClick = () => {
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!disabled) fileInputRef.current?.click();
   };
 
+  // handleFileChange は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
   const handleFileChange = (event) => {
     const file = event.target.files?.[0];
+    // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!file) return;
     onImageUpload?.(file);
     event.target.value = '';
