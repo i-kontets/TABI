@@ -1,3 +1,11 @@
+/**
+ * QRコードや招待リンクから旅行グループへ参加するための画面です。
+ *
+ * 主な流れ:
+ * 1. URL の groupId から参加対象の旅行グループを判断する
+ * 2. 未ログインの場合は、ログイン後にこの画面へ戻れるようにしてログイン画面へ移動する
+ * 3. ログイン済みの場合は旅行名を取得し、参加ボタンからグループ加入APIを呼び出す
+ */
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { buildAuthPath, saveAuthReturnPath } from "../../utils/authReturnPath";
@@ -6,11 +14,15 @@ import styles from "./itineraryJoin.module.css";
 export default function ItineraryJoin() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+
+    // QRコードのURLに含まれる groupId を取得します。
+    // この値で「どの旅行グループに参加するか」を決めます。
     const groupId = searchParams.get("groupId");
     const joinPath = groupId
         ? `/ItineraryJoin?groupId=${encodeURIComponent(groupId)}`
         : "/ItineraryJoin";
 
+    // 画面表示に使う旅行名・メッセージ・処理中フラグを管理します。
     const [tripName, setTripName] = useState("");
     const [statusMessage, setStatusMessage] = useState(
         groupId ? "" : "招待リンクに旅行グループIDが含まれていません。"
@@ -18,6 +30,7 @@ export default function ItineraryJoin() {
     const [isLoading, setIsLoading] = useState(Boolean(groupId));
     const [isJoining, setIsJoining] = useState(false);
 
+    // 未ログインの場合に、ログイン後もう一度この加入画面へ戻れるようにします。
     const redirectToLogin = useCallback(() => {
         saveAuthReturnPath(joinPath);
         navigate(buildAuthPath("/", joinPath), { replace: true });
@@ -28,11 +41,13 @@ export default function ItineraryJoin() {
             return;
         }
 
+        // スマートフォンのカメラから直接開いた場合など、未ログインなら先にログインへ送ります。
         if (!localStorage.getItem("loginUser")) {
             redirectToLogin();
             return;
         }
 
+        // 参加前に旅行名を取得し、ユーザーが参加対象を確認できるようにします。
         const fetchTripInfo = async () => {
             try {
                 const response = await fetch("/TABI/api/Itinerary/TripInfo.php", {
@@ -46,6 +61,7 @@ export default function ItineraryJoin() {
                     }),
                 });
 
+                // PHPセッションが切れている場合も、ログイン後に同じ加入画面へ戻します。
                 if (response.status === 401) {
                     redirectToLogin();
                     return;
@@ -69,6 +85,7 @@ export default function ItineraryJoin() {
         fetchTripInfo();
     }, [groupId, redirectToLogin]);
 
+    // 「参加する」ボタンを押した時に、ログイン中のユーザーを対象グループへ加入させます。
     const handleJoin = async () => {
         if (!groupId) return;
 
