@@ -36,8 +36,8 @@ $config = file_exists($configPath) ? require $configPath : [];
 // DB access is fixed to the AWS RDS connection profile.
 // Secrets stay in env.php or server environment variables.
 // 現在はAWS RDS接続を使う前提です。ローカルDBへ切り替える場合は、この判定とenv.php側の設定を一緒に見直します。
-$appEnv = "aws";
-$awsConfig = $config["connections"]["aws"] ?? [];
+$appEnv = "local";
+$awsConfig = $config["connections"]["local"] ?? [];
 
 $host = $awsConfig["DB_HOST"] ?? "";
 $dbname = $awsConfig["DB_NAME"] ?? "";

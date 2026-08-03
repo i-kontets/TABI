@@ -1,11 +1,15 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { buildAuthPath, saveAuthReturnPath } from "../../utils/authReturnPath";
 import styles from "./itineraryJoin.module.css";
 
 export default function ItineraryJoin() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const groupId = searchParams.get("groupId");
+    const joinPath = groupId
+        ? `/ItineraryJoin?groupId=${encodeURIComponent(groupId)}`
+        : "/ItineraryJoin";
 
     const [tripName, setTripName] = useState("");
     const [statusMessage, setStatusMessage] = useState(
@@ -14,14 +18,24 @@ export default function ItineraryJoin() {
     const [isLoading, setIsLoading] = useState(Boolean(groupId));
     const [isJoining, setIsJoining] = useState(false);
 
+    const redirectToLogin = useCallback(() => {
+        saveAuthReturnPath(joinPath);
+        navigate(buildAuthPath("/", joinPath), { replace: true });
+    }, [joinPath, navigate]);
+
     useEffect(() => {
         if (!groupId) {
             return;
         }
 
+        if (!localStorage.getItem("loginUser")) {
+            redirectToLogin();
+            return;
+        }
+
         const fetchTripInfo = async () => {
             try {
-                const response = await fetch("/TABI/api/auth/TripInfo.php", {
+                const response = await fetch("/TABI/api/Itinerary/TripInfo.php", {
                     method: "POST",
                     credentials: "include",
                     headers: {
@@ -33,8 +47,7 @@ export default function ItineraryJoin() {
                 });
 
                 if (response.status === 401) {
-                    setStatusMessage("参加するにはログインが必要です。ログイン後にもう一度QRコードを開いてください。");
-                    setIsLoading(false);
+                    redirectToLogin();
                     return;
                 }
 
@@ -54,7 +67,7 @@ export default function ItineraryJoin() {
         };
 
         fetchTripInfo();
-    }, [groupId]);
+    }, [groupId, redirectToLogin]);
 
     const handleJoin = async () => {
         if (!groupId) return;
@@ -63,7 +76,7 @@ export default function ItineraryJoin() {
         setStatusMessage("");
 
         try {
-            const response = await fetch("/TABI/api/auth/JoinGroup.php", {
+            const response = await fetch("/TABI/api/Itinerary/JoinGroup.php", {
                 method: "POST",
                 credentials: "include",
                 headers: {
@@ -75,7 +88,7 @@ export default function ItineraryJoin() {
             });
 
             if (response.status === 401) {
-                setStatusMessage("参加するにはログインが必要です。ログインしてください。");
+                redirectToLogin();
                 return;
             }
 

@@ -29,6 +29,9 @@ export default function Itinerary() {
 
   // Home などから /Itinerary?groupId=1 の形で渡された旅行グループIDです。
   const groupId = searchParams.get("groupId");
+  const itineraryEditPath = groupId
+    ? `/ItineraryEdit?groupId=${encodeURIComponent(groupId)}`
+    : "/ItineraryEdit";
 
   // 招待モーダルの開閉状態です。
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -58,7 +61,7 @@ export default function Itinerary() {
 
     const fetchTripInfo = async () => {
       try {
-        const response = await fetch("/TABI/api/auth/TripInfo.php", {
+        const response = await fetch("/TABI/api/Itinerary/TripInfo.php", {
           method: "POST",
           credentials: "include",
           headers: {
@@ -144,20 +147,50 @@ export default function Itinerary() {
     return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} (${weekDays[date.getDay()]})`;
   };
 
-  // 出発日までの日数を計算します。日付だけを比較するため、時刻は 0:00 に揃えます。
-  const getRemainingDays = (startDate) => {
-    if (!startDate) return "";
+  // 旅行期間に応じて、バッジに表示する文言を切り替えます。
+  const getTripStatusLabel = (startDate, endDate) => {
+    if (!startDate || !endDate) return "日付未設定";
 
     const today = new Date();
     const start = new Date(startDate);
+    const end = new Date(endDate);
 
     today.setHours(0, 0, 0, 0);
     start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
 
-    const diffTime = start - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (today < start) {
+      const diffTime = start - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    return diffDays;
+      return `あと ${diffDays} 日`;
+    }
+
+    if (today <= end) {
+      return "旅行中";
+    }
+
+    return "終了";
+  };
+
+  const getTripStatusClassName = (startDate, endDate) => {
+    if (!startDate || !endDate) {
+      return `${styles.daysBadge} ${styles.daysBadgeUnset}`;
+    }
+
+    const today = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    today.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    if (today >= start && today <= end) {
+      return `${styles.daysBadge} ${styles.daysBadgeActive}`;
+    }
+
+    return styles.daysBadge;
   };
 
   return (
@@ -172,10 +205,8 @@ export default function Itinerary() {
           <div className={styles.titleRow}>
             <h1 className={styles.mainTitle}>{trip.name}</h1>
 
-            <span className={styles.daysBadge}>
-              {tripPeriod?.startDate
-                ? `あと ${getRemainingDays(tripPeriod.startDate)} 日`
-                : "日付未設定"}
+            <span className={getTripStatusClassName(tripPeriod?.startDate, tripPeriod?.endDate)}>
+              {getTripStatusLabel(tripPeriod?.startDate, tripPeriod?.endDate)}
             </span>
           </div>
 
@@ -210,7 +241,7 @@ export default function Itinerary() {
 
         <button
           className={styles.editBtn}
-          onClick={() => navigate("/ItineraryEdit")}
+          onClick={() => navigate(itineraryEditPath)}
         >
           旅行情報を編集
         </button>

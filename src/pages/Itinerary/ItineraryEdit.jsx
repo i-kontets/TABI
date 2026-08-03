@@ -8,7 +8,7 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { DayPicker } from 'react-day-picker';
 import { ja } from 'react-day-picker/locale';
@@ -32,8 +32,13 @@ const formatJapaneseDate = (date) =>
  * itineraryEdit は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-function itineraryEdit() {
+function ItineraryEdit() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const groupId = searchParams.get("groupId");
+    const itineraryPath = groupId
+        ? `/Itinerary?groupId=${encodeURIComponent(groupId)}`
+        : '/Itinerary';
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [selectedRange, setSelectedRange] = useState({
         from: new Date(2026, 3, 15),
@@ -47,7 +52,7 @@ function itineraryEdit() {
     });
 
     const BackClick = () => {
-        navigate('/Itinerary');
+        navigate(itineraryPath);
     };
 
     // sanitizeMembers は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
@@ -73,7 +78,7 @@ function itineraryEdit() {
             period,
             members: formValues.members === '' ? '' : Number(formValues.members),
         });
-        navigate('/Itinerary');
+        navigate(itineraryPath);
     };
 
     return (
@@ -163,4 +168,4 @@ function itineraryEdit() {
     )
 }
 
-export default itineraryEdit
+export default ItineraryEdit

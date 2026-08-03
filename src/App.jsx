@@ -72,7 +72,7 @@ function App() {
         }
 
         try {
-            const response = await fetch("/TABI/api/auth/Members.php", {
+            const response = await fetch("/TABI/api/Itinerary/Members.php", {
                 method: "POST",
                 credentials: "include",
                 headers: {
