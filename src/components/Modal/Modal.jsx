@@ -11,10 +11,17 @@
 import { useEffect } from "react";
 import styles from "./Modal.module.css";
 
-/**
- * Modal は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
+export function InviteActions({ onCancel }) {
+    return (
+        <div className={styles.actions}>
+            <button className={styles.cancel} type="button" onClick={onCancel}>
+                閉じる
+            </button>
+        </div>
+    );
+}
+
+
 function Modal({ isOpen, onClose, children }) {
     // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
@@ -36,6 +43,8 @@ function Modal({ isOpen, onClose, children }) {
         return null;
     }
 
+    
+
     return (
         <div className={styles.modalOverlay} onClick={onClose}>
             <div
@@ -45,6 +54,7 @@ function Modal({ isOpen, onClose, children }) {
                 onClick={(event) => event.stopPropagation()}
             >
                 {children}
+            <InviteActions onCancel={onClose} />
             </div>
         </div>
     );
