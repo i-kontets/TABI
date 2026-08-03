@@ -12,6 +12,7 @@ import { createElement, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Modal from '../../components/Modal/Modal';
 import PasswordResetRequestModal from '../../components/PasswordReset/PasswordResetRequestModal';
+import MainBottomNav from '../../components/mainBottomNav/MainBottomNav';
 import styles from './MyPage.module.css';
 import { useUnreadNotificationBadge } from '../../api/useUnreadNotificationBadge';
 
@@ -24,20 +25,6 @@ function BellIcon({ className }) {
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
             <path d="M18 16v-5a6 6 0 0 0-12 0v5l-2 2v1h16v-1l-2-2Z" />
             <path d="M9.5 21a2.5 2.5 0 0 0 5 0" />
-        </svg>
-    );
-}
-
-/**
- * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
-function HomeIcon({ className }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 11.5 12 4l9 7.5" />
-            <path d="M5.5 10.5V20h13v-9.5" />
-            <path d="M9.5 20v-5h5v5" />
         </svg>
     );
 }
@@ -394,27 +381,8 @@ function MyPage() {
                 </button>
             </main>
 
-            <footer className={styles.footer}>
-                <button
-                    type="button"
-                    className={styles.footerItem}
-                    onClick={() => navigate('/Home')}
-                    aria-label="ホーム"
-                >
-                    <HomeIcon className={styles.footerIcon} />
-                    <span>ホーム</span>
-                </button>
-
-                <button
-                    type="button"
-                    className={[styles.footerItem, styles.footerItemActive].join(' ')}
-                    onClick={() => navigate('/MyPage')}
-                    aria-label="マイページ"
-                >
-                    <UserIcon className={styles.footerIcon} />
-                    <span>マイページ</span>
-                </button>
-            </footer>
+            {/* Home・マイページ・通知画面で同じフッターを使い、画面ごとのリンク処理の差をなくします。 */}
+            <MainBottomNav />
 
             <PasswordResetRequestModal
                 isOpen={isPasswordOpen}

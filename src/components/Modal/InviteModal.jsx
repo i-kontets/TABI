@@ -13,16 +13,6 @@ export function InviteHeader({ title }) {
     );
 }
 
-export function InviteActions({ onCancel }) {
-    return (
-        <div className={styles.actions}>
-            <button className={styles.cancel} type="button" onClick={onCancel}>
-                閉じる
-            </button>
-        </div>
-    );
-}
-
 export default function InviteModalContent({ groupId, onClose }) {
     const [copyStatus, setCopyStatus] = useState("");
     const location = useLocation();
@@ -86,7 +76,6 @@ export default function InviteModalContent({ groupId, onClose }) {
                     <QRCodeComponent value={inviteLink} size={160} className={styles.qrCode} />
                 </div>
             </div>
-            <InviteActions onCancel={onClose} />
         </div>
     );
 }

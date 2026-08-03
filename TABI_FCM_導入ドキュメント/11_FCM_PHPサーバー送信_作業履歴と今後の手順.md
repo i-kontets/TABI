@@ -755,3 +755,43 @@ Git BashでDockerのパス変換問題が出る場合は、`MSYS_NO_PATHCONV=1` 
 - dry-run結果に秘密情報が含まれないことを確認する
 - ユーザー確認後に実送信する
 - 受信確認後、通知履歴DBとFCM送信を統合する共通通知サービスへ進む
+
+### 2026-07-23 共通通知サービス実装
+
+#### 実施内容
+
+- `NotificationRepository` を追加
+- `NotificationSettingsResolver` を追加
+- `NotificationService` を追加
+- `test_notification_service.php` を追加
+- 共通通知サービスの説明資料を `12_共通通知サービス.md` として追加
+
+#### 実装した流れ
+
+- 入力値を検証
+- 受信者ユーザーの存在を確認
+- `notifications` へ通知本体を登録
+- `notification_recipients` へ受信者ごとの履歴を登録
+- DB登録後にcommit
+- 通知設定を判定
+- 有効端末があり、通知設定ONの場合だけ既存 `FcmSendService` でFCM送信
+- 1台以上成功した受信者だけ `delivered_at` を更新
+
+#### 確認結果
+
+- 追加PHPファイルの `php -l` は成功
+- `composer validate` は成功
+- `composer audit` は脆弱性警告なし
+- CLI `--help` は成功
+- CLI `--send` は `FCM_SEND_ENABLED=true` なしで停止
+- CLI `--dry-run` は成功
+- `user_id=1` は有効端末0件のため `no_active_device` 判定
+- Codexでは `--create-only`、`--send`、DB INSERT、FCM実送信、`delivered_at` 更新は実行していない
+
+#### 次回
+
+- ユーザーが手動で `--create-only` を実行して通知履歴登録を確認
+- 通知一覧・未読件数にテスト通知が反映されることを確認
+- ユーザーが手動で `--send` を実行してFCM送信と `delivered_at` 更新を確認
+- テストデータ削除SQLで対象を確認してから必要に応じて削除
+- 次段階としてチャット投稿処理から共通通知サービスを呼び出す
