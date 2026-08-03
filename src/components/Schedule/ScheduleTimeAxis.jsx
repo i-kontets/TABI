@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Avatar, Timeline } from '@mantine/core';
+import { useEffect, useRef, useState } from 'react';
+import { Tabs, Timeline } from '@mantine/core';
+import groupIcon from '../../assets/icons/groups.svg';
+import personIcon from '../../assets/icons/person.svg';
 import styles from './ScheduleTimeAxis.module.css';
 
 const GROUP_COLORS = {
@@ -82,7 +84,10 @@ function groupEventsByStartTime(events) {
 }
 
 const generateHours = (overrides = {}) =>
-    Array.from({ length: 24 }, (_, i) => {
+{
+    const eventsByHour = groupEventsByHour(overrides);
+
+    return Array.from({ length: 24 }, (_, i) => {
         const time = `${String(i).padStart(2, '0')}:00`;
         return { time, events: eventsByHour[time] ?? [] };
     });
@@ -143,6 +148,36 @@ const SUB_TIME_LABEL_HEIGHT = 22;
 const MEMBER_AVATAR_SIZE = 24;
 const MEMBER_AVATAR_OVERLAP = 6;
 const MEMBER_AVATAR_STEP = MEMBER_AVATAR_SIZE - MEMBER_AVATAR_OVERLAP;
+const TIMELINE_PADDING_TOP = 36;
+const TIMELINE_BULLET_CENTER = 11;
+
+function getUserName(userId) {
+    return users.find((user) => user.userId === userId)?.name ?? '不明';
+}
+
+function getMemberInitial(name) {
+    return name.slice(0, 1);
+}
+
+function getVisibleMemberCount(memberCount, availableWidth) {
+    if (!availableWidth) {
+        return memberCount;
+    }
+
+    const maxVisibleCount = Math.floor((availableWidth - MEMBER_AVATAR_OVERLAP) / MEMBER_AVATAR_STEP);
+    return Math.max(Math.min(memberCount, maxVisibleCount), 1);
+}
+
+function formatEventTimeRange(event) {
+    return event.endTime ? `${event.time} - ${event.endTime}` : event.time;
+}
+
+function getEventGroupVisualHeight(eventGroup) {
+    const labelHeight = isHourStartTime(eventGroup.time) ? 0 : SUB_TIME_LABEL_HEIGHT;
+    const rowCount = Math.max(Math.ceil(eventGroup.events.length / EVENTS_PER_ROW), 1);
+
+    return labelHeight + (rowCount * SLOT_HEIGHT);
+}
 
 /**
  * isCompactSlot は、このファイルの中心となる処理をまとめた関数です。
@@ -286,11 +321,11 @@ function MemberAvatars({ userIds = [] }) {
 
     return (
         <span ref={containerRef} className={styles.memberAvatars} aria-label={`参加メンバー: ${memberNames.join('、')}`}>
-            {visibleUserIds.map((userId) => {
+            {visibleUserIds.map((userId, index) => {
                 const memberName = getUserName(userId);
 
                 return (
-                    <span key={userId} className={styles.memberAvatar} title={memberName}>
+                    <span key={`${userId}-${index}`} className={styles.memberAvatar} title={memberName}>
                         {getMemberInitial(memberName)}
                     </span>
                 );
