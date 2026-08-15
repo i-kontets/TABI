@@ -31,13 +31,22 @@ require_once __DIR__ . "/../config/serviceSchedule.php";
 $scheduleStatus = tabiEvaluateServiceSchedule();
 $configPath = __DIR__ . "/../config/env.php";
 $config = file_exists($configPath) ? require $configPath : [];
-$awsConfig = $config["connections"]["aws"] ?? [];
+// env.php が判定した現在の実行環境を取得します。
+// 例: local / lolipop / aws
+$appEnv = $config["APP_ENV"] ?? "local";
 
-$host = $awsConfig["DB_HOST"] ?? "";
-$dbname = $awsConfig["DB_NAME"] ?? "";
-$user = $awsConfig["DB_USER"] ?? "";
-$password = $awsConfig["DB_PASSWORD"] ?? "";
-$charset = $awsConfig["DB_CHARSET"] ?? "utf8mb4";
+// 現在の実行環境に対応したDB接続設定を取得します。
+// local   の場合は connections["local"]
+// lolipop の場合は connections["lolipop"]
+// aws     の場合は connections["aws"]
+$dbConfig = $config["connections"][$appEnv] ?? [];
+
+// 選択された環境のDB接続情報を取り出します。
+$host = $dbConfig["DB_HOST"] ?? "";
+$dbname = $dbConfig["DB_NAME"] ?? "";
+$user = $dbConfig["DB_USER"] ?? "";
+$password = $dbConfig["DB_PASSWORD"] ?? "";
+$charset = $dbConfig["DB_CHARSET"] ?? "utf8mb4";
 $checkedAt = (new DateTimeImmutable("now", new DateTimeZone("Asia/Tokyo")))->format(DateTimeInterface::ATOM);
 $databaseAvailable = false;
 
@@ -60,6 +69,16 @@ if ($host !== "" && $dbname !== "" && $user !== "") {
         $databaseAvailable = true;
     // エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
     } catch (Throwable $error) {
+        // DB接続または SELECT 1 の実行に失敗した理由をサーバーログへ記録します。
+        // ブラウザのJSONレスポンスには内部エラーを含めないため、
+        // DB接続情報などの機密情報を利用者側へ見せません。
+        error_log(
+            "[system/status.php] DB probe failed: "
+            . get_class($error)
+            . " / "
+            . $error->getMessage()
+        );
+
         // 接続失敗やSQL実行失敗は、フロント側では「DB利用不可」として扱います。
         $databaseAvailable = false;
     }
