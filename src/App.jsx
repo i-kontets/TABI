@@ -15,6 +15,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // 画面をまたいで値を共有するための Context 作成関数を読み込みます。
 import { createContext } from 'react';
 import './App.css'
+import InvoiceAll from './pages/InvoiceAll/InvoiceAll.jsx';
+import InvoiceLiquidation from './pages/InvoiceLiquidation/InvoiceLiquidation.jsx';
+import InvoiceTotal from './pages/InvoiceTotal/InvoiceTotal.jsx';
 import ItineraryJoin from './pages/ItineraryJoin/ItineraryJoin.jsx';
 
 // ===== 各ページコンポーネントの読み込み =====
@@ -164,6 +167,9 @@ function App() {
                     <Route path="/group/:groupId/talk" element={<Discussion />} />
                     <Route path="/album" element={<Album />} />
                     <Route path="/Invoice" element={<Invoice />} />
+                    <Route path="/InvoiceAll" element={<InvoiceAll />} />
+                    <Route path="/InvoiceLiquidation" element={<InvoiceLiquidation />} />
+                    <Route path="/InvoiceTotal" element={<InvoiceTotal />} />
                     <Route path="/Appointment" element={<Appointment />} />
                     <Route path="/Other" element={<Other />} />
                     {/* <Route path="/TouristRanking" element={<TouristRanking />} /> */}

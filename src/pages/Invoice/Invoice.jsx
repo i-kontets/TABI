@@ -1,22 +1,17 @@
 /**
- * 旅行費用の支払い・回収状況を表示して管理する画面です。
+ * 割り勘ページです。
  *
- * 主な流れ:
- * 1. 必要な部品や API 関数を読み込む
- * 2. 画面表示やデータ取得に必要な値を準備する
- * 3. ユーザー操作や API の結果に合わせて表示を更新する
- *
- * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ * 今回はスマホ画面に合わせて、支払い履歴をカード形式で表示します。
+ * 支払い記録の追加・削除は localStorage に保存しています。
  */
 import { useContext, useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { TripContext } from "../../App";
 import styles from "./Invoice.module.css";
 import Header from "../../components/header/Header";
 import BtmNav from "../../components/bottomNav/BottomNav";
 import invoiceJson from "./Invoice.json";
-import QRCode from "react-qr-code";
-// 旧グループIDとの互換用
+
 const legacyGroupIds = {
     mie: 1,
     hok: 2,
@@ -24,7 +19,7 @@ const legacyGroupIds = {
     nara: 4,
     aom: 5,
 };
-// グループ名表示用
+
 const groupNames = {
     1: "三重",
     2: "北海道",
@@ -32,819 +27,632 @@ const groupNames = {
     4: "奈良",
     5: "青森",
 };
-// 仮メンバー
+
 const defaultMembers = [
-    { id: 1, name: "志田", paidPayIds: [] },
+    { id: 1, name: "山田", paidPayIds: [] },
     { id: 2, name: "石垣", paidPayIds: [] },
     { id: 3, name: "田中", paidPayIds: [] },
     { id: 4, name: "寺川", paidPayIds: [] },
     { id: 5, name: "岩井", paidPayIds: [] },
 ];
-// 支払い追加フォーム初期値
-// 金額は人数割りせず、そのまま各メンバーへ設定する
+
 const emptyForm = {
     storeName: "",
     amount: "",
-    selectedMemberIds: []
+    category: "food",
+    selectedMemberIds: [],
 };
-// 金額表示
+
+const invoiceStorageKey = "tabi:invoice-data";
+
+const categories = [
+    { value: "food", label: "食費", icon: "🍽️" },
+    { value: "hotel", label: "宿泊費", icon: "🏨" },
+    { value: "transport", label: "交通費", icon: "⛽" },
+    { value: "sightseeing", label: "観光費", icon: "🎡" },
+    { value: "shopping", label: "買い物", icon: "🛒" },
+    { value: "other", label: "その他", icon: "💰" },
+];
+
 function formatYen(value) {
     const number = Number(value);
+    return Number.isNaN(number) ? "0円" : `${number.toLocaleString()}円`;
+}
 
-    // ここで条件を確認し、状況に合う処理だけを実行します。
-    if(Number.isNaN(number)){
+function getCategory(categoryValue) {
+    return categories.find((category) => category.value === categoryValue) || categories.at(-1);
+}
 
-        return "0円";
+function formatPaymentDate(dateString) {
+    const date = dateString ? new Date(dateString) : new Date();
 
+    if (Number.isNaN(date.getTime())) {
+        return "";
     }
 
-    return `${number.toLocaleString()}円`;
+    const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+    return `${date.getMonth() + 1}/${date.getDate()}(${weekDays[date.getDay()]})`;
 }
-// グループデータを画面用へ変換
-function normalizeGroupData(data) {
-    const members =
-        Array.isArray(data?.members)
-            ? data.members
-            : defaultMembers;
 
-    const memberIds =
-        // 配列のデータを1件ずつ画面表示用の形に変換します。
-        members.map(member => member.id);
+function formatTripDate(dateString) {
+    if (!dateString) {
+        return "";
+    }
 
-    const pay =
-        Array.isArray(data?.pay)
-            ? data.pay
-            : [];
+    const date = new Date(dateString);
+
+    if (Number.isNaN(date.getTime())) {
+        return "";
+    }
+
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function formatTripPeriod(startDate, endDate) {
+    const formattedStartDate = formatTripDate(startDate);
+    const formattedEndDate = formatTripDate(endDate);
+
+    if (!formattedStartDate || !formattedEndDate) {
+        return "期間未設定";
+    }
+
+    return `${formattedStartDate} - ${formattedEndDate}`;
+}
+
+function normalizeGroupId(groupId) {
+    if (groupId == null || groupId === "") {
+        return 1;
+    }
+
+    const numericGroupId = Number(groupId);
+
+    if (Number.isInteger(numericGroupId) && numericGroupId > 0) {
+        return numericGroupId;
+    }
+
+    return legacyGroupIds[groupId] || 1;
+}
+
+function normalizeMembers(members) {
+    const sourceMembers = Array.isArray(members) && members.length > 0
+        ? members
+        : defaultMembers;
+
+    return sourceMembers.map((member) => ({
+        id: Number(member.id),
+        name: member.name || "メンバー",
+        paidPayIds: Array.isArray(member.paidPayIds) ? member.paidPayIds : [],
+    }));
+}
+
+function normalizePayItem(payItem, members) {
+    const memberIds = members.map((member) => member.id);
+    const participantIds = Array.isArray(payItem.selectedMemberIds)
+        ? payItem.selectedMemberIds
+        : Array.isArray(payItem.participantIds)
+            ? payItem.participantIds
+            : memberIds;
+    const payMembers = Array.isArray(payItem.members)
+        ? payItem.members.map((member) => ({
+            id: Number(member.id),
+            amount: Number(member.amount) || 0,
+        }))
+        : participantIds.map((id) => ({
+            id: Number(id),
+            amount: Number(payItem.perPersonAmount ?? 0),
+        }));
+    const totalAmount = Number(payItem.totalAmount || payItem.amount)
+        || payMembers.reduce((sum, member) => sum + Number(member.amount), 0);
+
     return {
-        // 配列のデータを1件ずつ画面表示用の形に変換します。
-        pay: pay.map((payItem) => {
-            let invoiceMembers = [];
-
-            /*
-                新形式
-                {
-                    id:1,
-                    storeName:"ホテル",
-                    members:[
-                        {
-                            id:1,
-                            amount:5000
-                        }
-                    ]
-                }
-            */
-
-            // ここで条件を確認し、状況に合う処理だけを実行します。
-            if(Array.isArray(payItem.members)){
-
-                invoiceMembers =
-                    // 配列のデータを1件ずつ画面表示用の形に変換します。
-                    payItem.members.map(member => ({
-
-                        id: member.id,
-                        amount:
-                            Number(member.amount)
-                    }));
-            }
-
-            /*
-                旧形式対応
-                以前は
-                totalAmount ÷ 人数
-                で保存していたため、
-                読み込み時だけ変換する
-            */
-
-            else {
-                const participantIds =
-                    Array.isArray(payItem.participantIds)
-                        ? payItem.participantIds
-                        : memberIds;
-                invoiceMembers =
-                    // 配列のデータを1件ずつ画面表示用の形に変換します。
-                    participantIds.map(id => ({
-                        id,
-                        amount:
-                            Number(
-                                payItem.perPersonAmount
-                                ??
-                                payItem.totalAmount
-                                ??
-                                0
-                            )
-                    }));
-            }
-
-            return {
-                ...payItem,
-
-                // 各メンバーごとの請求情報
-                members: invoiceMembers,
-
-                // 参加人数
-                participantCount:
-                    invoiceMembers.length,
-
-                /*
-                    総額は人数割りではなく
-                    各メンバーの請求額を合計
-                */
-
-                totalAmount:
-                    invoiceMembers.reduce(
-                        (sum,member) =>
-                            sum + Number(member.amount),
-                        0
-                    )
-            };
-
-        }),
-
-        // 徴収データ
-        collect:
-            Array.isArray(data?.collect)
-                ? data.collect
-                : [],
-
-        // メンバー情報
-        members:
-            // 配列のデータを1件ずつ画面表示用の形に変換します。
-            members.map(member => ({
-                id: member.id,
-                name: member.name,
-                paidPayIds:
-                    Array.isArray(member.paidPayIds)
-                        ? member.paidPayIds
-                        : []
-            }))
+        id: payItem.id || Date.now(),
+        storeName: payItem.storeName || "支払い",
+        amount: totalAmount,
+        paidById: Number(payItem.paidById || payItem.paid_by || payMembers[0]?.id || memberIds[0] || 0),
+        paidByName: payItem.paidByName || "",
+        category: payItem.category || "other",
+        members: payMembers,
+        participantCount: payMembers.length,
+        totalAmount,
+        createdAt: payItem.createdAt || new Date().toISOString(),
     };
 }
 
-// 空のグループデータ作成
-function createEmptyGroupData(){
+function normalizeGroupData(data) {
+    const members = normalizeMembers(data?.members);
+    const pay = Array.isArray(data?.pay) ? data.pay : [];
+
+    return {
+        pay: pay.map((payItem) => normalizePayItem(payItem, members)),
+        collect: Array.isArray(data?.collect) ? data.collect : [],
+        members,
+    };
+}
+
+function createEmptyGroupData(members = defaultMembers) {
     return normalizeGroupData({
         pay: [],
         collect: [],
-        members: defaultMembers
+        members,
     });
 }
 
-// groupIdを統一
-function normalizeGroupId(groupId){
-    // ここで条件を確認し、状況に合う処理だけを実行します。
-    if(groupId == null || groupId === ""){
-        return 1;
-
-    }
-    const numericGroupId =
-        Number(groupId);
-
-    // ここで条件を確認し、状況に合う処理だけを実行します。
-    if(
-        Number.isInteger(numericGroupId)
-        &&
-        numericGroupId > 0
-    ){
-        return numericGroupId;
-
-    }
-    return legacyGroupIds[groupId] || 1;
-
-}
-// Invoiceデータ全体を整形
-function normalizeInvoiceFile(data){
-
-    // groups形式
-    if(data?.groups){
+function normalizeInvoiceFile(data) {
+    if (data?.groups) {
         return {
-            groups:
-                Object.fromEntries(
-                    Object.entries(data.groups)
-                    // 配列のデータを1件ずつ画面表示用の形に変換します。
-                    .map(([groupId,groupData]) => [
-                        normalizeGroupId(groupId),
-                        normalizeGroupData(groupData)
-                    ])
-                )
+            groups: Object.fromEntries(
+                Object.entries(data.groups).map(([groupId, groupData]) => [
+                    normalizeGroupId(groupId),
+                    normalizeGroupData(groupData),
+                ])
+            ),
         };
     }
 
-    // 古い単一グループ形式
     return {
-        groups:{
-            1:
-                normalizeGroupData(data)
-        }
+        groups: {
+            1: normalizeGroupData(data),
+        },
     };
 }
 
-/**
- * Invoice は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
+function loadStoredInvoiceData() {
+    try {
+        const storedData = localStorage.getItem(invoiceStorageKey);
+        return storedData ? JSON.parse(storedData) : invoiceJson;
+    } catch {
+        return invoiceJson;
+    }
+}
+
+function splitAmount(totalAmount, memberIds) {
+    const baseAmount = Math.floor(totalAmount / memberIds.length);
+    const remainder = totalAmount % memberIds.length;
+
+    return memberIds.map((id, index) => ({
+        id,
+        amount: baseAmount + (index < remainder ? 1 : 0),
+    }));
+}
+
+function getLoginUser() {
+    try {
+        return JSON.parse(localStorage.getItem("loginUser") || "null");
+    } catch {
+        return null;
+    }
+}
+
 export default function Invoice() {
-
     const location = useLocation();
+    const navigate = useNavigate();
+    const params = new URLSearchParams(location.search);
+    const groupId = normalizeGroupId(params.get("groupId"));
+    const { trip, fetchMembers, tripPeriod } = useContext(TripContext);
+    const loginUser = getLoginUser();
+    const loginUserId = Number(loginUser?.user_id) || 0;
+    const loginUserName = loginUser?.name || "ログイン中のユーザー";
 
-    const params =
-        new URLSearchParams(location.search);
+    const [allInvoiceData, setAllInvoiceData] = useState(() =>
+        normalizeInvoiceFile(loadStoredInvoiceData())
+    );
+    const [invoiceData, setInvoiceData] = useState(() =>
+        normalizeInvoiceFile(loadStoredInvoiceData()).groups[groupId] || createEmptyGroupData()
+    );
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [form, setForm] = useState(emptyForm);
 
-    // URLからグループID取得
-    const groupId =
-        normalizeGroupId(
-            params.get("groupId")
-        );
+    useEffect(() => {
+        queueMicrotask(() => {
+            const data = normalizeInvoiceFile(loadStoredInvoiceData());
+            const currentGroupData = data.groups[groupId] || createEmptyGroupData();
 
-    // Contextから旅行名取得
-    const { tripName } =
-        useContext(TripContext);
+            setAllInvoiceData(data);
+            setInvoiceData(currentGroupData);
+        });
+    }, [groupId]);
 
-    // 現在選択中のタブ
-    const [activeTab,setActiveTab] =
-        useState("collect");
+    useEffect(() => {
+        if (!groupId || typeof fetchMembers !== "function") {
+            return;
+        }
 
-    // 全グループの請求データ
-    const [allInvoiceData,setAllInvoiceData] =
-        useState(
-            normalizeInvoiceFile(invoiceJson)
-        );
+        const loadGroupMembers = async () => {
+            const result = await fetchMembers(groupId);
 
-    // 現在表示中の請求データ
-    const [invoiceData,setInvoiceData] =
-        useState(
-            normalizeInvoiceFile(invoiceJson)
-                .groups[groupId]
-            ||
-            createEmptyGroupData()
-        );
-
-    // 支払い追加フォーム表示状態
-    const [isFormOpen,setIsFormOpen] =
-        useState(false);
-
-    // 入力フォーム
-    const [form,setForm] =
-        useState(emptyForm);
-
-    /*
-        グループID変更時に
-        請求データを取得する
-    */
-    useEffect(()=>{
-        // loadInvoices は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
-        const loadInvoices = async()=>{
-            // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
-            try{
-                const response =
-                    // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-                    await fetch(
-                        `${import.meta.env.BASE_URL}api/invoices`
-                    );
-
-                // ここで条件を確認し、状況に合う処理だけを実行します。
-                if(!response.ok){
-                    throw new Error(
-                        "Invoice取得失敗"
-                    );
-                }
-
-                const data =
-                    normalizeInvoiceFile(
-                        await response.json()
-                    );
-
-                const currentGroupData =
-                    data.groups[groupId]
-                    ||
-                    createEmptyGroupData();
-
-                setAllInvoiceData(data);
-
-                setInvoiceData(
-                    currentGroupData
-                );
-
+            if (!result.success || !Array.isArray(result.members) || result.members.length === 0) {
+                return;
             }
 
-            // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
-            catch{
-                // API取得失敗時はjsonを利用
-                const data =
-                    normalizeInvoiceFile(
-                        invoiceJson
+            const groupMembers = result.members.map((member) => ({
+                id: Number(member.id),
+                name: member.name || "メンバー",
+                paidPayIds: [],
+            }));
+
+            setInvoiceData((currentData) => ({
+                ...currentData,
+                members: groupMembers.map((groupMember) => {
+                    const currentMember = currentData.members.find(
+                        (member) => member.id === groupMember.id
                     );
 
-                setAllInvoiceData(data);
-
-                setInvoiceData(
-                    data.groups[groupId]
-                    ||
-                    createEmptyGroupData()
-                );
-
-            }
-
+                    return {
+                        ...groupMember,
+                        paidPayIds: currentMember?.paidPayIds || [],
+                    };
+                }),
+            }));
         };
 
-        loadInvoices();
+        loadGroupMembers();
+    }, [fetchMembers, groupId]);
 
-    },[groupId]);
+    const selectableMembers = invoiceData.members;
+    const recentPayments = useMemo(() => (
+        [...invoiceData.pay].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    ), [invoiceData.pay]);
+    const headerTitle = trip?.name || groupNames[groupId] || "割り勘";
 
-    /*
-        徴収一覧用データ作成
-        変更前:
-        総額 ÷ 人数
-        変更後:
-        各メンバーに設定された金額を表示
-    */
+    const tripStartDate = tripPeriod?.startDate || trip?.start_date || trip?.startDate;
+    const tripEndDate = tripPeriod?.endDate || trip?.end_date || trip?.endDate;
+    const tripPeriodText = formatTripPeriod(tripStartDate, tripEndDate);
+    const totalExpense = invoiceData.pay.reduce(
+        (sum, payItem) => sum + Number(payItem.totalAmount || payItem.amount || 0),
+        0
+    );
+    const perPersonExpense = selectableMembers.length > 0
+        ? Math.round(totalExpense / selectableMembers.length)
+        : 0;
 
-    const collectMembers =
+    const saveInvoiceData = (nextGroupData) => {
+        const nextAllData = {
+            groups: {
+                ...allInvoiceData.groups,
+                [groupId]: nextGroupData,
+            },
+        };
 
-        useMemo(()=>{
+        setInvoiceData(nextGroupData);
+        setAllInvoiceData(nextAllData);
+        localStorage.setItem(invoiceStorageKey, JSON.stringify(nextAllData));
+    };
 
-            // 配列のデータを1件ずつ画面表示用の形に変換します。
-            return invoiceData.members.map(
+    const handleChange = (event) => {
+        const { name, value } = event.target;
+        setForm((currentForm) => ({
+            ...currentForm,
+            [name]: value,
+        }));
+    };
 
-                (member)=>{
+    const handleMemberSelect = (memberId) => {
+        setForm((currentForm) => {
+            const isSelected = currentForm.selectedMemberIds.includes(memberId);
 
-                    // このメンバーが参加している支払い取得
-                    const details =
-
-                        invoiceData.pay
-                        // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
-                        .filter(
-                            payItem =>
-                                payItem.members.some(
-                                    payMember =>
-                                        payMember.id
-                                        ===
-                                        member.id
-                                )
-                        )
-
-                        // 配列のデータを1件ずつ画面表示用の形に変換します。
-                        .map(
-                            payItem=>{
-                                // メンバー個人の金額取得
-                                const memberPayment =
-                                    payItem.members.find(
-                                        payMember =>
-                                            payMember.id
-                                            ===
-                                            member.id
-                                    );
-
-                                return {
-
-                                    id:
-                                        payItem.id,
-                                    storeName:
-                                        payItem.storeName,
-                                    // 人数割りせずそのまま表示
-                                    amount:
-                                        memberPayment.amount,
-                                    // 支払い済み判定
-                                    isPaid:
-                                        member.paidPayIds.includes(
-                                            payItem.id
-                                        )
-                                };
-                            }
-                        );
-                    // 未払い合計
-                    const totalAmount =
-                        details.reduce(
-                            (sum,detail)=>{
-                                // ここで条件を確認し、状況に合う処理だけを実行します。
-                                if(detail.isPaid){
-                                    return sum;
-                                }
-                                return (
-                                    sum
-                                    +
-                                    Number(detail.amount)
-                                );
-                            },
-                            0
-                        );
-                    return {
-                        ...member,
-                        // 未払い合計
-                        totalAmount,
-                        // 明細
-                        details
-                    };
-                }
-            );
-        },[
-            invoiceData.members,
-            invoiceData.pay
-        ]);
-    // タイトル変更
-    const title =
-        activeTab === "pay"
-            ? "支払い"
-            : "徴収側";
-    // ヘッダー表示名
-    const headerTitle =
-        tripName
-        ||
-        groupNames[groupId]
-
-        ||
-        "割り勘";
-    /*
-        請求データ保存
-        JSON保存APIへ送信
-    */
-    const saveInvoiceData =
-        async(nextGroupData)=>{
-            const nextAllData = {
-                groups:{
-                    ...allInvoiceData.groups,
-                    [groupId]:
-                        nextGroupData
-                }
+            return {
+                ...currentForm,
+                selectedMemberIds: isSelected
+                    ? currentForm.selectedMemberIds.filter((id) => id !== memberId)
+                    : [...currentForm.selectedMemberIds, memberId],
             };
-            // 画面更新
-            setInvoiceData(
-                nextGroupData
-            );
-            setAllInvoiceData(
-                nextAllData
-            );
-            const response =
-                // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-                await fetch(
-                    `${import.meta.env.BASE_URL}api/invoices`,
-                    {
-                        method:"POST",
-                        headers:{
-                            "Content-Type":
-                                "application/json"
-                        },
-                        body:
-                            JSON.stringify(
-                                nextAllData
-                            )
-                    }
-                );
-            // ここで条件を確認し、状況に合う処理だけを実行します。
-            if(!response.ok){
-                throw new Error(
-                    "保存失敗"
-                );
-            }
-        };
-    /*
-        入力変更
-    */
-    const handleChange =
-        (event)=>{
-            const {
-                name,
-                value
-            } = event.target;
-            setForm(
-                currentForm=>({
-                    ...currentForm,
-                    [name]:
-                        value
-                })
-            );
-        };
-    /*
-        メンバー選択変更
-    */
-    const handleMemberSelect =
-        (memberId)=>{
-            setForm(
-                currentForm=>{
-                    const isSelected =
-                        currentForm.selectedMemberIds
-                        .includes(memberId);
-                    return {
-                        ...currentForm,
-                        selectedMemberIds:
-                            isSelected
-                            ?
-                            currentForm.selectedMemberIds
-                            // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
-                            .filter(
-                                id =>
-                                    id !== memberId
-                            )
-                            :
-                            [
-                                ...currentForm.selectedMemberIds,
-                                memberId
-                            ]
-                    };
-                }
-            );
-        };
-    // フォームを開く
-    const handleOpenForm = ()=>{
-        setForm(emptyForm);
+        });
+    };
+
+    const handleOpenForm = () => {
+        setForm({
+            ...emptyForm,
+            selectedMemberIds: selectableMembers.map((member) => member.id),
+        });
         setIsFormOpen(true);
     };
-    // フォームを閉じる
-    const handleCloseForm = ()=>{
+
+    const handleCloseForm = () => {
         setIsFormOpen(false);
         setForm(emptyForm);
     };
- /*
-        支払い追加処理
 
-        変更前:
-        入力金額 ÷ 人数
-
-        変更後:
-        入力金額を各メンバーへそのまま設定
-    */
-    const handleSubmit = async(event) => {
+    const handleSubmit = (event) => {
         event.preventDefault();
-        // 参加メンバー確認
-        if(form.selectedMemberIds.length === 0){
-            alert(
-                "参加メンバーを1人以上選択してください。"
-            );
+
+        const totalAmount = Number(form.amount);
+
+        if (!form.storeName.trim()) {
+            alert("支払い名を入力してください。");
             return;
         }
-        // 入力された金額
-        const amount =
-            Number(form.amount);
-        /*
-            選択されたメンバーごとの
-            請求金額を作成
 
-            例:
-            田中 5000円
-            山田 5000円
-        */
-        const members =
-            // 配列のデータを1件ずつ画面表示用の形に変換します。
-            form.selectedMemberIds.map(
-                id => ({
-                    id:id,
-                    amount:amount
-                })
-            );
-        const newInvoice = {
-            // 支払いID
-            id:
-                Date.now(),
-            // 店名
-            storeName:
-                form.storeName,
-            // 各メンバーの請求情報
-            members,
-            // 人数
-            participantCount:
-                members.length,
-            // 各メンバー金額の合計
-            totalAmount:
-                members.reduce(
-                    (sum,member)=>
-                        sum + Number(member.amount),
-                    0
-                )
-        };
-        const nextData = {
+        if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
+            alert("金額は1円以上で入力してください。");
+            return;
+        }
+
+        if (!loginUserId) {
+            alert("ログイン中のユーザー情報が取得できません。");
+            return;
+        }
+
+        if (form.selectedMemberIds.length === 0) {
+            alert("対象メンバーを1人以上選択してください。");
+            return;
+        }
+
+        const members = splitAmount(totalAmount, form.selectedMemberIds);
+
+        saveInvoiceData({
             ...invoiceData,
-            pay:[
+            pay: [
                 ...invoiceData.pay,
-                newInvoice
-            ]
-        };
-        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
-        try{
-            await saveInvoiceData(nextData);
-            handleCloseForm();
-        }
-        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
-        catch{
-            alert(
-                "請求データの保存に失敗しました。"
-            );
-        }
+                {
+                    id: Date.now(),
+                    storeName: form.storeName.trim(),
+                    amount: totalAmount,
+                    paidById: loginUserId,
+                    paidByName: loginUserName,
+                    category: form.category,
+                    members,
+                    participantCount: members.length,
+                    totalAmount,
+                    createdAt: new Date().toISOString(),
+                },
+            ],
+        });
+        handleCloseForm();
     };
 
-    /*
-        支払い完了処理
-    */
-    const handleCompletePayment = async(memberId,payId)=>{
+    const handleDeletePayment = (payItem) => {
+        const isConfirmed = confirm(
+            `「${payItem.storeName}」の支払い記録を削除しますか？\nこの操作は取り消せません。`
+        );
 
-        const isConfirmed =
-            confirm(
-                "支払い完了にしますか？\n完了後は編集できません。"
-            );
-
-        // ここで条件を確認し、状況に合う処理だけを実行します。
-        if(!isConfirmed){
+        if (!isConfirmed) {
             return;
         }
 
-        const nextData = {
+        saveInvoiceData({
             ...invoiceData,
-            members:
-                // 配列のデータを1件ずつ画面表示用の形に変換します。
-                invoiceData.members.map(
-                    member=>{
-                        // ここで条件を確認し、状況に合う処理だけを実行します。
-                        if(
-                            member.id !== memberId
-                            ||
-                            member.paidPayIds.includes(payId)
-                        ){
-                            return member;
-                        }
-                        return {
-                            ...member,
-                            paidPayIds:[
-                                ...member.paidPayIds,
-                                payId
-                            ]
-                        };
-                    }
-                )
-        };
-        // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
-        try{
-            await saveInvoiceData(nextData);
-        }
-        // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
-        catch{
-            alert(
-                "支払い完了の保存に失敗しました。"
-            );
-        }
+            pay: invoiceData.pay.filter((item) => item.id !== payItem.id),
+        });
     };
+
+    const handleCompletePayment = (memberId, payId) => {
+        const isConfirmed = confirm(
+            "支払い完了にしますか？\n完了後は編集できません。"
+        );
+
+        if (!isConfirmed) {
+            return;
+        }
+
+        saveInvoiceData({
+            ...invoiceData,
+            members: invoiceData.members.map((member) => {
+                if (member.id !== memberId || member.paidPayIds.includes(payId)) {
+                    return member;
+                }
+
+                return {
+                    ...member,
+                    paidPayIds: [
+                        ...member.paidPayIds,
+                        payId,
+                    ],
+                };
+            }),
+        });
+    };
+
+    const handleViewAllPayments = () => {
+        navigate(`/InvoiceAll?groupId=${encodeURIComponent(groupId)}`);
+    };
+
+    const getPayerName = (payItem) => (
+        payItem.paidByName
+        || invoiceData.members.find((member) => member.id === payItem.paidById)?.name
+        || `支払者ID: ${payItem.paidById}`
+    );
 
     return (
         <>
             <Header tripName={headerTitle} />
 
-            {/* 画面全体のメイン領域 */}
             <main className={styles.page}>
-                {/* 画面上部のタイトルとメニュー */}
-                <section className={styles.titleArea}>
-                    <h2>{title}</h2>
+                <section className={styles.tripSummaryCard}>
+                    <h2 className={styles.tripSummaryTitle}>{headerTitle}</h2>
+                    <p className={styles.tripPeriodText}>{tripPeriodText}</p>
+
+                    <p className={styles.tripSummaryLabel}>総支出</p>
+                    <p className={styles.totalExpense}>{formatYen(totalExpense)}</p>
+                    <p className={styles.tripSummaryMeta}>
+                        1人あたり {formatYen(perPersonExpense)}・{recentPayments.length}件の支払い
+                    </p>
+
+                    <div className={styles.summaryActions}>
+                        <button
+                            className={styles.summaryAction}
+                            type="button"
+                            onClick={handleOpenForm}
+                        >
+                            <span className={`${styles.summaryActionIcon} ${styles.summaryActionBlue}`}>＋</span>
+                            <span>支払い追加</span>
+                        </button>
+
+                        <button
+                            className={styles.summaryAction}
+                            type="button"
+                            onClick={() => navigate(`/InvoiceLiquidation?groupId=${encodeURIComponent(groupId)}`)}
+                        >
+                            <span className={`${styles.summaryActionIcon} ${styles.summaryActionCyan}`}>🤝</span>
+                            <span>精算結果</span>
+                        </button>
+
+                        <button
+                            className={styles.summaryAction}
+                            type="button"
+                            onClick={() => navigate(`/InvoiceTotal?groupId=${encodeURIComponent(groupId)}`)}
+                        >
+                            <span className={`${styles.summaryActionIcon} ${styles.summaryActionSky}`}>📊</span>
+                            <span>集計</span>
+                        </button>
+                    </div>
                 </section>
 
-                {/* 支払い表示と徴収表示を切り替えるタブ */}
-                <div className={styles.tabs}>
+                <section className={styles.recentHeader}>
+                    <h2>最近の支払い</h2>
                     <button
+                        className={styles.viewAllButton}
                         type="button"
-                        className={activeTab === "pay" ? styles.activeTab : ""}
-                        onClick={() => setActiveTab("pay")}
+                        onClick={handleViewAllPayments}
                     >
-                        支払い
+                        すべて見る ›
                     </button>
-                    <button
-                        type="button"
-                        className={activeTab === "collect" ? styles.activeTab : ""}
-                        onClick={() => setActiveTab("collect")}
-                    >
-                        徴収分
-                    </button>
-                </div>
+                </section>
 
-                {/* タブに応じて表示する一覧を切り替える */}
-                <div className={styles.list}>
-                    {activeTab === "pay" ? (
-                        // 支払い一覧を表示する
-                        invoiceData.pay.length === 0 ? (
-                            <p className={styles.emptyText}>まだ支払いがありません</p>
-                        ) : (
-                            invoiceData.pay.map((item) => {
-                                // 支払いの残額を計算
-                                const remainingAmount = item.members.reduce((sum, payMember) => {
-                                    // メンバー情報を取得
-                                    const member = invoiceData.members.find(
-                                        (m) => m.id === payMember.id
-                                    );
-
-                                    // 支払い済みなら加算しない
-                                    if(member?.paidPayIds.includes(item.id)){
-                                        return sum;
-                                    }
-
-                                    // 未払いなら残額へ加算
-                                    return sum + payMember.amount;
-
-                                }, 0);
-
-                                return (
-                                    <div className={styles.payItem} key={item.id}>
-                                        <p className={styles.storeName}>{item.storeName}</p>
-                                        <p className={styles.perPersonAmount}>
-                                            総額{formatYen(item.totalAmount)}
-                                        </p>
-
-                                        <p className={styles.participantCount}>
-                                            {item.participantCount}人
-                                        </p>
-
-                                        <p className={styles.totalAmount}>
-                                            残額{formatYen(remainingAmount)}
-                                        </p>
-                                    </div>
-                                );
-                            })
-                        )
-                    ) : collectMembers.length === 0 ? (
-                        // 徴収一覧を出す対象がいない場合のメッセージ
-                        <p className={styles.emptyText}>表示するメンバーがいません</p>
+                <section className={styles.paymentList}>
+                    {recentPayments.length === 0 ? (
+                        <p className={styles.emptyText}>まだ支払いがありません</p>
                     ) : (
-                        // メンバーごとに未払い金額を折りたたみ表示する
-                        collectMembers.map((member) => (
-                            <details className={styles.collectItem} key={member.id}>
-                                <summary className={styles.collectSummary}>
-                                    <span className={styles.memberName}>{member.name}</span>
-                                    <span className={styles.memberTotal}>
-                                        {formatYen(member.totalAmount)}
-                                    </span>
-                                </summary>
+                        recentPayments.map((item) => {
+                            const category = getCategory(item.category);
+                            const remainingAmount = item.members.reduce((sum, payMember) => {
+                                const member = invoiceData.members.find(
+                                    (m) => m.id === payMember.id
+                                );
 
-                                <div className={styles.detailList}>
-                                    {member.details.length === 0 ? (
-                                        <p className={styles.emptyDetail}>支払い詳細がありません</p>
-                                    ) : (
-                                        // 各明細に店名、金額、支払済みチェックを表示する
-                                        member.details.map((detail) => (
-                                            <label
-                                                className={`${styles.detailRow} ${detail.isPaid ? styles.paidDetail : ""}`}
-                                                key={detail.id}
-                                            >
-                                                <input
-                                                    type="checkbox"
-                                                    checked={detail.isPaid}
-                                                    disabled={detail.isPaid}
-                                                    onChange={() =>
-                                                        handleCompletePayment(member.id, detail.id)
-                                                    }
-                                                />
-                                                <span className={styles.detailStore}>
-                                                    {detail.storeName}
-                                                </span>
-                                                <span className={styles.detailAmount}>
-                                                    {formatYen(detail.amount)}
-                                                </span>
-                                            </label>
-                                        ))
-                                    )}
-                                </div>
-                            </details>
-                        ))
+                                if (member?.paidPayIds.includes(item.id)) {
+                                    return sum;
+                                }
+
+                                return sum + payMember.amount;
+                            }, 0);
+
+                            return (
+                                <article className={styles.paymentCard} key={item.id}>
+                                    <div className={styles.paymentMain}>
+                                        <div className={styles.categoryIcon} aria-hidden="true">
+                                            {category.icon}
+                                        </div>
+
+                                        <div className={styles.paymentInfo}>
+                                            <h3>{item.storeName}</h3>
+                                            <p>
+                                                {formatPaymentDate(item.createdAt)} / {category.label}
+                                            </p>
+                                        </div>
+
+                                        <div className={styles.paymentAmountArea}>
+                                            <p className={styles.paymentAmount}>{formatYen(item.totalAmount)}</p>
+                                            <p className={styles.paymentData}>{getPayerName(item)}</p>
+                                        </div>
+                                    </div>
+
+                                    <details className={styles.breakdown}>
+                                        <summary>内訳を見る（誰がいくら）▼</summary>
+                                        <div className={styles.breakdownBody}>
+                                            {item.members.map((payMember) => {
+                                                const member = invoiceData.members.find(
+                                                    (invoiceMember) => invoiceMember.id === payMember.id
+                                                );
+                                                const isPaid = member?.paidPayIds.includes(item.id);
+
+                                                return (
+                                                    <label
+                                                        className={`${styles.breakdownRow} ${isPaid ? styles.paidDetail : ""}`}
+                                                        key={payMember.id}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Boolean(isPaid)}
+                                                            disabled={Boolean(isPaid)}
+                                                            onChange={() => handleCompletePayment(payMember.id, item.id)}
+                                                        />
+                                                        <span>{member?.name || `対象ID: ${payMember.id}`}</span>
+                                                        <strong>{formatYen(payMember.amount)}</strong>
+                                                    </label>
+                                                );
+                                            })}
+
+                                            <div className={styles.breakdownFooter}>
+                                                <span>残額 {formatYen(remainingAmount)}</span>
+                                                <button
+                                                    className={styles.deleteButton}
+                                                    type="button"
+                                                    onClick={() => handleDeletePayment(item)}
+                                                >
+                                                    削除
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </article>
+                            );
+                        })
                     )}
-                </div>
+                </section>
 
-                {/* 支払いタブのときだけ新規追加ボタンを表示する */}
-                {activeTab === "pay" ? (
-                    <button
-                        className={styles.addButton}
-                        type="button"
-                        aria-label="請求を追加"
-                        onClick={handleOpenForm}
-                    >
-                        +
-                    </button>
-                ) : null}
+                <button
+                    className={styles.addButton}
+                    type="button"
+                    aria-label="支払いを追加"
+                    onClick={handleOpenForm}
+                >
+                    ＋ 支払いを追加
+                </button>
 
-                {/* isFormOpen のときだけ新規支払いフォームを表示する */}
                 {isFormOpen ? (
                     <div className={styles.modalBack}>
                         <form className={styles.form} onSubmit={handleSubmit}>
                             <h3>新しい支払い</h3>
 
                             <label className={styles.form_label}>
-                                店名
+                                支払い名
                                 <input
                                     name="storeName"
                                     value={form.storeName}
                                     onChange={handleChange}
-                                    placeholder="例: スーパーA店"
+                                    placeholder="例：昼ごはん"
                                     required
                                 />
                             </label>
 
                             <label className={styles.form_label}>
-                                支払金額
+                                金額
                                 <input
                                     name="amount"
                                     type="number"
                                     min="1"
                                     value={form.amount}
                                     onChange={handleChange}
-                                    placeholder="例: 4000"
+                                    placeholder="例：6000"
                                     required
                                 />
                             </label>
 
+                            <label className={styles.form_label}>
+                                支払った人
+                                <div className={styles.fixedPayer}>
+                                    {loginUserName}
+                                </div>
+                            </label>
+
+                            <label className={styles.form_label}>
+                                分類
+                                <select
+                                    name="category"
+                                    value={form.category}
+                                    onChange={handleChange}
+                                >
+                                    {categories.map((category) => (
+                                        <option value={category.value} key={category.value}>
+                                            {category.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+
                             <fieldset className={styles.memberSelect}>
-                                <legend>参加メンバー</legend>
-                                {invoiceData.members.map((member) => (
+                                <legend>対象メンバー</legend>
+                                {selectableMembers.map((member) => (
                                     <label className={styles.memberOption} key={member.id}>
                                         <input
                                             type="checkbox"
@@ -867,7 +675,6 @@ export default function Invoice() {
                 ) : null}
             </main>
 
-            {/* 下部ナビゲーション */}
             <BtmNav />
         </>
     );

@@ -2,7 +2,8 @@
     max-width: 430px;
     min-height: calc(100vh - 120px);
     margin: 0 auto;
-    padding: 18px 24px 96px;
+    padding: 18px 10px 120px;
+    background-color: #f7fbff;
     box-sizing: border-box;
 }
 
@@ -48,6 +49,301 @@
     margin-top: 12px;
 }
 
+.tripSummaryCard {
+    margin-bottom: 18px;
+    padding: 20px 16px 24px;
+    border: 1px solid #e8f0ff;
+    border-radius: 18px;
+    background-color: #fff;
+    box-shadow: 0 6px 16px rgba(54, 106, 180, 0.06);
+    text-align: center;
+}
+
+.tripSummaryLabel {
+    margin: 16px 0 2px;
+    color: #6a7b92;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.tripSummaryTitle {
+    margin: 0 0 4px;
+    overflow: hidden;
+    color: #061634;
+    font-size: 21px;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tripPeriodText {
+    margin: 0;
+    color: #52657d;
+    font-size: 13px;
+}
+
+.totalExpense {
+    margin: 0;
+    color: #3167f4;
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: 0.02em;
+}
+
+.tripSummaryMeta {
+    margin: 4px 0 0;
+    color: #52657d;
+    font-size: 13px;
+}
+
+.summaryActions {
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.summaryAction {
+    padding: 0;
+    border: none;
+    display: grid;
+    justify-items: center;
+    gap: 8px;
+    background: transparent;
+    color: #061634;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.summaryActionIcon {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 800;
+    box-shadow: 0 8px 16px rgba(49, 103, 244, 0.14);
+}
+
+.summaryActionBlue {
+    background: linear-gradient(135deg, #3167f4, #2357dd);
+}
+
+.summaryActionCyan {
+    background: linear-gradient(135deg, #20b8ec, #0fa1d2);
+}
+
+.summaryActionSky {
+    background: linear-gradient(135deg, #55c7f8, #26aeea);
+}
+
+.recentHeader {
+    margin: 2px 0 12px;
+    padding: 0 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.recentHeader h2 {
+    margin: 0;
+    color: #061634;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.viewAllButton {
+    padding: 4px 0 4px 10px;
+    border: none;
+    background: transparent;
+    color: #1d6ff2;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.paymentList {
+    display: grid;
+    gap: 10px;
+}
+
+.paymentCard {
+    overflow: hidden;
+    border: 1px solid #e8f0ff;
+    border-radius: 15px;
+    background-color: #fff;
+    box-shadow: 0 6px 16px rgba(54, 106, 180, 0.06);
+}
+
+.paymentMain {
+    min-height: 82px;
+    padding: 18px 14px;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+}
+
+.categoryIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #dff1ff;
+    font-size: 22px;
+}
+
+.paymentInfo {
+    min-width: 0;
+}
+
+.paymentInfo h3 {
+    margin: 0 0 5px;
+    overflow: hidden;
+    color: #061634;
+    font-size: 16px;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.paymentInfo p {
+    margin: 0;
+    overflow: hidden;
+    color: #5b6b83;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.paymentAmountArea {
+    display: grid;
+    justify-items: end;
+    gap: 6px;
+}
+
+.paymentAmount {
+    margin: 0;
+    color: #061634;
+    font-size: 18px;
+    font-weight: 900;
+}
+
+.paidBy {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #5b6b83;
+    font-size: 12px;
+}
+
+.paymentData {
+    margin: 0;
+    color: #5b6b83;
+    font-size: 12px;
+}
+
+.payerBadge {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.payerToneOrange {
+    background-color: #f4a62a;
+}
+
+.payerTonePurple {
+    background-color: #7659b8;
+}
+
+.payerToneViolet {
+    background-color: #b779d7;
+}
+
+.payerToneGreen {
+    background-color: #43b983;
+}
+
+.payerToneBlue {
+    background-color: #4299e1;
+}
+
+.breakdown {
+    border-top: 1px solid #d9e8ff;
+}
+
+.breakdown summary {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #52657d;
+    font-size: 12px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.breakdown summary::-webkit-details-marker {
+    display: none;
+}
+
+.breakdownBody {
+    border-top: 1px dashed #d9e8ff;
+    padding: 10px 14px 12px;
+    display: grid;
+    gap: 8px;
+}
+
+.breakdownRow {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 8px;
+    color: #24344d;
+    font-size: 13px;
+}
+
+.breakdownRow input {
+    width: 17px;
+    height: 17px;
+}
+
+.breakdownFooter {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #52657d;
+    font-size: 13px;
+}
+
+.sectionBlock {
+    margin-top: 18px;
+}
+
+.sectionTitle {
+    margin: 0 0 10px;
+    color: #333;
+    font-size: 16px;
+    font-weight: bold;
+}
+
 .emptyText {
     margin: 28px 0;
     color: #777;
@@ -84,6 +380,7 @@
 .storeName,
 .perPersonAmount,
 .participantCount,
+.payMeta,
 .totalAmount {
     margin: 0;
     color: #222;
@@ -112,11 +409,43 @@
     font-weight: bold;
 }
 
+.payMeta {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin-top: 8px;
+    color: #666;
+    font-size: 13px;
+}
+
 .totalAmount {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 3;
+    margin-top: 8px;
     font-size: 16px;
     font-weight: bold;
+}
+
+.payActions {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.deleteButton {
+    padding: 6px 12px;
+    border: 1px solid #d9534f;
+    border-radius: 999px;
+    background-color: #fff;
+    color: #d9534f;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.deleteButton:hover {
+    background-color: #fff2f2;
 }
 
 .collectItem {
@@ -240,17 +569,21 @@
 
 .addButton {
     position: fixed;
-    right: 24px;
-    bottom: 86px;
-    width: 48px;
-    height: 48px;
+    left: 50%;
+    bottom: 74px;
+    width: min(178px, calc(100vw - 48px));
+    min-height: 54px;
+    transform: translateX(-50%);
     border: none;
-    border-radius: 50%;
-    background-color: var(--sub-color);
+    border-radius: 999px;
+    background: linear-gradient(135deg, #2f7df4, #08aeea);
     color: #fff;
-    font-size: 32px;
-    line-height: 1;
+    font-size: 16px;
+    font-weight: bold;
     cursor: pointer;
+    box-sizing: border-box;
+    box-shadow: 0 10px 22px rgba(28, 112, 238, 0.35);
+    z-index: 9;
 }
 
 .modalBack {
@@ -295,6 +628,19 @@
     padding: 0 10px;
     border: 1px solid #cfcfcf;
     border-radius: 6px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.fixedPayer {
+    min-height: 40px;
+    padding: 0 10px;
+    border: 1px solid #cfcfcf;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    background-color: #f7fbff;
+    color: #333;
     font-size: 16px;
     box-sizing: border-box;
 }
