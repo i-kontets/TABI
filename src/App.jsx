@@ -15,7 +15,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // 画面をまたいで値を共有するための Context 作成関数を読み込みます。
 import { createContext } from 'react';
 import './App.css'
-import ItineraryJoin from './pages/Itinerary/ItineraryJoin.jsx';
+import ItineraryJoin from './pages/ItineraryJoin/ItineraryJoin.jsx';
 
 // ===== 各ページコンポーネントの読み込み =====
 import Newreg from './pages/newreg/Newreg';                    // 新規会員登録
@@ -28,8 +28,8 @@ import { ProfileEditPage, UserEditPage, EmailChangePage, NotificationSettingsPag
 import Terms from './pages/Terms/Terms.jsx';                    // 利用規約
 import PrivacyPolicy from './pages/PrivacyPolicy/PrivacyPolicy.jsx'; // プライバシーポリシー
 import UserProfilePage from './pages/UserProfile/UserProfilePage.jsx'; // 他ユーザーの公開プロフィール
-import Itinerary from './pages/Itinerary/itinerary.jsx';        // 旅程(しおり)表示
-import ItineraryEdit from './pages/Itinerary/ItineraryEdit.jsx'; // 旅程編集
+import Itinerary from './pages/Itinerary/Itinerary.jsx';        // 旅程(しおり)表示
+import ItineraryEdit from './pages/ItineraryEdit/ItineraryEdit.jsx'; // 旅程編集
 import Tripmap from './pages/Tripmap/Tripmap';                  // 旅行マップ
 import Schedule from './pages/Schedule/Schedule.jsx';           // スケジュール
 import Chat from './pages/Chat/Chat';                           // グループチャット
