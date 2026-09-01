@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Tabs, Timeline } from '@mantine/core';
+import { Drawer, Tabs, Timeline } from '@mantine/core';
 import groupIcon from '../../assets/icons/groups.svg';
 import personIcon from '../../assets/icons/person.svg';
 import styles from './ScheduleTimeAxis.module.css';
@@ -106,7 +106,7 @@ const scheduleData = {
             { id: 5, group: '全員', title: 'ホテル出発', endTime: '10:30', userIds: null },
         ],
         '10:00': [
-            { id: 6, group: null, title: 'コテージ到着', endTime: '10:20', userIds: [1, 2, 3, 4, 5, 6, 6, 6] },
+            { id: 6, group: null, title: 'コテージ到着', endTime: '10:20', userIds: [1, 2, 3, 4, 5, 6] },
             { id: 7, group: null, title: '買い出し', endTime: '10:40', userIds: [7, 1] },
             { id: 8, group: null, title: '買い出し', endTime: '10:50', userIds: [7] },
             { id: 9, group: null, title: '買い出し', endTime: '11:00', userIds: [7] },
@@ -147,6 +147,10 @@ const SUB_TIME_LABEL_HEIGHT = 22;
 const MEMBER_AVATAR_SIZE = 24;
 const MEMBER_AVATAR_OVERLAP = 6;
 const MEMBER_AVATAR_STEP = MEMBER_AVATAR_SIZE - MEMBER_AVATAR_OVERLAP;
+const SHEET_CLOSE_DRAG_DISTANCE = 110;
+const SHEET_ANIMATION_DURATION = 220;
+const SHEET_HEIGHT_RATIO = 0.8;
+const SHEET_TOP_MARGIN = 72;
 
 function isCompactSlot(item) {
     return item.events.length === 0;
@@ -188,6 +192,19 @@ function getUserName(userId) {
     return users.find((user) => user.userId === userId)?.name ?? `ユーザー${userId}`;
 }
 
+function getEventMemberNames(event) {
+    return event.userIds?.map(getUserName) ?? [];
+}
+
+function getEventTargetText(event) {
+    if (event.group === '全員') {
+        return '全員';
+    }
+
+    const memberNames = getEventMemberNames(event);
+    return memberNames.length > 0 ? memberNames.join('、') : '未設定';
+}
+
 function getMemberAvatarsWidth(visibleCount, hasMore) {
     if (visibleCount === 0) {
         return hasMore ? MEMBER_AVATAR_SIZE : 0;
@@ -213,6 +230,11 @@ function getVisibleMemberCount(memberCount, availableWidth) {
     }
 
     return 0;
+}
+
+function getDetailSheetBaseHeight() {
+    const viewportHeight = window.innerHeight;
+    return Math.min(viewportHeight * SHEET_HEIGHT_RATIO, viewportHeight - SHEET_TOP_MARGIN);
 }
 
 function filterItemsByView(items, viewMode) {
@@ -282,11 +304,11 @@ function MemberAvatars({ userIds = [] }) {
 
     return (
         <span ref={containerRef} className={styles.memberAvatars} aria-label={`参加メンバー: ${memberNames.join('、')}`}>
-            {visibleUserIds.map((userId) => {
+            {visibleUserIds.map((userId, index) => {
                 const memberName = getUserName(userId);
 
                 return (
-                    <span key={userId} className={styles.memberAvatar} title={memberName}>
+                    <span key={`${userId}-${index}`} className={styles.memberAvatar} title={memberName}>
                         {getMemberInitial(memberName)}
                     </span>
                 );
@@ -303,6 +325,13 @@ function MemberAvatars({ userIds = [] }) {
 export default function ScheduleTimeAxis({ selectedDay }) {
     const [viewMode, setViewMode] = useState('all');
     const [now, setNow] = useState(() => new Date());
+    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [sheetDragY, setSheetDragY] = useState(0);
+    const [isSheetDragging, setIsSheetDragging] = useState(false);
+    const [isSheetSettling, setIsSheetSettling] = useState(false);
+    const sheetDragStartYRef = useRef(null);
+    const sheetDragYRef = useRef(0);
+    const sheetAnimationTimerRef = useRef(null);
     const baseItems = scheduleData[selectedDay] ?? [];
     const items = filterVisibleItems(filterItemsByView(baseItems, viewMode));
 
@@ -313,6 +342,76 @@ export default function ScheduleTimeAxis({ selectedDay }) {
 
         return () => window.clearInterval(timerId);
     }, []);
+
+    useEffect(() => {
+        return () => {
+            window.clearTimeout(sheetAnimationTimerRef.current);
+        };
+    }, []);
+
+    const closeDetailSheet = () => {
+        window.clearTimeout(sheetAnimationTimerRef.current);
+        setSheetDragY(0);
+        setIsSheetDragging(false);
+        setIsSheetSettling(false);
+        sheetDragStartYRef.current = null;
+        sheetDragYRef.current = 0;
+        setSelectedEvent(null);
+    };
+
+    const animateDetailSheetClose = () => {
+        window.clearTimeout(sheetAnimationTimerRef.current);
+        setIsSheetDragging(false);
+        setIsSheetSettling(true);
+        setSheetDragY(getDetailSheetBaseHeight());
+
+        sheetAnimationTimerRef.current = window.setTimeout(() => {
+            closeDetailSheet();
+        }, SHEET_ANIMATION_DURATION);
+    };
+
+    const handleSheetPointerDown = (event) => {
+        if (event.button !== undefined && event.button !== 0) {
+            return;
+        }
+
+        sheetDragStartYRef.current = event.clientY;
+        sheetDragYRef.current = 0;
+        setIsSheetDragging(true);
+        event.currentTarget.setPointerCapture(event.pointerId);
+    };
+
+    const handleSheetPointerMove = (event) => {
+        if (sheetDragStartYRef.current === null) {
+            return;
+        }
+
+        const dragDistance = Math.max(event.clientY - sheetDragStartYRef.current, 0);
+        sheetDragYRef.current = dragDistance;
+        setSheetDragY(dragDistance);
+    };
+
+    const handleSheetPointerEnd = () => {
+        if (sheetDragStartYRef.current === null) {
+            return;
+        }
+
+        if (sheetDragYRef.current >= SHEET_CLOSE_DRAG_DISTANCE) {
+            animateDetailSheetClose();
+            return;
+        }
+
+        sheetDragStartYRef.current = null;
+        sheetDragYRef.current = 0;
+        setIsSheetDragging(false);
+        setIsSheetSettling(true);
+        setSheetDragY(0);
+
+        window.clearTimeout(sheetAnimationTimerRef.current);
+        sheetAnimationTimerRef.current = window.setTimeout(() => {
+            setIsSheetSettling(false);
+        }, SHEET_ANIMATION_DURATION);
+    };
 
     if (items.length === 0) {
         return null;
@@ -390,8 +489,14 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                                             const eventRunning = isEventRunning(event, now);
 
                                             return (
-                                                <div key={event.id ?? `${event.time}-${i}`} className={styles.scheduleCard}>
-                                                    <div className={styles.cardMeta}>
+                                                <button
+                                                    key={event.id ?? `${event.time}-${i}`}
+                                                    className={styles.scheduleCard}
+                                                    type="button"
+                                                    onClick={() => setSelectedEvent(event)}
+                                                    aria-label={`${event.title}の詳細を表示`}
+                                                >
+                                                    <span className={styles.cardMeta}>
                                                         {eventRunning && (
                                                             <span className={styles.runningStatus} aria-label="実行中">
                                                                 <span className={styles.runningDot} />
@@ -409,10 +514,10 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                                                         {event.group !== '全員' && (
                                                             <MemberAvatars userIds={event.userIds} />
                                                         )}
-                                                    </div>
-                                                    <p className={styles.timeRange}>{formatEventTimeRange(event)}</p>
-                                                    <p className={styles.scheduleTitle}>{event.title}</p>
-                                                </div>
+                                                    </span>
+                                                    <span className={styles.timeRange}>{formatEventTimeRange(event)}</span>
+                                                    <span className={styles.scheduleTitle}>{event.title}</span>
+                                                </button>
                                             );
                                         })}
                                     </div>
@@ -422,6 +527,75 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                     })}
                 </div>
             </div>
+
+            <Drawer
+                opened={selectedEvent !== null}
+                onClose={closeDetailSheet}
+                position="bottom"
+                size="80dvh"
+                radius="24px 24px 0 0"
+                withCloseButton={false}
+                classNames={{
+                    overlay: styles.detailOverlay,
+                    content: styles.detailDrawer,
+                    body: styles.detailDrawerBody,
+                }}
+                styles={{
+                    content: {
+                        height: sheetDragY > 0 || isSheetDragging || isSheetSettling
+                            ? `max(0px, calc(80dvh - ${sheetDragY}px))`
+                            : undefined,
+                        transitionProperty: isSheetSettling ? 'height' : undefined,
+                        transitionDuration: isSheetDragging ? '0ms' : `${SHEET_ANIMATION_DURATION}ms`,
+                        transitionTimingFunction: isSheetSettling ? 'cubic-bezier(0.2, 0.8, 0.2, 1)' : undefined,
+                    },
+                }}
+                transitionProps={{ transition: 'slide-up', duration: 220, timingFunction: 'ease' }}
+                aria-label="予定詳細"
+            >
+                {selectedEvent && (
+                    <>
+                        <div
+                            className={styles.sheetDragArea}
+                            onPointerDown={handleSheetPointerDown}
+                            onPointerMove={handleSheetPointerMove}
+                            onPointerUp={handleSheetPointerEnd}
+                            onPointerCancel={handleSheetPointerEnd}
+                        >
+                            <div className={styles.sheetHandle} />
+                        </div>
+                        <div className={styles.detailHeader}>
+                            <div>
+                                <p className={styles.detailEyebrow}>予定詳細</p>
+                                <h2>{selectedEvent.title}</h2>
+                            </div>
+                            <button
+                                className={styles.detailCloseButton}
+                                type="button"
+                                onClick={closeDetailSheet}
+                                aria-label="閉じる"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <dl className={styles.detailList}>
+                            <div>
+                                <dt>時間</dt>
+                                <dd>{formatEventTimeRange(selectedEvent)}</dd>
+                            </div>
+                            <div>
+                                <dt>対象</dt>
+                                <dd>{getEventTargetText(selectedEvent)}</dd>
+                            </div>
+                            <div>
+                                <dt>ID</dt>
+                                <dd>{selectedEvent.id}</dd>
+                            </div>
+                        </dl>
+                    </>
+                )}
+            </Drawer>
         </section>
     );
 }
