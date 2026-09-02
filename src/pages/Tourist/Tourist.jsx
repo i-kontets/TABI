@@ -217,7 +217,7 @@ function Tourist() {
 
     return (
         <>
-            <Header tripName="観光地検索" />
+            <Header tripName="観光地検索" isOther={true} />
             <main className={styles.page}>
                 <section className={styles.searchSection}>
                     <div className={styles.headingGroup}>

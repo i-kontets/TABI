@@ -17,12 +17,12 @@ import ChatIcon from '../../assets/icons/chat.svg?react';
  * Header は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-function Header({tripName}) {
+function Header({tripName, isOther = false}) {
     const navigate = useNavigate();
 
     // handleBackClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleBackClick = () => {
-        navigate('/Other?groupId=${trip.id}');
+        navigate(isOther ? '/Other' : '/Home');
     };
 
     // chatClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。

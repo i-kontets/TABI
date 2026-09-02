@@ -531,7 +531,7 @@ export default function Invoice() {
 
     return (
         <>
-            <Header tripName={headerTitle} />
+            <Header tripName={headerTitle} isOther={true} />
 
             <main className={styles.page}>
                 <section className={styles.tripSummaryCard}>
