@@ -683,7 +683,7 @@ export default function Invoice() {
 
     return (
         <>
-            <Header tripName={headerTitle} />
+            <Header tripName={headerTitle} isOther={true} />
 
             {/* 画面全体のメイン領域 */}
             <main className={styles.page}>
