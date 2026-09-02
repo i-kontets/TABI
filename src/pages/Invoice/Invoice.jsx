@@ -223,6 +223,13 @@ function getLoginUser() {
     }
 }
 
+function buildInvoiceData(data) {
+    return normalizeGroupData({
+        pay: data?.pay,
+        members: data?.members,
+    });
+}
+
 export default function Invoice() {
     const location = useLocation();
     const navigate = useNavigate();
@@ -233,9 +240,6 @@ export default function Invoice() {
     const loginUserId = Number(loginUser?.user_id) || 0;
     const loginUserName = loginUser?.name || "ログイン中のユーザー";
 
-    const [allInvoiceData, setAllInvoiceData] = useState(() =>
-        normalizeInvoiceFile(loadStoredInvoiceData())
-    );
     const [invoiceData, setInvoiceData] = useState(() =>
         normalizeInvoiceFile(loadStoredInvoiceData()).groups[groupId] || createEmptyGroupData()
     );
@@ -243,14 +247,40 @@ export default function Invoice() {
     const [form, setForm] = useState(emptyForm);
 
     useEffect(() => {
-        queueMicrotask(() => {
-            const data = normalizeInvoiceFile(loadStoredInvoiceData());
-            const currentGroupData = data.groups[groupId] || createEmptyGroupData();
+        let isMounted = true;
 
-            setAllInvoiceData(data);
-            setInvoiceData(currentGroupData);
-        });
-    }, [groupId]);
+        const loadInvoiceData = async () => {
+            try {
+                const response = await fetch(
+                    `/TABI/api/Invoice/List.php?group_id=${encodeURIComponent(groupId)}`,
+                    {
+                        method: "GET",
+                        credentials: "include",
+                    }
+                );
+
+                if (response.status === 401) {
+                    localStorage.removeItem("loginUser");
+                    navigate("/");
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (isMounted && data.success) {
+                    setInvoiceData(buildInvoiceData(data));
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        loadInvoiceData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [groupId, navigate]);
 
     useEffect(() => {
         if (!groupId || typeof fetchMembers !== "function") {
@@ -305,19 +335,6 @@ export default function Invoice() {
         ? Math.round(totalExpense / selectableMembers.length)
         : 0;
 
-    const saveInvoiceData = (nextGroupData) => {
-        const nextAllData = {
-            groups: {
-                ...allInvoiceData.groups,
-                [groupId]: nextGroupData,
-            },
-        };
-
-        setInvoiceData(nextGroupData);
-        setAllInvoiceData(nextAllData);
-        localStorage.setItem(invoiceStorageKey, JSON.stringify(nextAllData));
-    };
-
     const handleChange = (event) => {
         const { name, value } = event.target;
         setForm((currentForm) => ({
@@ -352,7 +369,7 @@ export default function Invoice() {
         setForm(emptyForm);
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
 
         const totalAmount = Number(form.amount);
@@ -379,28 +396,47 @@ export default function Invoice() {
 
         const members = splitAmount(totalAmount, form.selectedMemberIds);
 
-        saveInvoiceData({
-            ...invoiceData,
-            pay: [
-                ...invoiceData.pay,
-                {
-                    id: Date.now(),
-                    storeName: form.storeName.trim(),
-                    amount: totalAmount,
-                    paidById: loginUserId,
-                    paidByName: loginUserName,
-                    category: form.category,
-                    members,
-                    participantCount: members.length,
-                    totalAmount,
-                    createdAt: new Date().toISOString(),
+        try {
+            const response = await fetch("/TABI/api/Invoice/Create.php", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-            ],
-        });
-        handleCloseForm();
+                body: JSON.stringify({
+                    group_id: groupId,
+                    title: form.storeName.trim(),
+                    amount: totalAmount,
+                    category: form.category,
+                    members: members.map((member) => ({
+                        user_id: member.id,
+                        amount: member.amount,
+                    })),
+                }),
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem("loginUser");
+                navigate("/");
+                return;
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                alert(data.message || "支払いの追加に失敗しました。");
+                return;
+            }
+
+            setInvoiceData(buildInvoiceData(data));
+            handleCloseForm();
+        } catch (error) {
+            console.error(error);
+            alert("支払いの追加に失敗しました。通信環境を確認してください。");
+        }
     };
 
-    const handleDeletePayment = (payItem) => {
+    const handleDeletePayment = async (payItem) => {
         const isConfirmed = confirm(
             `「${payItem.storeName}」の支払い記録を削除しますか？\nこの操作は取り消せません。`
         );
@@ -409,13 +445,39 @@ export default function Invoice() {
             return;
         }
 
-        saveInvoiceData({
-            ...invoiceData,
-            pay: invoiceData.pay.filter((item) => item.id !== payItem.id),
-        });
+        try {
+            const response = await fetch("/TABI/api/Invoice/Delete.php", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    payment_id: payItem.id,
+                }),
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem("loginUser");
+                navigate("/");
+                return;
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                alert(data.message || "支払いの削除に失敗しました。");
+                return;
+            }
+
+            setInvoiceData(buildInvoiceData(data));
+        } catch (error) {
+            console.error(error);
+            alert("支払いの削除に失敗しました。通信環境を確認してください。");
+        }
     };
 
-    const handleCompletePayment = (memberId, payId) => {
+    const handleCompletePayment = async (memberId, payId) => {
         const isConfirmed = confirm(
             "支払い完了にしますか？\n完了後は編集できません。"
         );
@@ -424,22 +486,37 @@ export default function Invoice() {
             return;
         }
 
-        saveInvoiceData({
-            ...invoiceData,
-            members: invoiceData.members.map((member) => {
-                if (member.id !== memberId || member.paidPayIds.includes(payId)) {
-                    return member;
-                }
+        try {
+            const response = await fetch("/TABI/api/Invoice/MarkPaid.php", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    payment_id: payId,
+                    user_id: memberId,
+                }),
+            });
 
-                return {
-                    ...member,
-                    paidPayIds: [
-                        ...member.paidPayIds,
-                        payId,
-                    ],
-                };
-            }),
-        });
+            if (response.status === 401) {
+                localStorage.removeItem("loginUser");
+                navigate("/");
+                return;
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                alert(data.message || "支払い完了の保存に失敗しました。");
+                return;
+            }
+
+            setInvoiceData(buildInvoiceData(data));
+        } catch (error) {
+            console.error(error);
+            alert("支払い完了の保存に失敗しました。通信環境を確認してください。");
+        }
     };
 
     const handleViewAllPayments = () => {
@@ -554,6 +631,7 @@ export default function Invoice() {
                                                     (invoiceMember) => invoiceMember.id === payMember.id
                                                 );
                                                 const isPaid = member?.paidPayIds.includes(item.id);
+                                                const canMarkPaid = item.paidById === loginUserId || payMember.id === loginUserId;
 
                                                 return (
                                                     <label
@@ -563,7 +641,7 @@ export default function Invoice() {
                                                         <input
                                                             type="checkbox"
                                                             checked={Boolean(isPaid)}
-                                                            disabled={Boolean(isPaid)}
+                                                            disabled={Boolean(isPaid) || !canMarkPaid}
                                                             onChange={() => handleCompletePayment(payMember.id, item.id)}
                                                         />
                                                         <span>{member?.name || `対象ID: ${payMember.id}`}</span>

@@ -146,6 +146,13 @@ function getLoginUser() {
     }
 }
 
+function buildInvoiceData(data) {
+    return normalizeGroupData({
+        pay: data?.pay,
+        members: data?.members,
+    });
+}
+
 export default function InvoiceLiquidation() {
     const location = useLocation();
     const navigate = useNavigate();
@@ -161,11 +168,40 @@ export default function InvoiceLiquidation() {
     });
 
     useEffect(() => {
-        queueMicrotask(() => {
-            const data = normalizeInvoiceFile(loadStoredInvoiceData());
-            setInvoiceData(data.groups[groupId] || normalizeGroupData({ pay: [], members: defaultMembers }));
-        });
-    }, [groupId]);
+        let isMounted = true;
+
+        const loadInvoiceData = async () => {
+            try {
+                const response = await fetch(
+                    `/TABI/api/Invoice/List.php?group_id=${encodeURIComponent(groupId)}`,
+                    {
+                        method: "GET",
+                        credentials: "include",
+                    }
+                );
+
+                if (response.status === 401) {
+                    localStorage.removeItem("loginUser");
+                    navigate("/");
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (isMounted && data.success) {
+                    setInvoiceData(buildInvoiceData(data));
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        };
+
+        loadInvoiceData();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [groupId, navigate]);
 
     useEffect(() => {
         if (!groupId || typeof fetchMembers !== "function") {
