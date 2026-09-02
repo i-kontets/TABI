@@ -22,7 +22,7 @@ function Header({tripName}) {
 
     // handleBackClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleBackClick = () => {
-        navigate('/Home');
+        navigate('/Other?groupId=${trip.id}');
     };
 
     // chatClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
