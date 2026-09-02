@@ -141,3 +141,22 @@ button {
         height: 42px;
     }
 }
+/* PC画面では横幅・高さを画面いっぱいにする */
+@media (min-width: 768px) {
+    .phoneFrame {
+        width: 100%;
+        max-width: none;
+        height: 100dvh;
+        max-height: none;
+
+        /* スマホ枠として付けていた左右線もPCでは解除 */
+        border-left: 0;
+        border-right: 0;
+    }
+
+    /* 下部ナビもPCでは横幅いっぱいにする */
+    .phoneFrame > nav:last-child {
+        width: 100%;
+        max-width: none;
+    }
+}

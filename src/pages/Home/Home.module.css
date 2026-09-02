@@ -256,3 +256,31 @@
         right: 20px;
     }
 }
+@media screen and (min-width: 768px) {
+    .page {
+        max-width: none;
+    }
+
+    .createButton {
+        left: auto;
+        right: 40px;
+    }
+
+    .footer {
+        width: 100%;
+        max-width: none;
+        height: 96px;
+    }
+
+    /* PCでは文字とアイコンの間隔を大きくする */
+    .footerItem {
+        gap: 6px;
+        font-size: 15px;
+    }
+
+    /* PCではフッターアイコンを大きくする */
+    .footerIcon {
+        width: 34px;
+        height: 34px;
+    }
+}

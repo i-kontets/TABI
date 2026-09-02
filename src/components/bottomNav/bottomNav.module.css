@@ -84,3 +84,24 @@
         height: 21px;
     }
 }
+
+@media (min-width: 768px) {
+    .bottomNav {
+        width: 100%;
+        max-width: none;
+        min-height: 72px;
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .navItem {
+        gap: 6px;
+        font-size: 15px;
+        padding: 4px 4px 0;
+    }
+
+    .icon,
+    .iconPlaceholder {
+        width: 34px;
+        height: 34px;
+    }
+}

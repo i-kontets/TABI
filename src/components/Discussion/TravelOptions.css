@@ -365,3 +365,29 @@
         font-size: 10px;
     }
 }
+/* PC画面では候補一覧を横幅いっぱいにする */
+@media (min-width: 768px) {
+    .candidatePanel {
+        width: 100%;
+        max-width: none;
+    }
+
+    .candidateHeading,
+    .candidateTypes,
+    .candidateBody {
+        width: 100%;
+        max-width: none;
+        box-sizing: border-box;
+    }
+
+    .candidateList {
+        width: 100%;
+        max-width: none;
+    }
+
+    .candidateCard {
+        width: 100%;
+        max-width: none;
+        box-sizing: border-box;
+    }
+}
