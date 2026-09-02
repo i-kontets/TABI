@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Drawer, Tabs, Timeline } from '@mantine/core';
+import { Tabs, Timeline } from '@mantine/core';
+import Modal from '../Modal/Modal';
 import groupIcon from '../../assets/icons/groups.svg';
 import personIcon from '../../assets/icons/person.svg';
 import styles from './ScheduleTimeAxis.module.css';
@@ -147,10 +148,6 @@ const SUB_TIME_LABEL_HEIGHT = 22;
 const MEMBER_AVATAR_SIZE = 24;
 const MEMBER_AVATAR_OVERLAP = 6;
 const MEMBER_AVATAR_STEP = MEMBER_AVATAR_SIZE - MEMBER_AVATAR_OVERLAP;
-const SHEET_CLOSE_DRAG_DISTANCE = 110;
-const SHEET_ANIMATION_DURATION = 220;
-const SHEET_HEIGHT_RATIO = 0.8;
-const SHEET_TOP_MARGIN = 72;
 
 function isCompactSlot(item) {
     return item.events.length === 0;
@@ -230,11 +227,6 @@ function getVisibleMemberCount(memberCount, availableWidth) {
     }
 
     return 0;
-}
-
-function getDetailSheetBaseHeight() {
-    const viewportHeight = window.innerHeight;
-    return Math.min(viewportHeight * SHEET_HEIGHT_RATIO, viewportHeight - SHEET_TOP_MARGIN);
 }
 
 function filterItemsByView(items, viewMode) {
@@ -326,12 +318,6 @@ export default function ScheduleTimeAxis({ selectedDay }) {
     const [viewMode, setViewMode] = useState('all');
     const [now, setNow] = useState(() => new Date());
     const [selectedEvent, setSelectedEvent] = useState(null);
-    const [sheetDragY, setSheetDragY] = useState(0);
-    const [isSheetDragging, setIsSheetDragging] = useState(false);
-    const [isSheetSettling, setIsSheetSettling] = useState(false);
-    const sheetDragStartYRef = useRef(null);
-    const sheetDragYRef = useRef(0);
-    const sheetAnimationTimerRef = useRef(null);
     const baseItems = scheduleData[selectedDay] ?? [];
     const items = filterVisibleItems(filterItemsByView(baseItems, viewMode));
 
@@ -343,74 +329,8 @@ export default function ScheduleTimeAxis({ selectedDay }) {
         return () => window.clearInterval(timerId);
     }, []);
 
-    useEffect(() => {
-        return () => {
-            window.clearTimeout(sheetAnimationTimerRef.current);
-        };
-    }, []);
-
     const closeDetailSheet = () => {
-        window.clearTimeout(sheetAnimationTimerRef.current);
-        setSheetDragY(0);
-        setIsSheetDragging(false);
-        setIsSheetSettling(false);
-        sheetDragStartYRef.current = null;
-        sheetDragYRef.current = 0;
         setSelectedEvent(null);
-    };
-
-    const animateDetailSheetClose = () => {
-        window.clearTimeout(sheetAnimationTimerRef.current);
-        setIsSheetDragging(false);
-        setIsSheetSettling(true);
-        setSheetDragY(getDetailSheetBaseHeight());
-
-        sheetAnimationTimerRef.current = window.setTimeout(() => {
-            closeDetailSheet();
-        }, SHEET_ANIMATION_DURATION);
-    };
-
-    const handleSheetPointerDown = (event) => {
-        if (event.button !== undefined && event.button !== 0) {
-            return;
-        }
-
-        sheetDragStartYRef.current = event.clientY;
-        sheetDragYRef.current = 0;
-        setIsSheetDragging(true);
-        event.currentTarget.setPointerCapture(event.pointerId);
-    };
-
-    const handleSheetPointerMove = (event) => {
-        if (sheetDragStartYRef.current === null) {
-            return;
-        }
-
-        const dragDistance = Math.max(event.clientY - sheetDragStartYRef.current, 0);
-        sheetDragYRef.current = dragDistance;
-        setSheetDragY(dragDistance);
-    };
-
-    const handleSheetPointerEnd = () => {
-        if (sheetDragStartYRef.current === null) {
-            return;
-        }
-
-        if (sheetDragYRef.current >= SHEET_CLOSE_DRAG_DISTANCE) {
-            animateDetailSheetClose();
-            return;
-        }
-
-        sheetDragStartYRef.current = null;
-        sheetDragYRef.current = 0;
-        setIsSheetDragging(false);
-        setIsSheetSettling(true);
-        setSheetDragY(0);
-
-        window.clearTimeout(sheetAnimationTimerRef.current);
-        sheetAnimationTimerRef.current = window.setTimeout(() => {
-            setIsSheetSettling(false);
-        }, SHEET_ANIMATION_DURATION);
     };
 
     if (items.length === 0) {
@@ -528,42 +448,9 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                 </div>
             </div>
 
-            <Drawer
-                opened={selectedEvent !== null}
-                onClose={closeDetailSheet}
-                position="bottom"
-                size="80dvh"
-                radius="24px 24px 0 0"
-                withCloseButton={false}
-                classNames={{
-                    overlay: styles.detailOverlay,
-                    content: styles.detailDrawer,
-                    body: styles.detailDrawerBody,
-                }}
-                styles={{
-                    content: {
-                        height: sheetDragY > 0 || isSheetDragging || isSheetSettling
-                            ? `max(0px, calc(80dvh - ${sheetDragY}px))`
-                            : undefined,
-                        transitionProperty: isSheetSettling ? 'height' : undefined,
-                        transitionDuration: isSheetDragging ? '0ms' : `${SHEET_ANIMATION_DURATION}ms`,
-                        transitionTimingFunction: isSheetSettling ? 'cubic-bezier(0.2, 0.8, 0.2, 1)' : undefined,
-                    },
-                }}
-                transitionProps={{ transition: 'slide-up', duration: 220, timingFunction: 'ease' }}
-                aria-label="予定詳細"
-            >
+            <Modal isOpen={selectedEvent !== null} onClose={closeDetailSheet}>
                 {selectedEvent && (
-                    <>
-                        <div
-                            className={styles.sheetDragArea}
-                            onPointerDown={handleSheetPointerDown}
-                            onPointerMove={handleSheetPointerMove}
-                            onPointerUp={handleSheetPointerEnd}
-                            onPointerCancel={handleSheetPointerEnd}
-                        >
-                            <div className={styles.sheetHandle} />
-                        </div>
+                    <div className={styles.detailContent}>
                         <div className={styles.detailHeader}>
                             <div>
                                 <p className={styles.detailEyebrow}>予定詳細</p>
@@ -593,9 +480,9 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                                 <dd>{selectedEvent.id}</dd>
                             </div>
                         </dl>
-                    </>
+                    </div>
                 )}
-            </Drawer>
+            </Modal>
         </section>
     );
 }
