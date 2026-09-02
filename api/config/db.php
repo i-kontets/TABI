@@ -33,11 +33,15 @@ $serviceGuardExempt = tabiIsServiceGuardExempt();
 $configPath = __DIR__ . "/env.php";
 $config = file_exists($configPath) ? require $configPath : [];
 
-// DB access is fixed to the AWS RDS connection profile.
-// Secrets stay in env.php or server environment variables.
-// 現在はAWS RDS接続を使う前提です。ローカルDBへ切り替える場合は、この判定とenv.php側の設定を一緒に見直します。
-$appEnv = "local";
-$awsConfig = $config["connections"]["local"] ?? [];
+// env.php が判定した現在の実行環境を取得します。
+// local / lolipop / aws のいずれかを使用します。
+$appEnv = $config["APP_ENV"] ?? "local";
+
+// 現在の実行環境に対応するDB接続設定を取得します。
+// local   → connections["local"]
+// lolipop → connections["lolipop"]
+// aws     → connections["aws"]
+$dbConfig = $config["connections"][$appEnv] ?? [];
 
 // 選択された環境のDB接続情報を取り出します。
 $host = $dbConfig["DB_HOST"] ?? "";
