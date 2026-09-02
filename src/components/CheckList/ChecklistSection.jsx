@@ -78,7 +78,9 @@ export default function ChecklistSection({
             <ChecklistDeleteActions
                 hasItems={section.items.length > 0}
                 hasCheckedItems={checkedItemIds.length > 0}
-                onDeleteChecked={() => onDelete(section.id, checkedItemIds)}
+                onDeleteChecked={() =>
+                    onDelete(section.id, checkedItemIds, { checkedOnly: true })
+                }
                 onDeleteAll={() =>
                     onDelete(
                         section.id,
