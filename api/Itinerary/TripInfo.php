@@ -28,6 +28,7 @@ header("Content-Type: application/json; charset=UTF-8");
 
 // データベース接続設定を読み込みます。ここで $pdo を使用できるようになります。
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Groups/S3Common.php";
 
 // 未ログインの場合は、旅行情報を返さず 401 を返します。
 if (!isset($_SESSION["user_id"])) {
@@ -62,7 +63,8 @@ try {
             group_id,
             title,
             start_date,
-            end_date
+            end_date,
+            group_icon
         FROM trips
         WHERE group_id = :group_id
         ORDER BY trip_id DESC
@@ -85,6 +87,11 @@ try {
         exit;
     }
 
+    $aws = loadAwsConfig();
+    $s3 = $aws ? createS3Client($aws) : null;
+    $bucket = $aws ? $aws["bucket"] : null;
+    $imageUrl = resolveGroupImageUrl($trip["group_icon"] ?? null, $s3, $bucket);
+
     // フロントエンドでは旅行タイトルを trip.name として扱うため、title と name の両方を返します。
     echo json_encode([
         "success" => true,
@@ -94,7 +101,8 @@ try {
             "name" => $trip["title"],
             "title" => $trip["title"],
             "start_date" => $trip["start_date"],
-            "end_date" => $trip["end_date"]
+            "end_date" => $trip["end_date"],
+            "image_url" => $imageUrl
         ]
     ]);
 } catch (Throwable $error) {

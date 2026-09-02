@@ -86,6 +86,7 @@ export default function Itinerary() {
           setTrip({
             id: data.trip.id,
             name: data.trip.name,
+            image: data.trip.image_url,
           });
 
           setTripPeriod({
@@ -136,6 +137,10 @@ export default function Itinerary() {
   const handleAppointmentClick = () => {
     navigate("/Appointment");
   };
+
+  const coverHeaderStyle = trip?.image
+    ? { backgroundImage: `url("${trip.image}")` }
+    : undefined;
 
   // API から返る YYYY-MM-DD 形式の日付を、画面表示用に変換します。
   const formatDate = (dateString) => {
@@ -198,7 +203,7 @@ export default function Itinerary() {
       <Header />
 
       {/* 旅行タイトル・日付・メンバーをまとめて表示するカバー部分 */}
-      <div className={styles.coverHeader}>
+      <div className={styles.coverHeader} style={coverHeaderStyle}>
         <div className={styles.coverOverlay}></div>
 
         <div className={styles.coverMainInfo}>

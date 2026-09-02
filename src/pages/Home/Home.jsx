@@ -124,7 +124,7 @@ function Home() {
                 if (data.success && Array.isArray(data.groups)) {
                     setTravelGroups(
                         // 配列のデータを1件ずつ画面表示用の形に変換します。
-                        data.groups.map((group, index) => ({
+                        data.groups.map((group) => ({
                             ...group,
                             image: group.image_url ?? null,
                         }))
@@ -163,7 +163,8 @@ function Home() {
     const handleGroupClick = (trip) => {
         setTrip({
             id: trip.id,
-            name: trip.name
+            name: trip.name,
+            image: trip.image,
         });
 
         // 旅程画面へは groupId を付けて遷移します。
@@ -172,7 +173,7 @@ function Home() {
     };
 
     // ログアウト API を呼び、成功したらローカルのログイン情報も消してログイン画面へ戻します。
-    const handleLogout = async () => {
+    const _handleLogout = async () => {
         // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
         const response = await fetch(
             "/TABI/api/auth/logout.php",
