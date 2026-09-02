@@ -103,7 +103,7 @@ function AppRoutes({ trip }) {
                 <Route path="/schedule" element={<Schedule />} />
                 {/* ===== コミュニケーション系 ===== */}
                 <Route path="/Chat" element={<Chat />} />
-                <Route path="/Discussion" element={<Discussion />} />
+                {/* <Route path="/Discussion" element={<Discussion />} /> */}
                 <Route path="/group/:groupId/talk" element={<Discussion />} />
                 <Route path="/album" element={<Album />} />
                 {/* ===== 精算・日程調整・その他 ===== */}
