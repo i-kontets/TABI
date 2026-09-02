@@ -304,8 +304,19 @@ function Album() {
                         body: formData,
                     }
                 );
+                const responseText = await response.text();
 
-                const data = await response.json();
+                console.log('アップロードした画像:', photo.file.name);
+                console.log('ステータス:', response.status);
+                console.log('Upload.phpの返答:', responseText);
+
+                if (!responseText) {
+                    throw new Error(
+                        `${photo.file.name}のアップロード後、Upload.phpから返答がありません`
+                    );
+                }
+
+                const data = JSON.parse(responseText);
 
                 // ここで条件を確認し、状況に合う処理だけを実行します。
                 if(!response.ok || !data.success){
@@ -339,15 +350,7 @@ function Album() {
         setView('detail');
     };
 
-    // 写真のお気に入り状態を切り替える処理です。
-    const toggleFavorite = (photoId) => {
-        setPhotos((currentPhotos) =>
-            // 配列のデータを1件ずつ画面表示用の形に変換します。
-            currentPhotos.map((photo) =>
-                photo.id === photoId ? { ...photo, favorite: !photo.favorite } : photo
-            )
-        );
-    };
+    
 
     // 詳細画面を閉じて、一覧画面へ戻る処理です。
     const closeDetail = () => {
@@ -433,7 +436,6 @@ function Album() {
         if (!photo) return null;
 
         const hashtagList = parseHashtags(photo.hashtags);
-        const isFavorite = Boolean(photo.favorite);
         const uploaderName = String(photo.uploader_name || '投稿者不明');
         
 
@@ -483,14 +485,6 @@ function Album() {
                     </div>
 
                     <div className={styles.postInfo}>
-                        <button
-                            className={`${styles.favoriteButton} ${isFavorite ? styles.favoriteActive : ''}`}
-                            onClick={() => toggleFavorite(photo.id)}
-                            aria-label={isFavorite ? 'お気に入りを解除' : 'お気に入りに追加'}
-                            aria-pressed={isFavorite}
-                        >
-                            {isFavorite ? '★' : '☆'}
-                        </button>
                         <p className={styles.caption}>
                             <span>{uploaderName}</span>
                             {photo.caption || 'キャプション未設定'}
@@ -658,7 +652,6 @@ function Album() {
                             }}
                         >
                             <img src={photo.image_url} alt={photo.caption || 'アルバム写真'} />
-                            {photo.favorite && <span className={styles.favoriteBadge}>★</span>}
                         </div>
                     ))}
                 </div>

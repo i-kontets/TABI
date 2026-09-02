@@ -27,19 +27,7 @@
     object-fit: cover;
 }
 
-.favoriteBadge {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: rgba(0,0,0,0.58);
-    color: #ffd447;
-    font-size: 15px;
-    line-height: 24px;
-    text-align: center;
-}
+
 
 .addButton {
     position: fixed;
@@ -269,17 +257,7 @@
     border-top: 1px solid rgba(255,255,255,0.08);
 }
 
-.favoriteButton {
-    width: 42px;
-    height: 42px;
-    margin: 0 0 10px -8px;
-    border: none;
-    background: transparent;
-    color: white;
-    font-size: 32px;
-    line-height: 1;
-    cursor: pointer;
-}
+
 
 .caption,
 .hashtags,
@@ -320,9 +298,7 @@
     font-size: 14px;
 }
 
-.favoriteActive {
-    color: #ff5f7e;
-}
+
 
 .addView {
     position: fixed;
