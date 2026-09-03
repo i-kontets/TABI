@@ -17,10 +17,24 @@
   box-shadow: 0 5px 14px rgba(32, 35, 50, 0.08);
 }
 
+.dayStepperScroller {
+  overflow-x: auto;
+  overflow-y: visible;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dayStepperScroller::-webkit-scrollbar {
+  display: none;
+}
+
 .dayStepper {
   position: relative;
   display: grid;
   align-items: start;
+  min-width: 100%;
 }
 
 .dayStep {
@@ -35,6 +49,7 @@
   padding: 0;
   min-width: 0;
   font: inherit;
+  scroll-snap-align: center;
 }
 
 .dayStep:focus-visible {
