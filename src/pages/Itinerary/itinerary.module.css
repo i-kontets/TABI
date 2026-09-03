@@ -67,6 +67,14 @@ padding: 4px 10px;
 border-radius: 9999px;
 }
 
+.daysBadgeUnset {
+background-color: #e74c3c;
+}
+
+.daysBadgeActive {
+background-color: #2ecc71;
+}
+
 .subDate {
 font-size: 13px;
 font-weight: 600;
@@ -186,6 +194,7 @@ transform: translateY(-1px);
   height: auto;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
 }
 
 .appointmentHeader {

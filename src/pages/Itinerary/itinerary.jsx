@@ -1,95 +1,133 @@
 /**
  * 旅程の確認や編集を行う画面です。
  *
- * 主な流れ:
- * 1. 必要な部品や API 関数を読み込む
- * 2. 画面表示やデータ取得に必要な値を準備する
- * 3. ユーザー操作や API の結果に合わせて表示を更新する
- *
- * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ * URL の groupId をもとに、旅行タイトル・旅行期間・参加メンバーを取得し、
+ * しおり画面として表示します。
  */
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useContext, useState, useEffect } from "react";
 import { TripContext } from "../../App";
-import BottomNav from '../../components/BottomNav/BottomNav';
-import BtmNav from '../../components/bottomNav/BottomNav';
-import Header from '../../components/header/Header';
-import Modal from '../../components/Modal/Modal';
-import InviteModal from '../../components/Modal/InviteModal';
-import styles from './itinerary.module.css';
-import Edit from '../../assets/icons/edit.svg?react';
-import Group from '../../assets/icons/group.svg?react';
+import BtmNav from "../../components/bottomNav/BottomNav";
+import Header from "../../components/header/Header";
+import Modal from "../../components/Modal/Modal";
+import InviteModal from "../../components/Modal/InviteModal";
+import styles from "./itinerary.module.css";
 
-/**
- * Itinerary は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
+function getLoginUserId() {
+  try {
+    const loginUser = JSON.parse(localStorage.getItem("loginUser") || "null");
+    return Number(loginUser?.user_id) || null;
+  } catch {
+    return null;
+  }
+}
+
+const yenFormatter = new Intl.NumberFormat("ja-JP");
+
+function formatYen(value) {
+  const number = Number(String(value ?? "").replace(/,/g, ""));
+  return Number.isFinite(number) ? `${yenFormatter.format(number)}円` : "0円";
+}
+
 export default function Itinerary() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const {trip} = useContext(TripContext);
 
-  const groupId = searchParams.get("groupId")
+  // TripContext で、選択中の旅行情報・メンバー一覧・旅行期間を全ページで共有します。
+  const {
+    trip,
+    setTrip,
+    members,
+    fetchMembers,
+    tripPeriod,
+    setTripPeriod,
+  } = useContext(TripContext);
 
-  // 招待モーダルの管理状態
+  // Home などから /Itinerary?groupId=1 の形で渡された旅行グループIDです。
+  const groupId = searchParams.get("groupId");
+  const itineraryEditPath = groupId
+    ? `/ItineraryEdit?groupId=${encodeURIComponent(groupId)}`
+    : "/ItineraryEdit";
+  const loginUserId = getLoginUserId();
+  const isTripAdmin = members.some(
+    (member) => Number(member.id) === loginUserId && member.role === "admin"
+  );
+
+  // 招待モーダルの開閉状態です。
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-  const [isLiquidationOpen, setIsLiquidationOpen] = useState(false);  
 
-  // メンバー情報
-  const [members, setMembers] = useState([]);
-
-  // User取得処理
+  // groupId が変わるたびに、共通化された fetchMembers で参加メンバーを取得します。
   useEffect(() => {
-    // ここで条件を確認し、状況に合う処理だけを実行します。
-    if (!groupId) return;
+    const loadMembers = async () => {
+      const result = await fetchMembers(groupId);
 
-    // fetchMembers は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
-    const fetchMembers = async () => {
-      // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
-      try {
-        // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-        const response = await fetch("/TABI/api/Groups/Members.php", {
-  method: "POST",
-  credentials: "include",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    group_id: groupId,
-  }),
-});
-
-const text = await response.text();
-console.log(text);
-
-const data = JSON.parse(text);
-
-        // ここで条件を確認し、状況に合う処理だけを実行します。
-        if (data.success && Array.isArray(data.members)) {
-          setMembers(
-            // 配列のデータを1件ずつ画面表示用の形に変換します。
-            data.members.map((member) => ({
-              ...member,
-              name: member.name,
-              initial: member.name?.charAt(0) ?? "?",
-              color: member.color ?? "#b5ead7",
-            }))
-          );
-        } else {
-          setMembers([]);
-        }
-      // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
-      } catch (error) {
-        console.error(error);
-        setMembers([]);
+      // セッション切れの場合はログイン情報を消してログイン画面へ戻します。
+      if (result.status === "login-required") {
+        localStorage.removeItem("loginUser");
+        navigate("/");
       }
     };
 
-    fetchMembers();
-  }, [groupId]);
+    loadMembers();
+  }, [fetchMembers, groupId, navigate]);
 
-  // 移動手段のデータ
+  // groupId から旅行タイトルと旅行期間を取得します。
+  useEffect(() => {
+    if (!groupId) {
+      setTrip({});
+      setTripPeriod(null);
+      return;
+    }
+
+    const fetchTripInfo = async () => {
+      try {
+        const response = await fetch("/TABI/api/Itinerary/TripInfo.php", {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            group_id: groupId,
+          }),
+        });
+
+        // ログインセッションが無効な場合はログイン画面へ戻します。
+        if (response.status === 401) {
+          localStorage.removeItem("loginUser");
+          navigate("/");
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.trip) {
+          // trips.title は画面側では trip.name として扱います。
+          setTrip({
+            id: data.trip.id,
+            name: data.trip.name,
+            image: data.trip.image_url,
+          });
+
+          setTripPeriod({
+            startDate: data.trip.start_date,
+            endDate: data.trip.end_date,
+          });
+        } else {
+          setTrip({});
+          setTripPeriod(null);
+        }
+      } catch (error) {
+        console.error(error);
+        setTrip({});
+        setTripPeriod(null);
+      }
+    };
+
+    fetchTripInfo();
+  }, [groupId, navigate, setTrip, setTripPeriod]);
+
+  // TODO: 予約APIができたら、ここを実データ取得に置き換えます。
   const appointmentList = [
     {
       id: 1,
@@ -109,59 +147,168 @@ const data = JSON.parse(text);
     },
   ];
 
-  // 未清算のデータ
-  const liquidationList = [
+  // 清算Widgetに表示する、自分が払う必要のある最新の未払いデータです。
+  const [liquidationResult, setLiquidationResult] = useState({
+    groupId: null,
+    debts: [],
+  });
+  const liquidationList = liquidationResult.groupId === groupId ? liquidationResult.debts : [];
+  const isLiquidationLoading = Boolean(groupId) && liquidationResult.groupId !== groupId;
 
-  ];
-
-  // closeInviteModal は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
   const closeInviteModal = () => {
-  setIsInviteModalOpen(false);
+    setIsInviteModalOpen(false);
   };
 
-  // handleAppointmentClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
   const handleAppointmentClick = () => {
-    // データがない　→　Appointment.jsxへ
-     navigate('/Appointment')
-  }
+    navigate("/Appointment");
+  };
+
+  const handleLiquidationClick = () => {
+    const invoiceLiquidationPath = groupId
+      ? `/InvoiceLiquidation?groupId=${encodeURIComponent(groupId)}`
+      : "/InvoiceLiquidation";
+
+    navigate(invoiceLiquidationPath);
+  };
+
+  // groupId とログインセッションをもとに、自分が払うべき未払い清算を最新3件だけ取得します。
+  useEffect(() => {
+    if (!groupId) {
+      return;
+    }
+
+    const fetchMyDebts = async () => {
+      try {
+        const response = await fetch(
+          `/TABI/api/Invoice/MyDebts.php?group_id=${encodeURIComponent(groupId)}&limit=3`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (response.status === 401) {
+          localStorage.removeItem("loginUser");
+          navigate("/");
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.debts)) {
+          setLiquidationResult({
+            groupId,
+            debts: data.debts,
+          });
+          return;
+        }
+
+        setLiquidationResult({
+          groupId,
+          debts: [],
+        });
+      } catch (error) {
+        console.error(error);
+        setLiquidationResult({
+          groupId,
+          debts: [],
+        });
+      }
+    };
+
+    fetchMyDebts();
+  }, [groupId, navigate]);
+
+  const coverHeaderStyle = trip?.image
+    ? { backgroundImage: `url("${trip.image}")` }
+    : undefined;
+
+  // API から返る YYYY-MM-DD 形式の日付を、画面表示用に変換します。
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+
+    const date = new Date(dateString);
+    const weekDays = ["日", "月", "火", "水", "木", "金", "土"];
+
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()} (${weekDays[date.getDay()]})`;
+  };
+
+  // 旅行期間に応じて、バッジに表示する文言を切り替えます。
+  const getTripStatusLabel = (startDate, endDate) => {
+    if (!startDate || !endDate) return "日付未設定";
+
+    const today = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    today.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    if (today < start) {
+      const diffTime = start - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      return `あと ${diffDays} 日`;
+    }
+
+    if (today <= end) {
+      return "旅行中";
+    }
+
+    return "終了";
+  };
+
+  const getTripStatusClassName = (startDate, endDate) => {
+    if (!startDate || !endDate) {
+      return `${styles.daysBadge} ${styles.daysBadgeUnset}`;
+    }
+
+    const today = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    today.setHours(0, 0, 0, 0);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    if (today >= start && today <= end) {
+      return `${styles.daysBadge} ${styles.daysBadgeActive}`;
+    }
+
+    return styles.daysBadge;
+  };
 
   return (
     <div>
       <Header />
 
-      {/* カバー画像ヘッダー */}
-      <div className={styles.coverHeader}>
-
+      {/* 旅行タイトル・日付・メンバーをまとめて表示するカバー部分 */}
+      <div className={styles.coverHeader} style={coverHeaderStyle}>
         <div className={styles.coverOverlay}></div>
 
         <div className={styles.coverMainInfo}>
-
           <div className={styles.titleRow}>
+            <h1 className={styles.mainTitle}>{trip.name}</h1>
 
-            <h1 className={styles.mainTitle}>
-              {trip.name}
-            </h1>
-
-            <span className={styles.daysBadge}>
-              あと 24 日
+            <span className={getTripStatusClassName(tripPeriod?.startDate, tripPeriod?.endDate)}>
+              {getTripStatusLabel(tripPeriod?.startDate, tripPeriod?.endDate)}
             </span>
-
           </div>
 
           <p className={styles.subDate}>
-            出発：2026/05/14 (木)<br/>
-            帰宅：2026/05/16 (土)
+            出発：{formatDate(tripPeriod?.startDate)}<br />
+            帰宅：{formatDate(tripPeriod?.endDate)}
           </p>
 
+          {/* 参加メンバーの頭文字アイコンと、招待モーダルを開くボタン */}
           <div className={styles.memberRow}>
-
             <div className={styles.avatarGroup}>
-
-              {members.map((member)=>(
+              {members.map((member) => (
                 <span
                   key={member.id}
                   className={styles.avatar}
-                  style={{backgroundColor:member.color}}
+                  style={{ backgroundColor: member.color }}
                   title={member.name}
                 >
                   {member.initial}
@@ -178,40 +325,49 @@ const data = JSON.parse(text);
           </div>
         </div>
 
-        {/* 編集ボタン */}
-        <button
-          className={styles.editBtn}
-          onClick={() => navigate("/ItineraryEdit")}
-        >
-          旅行情報を編集
-        </button>
+        {isTripAdmin ? (
+          <button
+            className={styles.editBtn}
+            onClick={() => navigate(itineraryEditPath)}
+          >
+            旅行情報を編集
+          </button>
+        ) : null}
       </div>
 
-      {/* タイトルウィジェット */}
+      {/* しおりタイトル */}
       <div className={styles.WidgetFrame}>
         <div className={styles.WidgetTitle}>しおりタイトル</div>
         <div className={styles.WidgetText}>{trip.name}</div>
       </div>
 
-      {/* 旅行期間ウィジェット */}
+      {/* 旅行期間 */}
       <div className={styles.WidgetFrame}>
         <div className={styles.WidgetTitle}>旅行期間</div>
-        <div className={styles.WidgetText}>2026年5/14(木) - 2026年5月16日(土)</div>
+        <div className={styles.WidgetText}>
+          {tripPeriod?.startDate && tripPeriod?.endDate
+            ? `${formatDate(tripPeriod.startDate)} - ${formatDate(tripPeriod.endDate)}`
+            : "旅行期間未設定"}
+        </div>
       </div>
 
-      {/* メンバー数ウィジェット */}
+      {/* メンバー数 */}
       <div className={styles.WidgetFrame}>
         <div className={styles.WidgetTitle}>メンバー数</div>
-        <div className={styles.WidgetText}>4人</div>
+        <div className={styles.WidgetText}>{members.length}人</div>
       </div>
 
-      <div className={styles.WidgetFrame} >
-        {appointmentList.length == 0 ? (
-          <div className={styles.WidgetText} onClick={handleAppointmentClick}>
+      {/* 移動手段。現在はダミーデータを表示しています。 */}
+      <div className={styles.WidgetFrame}>
+        {appointmentList.length === 0 ? (
+          <div
+            className={styles.WidgetText}
+            onClick={handleAppointmentClick}
+          >
             移動手段の予約に進む
           </div>
-          ) : (
-            <div className={styles.WidgetTitle}>
+        ) : (
+          <div className={styles.WidgetTitle}>
             <div className={styles.WidgetText}>
               {appointmentList[0].type}
             </div>
@@ -222,52 +378,54 @@ const data = JSON.parse(text);
         )}
       </div>
 
-      {/* サブウィジェット */}
+      {/* 清算・天気などのサブ情報 */}
       <div className={styles.subWidget}>
-        {/* 清算ウィジェット */}
-        <div className={styles.liquidationWidget}>
+        <div className={styles.liquidationWidget} onClick={handleLiquidationClick}>
           <div className={styles.WidgetTitle}>清算</div>
-          {liquidationList.length == 0 ? (
+
+          {isLiquidationLoading ? (
+            <div className={styles.WidgetText}>
+              読み込み中...
+            </div>
+          ) : liquidationList.length === 0 ? (
             <div className={styles.WidgetText}>
               請求はありません
             </div>
           ) : (
-             <>
-              {/* 合計金額 */}
+            <>
               <div className={styles.WidgetText}>
-                合計：￥
-                {liquidationList.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}
+                合計：{formatYen(liquidationList.reduce((sum, item) => sum + item.amount, 0))}
               </div>
 
-              {/* 各請求 */}
-              {liquidationList.map((item, index) => (
-                <div key={index} className={styles.WidgetText}>
-                  {item.from}さんへ：￥{item.amount.toLocaleString()}
+              {liquidationList.map((item) => (
+                <div
+                  key={item.payment_id}
+                  className={styles.WidgetText}
+                >
+                  {item.to_user_name}さんへ：{formatYen(item.amount)}
                 </div>
               ))}
             </>
           )}
         </div>
 
-        {/* 天気予報ウィジェット */}
         <div className={styles.weatherWidget}>
           <div className={styles.WidgetTitle}>天気予報</div>
           <div className={styles.WidgetText}></div>
         </div>
       </div>
 
-      {/* 固定ボトムナビ */}
+      {/* 画面下部に固定表示するナビゲーション */}
       <div className={styles.btmNavWrapper}>
         <BtmNav />
       </div>
 
-      {/* 招待モーダル */}
-      <Modal 
+      {/* メンバー招待用モーダル */}
+      <Modal
         isOpen={isInviteModalOpen}
         onClose={closeInviteModal}
       >
-
-        <InviteModal onClose={closeInviteModal}/>
+        <InviteModal groupId={groupId} onClose={closeInviteModal} />
       </Modal>
     </div>
   );
