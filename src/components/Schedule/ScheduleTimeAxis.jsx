@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Tabs, Timeline } from '@mantine/core';
 import Modal from '../Modal/Modal';
 import groupIcon from '../../assets/icons/groups.svg';
@@ -8,19 +8,6 @@ import styles from './ScheduleTimeAxis.module.css';
 const GROUP_COLORS = {
     '全員': 'var(--sub-color)',
 };
-const MY_USER_ID = 1;
-
-// これはローカルで作成する際に使用するtestデータです。
-// もしDB接続後も残っている場合は一応小野に確認取ってくれると嬉しいです。
-const users = [
-    { userId: 1, name: '自分' },
-    { userId: 2, name: '田中' },
-    { userId: 3, name: '鈴木' },
-    { userId: 4, name: '山本' },
-    { userId: 5, name: '中村' },
-    { userId: 6, name: '高橋' },
-    { userId: 7, name: '佐藤' },
-];
 
 function getHourSlot(time) {
     return `${time.slice(0, 2)}:00`;
@@ -32,6 +19,55 @@ function getMinutesFromTime(time) {
 
 function isHourStartTime(time) {
     return getMinutesFromTime(time) === 0;
+}
+
+function getLoginUserId() {
+    try {
+        const loginUser = JSON.parse(localStorage.getItem('loginUser') || 'null');
+        return Number(loginUser?.user_id) || null;
+    } catch {
+        return null;
+    }
+}
+
+function getMemberId(member) {
+    return Number(member?.id ?? member?.userId ?? member?.user_id);
+}
+
+function findMember(members, userId) {
+    return members.find((member) => getMemberId(member) === Number(userId));
+}
+
+function getMemberIdByTestId(testUserId, members) {
+    if (members.length === 0) {
+        return testUserId;
+    }
+
+    const memberIndex = (Number(testUserId) - 1) % members.length;
+    return getMemberId(members[memberIndex]);
+}
+
+function getUniqueIds(userIds) {
+    return [...new Set(userIds.filter((userId) => Number.isFinite(Number(userId))))];
+}
+
+function applyGroupMembersToTestItems(items, members) {
+    if (members.length === 0) {
+        return items;
+    }
+
+    return items.map((item) => ({
+        ...item,
+        events: item.events.map((event) => ({
+            ...event,
+            userIds: event.userIds
+                ? getUniqueIds(event.userIds.map((userId) => getMemberIdByTestId(userId, members)))
+                : null,
+            createdByUserId: event.createdByUserId
+                ? getMemberIdByTestId(event.createdByUserId, members)
+                : event.createdByUserId,
+        })),
+    }));
 }
 
 function buildDateTime(dateValue, time) {
@@ -362,12 +398,13 @@ const MEMBER_AVATAR_SIZE = 24;
 const MEMBER_AVATAR_OVERLAP = 6;
 const MEMBER_AVATAR_STEP = MEMBER_AVATAR_SIZE - MEMBER_AVATAR_OVERLAP;
 
-function getUserName(userId) {
-    return users.find((user) => user.userId === userId)?.name ?? `ユーザー${userId}`;
+function getUserName(userId, members) {
+    return findMember(members, userId)?.name ?? `ユーザー${userId}`;
 }
 
-function getMemberInitial(memberName) {
-    return memberName.slice(0, 1);
+function getMemberInitial(userId, members) {
+    const member = findMember(members, userId);
+    return member?.initial ?? member?.name?.slice(0, 1) ?? '?';
 }
 
 function formatEventTimeRange(event) {
@@ -418,21 +455,21 @@ function getSlotStyle(item) {
     return slotHeight > SLOT_HEIGHT ? { minHeight: slotHeight } : undefined;
 }
 
-function getEventMemberNames(event) {
-    return event.userIds?.map(getUserName) ?? [];
+function getEventMemberNames(event, members) {
+    return event.userIds?.map((userId) => getUserName(userId, members)) ?? [];
 }
 
-function getEventTargetText(event) {
+function getEventTargetText(event, members) {
     if (event.group === '全員') {
         return '全員';
     }
 
-    const memberNames = getEventMemberNames(event);
+    const memberNames = getEventMemberNames(event, members);
     return memberNames.length > 0 ? memberNames.join('、') : '未設定';
 }
 
-function getEventCreatorName(event) {
-    return event.createdByUserId ? getUserName(event.createdByUserId) : '未設定';
+function getEventCreatorName(event, members) {
+    return event.createdByUserId ? getUserName(event.createdByUserId, members) : '未設定';
 }
 
 function getMemberAvatarsWidth(visibleCount, hasMore) {
@@ -466,7 +503,7 @@ function getVisibleMemberCount(memberCount, availableWidth) {
  * filterItemsByView は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-function filterItemsByView(items, viewMode) {
+function filterItemsByView(items, viewMode, loginUserId) {
     // ここで条件を確認し、状況に合う処理だけを実行します。
     if (viewMode === 'all') {
         return items;
@@ -477,7 +514,7 @@ function filterItemsByView(items, viewMode) {
         ...item,
         // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         events: item.events.filter((event) => (
-            event.group === '全員' || event.userIds?.includes(MY_USER_ID)
+            event.group === '全員' || event.userIds?.some((userId) => Number(userId) === loginUserId)
         )),
     }));
 }
@@ -494,7 +531,7 @@ function filterVisibleItems(items) {
     ));
 }
 
-function MemberAvatars({ userIds = [] }) {
+function MemberAvatars({ userIds = [], members = [] }) {
     const containerRef = useRef(null);
     const [availableWidth, setAvailableWidth] = useState(null);
 
@@ -532,16 +569,16 @@ function MemberAvatars({ userIds = [] }) {
     const visibleCount = getVisibleMemberCount(userIds.length, availableWidth);
     const visibleUserIds = userIds.slice(0, visibleCount);
     const hiddenCount = userIds.length - visibleCount;
-    const memberNames = userIds.map(getUserName);
+    const memberNames = userIds.map((userId) => getUserName(userId, members));
 
     return (
         <span ref={containerRef} className={styles.memberAvatars} aria-label={`参加メンバー: ${memberNames.join('、')}`}>
             {visibleUserIds.map((userId, index) => {
-                const memberName = getUserName(userId);
+                const memberName = getUserName(userId, members);
 
                 return (
                     <span key={`${userId}-${index}`} className={styles.memberAvatar} title={memberName}>
-                        {getMemberInitial(memberName)}
+                        {getMemberInitial(userId, members)}
                     </span>
                 );
             })}
@@ -558,12 +595,16 @@ function MemberAvatars({ userIds = [] }) {
  * ScheduleTimeAxis は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-export default function ScheduleTimeAxis({ selectedDay, selectedDateValue }) {
+export default function ScheduleTimeAxis({ selectedDay, selectedDateValue, members = [] }) {
     const [now, setNow] = useState(() => new Date());
     const [viewMode, setViewMode] = useState('all');
     const [selectedEvent, setSelectedEvent] = useState(null);
-    const baseItems = scheduleData[selectedDay] ?? [];
-    const items = filterVisibleItems(filterItemsByView(baseItems, viewMode));
+    const loginUserId = getLoginUserId();
+    const memberAppliedItems = useMemo(
+        () => applyGroupMembersToTestItems(scheduleData[selectedDay] ?? [], members),
+        [members, selectedDay],
+    );
+    const items = filterVisibleItems(filterItemsByView(memberAppliedItems, viewMode, loginUserId));
 
     // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
@@ -678,7 +719,7 @@ export default function ScheduleTimeAxis({ selectedDay, selectedDateValue }) {
                                                             </span>
                                                         )}
                                                         {event.group !== '全員' && (
-                                                            <MemberAvatars userIds={event.userIds} />
+                                                            <MemberAvatars userIds={event.userIds} members={members} />
                                                         )}
                                                     </span>
                                                     <span className={styles.timeRange}>{formatEventTimeRange(event)}</span>
@@ -702,14 +743,6 @@ export default function ScheduleTimeAxis({ selectedDay, selectedDateValue }) {
                                 <p className={styles.detailEyebrow}>予定詳細</p>
                                 <h2>{selectedEvent.title}</h2>
                             </div>
-                            <button
-                                className={styles.detailCloseButton}
-                                type="button"
-                                onClick={closeDetailSheet}
-                                aria-label="閉じる"
-                            >
-                                ×
-                            </button>
                         </div>
 
                         <dl className={styles.detailList}>
@@ -719,11 +752,11 @@ export default function ScheduleTimeAxis({ selectedDay, selectedDateValue }) {
                             </div>
                             <div>
                                 <dt>メンバー</dt>
-                                <dd>{getEventTargetText(selectedEvent)}</dd>
+                                <dd>{getEventTargetText(selectedEvent, members)}</dd>
                             </div>
                             <div>
                                 <dt>作成者</dt>
-                                <dd>{getEventCreatorName(selectedEvent)}</dd>
+                                <dd>{getEventCreatorName(selectedEvent, members)}</dd>
                             </div>
                             {selectedEvent.location && (
                                 <div>

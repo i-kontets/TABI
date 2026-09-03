@@ -221,7 +221,11 @@ export default function SchedulePage() {
                     </div>
                 </section>
 
-                <ScheduleTimeAxis selectedDay={activeSelectedDay} selectedDateValue={activeSelectedDate} />
+                <ScheduleTimeAxis
+                    selectedDay={activeSelectedDay}
+                    selectedDateValue={activeSelectedDate}
+                    members={members}
+                />
             </main>
 
             <BottomNav />
