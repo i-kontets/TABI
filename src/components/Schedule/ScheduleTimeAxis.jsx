@@ -97,47 +97,254 @@ const generateHours = (overrides = {}) =>
 const scheduleData = {
     day1: generateHours({
         '09:00': [
-            { id: 1, group: '全員', title: 'ホテル出発', endTime: '09:30', userIds: null },
+            {
+                id: 1,
+                group: '全員',
+                title: 'ホテル出発',
+                endTime: '09:30',
+                userIds: null,
+                createdByUserId: 1,
+                detail: 'ロビーに集合してから、バス乗り場へ移動します。',
+                location: 'ホテルロビー',
+            },
         ],
         '10:10': [
-            { id: 2, group: '全員', title: 'ホテル出発', endTime: '10:30', userIds: null },
-            { id: 3, group: '全員', title: 'ホテル出発', endTime: '10:30', userIds: null },
-            { id: 4, group: '全員', title: 'ホテル出発', endTime: '10:30', userIds: null },
-        ],
-        '10:20': [
-            { id: 5, group: '全員', title: 'ホテル出発', endTime: '10:30', userIds: null },
-        ],
-        '10:00': [
-            { id: 6, group: null, title: 'コテージ到着', endTime: '10:20', userIds: [1, 2, 3, 4, 5, 6] },
-            { id: 7, group: null, title: '買い出し', endTime: '10:40', userIds: [7, 1] },
-            { id: 8, group: null, title: '買い出し', endTime: '10:50', userIds: [7] },
-            { id: 9, group: null, title: '買い出し', endTime: '11:00', userIds: [7] },
-            { id: 10, group: null, title: '買い出し', endTime: '11:20', userIds: [7] },
-        ],
-        '11:00': [
-            { id: 11, group: '全員', title: '昼食・休憩', endTime: '11:10', userIds: null },
-            { id: 12, group: '全員', title: '昼食・休憩', endTime: '12:00', userIds: null },
-            { id: 13, group: '全員', title: '昼食・休憩', endTime: '12:00', userIds: null },
+            {
+                id: 2,
+                group: null,
+                title: '買い出し',
+                endTime: '10:50',
+                userIds: [1, 2, 7],
+                createdByUserId: 2,
+                detail: '昼食と夜の飲み物を中心に購入します。',
+                location: '駅前スーパー',
+            },
         ],
         '12:00': [
-            { id: 14, group: '全員', title: '昼食・休憩', endTime: '13:00', userIds: null },
-            { id: 15, group: '全員', title: '昼食・休憩', endTime: '13:00', userIds: null },
-            { id: 16, group: '全員', title: '昼食・休憩', endTime: '12:30', userIds: null },
-        ],
-        '14:00': [
-            { id: 17, group: '全員', title: '昼食・休憩', endTime: '14:20', userIds: null },
+            {
+                id: 3,
+                group: '全員',
+                title: '昼食',
+                endTime: '13:00',
+                userIds: null,
+                createdByUserId: 3,
+                detail: '近くで昼食を取ります。混雑していれば候補を変更します。',
+                location: null,
+            },
         ],
         '14:20': [
-            { id: 18, group: '全員', title: '昼食・休憩', endTime: '15:00', userIds: null },
-        ],
-        '15:20': [
-            { id: 19, group: '全員', title: '昼食・休憩', endTime: '16:00', userIds: null },
+            {
+                id: 4,
+                group: '全員',
+                title: '自由時間',
+                endTime: '15:30',
+                userIds: null,
+                createdByUserId: 1,
+                detail: '各自で周辺散策をします。集合時間だけ忘れないようにします。',
+                location: null,
+            },
         ],
     }),
-    day2: generateHours(),
-    day3: generateHours(),
-    day4: generateHours(),
-    day5: generateHours(),
+    day2: generateHours({
+        '09:30': [
+            {
+                id: 5,
+                group: '全員',
+                title: '朝食',
+                endTime: '10:10',
+                userIds: null,
+                createdByUserId: 4,
+                detail: '出発前に朝食を済ませます。',
+                location: 'コテージ共有スペース',
+            },
+        ],
+        '10:40': [
+            {
+                id: 6,
+                group: '全員',
+                title: '観光地へ移動',
+                endTime: '11:20',
+                userIds: null,
+                createdByUserId: 1,
+                detail: '電車で移動します。交通系ICカードを準備しておきます。',
+                location: '最寄り駅',
+            },
+        ],
+        '13:00': [
+            {
+                id: 7,
+                group: null,
+                title: '写真撮影',
+                endTime: '13:40',
+                userIds: [1, 3, 5, 6],
+                createdByUserId: 5,
+                detail: '景色の良い場所で写真を撮ります。',
+                location: null,
+            },
+        ],
+        '16:10': [
+            {
+                id: 8,
+                group: '全員',
+                title: '宿へ戻る',
+                endTime: '16:50',
+                userIds: null,
+                createdByUserId: 2,
+                detail: '夕食前に一度荷物を置きに戻ります。',
+                location: null,
+            },
+        ],
+    }),
+    day3: generateHours({
+        '08:50': [
+            {
+                id: 9,
+                group: '全員',
+                title: 'チェックアウト準備',
+                endTime: '09:30',
+                userIds: null,
+                createdByUserId: 1,
+                detail: '忘れ物確認と荷物整理をします。',
+                location: '宿泊先',
+            },
+        ],
+        '10:00': [
+            {
+                id: 10,
+                group: null,
+                title: 'お土産購入',
+                endTime: '10:40',
+                userIds: [2, 4, 7],
+                createdByUserId: 7,
+                detail: '駅周辺でお土産を購入します。',
+                location: '駅前商店街',
+            },
+        ],
+        '12:20': [
+            {
+                id: 11,
+                group: '全員',
+                title: '昼食',
+                endTime: '13:10',
+                userIds: null,
+                createdByUserId: 3,
+                detail: '帰る前に全員で昼食を取ります。',
+                location: null,
+            },
+        ],
+        '15:00': [
+            {
+                id: 12,
+                group: '全員',
+                title: '帰宅',
+                endTime: '16:30',
+                userIds: null,
+                createdByUserId: 1,
+                detail: '駅で解散します。忘れ物があれば共有します。',
+                location: '伊豆駅',
+            },
+        ],
+    }),
+    day4: generateHours({
+        '09:00': [
+            {
+                id: 13,
+                group: '全員',
+                title: '予備日集合',
+                endTime: '09:20',
+                userIds: null,
+                createdByUserId: 6,
+                detail: '天候次第で行き先を相談します。',
+                location: null,
+            },
+        ],
+        '10:10': [
+            {
+                id: 14,
+                group: null,
+                title: 'カフェ休憩',
+                endTime: '10:50',
+                userIds: [1, 2, 3],
+                createdByUserId: 2,
+                detail: '近くのカフェで予定を調整します。',
+                location: '海沿いカフェ',
+            },
+        ],
+        '13:30': [
+            {
+                id: 15,
+                group: '全員',
+                title: '温泉',
+                endTime: '15:00',
+                userIds: null,
+                createdByUserId: 4,
+                detail: '希望者で温泉に向かいます。全員予定として入れています。',
+                location: null,
+            },
+        ],
+        '17:00': [
+            {
+                id: 16,
+                group: '全員',
+                title: '夕食',
+                endTime: '18:30',
+                userIds: null,
+                createdByUserId: 1,
+                detail: '最終日の夕食候補を確認します。',
+                location: '予約店舗',
+            },
+        ],
+    }),
+    day5: generateHours({
+        '08:30': [
+            {
+                id: 17,
+                group: '全員',
+                title: '荷物確認',
+                endTime: '09:00',
+                userIds: null,
+                createdByUserId: 1,
+                detail: '配送する荷物と手持ちの荷物を分けます。',
+                location: null,
+            },
+        ],
+        '09:40': [
+            {
+                id: 18,
+                group: null,
+                title: 'レンタカー返却',
+                endTime: '10:10',
+                userIds: [1, 6],
+                createdByUserId: 6,
+                detail: '返却前にガソリンを入れておきます。',
+                location: 'レンタカー店舗',
+            },
+        ],
+        '11:20': [
+            {
+                id: 19,
+                group: '全員',
+                title: '駅集合',
+                endTime: '11:40',
+                userIds: null,
+                createdByUserId: 2,
+                detail: '帰りのチケットを確認して集合します。',
+                location: '改札前',
+            },
+        ],
+        '12:00': [
+            {
+                id: 20,
+                group: '全員',
+                title: '解散',
+                endTime: '12:10',
+                userIds: null,
+                createdByUserId: 1,
+                detail: '全員の帰路を確認して解散します。',
+                location: null,
+            },
+        ],
+    }),
     day6: generateHours(),
 };
 
@@ -217,6 +424,10 @@ function getEventTargetText(event) {
 
     const memberNames = getEventMemberNames(event);
     return memberNames.length > 0 ? memberNames.join('、') : '未設定';
+}
+
+function getEventCreatorName(event) {
+    return event.createdByUserId ? getUserName(event.createdByUserId) : '未設定';
 }
 
 function getMemberAvatarsWidth(visibleCount, hasMore) {
@@ -502,12 +713,22 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                                 <dd>{formatEventTimeRange(selectedEvent)}</dd>
                             </div>
                             <div>
-                                <dt>対象</dt>
+                                <dt>メンバー</dt>
                                 <dd>{getEventTargetText(selectedEvent)}</dd>
                             </div>
                             <div>
-                                <dt>ID</dt>
-                                <dd>{selectedEvent.id}</dd>
+                                <dt>作成者</dt>
+                                <dd>{getEventCreatorName(selectedEvent)}</dd>
+                            </div>
+                            {selectedEvent.location && (
+                                <div>
+                                    <dt>場所</dt>
+                                    <dd>{selectedEvent.location}</dd>
+                                </div>
+                            )}
+                            <div className={styles.detailDescription}>
+                                <dt>詳細</dt>
+                                <dd>{selectedEvent.detail || '詳細は未設定です。'}</dd>
                             </div>
                         </dl>
                     </div>
