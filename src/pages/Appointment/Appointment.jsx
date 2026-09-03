@@ -614,9 +614,6 @@ function AppointmentStep({ onProceed }) {
                     </div>
                     
 
-                    <div className={styles.actions}>
-                        <button type="submit" className={styles.button}>検索</button>
-                    </div>
                 </form>
 
 
