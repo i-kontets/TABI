@@ -22,7 +22,6 @@ function Header({ tripName, isOther = false }) {
     const [searchParams] = useSearchParams();
     const groupId = searchParams.get('groupId');
     const navigate = useNavigate();
-    const subtitle = '2026年05月14日 - 2026年05月16日';
 
     // handleBackClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleBackClick = () => {
@@ -51,7 +50,6 @@ function Header({ tripName, isOther = false }) {
 
             <div className={styles.titleWrapper}>
                 <h1 className={styles.title}>{tripName}</h1>
-                <p className={styles.subtitle}>{subtitle}</p>
             </div>
 
             <button

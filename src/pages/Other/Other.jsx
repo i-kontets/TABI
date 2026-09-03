@@ -8,7 +8,7 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 import styles from './Other.module.css';
@@ -72,44 +72,53 @@ function ArrowIcon() {
  */
 export default function Other() {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const groupId = searchParams.get('groupId');
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    const groupId = params.get('groupId');
+
+    const buildPathWithGroupId = (path) => {
+        if (!groupId) {
+            return path;
+        }
+
+        return `${path}?groupId=${encodeURIComponent(groupId)}`;
+    };
 
     return (
         <>
-            <Header />
-            <div className={styles.page}>
-                <main className={styles.content}>
-                    <section className={styles.supportCard}>
-                        <div className={styles.menu}>
-                            {supportItems.map((item) => (
-                                <button
-                                    className={styles.menuItem}
-                                    type="button"
-                                    key={item.id}
-                                    onClick={() => {
-                                        if (item.path) {
-                                            navigate(`${item.path}?groupId=${groupId}`);
-                                        }
-                                    }}
-                                >
-                                    <span className={`${styles.thumbnail} ${styles[item.tone]}`}>
-                                        <span>{item.icon}</span>
-                                    </span>
-                                    <span className={styles.itemText}>
-                                        <strong>{item.title}</strong>
-                                        <small>{item.description}</small>
-                                    </span>
-                                    <span className={styles.arrow}>
-                                        <ArrowIcon />
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-                </main>
-                <BottomNav />
-            </div>
+        <Header />
+        <div className={styles.page}>
+            <main className={styles.content}>
+                <section className={styles.supportCard}>
+                    <div className={styles.menu}>
+                        {supportItems.map((item) => (
+                            <button
+                                className={styles.menuItem}
+                                type="button"
+                                key={item.id}
+                                onClick={() => {
+                                    if (item.path) {
+                                        navigate(buildPathWithGroupId(item.path));
+                                    }
+                                }}
+                            >
+                                <span className={`${styles.thumbnail} ${styles[item.tone]}`}>
+                                    <span>{item.icon}</span>
+                                </span>
+                                <span className={styles.itemText}>
+                                    <strong>{item.title}</strong>
+                                    <small>{item.description}</small>
+                                </span>
+                                <span className={styles.arrow}>
+                                    <ArrowIcon />
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+            </main>
+        <BottomNav />
+        </div>
         </>
     );
 }

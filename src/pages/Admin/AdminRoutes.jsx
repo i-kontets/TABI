@@ -27,7 +27,7 @@ import SpotForm from './Spots/SpotForm';
 import Analytics from './Analytics/Analytics';
 import Activities from './Activities/Activities';
 import Managers from './Managers/Managers';
-import Logs from './Logs/Logs';
+// import Logs from './Logs/Logs';
 import Settings from './Settings/Settings';
 import SystemErrors from './SystemErrors/SystemErrors';
 import AdminServiceGate from './AdminServiceGate';
@@ -64,7 +64,7 @@ export default function AdminRoutes() {
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="activities" element={<Activities />} />
                 <Route path="managers" element={<Managers />} />
-                <Route path="logs" element={<Logs />} />
+                {/* <Route path="logs" element={<Logs />} /> */}
                 <Route path="settings" element={<Settings />} />
                 <Route path="system-errors" element={<SystemErrors />} />
             </Routes>
