@@ -30,33 +30,38 @@ function getMinutesFromTime(time) {
     return Number(time.slice(3, 5));
 }
 
-function getTotalMinutesFromTime(time) {
-    const [hours, minutes] = time.split(':').map(Number);
-    return (hours * 60) + minutes;
-}
-
-function getTotalMinutesFromDate(date) {
-    return (date.getHours() * 60) + date.getMinutes();
-}
-
 function isHourStartTime(time) {
     return getMinutesFromTime(time) === 0;
 }
 
-function isEventRunning(event, now) {
-    if (!event.endTime) {
+function buildDateTime(dateValue, time) {
+    const [year, month, day] = dateValue.split('-').map(Number);
+    const [hours, minutes] = time.split(':').map(Number);
+
+    if (!year || !month || !day || Number.isNaN(hours) || Number.isNaN(minutes)) {
+        return null;
+    }
+
+    return new Date(year, month - 1, day, hours, minutes);
+}
+
+function isEventRunning(event, now, selectedDateValue) {
+    if (!event.endTime || !selectedDateValue) {
         return false;
     }
 
-    const currentMinutes = getTotalMinutesFromDate(now);
-    const startMinutes = getTotalMinutesFromTime(event.time);
-    const endMinutes = getTotalMinutesFromTime(event.endTime);
+    const startDateTime = buildDateTime(selectedDateValue, event.time);
+    const endDateTime = buildDateTime(selectedDateValue, event.endTime);
 
-    if (endMinutes < startMinutes) {
-        return currentMinutes >= startMinutes || currentMinutes < endMinutes;
+    if (!startDateTime || !endDateTime) {
+        return false;
     }
 
-    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+    if (endDateTime <= startDateTime) {
+        endDateTime.setDate(endDateTime.getDate() + 1);
+    }
+
+    return now >= startDateTime && now < endDateTime;
 }
 
 function groupEventsByHour(overrides) {
@@ -553,7 +558,7 @@ function MemberAvatars({ userIds = [] }) {
  * ScheduleTimeAxis は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-export default function ScheduleTimeAxis({ selectedDay }) {
+export default function ScheduleTimeAxis({ selectedDay, selectedDateValue }) {
     const [now, setNow] = useState(() => new Date());
     const [viewMode, setViewMode] = useState('all');
     const [selectedEvent, setSelectedEvent] = useState(null);
@@ -647,7 +652,7 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                                             <p className={styles.subTimeLabel}>{eventGroup.time}</p>
                                         )}
                                         {eventGroup.events.map((event, i) => {
-                                            const eventRunning = isEventRunning(event, now);
+                                            const eventRunning = isEventRunning(event, now, selectedDateValue);
 
                                             return (
                                                 <button
