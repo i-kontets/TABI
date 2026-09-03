@@ -281,25 +281,38 @@
 }
 
 .peopleValue {
-    display: inline-flex;
-    align-items: baseline;
+    display: flex;
+    align-items: center;
     justify-content: center;
     gap: 4px;
     min-width: 0;
-    padding: 0 8px;
+    padding: 0 4px;
     color: #222;
     font-weight: 700;
 }
 
 .peopleNumber {
-    min-width: 2ch;
+    width: 50px;
+    min-width: 0;
+    height: 36px;
+    padding: 0 4px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #222;
     font-size: 1.05rem;
-    text-align: right;
+    font-weight: 700;
+    text-align: center;
+}
+
+.peopleNumber:focus {
+    outline: none;
 }
 
 .peopleUnit {
     font-size: 0.85rem;
     color: #555;
+    pointer-events: none;
 }
 
 .dateTimeTable {

@@ -178,8 +178,25 @@ function PeopleStepper({ value, onChange }) {
         onChange(Math.max(1, nextValue));
     };
 
+    const handleInputChange = (e) => {
+        const value = e.target.value;
+
+        // 入力途中の空欄も許可
+        if (value === '') {
+            onChange('');
+            return;
+        }
+
+        const number = Number(value);
+
+        if (!Number.isNaN(number)) {
+            onChange(Math.max(1, number));
+        }
+    };
+
     return (
         <div className={styles.peopleStepper}>
+            {/* −ボタン */}
             <button
                 type="button"
                 className={styles.stepperButton}
@@ -187,19 +204,31 @@ function PeopleStepper({ value, onChange }) {
                 disabled={currentValue <= 1}
                 aria-label="人数を減らす"
             >
-                -
+                −
             </button>
-            <div className={styles.peopleValue} aria-live="polite">
-                <span className={styles.peopleNumber}>{currentValue}</span>
+
+            {/* ここを直接入力できるようにする */}
+            <div className={styles.peopleValue}>
+                <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={value}
+                    onChange={handleInputChange}
+                    className={styles.peopleNumber}
+                    aria-label="人数"
+                />
                 <span className={styles.peopleUnit}>名</span>
             </div>
+
+            {/* ＋ボタン */}
             <button
                 type="button"
                 className={styles.stepperButton}
                 onClick={() => updateValue(currentValue + 1)}
                 aria-label="人数を増やす"
             >
-                +
+                ＋
             </button>
         </div>
     );
@@ -574,10 +603,16 @@ function AppointmentStep({ onProceed }) {
                         </>
                     )}
 
-                    <label className={styles.label}>
-                        {labels.people}
+                    
+                    <div className={styles.label}>
+                        <div>{labels.people}</div>
                         <PeopleStepper value={people} onChange={setPeople} />
-                    </label>
+                    </div>
+
+                    <div className={styles.actions}>
+                        <button type="submit" className={styles.button}>検索</button>
+                    </div>
+                    
 
                     <div className={styles.actions}>
                         <button type="submit" className={styles.button}>検索</button>
