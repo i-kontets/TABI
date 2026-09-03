@@ -8,7 +8,7 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 import styles from './Other.module.css';
@@ -73,6 +73,17 @@ function ArrowIcon() {
  */
 export default function Other() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    const groupId = params.get('groupId');
+
+    const buildPathWithGroupId = (path) => {
+        if (!groupId) {
+            return path;
+        }
+
+        return `${path}?groupId=${encodeURIComponent(groupId)}`;
+    };
 
     return (
         <>
@@ -88,7 +99,7 @@ export default function Other() {
                                 key={item.id}
                                 onClick={() => {
                                     if (item.path) {
-                                        navigate(item.path);
+                                        navigate(buildPathWithGroupId(item.path));
                                     }
                                 }}
                             >

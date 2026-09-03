@@ -102,6 +102,13 @@ function sort_admin_users(array $items, string $sort): array
 }
 
 // users.status を管理画面で見やすい日本語ラベルに変換します。
+/**
+ * DBの値や入力値を、フロントエンドへ返しやすい形式に変換します。
+ *
+ * @param ?string $status 呼び出し元から渡される処理対象の値です。
+ * @return string 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function user_status_label(?string $status): string
 {
     return [
@@ -111,6 +118,13 @@ function user_status_label(?string $status): string
 }
 
 // お知らせの状態コードを日本語表示に変換します。
+/**
+ * DBの値や入力値を、フロントエンドへ返しやすい形式に変換します。
+ *
+ * @param ?string $status 呼び出し元から渡される処理対象の値です。
+ * @return string 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function notice_status_label(?string $status): string
 {
     return [
@@ -120,6 +134,13 @@ function notice_status_label(?string $status): string
 }
 
 // 通報の状態コードを日本語表示に変換します。
+/**
+ * DBの値や入力値を、フロントエンドへ返しやすい形式に変換します。
+ *
+ * @param ?string $status 呼び出し元から渡される処理対象の値です。
+ * @return string 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function report_status_label(?string $status): string
 {
     return [
@@ -129,6 +150,13 @@ function report_status_label(?string $status): string
 }
 
 // お問い合わせの状態コードを日本語表示に変換します。
+/**
+ * DBの値や入力値を、フロントエンドへ返しやすい形式に変換します。
+ *
+ * @param ?string $status 呼び出し元から渡される処理対象の値です。
+ * @return string 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function inquiry_status_label(?string $status): string
 {
     return [
@@ -138,6 +166,15 @@ function inquiry_status_label(?string $status): string
 }
 
 // 表示ラベルを DB 保存用のコードに戻すための変換関数です。
+/**
+ * 同じ処理を複数箇所へ書かないために、このAPI内の共通処理としてまとめています。
+ *
+ * @param string $label 呼び出し元から渡される処理対象の値です。
+ * @param array $map 呼び出し元から渡される処理対象の値です。
+ * @param string $default 呼び出し元から渡される処理対象の値です。
+ * @return string 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function to_status_code(string $label, array $map, string $default): string
 {
     return $map[$label] ?? $default;

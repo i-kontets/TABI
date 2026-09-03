@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Tabs, Timeline } from '@mantine/core';
+import Modal from '../Modal/Modal';
 import groupIcon from '../../assets/icons/groups.svg';
 import personIcon from '../../assets/icons/person.svg';
 import styles from './ScheduleTimeAxis.module.css';
@@ -107,7 +108,7 @@ const scheduleData = {
             { id: 5, group: '全員', title: 'ホテル出発', endTime: '10:30', userIds: null },
         ],
         '10:00': [
-            { id: 6, group: null, title: 'コテージ到着', endTime: '10:20', userIds: [1, 2, 3, 4, 5, 6, 6, 6] },
+            { id: 6, group: null, title: 'コテージ到着', endTime: '10:20', userIds: [1, 2, 3, 4, 5, 6] },
             { id: 7, group: null, title: '買い出し', endTime: '10:40', userIds: [7, 1] },
             { id: 8, group: null, title: '買い出し', endTime: '10:50', userIds: [7] },
             { id: 9, group: null, title: '買い出し', endTime: '11:00', userIds: [7] },
@@ -148,24 +149,13 @@ const SUB_TIME_LABEL_HEIGHT = 22;
 const MEMBER_AVATAR_SIZE = 24;
 const MEMBER_AVATAR_OVERLAP = 6;
 const MEMBER_AVATAR_STEP = MEMBER_AVATAR_SIZE - MEMBER_AVATAR_OVERLAP;
-const TIMELINE_PADDING_TOP = 36;
-const TIMELINE_BULLET_CENTER = 11;
 
 function getUserName(userId) {
-    return users.find((user) => user.userId === userId)?.name ?? '不明';
+    return users.find((user) => user.userId === userId)?.name ?? `ユーザー${userId}`;
 }
 
-function getMemberInitial(name) {
-    return name.slice(0, 1);
-}
-
-function getVisibleMemberCount(memberCount, availableWidth) {
-    if (!availableWidth) {
-        return memberCount;
-    }
-
-    const maxVisibleCount = Math.floor((availableWidth - MEMBER_AVATAR_OVERLAP) / MEMBER_AVATAR_STEP);
-    return Math.max(Math.min(memberCount, maxVisibleCount), 1);
+function getMemberInitial(memberName) {
+    return memberName.slice(0, 1);
 }
 
 function formatEventTimeRange(event) {
@@ -185,10 +175,6 @@ function getEventGroupVisualHeight(eventGroup) {
  */
 function isCompactSlot(item) {
     return item.events.length === 0;
-}
-
-function getEventRows(item) {
-    return Math.max(Math.ceil(item.events.length / EVENTS_PER_ROW), 1);
 }
 
 /**
@@ -220,31 +206,44 @@ function getSlotStyle(item) {
     return slotHeight > SLOT_HEIGHT ? { minHeight: slotHeight } : undefined;
 }
 
-function formatTime(date) {
-    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+function getEventMemberNames(event) {
+    return event.userIds?.map(getUserName) ?? [];
 }
 
-function getCurrentTimeTop(items, now) {
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:00`;
-    const currentIndex = items.findIndex((item) => item.time === currentTime);
-
-    if (currentIndex === -1) {
-        return null;
+function getEventTargetText(event) {
+    if (event.group === '全員') {
+        return '全員';
     }
 
-    const offsetBeforeCurrent = items
-        .slice(0, currentIndex)
-        .reduce((total, item) => total + getSlotVisualHeight(item), 0);
-    const currentItem = items[currentIndex];
-    const currentHeight = getSlotVisualHeight(currentItem);
-    const minuteOffset = currentHeight * (now.getMinutes() / 60);
-
-    return TIMELINE_PADDING_TOP + TIMELINE_BULLET_CENTER + offsetBeforeCurrent + minuteOffset;
+    const memberNames = getEventMemberNames(event);
+    return memberNames.length > 0 ? memberNames.join('、') : '未設定';
 }
 
-function isCurrentTimeOverEvent(items, now) {
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:00`;
-    return items.some((item) => item.time === currentTime && item.events.length > 0);
+function getMemberAvatarsWidth(visibleCount, hasMore) {
+    if (visibleCount === 0) {
+        return hasMore ? MEMBER_AVATAR_SIZE : 0;
+    }
+
+    const visibleWidth = MEMBER_AVATAR_SIZE + ((visibleCount - 1) * MEMBER_AVATAR_STEP);
+    return hasMore ? visibleWidth + MEMBER_AVATAR_STEP : visibleWidth;
+}
+
+function getVisibleMemberCount(memberCount, availableWidth) {
+    if (memberCount === 0 || availableWidth === null) {
+        return memberCount;
+    }
+
+    if (getMemberAvatarsWidth(memberCount, false) <= availableWidth) {
+        return memberCount;
+    }
+
+    for (let count = memberCount - 1; count >= 1; count -= 1) {
+        if (getMemberAvatarsWidth(count, true) <= availableWidth) {
+            return count;
+        }
+    }
+
+    return 0;
 }
 
 /**
@@ -346,6 +345,7 @@ function MemberAvatars({ userIds = [] }) {
 export default function ScheduleTimeAxis({ selectedDay }) {
     const [now, setNow] = useState(() => new Date());
     const [viewMode, setViewMode] = useState('all');
+    const [selectedEvent, setSelectedEvent] = useState(null);
     const baseItems = scheduleData[selectedDay] ?? [];
     const items = filterVisibleItems(filterItemsByView(baseItems, viewMode));
 
@@ -359,6 +359,10 @@ export default function ScheduleTimeAxis({ selectedDay }) {
     }, []);
 
     // ここで条件を確認し、状況に合う処理だけを実行します。
+    const closeDetailSheet = () => {
+        setSelectedEvent(null);
+    };
+
     if (items.length === 0) {
         return null;
     }
@@ -435,8 +439,14 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                                             const eventRunning = isEventRunning(event, now);
 
                                             return (
-                                                <div key={event.id ?? `${event.time}-${i}`} className={styles.scheduleCard}>
-                                                    <div className={styles.cardMeta}>
+                                                <button
+                                                    key={event.id ?? `${event.time}-${i}`}
+                                                    className={styles.scheduleCard}
+                                                    type="button"
+                                                    onClick={() => setSelectedEvent(event)}
+                                                    aria-label={`${event.title}の詳細を表示`}
+                                                >
+                                                    <span className={styles.cardMeta}>
                                                         {eventRunning && (
                                                             <span className={styles.runningStatus} aria-label="実行中">
                                                                 <span className={styles.runningDot} />
@@ -454,10 +464,10 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                                                         {event.group !== '全員' && (
                                                             <MemberAvatars userIds={event.userIds} />
                                                         )}
-                                                    </div>
-                                                    <p className={styles.timeRange}>{formatEventTimeRange(event)}</p>
-                                                    <p className={styles.scheduleTitle}>{event.title}</p>
-                                                </div>
+                                                    </span>
+                                                    <span className={styles.timeRange}>{formatEventTimeRange(event)}</span>
+                                                    <span className={styles.scheduleTitle}>{event.title}</span>
+                                                </button>
                                             );
                                         })}
                                     </div>
@@ -467,6 +477,42 @@ export default function ScheduleTimeAxis({ selectedDay }) {
                     })}
                 </div>
             </div>
+
+            <Modal isOpen={selectedEvent !== null} onClose={closeDetailSheet}>
+                {selectedEvent && (
+                    <div className={styles.detailContent}>
+                        <div className={styles.detailHeader}>
+                            <div>
+                                <p className={styles.detailEyebrow}>予定詳細</p>
+                                <h2>{selectedEvent.title}</h2>
+                            </div>
+                            <button
+                                className={styles.detailCloseButton}
+                                type="button"
+                                onClick={closeDetailSheet}
+                                aria-label="閉じる"
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <dl className={styles.detailList}>
+                            <div>
+                                <dt>時間</dt>
+                                <dd>{formatEventTimeRange(selectedEvent)}</dd>
+                            </div>
+                            <div>
+                                <dt>対象</dt>
+                                <dd>{getEventTargetText(selectedEvent)}</dd>
+                            </div>
+                            <div>
+                                <dt>ID</dt>
+                                <dd>{selectedEvent.id}</dd>
+                            </div>
+                        </dl>
+                    </div>
+                )}
+            </Modal>
         </section>
     );
 }

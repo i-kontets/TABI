@@ -9,7 +9,8 @@
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { buildAuthPath, getReturnPathFromSearchParams, resolveAuthReturnPath } from "../../utils/authReturnPath";
 import PasswordInput from "../../components/Zxcvbn/Password";
 import Terms from "../Terms/Terms.jsx";
 import PrivacyPolicy from "../PrivacyPolicy/PrivacyPolicy.jsx";
@@ -96,6 +97,8 @@ function PolicyRow({ title, confirmed, onOpen }) {
  */
 export default function Newreg() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const returnPath = getReturnPathFromSearchParams(searchParams);
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [name, setName] = useState("");
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
@@ -254,7 +257,7 @@ export default function Newreg() {
             }
 
             localStorage.setItem("loginUser", JSON.stringify(data.user));
-            navigate("/Home");
+            navigate(resolveAuthReturnPath(returnPath));
         // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
             console.error("登録エラー:", error);
@@ -358,7 +361,7 @@ export default function Newreg() {
                     <button
                         type="button"
                         className={styles.btn}
-                        onClick={() => navigate("/")}
+                        onClick={() => navigate(buildAuthPath("/", returnPath))}
                     >
                         戻る
                     </button>

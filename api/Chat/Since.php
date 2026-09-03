@@ -56,6 +56,13 @@ function respond(array $payload, int $status = 200): void
 }
 
 // users.icon_url のS3キーを署名付きURLへ変換（Messages.phpと同じ処理）
+/**
+ * 同じ処理を複数箇所へ書かないために、このAPI内の共通処理としてまとめています。
+ *
+ * @param ?string $iconValue 呼び出し元から渡される処理対象の値です。
+ * @return ?string 宣言された型に合わせて処理結果を返します。
+ * エラー処理は主に呼び出し元、またはこの関数を使うAPI本体側で行います。
+ */
 function resolveIconUrl(?string $iconValue): ?string
 {
     static $initialized = false, $s3 = null, $aws = null, $cache = [];

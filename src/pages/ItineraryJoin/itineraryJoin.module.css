@@ -1,0 +1,73 @@
+.page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: #f7f7f7;
+}
+
+.card {
+    width: min(100%, 420px);
+    padding: 28px;
+    border-radius: 20px;
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+    text-align: center;
+}
+
+.label {
+    margin: 0 0 8px;
+    color: #666;
+    font-size: 14px;
+}
+
+.title {
+    margin: 0 0 16px;
+    color: var(--sub-color);
+    font-size: 24px;
+}
+
+.description,
+.message {
+    margin: 0 0 20px;
+    line-height: 1.7;
+}
+
+.error {
+    margin: 0 0 20px;
+    color: #c0392b;
+    line-height: 1.7;
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.primaryButton,
+.secondaryButton {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 999px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.primaryButton {
+    border: none;
+    background: var(--sub-color);
+    color: #fff;
+}
+
+.primaryButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.secondaryButton {
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #333;
+}
