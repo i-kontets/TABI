@@ -8,8 +8,9 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { buildAuthPath, getReturnPathFromSearchParams, resolveAuthReturnPath } from "../../utils/authReturnPath";
 import styles from "./Login.module.css";
 import PasswordResetRequestModal from "../../components/PasswordReset/PasswordResetRequestModal";
 
@@ -27,6 +28,8 @@ const BACKGROUND_IMAGES = Object.values(imageModules).map((mod) => mod.default);
  */
 export default function Login() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const returnPath = getReturnPathFromSearchParams(searchParams);
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [email, setEmail] = useState("2410041@i-seifu.jp");
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
@@ -41,16 +44,16 @@ export default function Login() {
     const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false);
 
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [bgImage, setBgImage] = useState(BACKGROUND_IMAGES[0] || "");
-
-    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
-    useEffect(() => {
-        // ここで条件を確認し、状況に合う処理だけを実行します。
-        if (BACKGROUND_IMAGES.length > 0) {
-            const randomIndex = Math.floor(Math.random() * BACKGROUND_IMAGES.length);
-            setBgImage(BACKGROUND_IMAGES[randomIndex]);
+    const [bgImage] = useState(() => {
+        if (BACKGROUND_IMAGES.length === 0) {
+            return "";
         }
-    }, []);
+
+        const randomIndex = Math.floor(Math.random() * BACKGROUND_IMAGES.length);
+        return BACKGROUND_IMAGES[randomIndex];
+    });
+
+    // 背景画像は初回表示時にランダムで1枚だけ選びます。
 
     // ログインフォーム送信ハンドラ
     const handleLogin = async (event) => {
@@ -98,7 +101,7 @@ export default function Login() {
             localStorage.setItem("loginUser", JSON.stringify(data.user));
 
             // ホームページにリダイレクト
-            navigate("/Home");
+            navigate(resolveAuthReturnPath(returnPath));
 
         // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
@@ -173,7 +176,7 @@ export default function Login() {
                     <button
                         type="button"
                         className={`${styles.btn} ${styles.registerBtn}`}
-                        onClick={() => navigate("/Newreg")}
+                        onClick={() => navigate(buildAuthPath("/Newreg", returnPath))}
                     >
                         新規登録
                     </button>

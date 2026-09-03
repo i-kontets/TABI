@@ -8,7 +8,7 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 import styles from './Other.module.css';
@@ -38,10 +38,11 @@ const supportItems = [
     },
     {
         id: 'transport',
-        title: '交通情報',
-        description: '電車・バス・フライトの情報を検索',
+        title: '交通手段の予約',
+        description: '飛行機・新幹線・レンタカーの予約を確認',
         icon: '↔',
         tone: 'blue',
+        path: '/Appointment',
     },
     {
         id: 'nearby',
@@ -72,6 +73,17 @@ function ArrowIcon() {
  */
 export default function Other() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    const groupId = params.get('groupId');
+
+    const buildPathWithGroupId = (path) => {
+        if (!groupId) {
+            return path;
+        }
+
+        return `${path}?groupId=${encodeURIComponent(groupId)}`;
+    };
 
     return (
         <>
@@ -87,7 +99,7 @@ export default function Other() {
                                 key={item.id}
                                 onClick={() => {
                                     if (item.path) {
-                                        navigate(item.path);
+                                        navigate(buildPathWithGroupId(item.path));
                                     }
                                 }}
                             >

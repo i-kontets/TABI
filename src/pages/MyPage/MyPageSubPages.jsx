@@ -11,6 +11,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ImagePicker from '../../components/ImagePicker/ImagePicker';
+import MainBottomNav from '../../components/mainBottomNav/MainBottomNav';
 import { registerNotificationDevice, fetchNotificationSettings, updateNotificationSettings } from '../../api/notificationApi';
 import { requestFirebasePushToken } from '../../firebase/firebasePushToken';
 import styles from './MyPageSubPages.module.css';
@@ -30,22 +31,6 @@ const api = {
  */
 function BackIcon({ className }) {
     return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7" /></svg>;
-}
-
-/**
- * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
-function HomeIcon({ className }) {
-    return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5" /><path d="M5.5 10.5V20h13v-9.5" /><path d="M9.5 20v-5h5v5" /></svg>;
-}
-
-/**
- * UserIcon は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
-function UserIcon({ className }) {
-    return <svg className={className} viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /><path d="M4.5 20a7.5 7.5 0 0 1 15 0" /></svg>;
 }
 
 /**
@@ -255,16 +240,8 @@ function PageShell({ title, children, onBack }) {
 
             <main className={styles.content}>{children}</main>
 
-            <footer className={styles.footer}>
-                <button type="button" className={styles.footerItem} onClick={() => navigate('/Home')} aria-label="ホーム">
-                    <HomeIcon className={styles.footerIcon} />
-                    <span>ホーム</span>
-                </button>
-                <button type="button" className={[styles.footerItem, styles.footerItemActive].join(' ')} onClick={() => navigate('/MyPage')} aria-label="マイページ">
-                    <UserIcon className={styles.footerIcon} />
-                    <span>マイページ</span>
-                </button>
-            </footer>
+            {/* 設定系のページも同じ共通フッターに揃え、通知設定から戻るリンクだけ別処理にならないようにします。 */}
+            <MainBottomNav />
         </div>
     );
 }

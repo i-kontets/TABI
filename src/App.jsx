@@ -9,12 +9,16 @@
  * 扱うデータ: 選択中の旅行グループ { id, name }(TripContext 経由で全画面に共有)。
  */
 // React の状態管理フックを読み込みます。
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 // ルーティング(URLと画面の対応付け)用の部品を読み込みます。
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // 画面をまたいで値を共有するための Context 作成関数を読み込みます。
 import { createContext } from 'react';
 import './App.css'
+import InvoiceAll from './pages/InvoiceAll/InvoiceAll.jsx';
+import InvoiceLiquidation from './pages/InvoiceLiquidation/InvoiceLiquidation.jsx';
+import InvoiceTotal from './pages/InvoiceTotal/InvoiceTotal.jsx';
+import ItineraryJoin from './pages/ItineraryJoin/ItineraryJoin.jsx';
 
 // ===== 各ページコンポーネントの読み込み =====
 import Newreg from './pages/newreg/Newreg';                    // 新規会員登録
@@ -28,7 +32,7 @@ import Terms from './pages/Terms/Terms.jsx';                    // 利用規約
 import PrivacyPolicy from './pages/PrivacyPolicy/PrivacyPolicy.jsx'; // プライバシーポリシー
 import UserProfilePage from './pages/UserProfile/UserProfilePage.jsx'; // 他ユーザーの公開プロフィール
 import Itinerary from './pages/Itinerary/Itinerary.jsx';        // 旅程(しおり)表示
-import ItineraryEdit from './pages/Itinerary/ItineraryEdit.jsx'; // 旅程編集
+import ItineraryEdit from './pages/ItineraryEdit/ItineraryEdit.jsx'; // 旅程編集
 import Tripmap from './pages/Tripmap/Tripmap';                  // 旅行マップ
 import Schedule from './pages/Schedule/Schedule.jsx';           // スケジュール
 import Chat from './pages/Chat/Chat';                           // グループチャット
@@ -49,106 +53,135 @@ import Maintenance from './pages/Maintenance/Maintenance.jsx';  // メンテナ�
 import NotificationListPage from './pages/Notifications/NotificationListPage.jsx';   // 通知一覧
 import NotificationDetailPage from './pages/Notifications/NotificationDetailPage.jsx'; // 通知詳細
 import ServiceAvailabilityGate from './components/ServiceAvailabilityGate.jsx'; // DB稼働状態の門番
-import { isAdminPath, isMaintenancePath } from './services/serviceStatus.js';   // パス判定ヘルパー
 
 // 選択中の旅行グループ情報を全画面で共有するための Context です。
 // 各画面は useContext(TripContext) で { trip, setTrip } を受け取れます。
 // eslint-disable-next-line react-refresh/only-export-components
 export const TripContext = createContext();
 
-/**
- * AppRoutes は、URLと表示する画面の対応表を定義するコンポーネントです。
- * あわせて、一般ユーザー向け画面ではリアルタイム受信(WebSocket)を有効にします。
- */
-function AppRoutes({ trip }) {
-    // 現在のURL情報を取得します。
-    const location = useLocation();
-    // 管理画面とメンテナンス画面では、ユーザー向けリアルタイム受信を動かさないようにします。
-    const shouldRunUserRealtime = !isAdminPath(location.pathname) && !isMaintenancePath(location.pathname);
-
-    return (
-        <>
-            {/* 一般ユーザー画面のときだけ、通知やチャットのリアルタイム受信係を起動します */}
-            {shouldRunUserRealtime && <UserRealtimeListener trip={trip} />}
-            <Routes>
-                {/* ===== 認証系 ===== */}
-                <Route path="/" element={<Login />} />
-                <Route path="/ResetPassword" element={<ResetPassword />} />
-                <Route path="/Newreg" element={<Newreg />} />
-                {/* ===== ホーム・マイページ系 ===== */}
-                <Route path="/Home" element={<Home />} />
-                {/* 大文字・小文字どちらのURLでもマイページを開けるように2つ登録しています */}
-                <Route path="/MyPage" element={<MyPage />} />
-                <Route path="/mypage" element={<MyPage />} />
-                <Route path="/mypage/profile-edit" element={<ProfileEditPage />} />
-                <Route path="/mypage/user-edit" element={<UserEditPage />} />
-                <Route path="/mypage/email-change" element={<EmailChangePage />} />
-                <Route path="/mypage/notification-settings" element={<NotificationSettingsPage />} />
-                <Route path="/mypage/notification-permission" element={<NotificationPermissionPage />} />
-                {/* ===== 通知系 ===== */}
-                <Route path="/notifications" element={<NotificationListPage />} />
-                {/* :notificationId はURLの一部が変数になる書き方です(例: /notifications/5) */}
-                <Route path="/notifications/:notificationId" element={<NotificationDetailPage />} />
-                {/* ===== サポート・規約系 ===== */}
-                <Route path="/mypage/contact" element={<ContactPage />} />
-                <Route path="/mypage/faq" element={<FaqPage />} />
-                <Route path="/terms" element={<Terms />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                {/* ===== ユーザープロフィール ===== */}
-                <Route path="/user/:userId" element={<UserProfilePage />} />
-                {/* ===== 旅行計画系 ===== */}
-                <Route path="/Itinerary" element={<Itinerary />} />
-                <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
-                <Route path="/Tripmap" element={<Tripmap />} />
-                <Route path="/schedule" element={<Schedule />} />
-                {/* ===== コミュニケーション系 ===== */}
-                <Route path="/Chat" element={<Chat />} />
-                <Route path="/Discussion" element={<Discussion />} />
-                <Route path="/group/:groupId/talk" element={<Discussion />} />
-                <Route path="/album" element={<Album />} />
-                {/* ===== 精算・日程調整・その他 ===== */}
-                <Route path="/Invoice" element={<Invoice />} />
-                <Route path="/Appointment" element={<Appointment />} />
-                <Route path="/Other" element={<Other />} />
-                {/* <Route path="/TouristRanking" element={<TouristRanking />} /> */}
-                {/* ===== 行き先候補・観光スポット ===== */}
-                <Route path="/Candidates" element={<Candidates />} />
-                <Route path="/Candidates/:candidateId" element={<CandidateDetail />} />
-                <Route path="/Tourist" element={<Tourist />} />
-                {/* 旧URL(/TouristRanking)でも観光スポット画面を表示します */}
-                <Route path="/TouristRanking" element={<Tourist />} />
-                <Route path="/CottageChatPage" element={<CottageChatPage />} />
-                <Route path="/CheckList" element={<CheckList /> }/>
-                {/* ===== メンテナンス・管理画面 ===== */}
-                <Route path="/maintenance" element={<Maintenance />} />
-                {/* /admin/ 以下はすべて AdminRoutes に任せます("*" は下層全部の意味) */}
-                <Route path="/admin/*" element={<AdminRoutes />} />
-            </Routes>
-        </>
-    );
-}
-
-/**
- * App は、アプリ全体の最上位コンポーネントです。
- * 旅行グループの共有(Context)→ ルーター → 稼働状態チェック → 各画面 の順に包んでいます。
- */
 function App() {
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    // ここでは「現在選択中の旅行グループ」を保持します(初期状態は未選択)。
-    const [trip, setTrip] = useState({
-        id: null,   // 旅行グループのID(未選択なら null)
-        name: ""    // 旅行グループの表示名
-    });
+    const [trip, setTrip] = useState({});
+    const [members, setMembers] = useState([]);
+    const [tripPeriod, setTripPeriod] = useState(null);
+
+    const fetchMembers = useCallback(async (groupId) => {
+        if (!groupId) {
+            setMembers([]);
+            return {
+                success: false,
+                status: "missing-group-id",
+                members: [],
+            };
+        }
+
+        try {
+            const response = await fetch("/TABI/api/Itinerary/Members.php", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    group_id: groupId,
+                }),
+            });
+
+            if (response.status === 401) {
+                setMembers([]);
+                return {
+                    success: false,
+                    status: "login-required",
+                    members: [],
+                };
+            }
+
+            const data = await response.json();
+
+            if (data.success && Array.isArray(data.members)) {
+                const normalizedMembers = data.members.map((member) => ({
+                    ...member,
+                    name: member.name ?? "",
+                    initial: member.initial ?? member.name?.charAt(0) ?? "?",
+                    color: member.color ?? "#b5ead7",
+                    role: member.role ?? "member",
+                }));
+
+                setMembers(normalizedMembers);
+                return {
+                    success: true,
+                    status: "ready",
+                    members: normalizedMembers,
+                };
+            }
+
+            setMembers([]);
+            return {
+                success: false,
+                status: "empty",
+                members: [],
+            };
+        } catch (error) {
+            console.error(error);
+            setMembers([]);
+            return {
+                success: false,
+                status: "error",
+                members: [],
+            };
+        }
+    }, []);
 
     return (
-        // TripContext.Provider: 配下のすべての画面が trip / setTrip を使えるようにします。
-        <TripContext.Provider value={{ trip, setTrip }}>
-            {/* basename: サブディレクトリ(/TABI など)配下で動かすためのURL接頭辞です */}
+        <TripContext.Provider
+            value={{
+                trip,
+                setTrip,
+                members,
+                setMembers,
+                fetchMembers,
+                tripPeriod,
+                setTripPeriod,
+            }}
+        >
             <BrowserRouter basename={import.meta.env.BASE_URL}>
-                {/* DBが停止中ならメンテナンス画面へ誘導する門番コンポーネントです */}
-                <ServiceAvailabilityGate>
-                    <AppRoutes trip={trip} />
-                </ServiceAvailabilityGate>
+                <UserRealtimeListener trip={trip} />
+                <Routes>
+                    <Route path="/" element={<Login />} />
+                    <Route path="/Newreg" element={<Newreg />} />
+                    <Route path="/Home" element={<Home />} />
+                    <Route path="/MyPage" element={<MyPage />} />
+                    <Route path="/mypage" element={<MyPage />} />
+                    <Route path="/mypage/profile-edit" element={<ProfileEditPage />} />
+                    <Route path="/mypage/user-edit" element={<UserEditPage />} />
+                    <Route path="/mypage/email-change" element={<EmailChangePage />} />
+                    <Route path="/mypage/notification-settings" element={<NotificationSettingsPage />} />
+                    <Route path="/mypage/notification-permission" element={<NotificationPermissionPage />} />
+                    <Route path="/mypage/contact" element={<ContactPage />} />
+                    <Route path="/mypage/faq" element={<FaqPage />} />
+                    <Route path="/Itinerary" element={<Itinerary />} />
+                    <Route path="/ItineraryJoin" element={<ItineraryJoin />} />
+                    <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
+                    <Route path="/Tripmap" element={<Tripmap />} />
+                    <Route path="/schedule" element={<Schedule />} />
+                    <Route path="/Chat" element={<Chat />} />
+                    <Route path="/Discussion" element={<Discussion />} />
+                    <Route path="/group/:groupId/talk" element={<Discussion />} />
+                    <Route path="/album" element={<Album />} />
+                    <Route path="/Invoice" element={<Invoice />} />
+                    <Route path="/InvoiceAll" element={<InvoiceAll />} />
+                    <Route path="/InvoiceLiquidation" element={<InvoiceLiquidation />} />
+                    <Route path="/InvoiceTotal" element={<InvoiceTotal />} />
+                    <Route path="/Appointment" element={<Appointment />} />
+                    <Route path="/Other" element={<Other />} />
+                    {/* <Route path="/TouristRanking" element={<TouristRanking />} /> */}
+                    <Route path="/Candidates" element={<Candidates />} />
+                    <Route path="/Candidates/:candidateId" element={<CandidateDetail />} />
+                    <Route path="/Tourist" element={<Tourist />} />
+                    <Route path="/TouristRanking" element={<Tourist />} />
+                    <Route path="/CottageChatPage" element={<CottageChatPage />} />
+                    <Route path="/CheckList" element={<CheckList />} />
+                    <Route path="/admin/*" element={<AdminRoutes />} />
+                </Routes>
             </BrowserRouter>
         </TripContext.Provider>
     )

@@ -1,86 +1,122 @@
 .timelineSection {
-    padding: 0 8px;
+    --time-axis-width: 78px;
+    --timeline-gap: 6px;
+    --timeline-side-padding: 4px;
+    padding: 0 2px;
 }
 
 .viewToggle {
-    display: inline-flex;
-    margin: 0 0 12px 108px;
-    padding: 3px;
-    border: 1px solid rgba(68, 85, 141, 0.16);
-    border-radius: 8px;
-    background: #ffffff;
-    box-shadow: 0 3px 10px rgba(32, 35, 50, 0.06);
+    width: min(80%, 320px);
+    margin: 0 auto 24px;
 }
 
-.viewToggleButton {
-    min-width: 58px;
-    height: 30px;
-    padding: 0 12px;
-    border: none;
-    border-radius: 6px;
+.viewToggleList {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+    min-height: 54px;
+    padding: 6px;
+    border-bottom: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sub-color) 9%, #ffffff);
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.9),
+        0 10px 24px rgba(32, 35, 50, 0.08);
+}
+/* 初期の線を削除する用のcss */
+.viewToggleList::before {
+    display: none;
+}
+
+.viewToggleTab {
+    height: 42px;
+    min-height: 42px;
+    padding: 0 14px;
+    border: 0;
+    border-bottom: 0;
+    border-radius: 999px;
     background: transparent;
-    color: var(--sub-color);
-    font-size: 13px;
+    color: color-mix(in srgb, var(--sub-color) 78%, #333333);
+    font-size: 16px;
     font-weight: 800;
-    cursor: pointer;
+    opacity: 0.68;
+    transition:
+        color 220ms ease,
+        opacity 220ms ease,
+        background-color 220ms ease,
+        box-shadow 220ms ease,
+        transform 220ms ease;
 }
 
-.viewToggleButtonActive {
-    background: var(--sub-color);
-    color: #ffffff;
+.viewToggleTab:hover {
+    background: color-mix(in srgb, #ffffff 52%, transparent);
+    opacity: 0.86;
+}
+
+.viewToggleTab[data-active] {
+    color: var(--sub-color);
+    opacity: 1;
+    background: #ffffff;
+    box-shadow:
+        0 8px 18px rgba(32, 35, 50, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.viewToggleTabLabel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+
+.viewToggleIcon {
+    display: block;
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    opacity: 0.68;
+    filter: grayscale(1);
+    transition: opacity 160ms ease, filter 160ms ease, transform 160ms ease;
+}
+
+.viewToggleTab:first-child .viewToggleIcon {
+    transform: translateY(0px);
+}
+
+.viewToggleTab[data-active] .viewToggleIcon {
+    opacity: 1;
+    filter: none;
+    transform: translateY(0px);
+}
+
+.viewToggleTab[data-active]:first-child .viewToggleIcon {
+    transform: translateY(0px);
 }
 
 .timelineBody {
     position: relative;
-    padding: 36px 8px 0;
+    padding: 36px var(--timeline-side-padding) 0;
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: var(--timeline-gap);
+    animation: viewChange 180ms ease both;
 }
 
-.currentTimeLine {
-    position: absolute;
-    right: 8px;
-    left: 62px;
-    z-index: 3;
-    height: 2px;
-    background: #ef4444;
-    pointer-events: none;
-}
+@keyframes viewChange {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
 
-.currentTimeLineShort {
-    right: auto;
-    width: 54px;
-}
-
-.currentTimeLine::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 38px;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #ef4444;
-    transform: translateY(-50%);
-}
-
-.currentTimeLabel {
-    position: absolute;
-    top: 50%;
-    left: -54px;
-    padding: 2px 6px;
-    border-radius: 999px;
-    background: #ef4444;
-    color: #ffffff;
-    font-size: 11px;
-    font-weight: 800;
-    line-height: 1;
-    transform: translateY(-50%);
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .timeAxis {
-    width: 108px;
+    width: var(--time-axis-width);
 }
 
 .timeItem {
@@ -98,7 +134,7 @@
 .timeLabel {
     margin: 0;
     color: var(--sub-color);
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 800;
     line-height: 22px;
 }
@@ -131,10 +167,39 @@
     gap: 6px;
 }
 
+.timeGroup {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.subTimeLabel {
+    width: 100%;
+    margin: 2px 0 -1px;
+    color: color-mix(in srgb, var(--sub-color) 72%, #ffffff);
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 16px;
+}
+
+.subTimeLabel::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 2px;
+    margin-right: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sub-color) 45%, #ffffff);
+    vertical-align: middle;
+}
+
 .scheduleCard {
     flex: 1 1 calc(50% - 3px);
     margin-top: 4px;
-    padding: 8px 10px;
+    padding: 8px;
+    border: 0;
     min-height: 92px;
     box-sizing: border-box;
     background: #ffffff;
@@ -144,6 +209,27 @@
     flex-direction: column;
     gap: 6px;
     min-width: 0;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.scheduleCard:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(32, 35, 50, 0.13);
+}
+
+.scheduleCard:focus-visible {
+    outline: 2px solid var(--sub-color);
+    outline-offset: 2px;
+}
+
+.cardMeta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
 }
 
 .groupBadge {
@@ -154,12 +240,81 @@
     color: #ffffff;
     font-size: 11px;
     font-weight: 700;
+    white-space: nowrap;
 }
 
-.memberRow {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3px;
+.memberAvatars {
+    display: inline-flex;
+    align-items: center;
+    flex: 1 1 24px;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.memberAvatar,
+.memberMore {
+    width: 24px;
+    height: 24px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--sub-color) 12%, #ffffff);
+    color: var(--sub-color);
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(32, 35, 50, 0.12);
+    flex: 0 0 auto;
+}
+
+.memberAvatar:not(:first-child),
+.memberMore {
+    margin-left: -6px;
+}
+
+.memberMore {
+    background: color-mix(in srgb, var(--sub-color) 88%, #ffffff);
+    color: #ffffff;
+    font-size: 10px;
+}
+
+.runningStatus {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    height: 17px;
+    padding: 2px 6px 2px 5px;
+    border-radius: 999px;
+    background: color-mix(in srgb, #22c55e 12%, #ffffff);
+    color: #15803d;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+
+.runningDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 18%, transparent);
+}
+
+.runningText {
+    white-space: nowrap;
+}
+
+.timeRange {
+    margin: 0;
+    color: var(--sub-color);
+    font-size: 13px;
+    font-weight: 800;
 }
 
 .scheduleTitle {
@@ -167,4 +322,71 @@
     color: var(--text-color, #333);
     font-size: 13px;
     font-weight: 700;
+}
+
+.detailContent {
+    display: grid;
+    gap: 18px;
+}
+
+.detailHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.detailHeader h2 {
+    margin: 4px 0 0;
+    color: var(--text-color, #333);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.detailEyebrow {
+    margin: 0;
+    color: var(--sub-color);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.detailCloseButton {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--sub-color) 10%, #ffffff);
+    color: var(--sub-color);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.detailList {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+}
+
+.detailList div {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 12px;
+    align-items: baseline;
+}
+
+.detailList dt {
+    color: color-mix(in srgb, var(--sub-color) 70%, #777777);
+    font-size: 13px;
+    font-weight: 800;
+}
+
+.detailList dd {
+    margin: 0;
+    color: var(--text-color, #333);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
 }

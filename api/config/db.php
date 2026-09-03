@@ -33,25 +33,34 @@ $serviceGuardExempt = tabiIsServiceGuardExempt();
 $configPath = __DIR__ . "/env.php";
 $config = file_exists($configPath) ? require $configPath : [];
 
-// 接続先は環境設定に従い、ローカル開発と本番で同じコードを使えるようにします。
+// env.php が判定した現在の実行環境を取得します。
+// local / lolipop / aws のいずれかを使用します。
 $appEnv = $config["APP_ENV"] ?? "local";
-$connection = $config["connections"][$appEnv] ?? [];
 
-$host = $connection["DB_HOST"] ?? "";
-$dbname = $connection["DB_NAME"] ?? "";
-$user = $connection["DB_USER"] ?? "";
-$password = $connection["DB_PASSWORD"] ?? "";
-$charset = $connection["DB_CHARSET"] ?? "utf8mb4";
+// 現在の実行環境に対応するDB接続設定を取得します。
+// local   → connections["local"]
+// lolipop → connections["lolipop"]
+// aws     → connections["aws"]
+$dbConfig = $config["connections"][$appEnv] ?? [];
 
-// 接続に最低限必要な情報がない場合は、SQLを実行する前にエラーとして終了します。
+// 選択された環境のDB接続情報を取り出します。
+$host = $dbConfig["DB_HOST"] ?? "";
+$dbname = $dbConfig["DB_NAME"] ?? "";
+$user = $dbConfig["DB_USER"] ?? "";
+$password = $dbConfig["DB_PASSWORD"] ?? "";
+$charset = $dbConfig["DB_CHARSET"] ?? "utf8mb4";
+
+// 現在選択されている環境のDB接続情報が不足していないか確認します。
+// local / lolipop / aws のどの環境でも共通して使用する判定です。
 if ($host === "" || $dbname === "" || $user === "") {
     http_response_code(500);
-    // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
+
     echo json_encode([
         "success" => false,
-        "message" => "AWS RDS config is missing",
+        "message" => "DB config is missing",
         "env" => $appEnv,
     ], JSON_UNESCAPED_UNICODE);
+
     exit;
 }
 
