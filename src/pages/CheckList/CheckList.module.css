@@ -65,6 +65,25 @@
     gap: 14px;
 }
 
+.stateMessage,
+.errorMessage {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.stateMessage {
+    background-color: #f4f6fb;
+    color: #596171;
+}
+
+.errorMessage {
+    background-color: #fff0f0;
+    color: #b42318;
+}
+
 @media (max-width: 360px) {
     .page {
         padding-right: 14px;

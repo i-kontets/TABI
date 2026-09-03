@@ -1,8 +1,9 @@
 .container {
     padding: 16px;
-    padding-bottom: 120px; /* フッター分の余白を確保して結果を上に表示 */
+    padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); /* フッター分の余白を確保して結果を上に表示 */
     max-width: 760px;
     margin: 16px auto;
+    box-sizing: border-box;
 }
 
 :global(:root) {
@@ -22,6 +23,7 @@
     border-bottom: 1px solid var(--other-color);
     height: 70px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding-top: env(safe-area-inset-top, 0px);
 }
 .backButton {
     background: none;
@@ -56,35 +58,311 @@
     margin-bottom: 10px;
     font-size: 0.95rem;
 }
+
+.typeField {
+    margin-bottom: 14px;
+}
+
+.typeLabel {
+    margin-bottom: 6px;
+    font-size: 0.95rem;
+}
+
+.typeTabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+.typeTab {
+    flex: 0 0 auto;
+    min-width: 124px;
+    min-height: 40px;
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+    color: #000;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font: inherit;
+}
+
+.typeTabIcon {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    fill: currentColor;
+}
+
+.typeTabActive {
+    background: var(--appointment-button-bg);
+    border-color: var(--sub-color);
+    font-weight: 600;
+}
+
 .select, .input {
     display: block;
     width: 100%;
-    padding: 8px;
+    min-height: 44px;
+    padding: 10px 12px;
     margin-top: 6px;
     border: 1px solid #ddd;
     border-radius: 6px;
     box-sizing: border-box;
+    background: #fff;
+    font: inherit;
 }
+
+.timeWheelField {
+    margin-top: 6px;
+}
+
+.timePickerField {
+    margin-top: 6px;
+}
+
+.timeInputButton {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    box-sizing: border-box;
+    background: #fff;
+    color: #222;
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+}
+
+.timePickerOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.timePickerSheet {
+    width: 100%;
+    padding: 12px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+    border-radius: 14px 14px 0 0;
+    background: #fff;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.14);
+    box-sizing: border-box;
+}
+
+.timePickerHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.timePickerTitle {
+    color: #222;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.timePickerDone {
+    min-height: 36px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    background: var(--sub-color);
+    color: var(--main-color);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+}
+
+.timeWheelWrapper {
+    height: 164px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.timeWheelColumn {
+    position: relative;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+}
+
+.timeWheelColumn + .timeWheelColumn {
+    border-left: 1px solid #eee;
+}
+
+.timeWheelOption {
+    color: #777;
+    font-size: 1rem;
+}
+
+.timeWheelHighlight {
+    background: var(--appointment-button-bg);
+    color: #000;
+}
+
+.timeWheelHighlightItem {
+    justify-content: center;
+    padding-right: 26px;
+    font-weight: 700;
+}
+
+.timeWheelUnit {
+    position: absolute;
+    top: 50%;
+    right: 26%;
+    z-index: 1;
+    transform: translateY(-50%);
+    color: #555;
+    font-size: 0.9rem;
+    pointer-events: none;
+}
+
+.timeWheelValue {
+    margin-top: 6px;
+    color: #666;
+    font-size: 0.85rem;
+    text-align: right;
+}
+
+.peopleStepper {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 40px;
+    align-items: center;
+    width: min(100%, 180px);
+    min-height: 44px;
+    margin-top: 6px;
+    padding: 3px;
+    border: 1px solid var(--other-color);
+    border-radius: 6px;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.stepperButton {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    background: var(--sub-color);
+    color: var(--main-color);
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: transform 0.12s ease, opacity 0.12s ease, background-color 0.12s ease;
+}
+
+.stepperButton:active:not(:disabled) {
+    transform: scale(0.94);
+}
+
+.stepperButton:disabled {
+    color: #aaa;
+    cursor: not-allowed;
+    background: #f8f8f8;
+    opacity: 0.72;
+}
+
+.peopleValue {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 0 4px;
+    color: #222;
+    font-weight: 700;
+}
+
+.peopleNumber {
+    width: 50px;
+    min-width: 0;
+    height: 36px;
+    padding: 0 4px;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #222;
+    font-size: 1.05rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.peopleNumber:focus {
+    outline: none;
+}
+
+.peopleUnit {
+    font-size: 0.85rem;
+    color: #555;
+    pointer-events: none;
+}
+
+.dateTimeTable {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.dateTimeCell {
+    padding: 10px;
+    border-right: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.95rem;
+}
+
+.dateTimeCell:nth-child(2n) {
+    border-right: none;
+}
+
+.dateTimeCell:nth-last-child(-n + 2) {
+    border-bottom: none;
+}
+
 .actions {
     margin-top: 12px;
     display: flex;
     gap: 8px;
 }
 .button {
-    padding: 8px 12px;
+    min-height: 44px;
+    padding: 10px 16px;
     background: var(--appointment-button-bg);
     color: var(--appointment-button-color);
     border: none;
     border-radius: 6px;
     cursor: pointer;
+    font: inherit;
 }
 .buttonPrimary {
-    padding: 8px 12px;
+    min-height: 44px;
+    padding: 10px 16px;
     background:#f2f2f2;
     color: rgb(0, 0, 0);
     border: none;
     border-radius: 6px;
     cursor: pointer;
+    font: inherit;
 }
 .confirm {
     margin-top: 14px;
@@ -116,12 +394,14 @@
 }
 
 .proceedButton {
-    padding: 8px 12px;
+    min-height: 44px;
+    padding: 10px 16px;
     background: var(--appointment-button-bg);
     color: var(--appointment-button-color);
     border: none;
     border-radius: 6px;
     cursor: pointer;
+    font: inherit;
 }
 
 .results {
@@ -170,4 +450,80 @@
     border: none;
     border-radius: 6px;
     cursor: pointer;
+}
+
+@media (max-width: 520px) {
+    .container {
+        width: 100%;
+        padding: 12px;
+        padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+        margin: 0 auto;
+    }
+
+    .header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        height: calc(58px + env(safe-area-inset-top, 0px));
+    }
+
+    .backButton {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    .Htitle {
+        font-size: 16px;
+    }
+
+    .form,
+    .results,
+    .card,
+    .note {
+        border-radius: 6px;
+    }
+
+    .typeTabs {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        overflow: visible;
+    }
+
+    .typeTab {
+        min-width: 0;
+        width: 100%;
+        min-height: 46px;
+        padding: 8px 6px;
+        font-size: 0.9rem;
+    }
+
+    .typeTabIcon {
+        width: 20px;
+        height: 20px;
+        flex-basis: 20px;
+    }
+
+    .actions {
+        display: block;
+    }
+
+    .button,
+    .buttonPrimary,
+    .proceedButton {
+        width: 100%;
+    }
+}
+
+@media (max-width: 360px) {
+    .typeTab {
+        flex-direction: column;
+        gap: 3px;
+        font-size: 0.82rem;
+    }
+
+    .dateTimeCell {
+        padding: 8px;
+        font-size: 0.86rem;
+    }
 }

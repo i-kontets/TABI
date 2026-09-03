@@ -33,22 +33,31 @@
 }
 
 .addHeaderButton {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     padding: 0;
-    border: 1px solid var(--sub-color);
-    border-radius: 50%;
-    background-color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background-color: transparent;
     color: var(--sub-color);
     cursor: pointer;
     font-size: 22px;
     line-height: 1;
     font-weight: 700;
+    transform: translateY(-1px);
 }
 
 .addHeaderButton:hover,
 .addHeaderButton:focus-visible {
     background-color: #f8f9fd;
+}
+
+.addHeaderIcon {
+    width: 28px;
+    height: 28px;
+    display: block;
 }
 
 .itemList {
@@ -171,9 +180,8 @@
 
 .deleteActions {
     margin: 14px 0 12px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .deleteActions button {
