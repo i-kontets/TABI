@@ -633,7 +633,7 @@ export default function Invoice() {
                                                     (invoiceMember) => invoiceMember.id === payMember.id
                                                 );
                                                 const isPaid = member?.paidPayIds.includes(item.id);
-                                                const canMarkPaid = item.paidById === loginUserId || payMember.id === loginUserId;
+                                                const canMarkPaid = item.paidById === loginUserId;
 
                                                 return (
                                                     <label

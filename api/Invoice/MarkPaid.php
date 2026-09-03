@@ -1,7 +1,7 @@
 <?php
 
 /**
- * ログイン中ユーザーの支払い対象行を支払い済みにするAPIです。
+ * 支払いを追加したユーザーだけが、対象メンバーの支払い行を支払い済みにするAPIです。
  */
 
 require_once __DIR__ . "/Common.php";
@@ -47,10 +47,10 @@ try {
     requireGroupMember($pdo, $payment["group_id"], $userId);
     requireGroupMember($pdo, $payment["group_id"], $targetUserId);
 
-    if ((int) $payment["created_by"] !== $userId && $targetUserId !== $userId) {
+    if ((int) $payment["created_by"] !== $userId) {
         respond([
             "success" => false,
-            "message" => "Only creator or target user can mark this payment as paid",
+            "message" => "支払い済みに変更できるのは、この支払いを追加したユーザーだけです。",
         ], 403);
     }
 

@@ -106,10 +106,12 @@ function normalizePayItem(payItem, members) {
         ? payItem.members.map((member) => ({
             id: Number(member.id),
             amount: Number(member.amount) || 0,
+            isPaid: Boolean(member.isPaid || Number(member.is_paid) === 1),
         }))
         : participantIds.map((id) => ({
             id: Number(id),
             amount: Number(payItem.perPersonAmount ?? 0),
+            isPaid: false,
         }));
     const totalAmount = Number(payItem.totalAmount || payItem.amount)
         || payMembers.reduce((sum, member) => sum + Number(member.amount), 0);
@@ -175,6 +177,14 @@ function loadStoredInvoiceData() {
     }
 }
 
+function getLoginUser() {
+    try {
+        return JSON.parse(localStorage.getItem("loginUser") || "null");
+    } catch {
+        return null;
+    }
+}
+
 function buildInvoiceData(data) {
     return normalizeGroupData({
         pay: data?.pay,
@@ -188,6 +198,8 @@ export default function InvoiceAll() {
     const params = new URLSearchParams(location.search);
     const groupId = normalizeGroupId(params.get("groupId"));
     const { trip, fetchMembers } = useContext(TripContext);
+    const loginUser = getLoginUser();
+    const loginUserId = Number(loginUser?.user_id) || 0;
 
     const [invoiceData, setInvoiceData] = useState(() => (
         normalizeInvoiceFile(loadStoredInvoiceData()).groups[groupId] || createEmptyGroupData()
@@ -280,6 +292,48 @@ export default function InvoiceAll() {
         || `支払者ID: ${payItem.paidById}`
     );
 
+    const handleCompletePayment = async (memberId, payId) => {
+        const isConfirmed = confirm(
+            "支払い完了にしますか？\n完了後は編集できません。"
+        );
+
+        if (!isConfirmed) {
+            return;
+        }
+
+        try {
+            const response = await fetch("/TABI/api/Invoice/MarkPaid.php", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    payment_id: payId,
+                    user_id: memberId,
+                }),
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem("loginUser");
+                navigate("/");
+                return;
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                alert(data.message || "支払い完了の保存に失敗しました。");
+                return;
+            }
+
+            setInvoiceData(buildInvoiceData(data));
+        } catch (error) {
+            console.error(error);
+            alert("支払い完了の保存に失敗しました。通信環境を確認してください。");
+        }
+    };
+
     return (
         <>
             <Header tripName={headerTitle} />
@@ -326,13 +380,29 @@ export default function InvoiceAll() {
                                     <details className={styles.breakdown}>
                                         <summary>内訳を見る（誰がいくら）▼</summary>
                                         <div className={styles.breakdownBody}>
-                                            {item.members.map((payMember) => (
-                                                <div className={styles.breakdownRow} key={payMember.id}>
-                                                    <span />
-                                                    <span>{getMemberName(payMember.id)}</span>
-                                                    <strong>{formatYen(payMember.amount)}</strong>
-                                                </div>
-                                            ))}
+                                            {item.members.map((payMember) => {
+                                                const member = invoiceData.members.find(
+                                                    (invoiceMember) => invoiceMember.id === payMember.id
+                                                );
+                                                const isPaid = member?.paidPayIds.includes(item.id) || payMember.isPaid;
+                                                const canMarkPaid = item.paidById === loginUserId;
+
+                                                return (
+                                                    <label
+                                                        className={`${styles.breakdownRow} ${isPaid ? styles.paidDetail : ""}`}
+                                                        key={payMember.id}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Boolean(isPaid)}
+                                                            disabled={Boolean(isPaid) || !canMarkPaid}
+                                                            onChange={() => handleCompletePayment(payMember.id, item.id)}
+                                                        />
+                                                        <span>{getMemberName(payMember.id)}</span>
+                                                        <strong>{formatYen(payMember.amount)}</strong>
+                                                    </label>
+                                                );
+                                            })}
                                         </div>
                                     </details>
                                 </article>
