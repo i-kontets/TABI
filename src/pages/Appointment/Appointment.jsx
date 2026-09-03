@@ -619,9 +619,6 @@ function AppointmentStep({ onProceed }) {
                     </div>
                 </form>
 
-                <div className={styles.note} style={{ marginTop: 12 }}>
-                    条件に合う便を一覧表示します。実データはサンプルJSONに基づきます。
-                </div>
 
                 {formError && (
                     <div style={{ color: '#b00', marginTop: 8 }}>{formError}</div>

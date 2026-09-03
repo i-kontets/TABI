@@ -34,9 +34,6 @@ export default function ChecklistDeleteActions({
             >
                 チェック済みを一括削除
             </button>
-            <button type="button" onClick={onDeleteAll}>
-                すべて削除
-            </button>
         </div>
     );
 }
