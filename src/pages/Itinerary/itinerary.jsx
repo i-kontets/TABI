@@ -22,6 +22,13 @@ function getLoginUserId() {
   }
 }
 
+const yenFormatter = new Intl.NumberFormat("ja-JP");
+
+function formatYen(value) {
+  const number = Number(String(value ?? "").replace(/,/g, ""));
+  return Number.isFinite(number) ? `${yenFormatter.format(number)}円` : "0円";
+}
+
 export default function Itinerary() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -140,8 +147,13 @@ export default function Itinerary() {
     },
   ];
 
-  // TODO: 清算APIができたら、ここを実データ取得に置き換えます。
-  const liquidationList = [];
+  // 清算Widgetに表示する、自分が払う必要のある最新の未払いデータです。
+  const [liquidationResult, setLiquidationResult] = useState({
+    groupId: null,
+    debts: [],
+  });
+  const liquidationList = liquidationResult.groupId === groupId ? liquidationResult.debts : [];
+  const isLiquidationLoading = Boolean(groupId) && liquidationResult.groupId !== groupId;
 
   const closeInviteModal = () => {
     setIsInviteModalOpen(false);
@@ -150,6 +162,62 @@ export default function Itinerary() {
   const handleAppointmentClick = () => {
     navigate("/Appointment");
   };
+
+  const handleLiquidationClick = () => {
+    const invoiceLiquidationPath = groupId
+      ? `/InvoiceLiquidation?groupId=${encodeURIComponent(groupId)}`
+      : "/InvoiceLiquidation";
+
+    navigate(invoiceLiquidationPath);
+  };
+
+  // groupId とログインセッションをもとに、自分が払うべき未払い清算を最新3件だけ取得します。
+  useEffect(() => {
+    if (!groupId) {
+      return;
+    }
+
+    const fetchMyDebts = async () => {
+      try {
+        const response = await fetch(
+          `/TABI/api/Invoice/MyDebts.php?group_id=${encodeURIComponent(groupId)}&limit=3`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
+
+        if (response.status === 401) {
+          localStorage.removeItem("loginUser");
+          navigate("/");
+          return;
+        }
+
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.debts)) {
+          setLiquidationResult({
+            groupId,
+            debts: data.debts,
+          });
+          return;
+        }
+
+        setLiquidationResult({
+          groupId,
+          debts: [],
+        });
+      } catch (error) {
+        console.error(error);
+        setLiquidationResult({
+          groupId,
+          debts: [],
+        });
+      }
+    };
+
+    fetchMyDebts();
+  }, [groupId, navigate]);
 
   const coverHeaderStyle = trip?.image
     ? { backgroundImage: `url("${trip.image}")` }
@@ -312,29 +380,29 @@ export default function Itinerary() {
 
       {/* 清算・天気などのサブ情報 */}
       <div className={styles.subWidget}>
-        <div className={styles.liquidationWidget}>
+        <div className={styles.liquidationWidget} onClick={handleLiquidationClick}>
           <div className={styles.WidgetTitle}>清算</div>
 
-          {liquidationList.length === 0 ? (
+          {isLiquidationLoading ? (
+            <div className={styles.WidgetText}>
+              読み込み中...
+            </div>
+          ) : liquidationList.length === 0 ? (
             <div className={styles.WidgetText}>
               請求はありません
             </div>
           ) : (
             <>
               <div className={styles.WidgetText}>
-                合計：￥
-                {liquidationList
-                  .reduce((sum, item) => sum + item.amount, 0)
-                  .toLocaleString()}
+                合計：{formatYen(liquidationList.reduce((sum, item) => sum + item.amount, 0))}
               </div>
 
-              {liquidationList.map((item, index) => (
+              {liquidationList.map((item) => (
                 <div
-                  key={index}
+                  key={item.payment_id}
                   className={styles.WidgetText}
                 >
-                  {item.from}さんへ：￥
-                  {item.amount.toLocaleString()}
+                  {item.to_user_name}さんへ：{formatYen(item.amount)}
                 </div>
               ))}
             </>
