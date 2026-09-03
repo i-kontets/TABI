@@ -654,13 +654,16 @@ export default function Invoice() {
 
                                             <div className={styles.breakdownFooter}>
                                                 <span>残額 {formatYen(remainingAmount)}</span>
-                                                <button
-                                                    className={styles.deleteButton}
-                                                    type="button"
-                                                    onClick={() => handleDeletePayment(item)}
-                                                >
-                                                    削除
-                                                </button>
+
+                                                {item.paidById === loginUserId ? (
+                                                    <button
+                                                        className={styles.deleteButton}
+                                                        type="button"
+                                                        onClick={() => handleDeletePayment(item)}
+                                                    >
+                                                        削除
+                                                    </button>
+                                                ) : null}
                                             </div>
                                         </div>
                                     </details>

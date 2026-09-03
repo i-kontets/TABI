@@ -334,6 +334,47 @@ export default function InvoiceAll() {
         }
     };
 
+    const handleDeletePayment = async (payItem) => {
+        const isConfirmed = confirm(
+            `「${payItem.storeName}」の支払い記録を削除しますか？\nこの操作は取り消せません。`
+        );
+
+        if (!isConfirmed) {
+            return;
+        }
+
+        try {
+            const response = await fetch("/TABI/api/Invoice/Delete.php", {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    payment_id: payItem.id,
+                }),
+            });
+
+            if (response.status === 401) {
+                localStorage.removeItem("loginUser");
+                navigate("/");
+                return;
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                alert(data.message || "支払いの削除に失敗しました。");
+                return;
+            }
+
+            setInvoiceData(buildInvoiceData(data));
+        } catch (error) {
+            console.error(error);
+            alert("支払いの削除に失敗しました。通信環境を確認してください。");
+        }
+    };
+
     return (
         <>
             <Header tripName={headerTitle} />
@@ -403,6 +444,19 @@ export default function InvoiceAll() {
                                                     </label>
                                                 );
                                             })}
+
+                                            {item.paidById === loginUserId ? (
+                                                <div className={styles.breakdownFooter}>
+                                                    <span />
+                                                    <button
+                                                        className={styles.deleteButton}
+                                                        type="button"
+                                                        onClick={() => handleDeletePayment(item)}
+                                                    >
+                                                        削除
+                                                    </button>
+                                                </div>
+                                            ) : null}
                                         </div>
                                     </details>
                                 </article>
