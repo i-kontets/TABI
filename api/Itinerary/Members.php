@@ -11,7 +11,7 @@
  *
  * 返却する members の形:
  * [
- *   { id: users.user_id, name: users.name, initial: 名前の先頭1文字 }
+ *   { id: users.user_id, name: users.name, initial: 名前の先頭1文字, role: group_members.role_in_group }
  * ]
  */
 
@@ -53,11 +53,13 @@ try {
     $sql = "
     SELECT
         u.user_id AS id,
-        u.name
+        u.name,
+        gm.role_in_group
     FROM group_members gm
     INNER JOIN users u
         ON u.user_id = gm.user_id
     WHERE gm.group_id = :group_id
+      AND gm.invitation_status = 'accepted'
 ";
 
     // プレースホルダーを使ってSQLインジェクションを防ぎます。
@@ -75,7 +77,8 @@ try {
         $members[] = [
             "id" => $member["id"],
             "name" => $name,
-            "initial" => mb_substr($name, 0, 1, "UTF-8")
+            "initial" => mb_substr($name, 0, 1, "UTF-8"),
+            "role" => $member["role_in_group"]
         ];
     }
 

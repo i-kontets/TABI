@@ -6,6 +6,9 @@ import styles from "./Minimap.module.css";
 
 mapboxgl.accessToken =
     "pk.eyJ1IjoibWFoaTYyIiwiYSI6ImNtb3c3bXBsZTAzdnkycHB2bnlpc3V0bmcifQ.GYUUwH-J7E4wU9yX4snLfg";
+const knownPlaceCoordinates = {
+    "伊勢神宮": [136.7194, 34.4854],
+};
 
 function formatDistance(distance) {
     const km = distance / 1000;
@@ -22,6 +25,18 @@ function formatDuration(duration) {
 }
 
 function normalizePlaceName(place) {
+
+    function getKnownPlaceCoordinates(place) {
+        const normalizedPlace = normalizePlaceName(place);
+
+        return Object.entries(knownPlaceCoordinates).find(([name]) =>
+            normalizedPlace === name || normalizedPlace.includes(name)
+        )?.[1] ?? null;
+    }
+    if (typeof place !== "string") {
+        return "";
+    }
+
     return place
         .replace(/[()（）]/g, " ")
         .replace(/エリア/g, "")
@@ -146,7 +161,7 @@ function getDurationText(durationSeconds) {
     return formatDuration(durationSeconds);
 }
 
-function MiniMap({ place, center: initialCenter, zoom: initialZoom = 12 }) {
+function MiniMap({ place, address, label, center: initialCenter, zoom: initialZoom = 12 }) {
     const mapContainer = useRef(null);
     const map = useRef(null);
     const watchIdRef = useRef(null);
@@ -174,6 +189,9 @@ function MiniMap({ place, center: initialCenter, zoom: initialZoom = 12 }) {
     const [navigationError, setNavigationError] = useState("");
     const [mapLoaded, setMapLoaded] = useState(false);
     const [isNavigating, setIsNavigating] = useState(false);
+    const [destinationReady, setDestinationReady] = useState(
+        Array.isArray(initialCenter) && initialCenter.length === 2 && !address
+    );
 
     const zoom = initialZoom;
 
@@ -503,41 +521,60 @@ function MiniMap({ place, center: initialCenter, zoom: initialZoom = 12 }) {
     // 地名 → 座標
     useEffect(() => {
         if (Array.isArray(initialCenter) && initialCenter.length === 2) {
+            setDestinationReady(true);
             return;
         }
 
-        if (!place) return;
+        const keyword = normalizePlaceName(address || place);
+
+        if (!keyword) {
+            setDestinationReady(true);
+            return;
+        }
+
+        let cancelled = false;
 
         async function geocode() {
             try {
-                const keyword = normalizePlaceName(place);
-
                 const res = await fetch(
-                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(keyword)}.json?language=ja&limit=1&access_token=${mapboxgl.accessToken}`
+                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(keyword)}.json?country=jp&language=ja&limit=1&types=address,poi&access_token=${mapboxgl.accessToken}`
                 );
 
                 const data = await res.json();
 
-                if (data.features?.length > 0) {
-                    setCenter(data.features[0].center);
-                }
+                const feature = data.features?.[0];
+                const knownCoordinates = getKnownPlaceCoordinates(keyword);
 
+                if (!cancelled && knownCoordinates) {
+                    setCenter(knownCoordinates);
+                } else if (!cancelled && feature) {
+                    setCenter(feature.center);
+                }
+                if (!cancelled) {
+                    setDestinationReady(true);
+                }
             } catch (error) {
                 console.error(
                     "Geocode Error",
                     error
                 );
+                if (!cancelled) {
+                    setDestinationReady(true);
+                }
             }
         }
 
         geocode();
 
-    }, [place]);
+        return () => {
+            cancelled = true;
+        };
+    }, [address, place]);
 
 
     // ルート取得
     useEffect(() => {
-        if (!map.current || !mapLoaded || !center) return;
+        if (!map.current || !mapLoaded || !center || !destinationReady) return;
 
         if (!currentLocation) {
             return;
@@ -593,7 +630,7 @@ function MiniMap({ place, center: initialCenter, zoom: initialZoom = 12 }) {
             .setPopup(
                 new mapboxgl.Popup({
                     offset: 25,
-                }).setText(place)
+                }).setText(label || place || address || "目的地")
             )
             .addTo(map.current);
 
@@ -616,6 +653,7 @@ function MiniMap({ place, center: initialCenter, zoom: initialZoom = 12 }) {
 
     }, [
         center,
+        destinationReady,
         currentLocation,
         isNavigating,
         mapLoaded

@@ -40,11 +40,14 @@ if (!$group_id) {
 }
 
 try {
-  // trips テーブルから、指定された group_id に紐づく旅行期間を取得します。
+  // trips テーブルから、指定された group_id に紐づく表示対象の旅行期間を取得します。
+  // Home や TripInfo と同じ優先順で取得し、複数tripがある場合でも表示のズレを防ぎます。
   $stmt = $pdo->prepare("
     SELECT start_date, end_date
     FROM trips
     WHERE group_id = ?
+    ORDER BY (start_date IS NULL) ASC, start_date DESC, trip_id DESC
+    LIMIT 1
   ");
 
   // プレースホルダーを使って group_id を安全に渡します。

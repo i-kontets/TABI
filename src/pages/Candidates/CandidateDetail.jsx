@@ -14,6 +14,44 @@ import Minimap from '../../components/Minimap/Minimap';
 import styles from './CandidateDetail.module.css';
 import { getCandidatePlaceById, typeLabels } from './candidateData';
 
+// 主要な観光地の緯度経度マッピング（テスト用）
+const LOCATION_MAP = {
+    '京都': [135.7681, 35.0116],
+    '伊勢神宮': [136.7194, 34.4854],
+    '鳥羽水族館': [136.8436, 34.4862],
+    '奈良': [135.8048, 34.6852],
+    '大阪': [135.5023, 34.6937],
+    '神戸': [135.1955, 34.6901],
+    '広島': [132.4549, 34.3853],
+    '福岡': [130.4017, 33.5904],
+    '東京': [139.6917, 35.6895],
+    '横浜': [139.6380, 35.4437],
+    '鎌倉': [139.5551, 35.3149],
+    '箱根': [139.1220, 35.2328],
+    '富士山': [138.7274, 35.3608],
+    '松本': [137.9727, 36.2384],
+};
+
+// 候補名から緯度経度を取得する関数
+function getLocationFromName(name) {
+    if (!name) return null;
+    
+    // 完全一致を確認
+    if (LOCATION_MAP[name]) {
+        return LOCATION_MAP[name];
+    }
+    
+    // 部分一致を確認
+    const lowerName = name.toLowerCase();
+    for (const [key, coords] of Object.entries(LOCATION_MAP)) {
+        if (lowerName.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerName)) {
+            return coords;
+        }
+    }
+    
+    return null;
+}
+
 /**
  * BackIcon は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
@@ -76,7 +114,7 @@ function CandidateDetail() {
     }, [candidateId]);
 
     // ここで条件を確認し、状況に合う処理だけを実行します。
-    if (!candidate) {
+    if (!candidate || (!candidate.name && !candidate.candidate_name)) {
         return (
             <main className={styles.page}>
                 <section className={styles.phone}>
@@ -99,17 +137,35 @@ function CandidateDetail() {
     }
 
     // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
-    const gallery = candidate.images?.length ? candidate.images : [candidate.image].filter(Boolean);
+    const gallery = candidate.images?.length ? candidate.images : [candidate.image || candidate.img_url].filter(Boolean);
     const currentImage = gallery[Math.min(activeImageIndex, gallery.length - 1)];
+    
+    // 候補名からマップセンターを取得（mapCenter がない場合は候補名で検索）
+    const hasSavedCoordinates = candidate.longitude != null && candidate.latitude != null
+        && Number.isFinite(Number(candidate.longitude)) && Number.isFinite(Number(candidate.latitude));
+    const savedMapCenter = hasSavedCoordinates
+        ? [Number(candidate.longitude), Number(candidate.latitude)]
+        : null;
+    const mapCenter = savedMapCenter || candidate.mapCenter || getLocationFromName(candidate.name || candidate.candidate_name);
 
     const infoRows = [
-        { label: 'カテゴリ', value: typeLabels[candidate.type] || candidate.type },
-        { label: '評価', value: candidate.rating ? <><StarIcon />{candidate.rating} / 5</> : '未設定' },
-        { label: '口コミ', value: `${candidate.reviews}件` },
-        { label: '住所', value: candidate.address },
-        { label: '営業時間', value: candidate.hours || '未設定' },
-        { label: '料金', value: candidate.price || '未設定' },
+        { label: 'カテゴリ', value: typeLabels[candidate.type || candidate.candidate_type] || candidate.type || candidate.candidate_type },
+        { label: '説明', value: candidate.description || '詳細情報はありません' },
     ];
+    const facilityDetails = [
+        { label: '営業時間', value: candidate.opening_hours },
+        { label: '定休日', value: candidate.regular_holiday },
+        { label: '電話番号', value: candidate.phone_number },
+        { label: '料金', value: candidate.fee_info },
+    ].filter((item) => item.value);
+    const facilityFeatures = [
+        ['多目的トイレ', candidate.has_accessible_toilet],
+        ['車椅子貸出', candidate.has_wheelchair_rental],
+        ['ベビーカー貸出', candidate.has_stroller_rental],
+        ['授乳室', candidate.has_nursing_room],
+        ['コインロッカー', candidate.has_coin_locker],
+        ['Wi-Fi', candidate.has_wifi],
+    ].filter(([, value]) => value !== null && value !== undefined && value !== '');
 
     // handleAdd は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleAdd = () => {
@@ -136,17 +192,15 @@ function CandidateDetail() {
                     </div>
 
                     <div className={styles.heroText}>
-                        <p>{candidate.area}</p>
-                        <h1>{candidate.name}</h1>
+                        <p>{candidate.area || '候補地'}</p>
+                        <h1>{candidate.name || candidate.candidate_name}</h1>
                         <div className={styles.heroMeta}>
                             <span className={styles.typeBadge}>
-                                {candidate.type === 'spot' ? '観光' : candidate.type === 'hotel' ? '宿泊' : '飲食'}
+                                {typeLabels[candidate.type || candidate.candidate_type] || candidate.type || candidate.candidate_type}
                             </span>
-                            <span className={styles.ratingBadge}>
-                                <StarIcon />
-                                {candidate.rating}
-                            </span>
-                            <span className={styles.reviewsBadge}>口コミ {candidate.reviews}件</span>
+                            {candidate.vote_count !== undefined && (
+                                <span className={styles.reviewsBadge}>投票数 {candidate.vote_count}件</span>
+                            )}
                         </div>
                     </div>
                 </header>
@@ -191,7 +245,6 @@ function CandidateDetail() {
                     <section className={styles.section}>
                         <div className={styles.sectionHeader}>
                             <h3>基本情報</h3>
-                            {candidate.tag && <span className={styles.tagBadge}>{candidate.tag}</span>}
                         </div>
                         <dl className={styles.detailList}>
                             {infoRows.map((item) => (
@@ -203,22 +256,69 @@ function CandidateDetail() {
                         </dl>
                     </section>
 
-                    <section className={styles.section}>
-                        <div className={styles.sectionHeader}>
-                            <h3>説明</h3>
-                        </div>
-                        <p className={styles.description}>{candidate.description}</p>
-                    </section>
+                    {(facilityDetails.length > 0 || facilityFeatures.length > 0) && (
+                        <section className={`${styles.section} ${styles.facilitySection}`}>
+                            <div className={styles.sectionHeader}>
+                                <div>
+                                    <p className={styles.sectionEyebrow}>VISITOR GUIDE</p>
+                                    <h3>訪問前にチェック</h3>
+                                </div>
+                                <span className={styles.infoMark}>INFO</span>
+                            </div>
 
-                    <section className={styles.section}>
-                        <div className={styles.sectionHeader}>
-                            <h3>地図</h3>
-                            <span className={styles.mapProvider}>Mapbox</span>
-                        </div>
-                        <div className={styles.mapContainer}>
-                            <Minimap place={candidate.name} center={candidate.mapCenter} zoom={14} />
-                        </div>
-                    </section>
+                            {facilityDetails.length > 0 && (
+                                <dl className={styles.facilityGrid}>
+                                    {facilityDetails.map((item) => (
+                                        <div key={item.label} className={styles.facilityItem}>
+                                            <dt>{item.label}</dt>
+                                            <dd>{item.value}</dd>
+                                        </div>
+                                    ))}
+                                </dl>
+                            )}
+
+                            {facilityFeatures.length > 0 && (
+                                <div className={styles.featureBlock}>
+                                    <p className={styles.featureTitle}>設備・サービス</p>
+                                    <div className={styles.featureList}>
+                                        {facilityFeatures.map(([label, value]) => (
+                                            <span key={label} className={styles.featureBadge} data-available={Number(value) === 1}>
+                                                <span className={styles.featureDot} aria-hidden="true" />
+                                                {label}: {Number(value) === 1 ? 'あり' : 'なし'}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </section>
+                    )}
+
+                    {candidate.description && (
+                        <section className={styles.section}>
+                            <div className={styles.sectionHeader}>
+                                <h3>説明</h3>
+                            </div>
+                            <p className={styles.description}>{candidate.description}</p>
+                        </section>
+                    )}
+
+                    {mapCenter && (
+                        <section className={styles.section}>
+                            <div className={styles.sectionHeader}>
+                                <h3>地図</h3>
+                                <span className={styles.mapProvider}>Mapbox</span>
+                            </div>
+                            <div className={styles.mapContainer}>
+                                <Minimap
+                                    place={candidate.name || candidate.candidate_name}
+                                    address={candidate.address}
+                                    label={candidate.name || candidate.candidate_name}
+                                    center={mapCenter}
+                                    zoom={14}
+                                />
+                            </div>
+                        </section>
+                    )}
                 </div>
             </section>
         </main>

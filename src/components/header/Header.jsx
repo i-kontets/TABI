@@ -8,25 +8,28 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './header.module.css';
 import Home from '../../assets/icons/home.svg?react';
+import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import ChatIcon from '../../assets/icons/chat.svg?react';
 
 /**
  * Header は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-function Header({tripName, isOther = false}) {
+function Header({ tripName, isOther = false }) {
+    const [searchParams] = useSearchParams();
+    const groupId = searchParams.get('groupId');
     const navigate = useNavigate();
 
     // handleBackClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleBackClick = () => {
-        navigate(isOther ? '/Other' : '/Home');
+        navigate(isOther ? `/Itinerary?groupId=${groupId}` : '/Home');
     };
 
     // chatClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
-    const chatClick = () =>{
+    const chatClick = () => {
         console.log("test内容");
         navigate('/Chat')
     };
@@ -38,24 +41,27 @@ function Header({tripName, isOther = false}) {
                 onClick={handleBackClick}
                 aria-label="戻る"
             >
-                {/* aria-hidden="true"は画面上で読み上げ機能を使用した際にsvgを範囲に含めないための命令です。 */}
-                <Home className={styles.icon} aria-hidden="true"/>
+                {isOther ? (
+                    <ArrowBack className={styles.icon} aria-hidden="true" />
+                ) : (
+                    <Home className={styles.icon} aria-hidden="true" />
+                )}
             </button>
 
             <div className={styles.titleWrapper}>
                 <h1 className={styles.title}>{tripName}</h1>
             </div>
 
-            <button 
-                className={styles.chatButton} 
+            <button
+                className={styles.chatButton}
                 onClick={chatClick}
                 aria-label="チャットゥ"
-                // onClick={() => {
-                //     console.log("chat clicked")
-                //     navigate("/chat")
-                >
+            // onClick={() => {
+            //     console.log("chat clicked")
+            //     navigate("/chat")
+            >
 
-                    <ChatIcon className={styles.icon}  aria-hidden="true" />
+                <ChatIcon className={styles.icon} aria-hidden="true" />
             </button>
         </header>
     );

@@ -142,9 +142,11 @@ function loadStoredInvoiceData() {
     }
 }
 
+const yenFormatter = new Intl.NumberFormat("ja-JP");
+
 function formatYen(value) {
-    const number = Number(value);
-    return Number.isNaN(number) ? "0円" : `${number.toLocaleString()}円`;
+    const number = Number(String(value ?? "").replace(/,/g, ""));
+    return Number.isFinite(number) ? `${yenFormatter.format(number)}円` : "0円";
 }
 
 function formatDateKey(dateString) {

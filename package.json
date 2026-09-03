@@ -13,6 +13,7 @@
     "@mantine/core": "^9.4.1",
     "@mantine/hooks": "^9.4.1",
     "@mapbox/mapbox-gl-language": "^1.0.1",
+    "@ncdai/react-wheel-picker": "^1.2.3",
     "@xyflow/react": "^12.11.1",
     "firebase": "^12.16.0",
     "install": "^0.13.0",

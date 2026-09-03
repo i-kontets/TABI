@@ -54,9 +54,11 @@ const categories = [
     { value: "other", label: "その他", icon: "💰" },
 ];
 
+const yenFormatter = new Intl.NumberFormat("ja-JP");
+
 function formatYen(value) {
-    const number = Number(value);
-    return Number.isNaN(number) ? "0円" : `${number.toLocaleString()}円`;
+    const number = Number(String(value ?? "").replace(/,/g, ""));
+    return Number.isFinite(number) ? `${yenFormatter.format(number)}円` : "0円";
 }
 
 function getCategory(categoryValue) {
@@ -631,7 +633,7 @@ export default function Invoice() {
                                                     (invoiceMember) => invoiceMember.id === payMember.id
                                                 );
                                                 const isPaid = member?.paidPayIds.includes(item.id);
-                                                const canMarkPaid = item.paidById === loginUserId || payMember.id === loginUserId;
+                                                const canMarkPaid = item.paidById === loginUserId;
 
                                                 return (
                                                     <label
@@ -652,13 +654,16 @@ export default function Invoice() {
 
                                             <div className={styles.breakdownFooter}>
                                                 <span>残額 {formatYen(remainingAmount)}</span>
-                                                <button
-                                                    className={styles.deleteButton}
-                                                    type="button"
-                                                    onClick={() => handleDeletePayment(item)}
-                                                >
-                                                    削除
-                                                </button>
+
+                                                {item.paidById === loginUserId ? (
+                                                    <button
+                                                        className={styles.deleteButton}
+                                                        type="button"
+                                                        onClick={() => handleDeletePayment(item)}
+                                                    >
+                                                        削除
+                                                    </button>
+                                                ) : null}
                                             </div>
                                         </div>
                                     </details>

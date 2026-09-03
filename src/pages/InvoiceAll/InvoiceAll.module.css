@@ -143,6 +143,43 @@
     font-size: 13px;
 }
 
+.breakdownRow input {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--sub-color);
+}
+
+.paidDetail {
+    color: #9aa7b7;
+    text-decoration: line-through;
+}
+
+.paidDetail input {
+    opacity: 0.7;
+}
+
+.breakdownFooter {
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.deleteButton {
+    padding: 6px 12px;
+    border: 1px solid #d9534f;
+    border-radius: 999px;
+    background-color: #fff;
+    color: #d9534f;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.deleteButton:hover {
+    background-color: #fff2f2;
+}
+
 .emptyText {
     margin: 28px 0;
     color: #777;

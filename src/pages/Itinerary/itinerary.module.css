@@ -194,6 +194,7 @@ transform: translateY(-1px);
   height: auto;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
 }
 
 .appointmentHeader {

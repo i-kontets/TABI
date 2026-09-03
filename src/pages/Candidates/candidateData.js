@@ -12,13 +12,13 @@ export const categories = [
     { id: 'all', label: 'すべて' },
     { id: 'spot', label: '観光スポット' },
     { id: 'hotel', label: '宿泊先' },
-    { id: 'food', label: '飲食店' },
+    { id: 'restaurant', label: '飲食店' },
 ];
 
 export const typeLabels = {
     spot: '観光',
     hotel: '宿泊',
-    food: '食事',
+    restaurant: '飲食',
 };
 
 export const candidatePlaces = [
