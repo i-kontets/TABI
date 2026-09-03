@@ -3,6 +3,8 @@ session_start();
 header("Content-Type: application/json; charset=UTF-8");
 
 require_once __DIR__ . "/../config/db.php";
+require_once __DIR__ . "/../Admin/includes/config.php";
+require_once __DIR__ . "/../Admin/services/realtime.php";
 
 function respond(array $payload, int $status = 200): void
 {
@@ -62,6 +64,13 @@ if ($title === "") {
     ], 400);
 }
 
+if ($startDate !== null && $endDate !== null && $startDate > $endDate) {
+    respond([
+        "success" => false,
+        "message" => "旅行期間の終了日は開始日以降にしてください。"
+    ], 400);
+}
+
 try {
     $adminStmt = $pdo->prepare("
         SELECT 1
@@ -88,7 +97,7 @@ try {
         SELECT trip_id
         FROM trips
         WHERE group_id = :group_id
-        ORDER BY trip_id DESC
+        ORDER BY (start_date IS NULL) ASC, start_date DESC, trip_id DESC
         LIMIT 1
     ");
     $tripStmt->execute([
@@ -103,32 +112,82 @@ try {
         ], 404);
     }
 
+    $now = (new DateTimeImmutable("now"))->format("Y-m-d H:i:s");
+
+    $pdo->beginTransaction();
+
     $updateStmt = $pdo->prepare("
         UPDATE trips
         SET title = :title,
             start_date = :start_date,
-            end_date = :end_date
+            end_date = :end_date,
+            updated_at = :updated_at
         WHERE trip_id = :trip_id
         LIMIT 1
     ");
     $updateStmt->bindValue(":title", $title, PDO::PARAM_STR);
     $updateStmt->bindValue(":start_date", $startDate, $startDate === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
     $updateStmt->bindValue(":end_date", $endDate, $endDate === null ? PDO::PARAM_NULL : PDO::PARAM_STR);
+    $updateStmt->bindValue(":updated_at", $now, PDO::PARAM_STR);
     $updateStmt->bindValue(":trip_id", (int) $trip["trip_id"], PDO::PARAM_INT);
     $updateStmt->execute();
+
+    $groupUpdateStmt = $pdo->prepare("
+        UPDATE user_groups
+        SET group_name = :group_name,
+            updated_at = :updated_at
+        WHERE group_id = :group_id
+        LIMIT 1
+    ");
+    $groupUpdateStmt->bindValue(":group_name", $title, PDO::PARAM_STR);
+    $groupUpdateStmt->bindValue(":updated_at", $now, PDO::PARAM_STR);
+    $groupUpdateStmt->bindValue(":group_id", $groupId, PDO::PARAM_INT);
+    $groupUpdateStmt->execute();
+
+    $pdo->commit();
+
+    $updatedTripStmt = $pdo->prepare("
+        SELECT trip_id, group_id, title, start_date, end_date, updated_at
+        FROM trips
+        WHERE trip_id = :trip_id
+        LIMIT 1
+    ");
+    $updatedTripStmt->bindValue(":trip_id", (int) $trip["trip_id"], PDO::PARAM_INT);
+    $updatedTripStmt->execute();
+    $updatedTrip = $updatedTripStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$updatedTrip) {
+        respond([
+            "success" => false,
+            "message" => "更新後の旅行情報を取得できませんでした。"
+        ], 500);
+    }
+
+    sendRealtimeEvent("trip:" . $groupId, "trip_updated", [
+        "group_id" => $groupId,
+        "trip_id" => (int) $updatedTrip["trip_id"],
+        "title" => $updatedTrip["title"],
+        "start_date" => $updatedTrip["start_date"],
+        "end_date" => $updatedTrip["end_date"],
+    ]);
 
     respond([
         "success" => true,
         "trip" => [
-            "id" => (string) $groupId,
-            "trip_id" => (int) $trip["trip_id"],
-            "name" => $title,
-            "title" => $title,
-            "start_date" => $startDate,
-            "end_date" => $endDate
+            "id" => (string) $updatedTrip["group_id"],
+            "trip_id" => (int) $updatedTrip["trip_id"],
+            "name" => $updatedTrip["title"],
+            "title" => $updatedTrip["title"],
+            "start_date" => $updatedTrip["start_date"],
+            "end_date" => $updatedTrip["end_date"],
+            "updated_at" => $updatedTrip["updated_at"]
         ]
     ]);
 } catch (Throwable $error) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
     respond([
         "success" => false,
         "message" => "旅行情報の変更に失敗しました。",

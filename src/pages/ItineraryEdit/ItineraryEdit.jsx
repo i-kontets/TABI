@@ -59,7 +59,7 @@ function getLoginUserId() {
 export default function ItineraryEdit() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const { fetchMembers } = useContext(TripContext);
+    const { setTrip, setTripPeriod, fetchMembers } = useContext(TripContext);
 
     // URLから編集対象の旅行グループIDを取得します。
     const groupId = searchParams.get("groupId");
@@ -114,6 +114,15 @@ export default function ItineraryEdit() {
 
                 const tripData = await tripResponse.json();
 
+                const currentMember = (memberResult.members || []).find(
+                    (member) => Number(member.id) === loginUserId
+                );
+
+                if (currentMember?.role !== "admin") {
+                    navigate(itineraryPath, { replace: true });
+                    return;
+                }
+
                 // DBから取得した旅行タイトル・期間をフォームの初期値に入れます。
                 if (tripData.success && tripData.trip) {
                     setFormValues({
@@ -136,7 +145,7 @@ export default function ItineraryEdit() {
         };
 
         loadEditData();
-    }, [fetchMembers, groupId, navigate]);
+    }, [fetchMembers, groupId, itineraryPath, loginUserId, navigate]);
 
     // 戻るボタンでは、groupId を保持したまま Itinerary へ戻ります。
     const BackClick = () => {
@@ -238,6 +247,20 @@ export default function ItineraryEdit() {
             if (!response.ok || !data.success) {
                 setMessage(data.message || "旅行情報の変更に失敗しました。");
                 return;
+            }
+
+            // DB更新後の最新情報をContextにも反映し、戻った先のItinerary表示をすぐ最新にします。
+            if (data.trip) {
+                setTrip((currentTrip) => ({
+                    ...currentTrip,
+                    id: data.trip.id,
+                    name: data.trip.name || data.trip.title,
+                }));
+
+                setTripPeriod({
+                    startDate: data.trip.start_date,
+                    endDate: data.trip.end_date,
+                });
             }
 
             navigate(itineraryPath);

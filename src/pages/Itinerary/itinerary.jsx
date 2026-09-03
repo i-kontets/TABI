@@ -13,6 +13,15 @@ import Modal from "../../components/Modal/Modal";
 import InviteModal from "../../components/Modal/InviteModal";
 import styles from "./itinerary.module.css";
 
+function getLoginUserId() {
+  try {
+    const loginUser = JSON.parse(localStorage.getItem("loginUser") || "null");
+    return Number(loginUser?.user_id) || null;
+  } catch {
+    return null;
+  }
+}
+
 export default function Itinerary() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -32,6 +41,10 @@ export default function Itinerary() {
   const itineraryEditPath = groupId
     ? `/ItineraryEdit?groupId=${encodeURIComponent(groupId)}`
     : "/ItineraryEdit";
+  const loginUserId = getLoginUserId();
+  const isTripAdmin = members.some(
+    (member) => Number(member.id) === loginUserId && member.role === "admin"
+  );
 
   // 招待モーダルの開閉状態です。
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -244,12 +257,14 @@ export default function Itinerary() {
           </div>
         </div>
 
-        <button
-          className={styles.editBtn}
-          onClick={() => navigate(itineraryEditPath)}
-        >
-          旅行情報を編集
-        </button>
+        {isTripAdmin ? (
+          <button
+            className={styles.editBtn}
+            onClick={() => navigate(itineraryEditPath)}
+          >
+            旅行情報を編集
+          </button>
+        ) : null}
       </div>
 
       {/* しおりタイトル */}

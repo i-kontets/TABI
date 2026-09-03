@@ -103,6 +103,7 @@ function App() {
                     name: member.name ?? "",
                     initial: member.initial ?? member.name?.charAt(0) ?? "?",
                     color: member.color ?? "#b5ead7",
+                    role: member.role ?? "member",
                 }));
 
                 setMembers(normalizedMembers);

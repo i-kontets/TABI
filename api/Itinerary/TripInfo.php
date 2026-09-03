@@ -55,8 +55,8 @@ if (!$groupId) {
 }
 
 try {
-    // group_id に紐づく最新の旅行レコードを取得します。
-    // 同じグループに複数の trips がある場合は、trip_id が一番大きいものを使います。
+    // group_id に紐づく表示対象の旅行レコードを取得します。
+    // Home のカードと同じ優先順にすることで、編集画面やしおり画面で別の旅行を見ないようにします。
     $stmt = $pdo->prepare("
         SELECT
             trip_id,
@@ -67,7 +67,7 @@ try {
             group_icon
         FROM trips
         WHERE group_id = :group_id
-        ORDER BY trip_id DESC
+        ORDER BY (start_date IS NULL) ASC, start_date DESC, trip_id DESC
         LIMIT 1
     ");
 
