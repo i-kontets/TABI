@@ -33,17 +33,15 @@ $serviceGuardExempt = tabiIsServiceGuardExempt();
 $configPath = __DIR__ . "/env.php";
 $config = file_exists($configPath) ? require $configPath : [];
 
-// DB access is fixed to the AWS RDS connection profile.
-// Secrets stay in env.php or server environment variables.
-// 現在はAWS RDS接続を使う前提です。ローカルDBへ切り替える場合は、この判定とenv.php側の設定を一緒に見直します。
-$appEnv = "aws";
-$awsConfig = $config["connections"]["aws"] ?? [];
+// 接続先は環境設定に従い、ローカル開発と本番で同じコードを使えるようにします。
+$appEnv = $config["APP_ENV"] ?? "local";
+$connection = $config["connections"][$appEnv] ?? [];
 
-$host = $awsConfig["DB_HOST"] ?? "";
-$dbname = $awsConfig["DB_NAME"] ?? "";
-$user = $awsConfig["DB_USER"] ?? "";
-$password = $awsConfig["DB_PASSWORD"] ?? "";
-$charset = $awsConfig["DB_CHARSET"] ?? "utf8mb4";
+$host = $connection["DB_HOST"] ?? "";
+$dbname = $connection["DB_NAME"] ?? "";
+$user = $connection["DB_USER"] ?? "";
+$password = $connection["DB_PASSWORD"] ?? "";
+$charset = $connection["DB_CHARSET"] ?? "utf8mb4";
 
 // 接続に最低限必要な情報がない場合は、SQLを実行する前にエラーとして終了します。
 if ($host === "" || $dbname === "" || $user === "") {

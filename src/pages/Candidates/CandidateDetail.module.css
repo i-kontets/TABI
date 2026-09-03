@@ -1,9 +1,7 @@
 .page {
     min-height: 100vh;
-    color: #0f172a;
-    background:
-        radial-gradient(circle at top, rgba(0, 59, 149, 0.12), transparent 38%),
-        #edf2f7;
+    color: #1f2937;
+    background: #eef2f7;
     font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", system-ui, sans-serif;
 }
 
@@ -11,19 +9,19 @@
     width: min(100%, 430px);
     min-height: 100vh;
     margin: 0 auto;
-    background: #f8fbff;
+    background: #f7f9fc;
     position: relative;
     overflow-x: hidden;
     overflow-y: auto;
-    box-shadow: 0 20px 70px rgba(15, 23, 42, 0.14);
+    box-shadow: 0 20px 70px rgba(31, 41, 55, 0.14);
 }
 
 .hero {
     padding: 16px 16px 32px;
     color: #fff;
-    background: linear-gradient(160deg, #003b95 0%, #0a58ca 100%);
-    border-radius: 0 0 24px 24px;
-    box-shadow: 0 14px 28px rgba(0, 53, 128, 0.18);
+    background: #44558d;
+    border-radius: 0 0 22px 22px;
+    box-shadow: 0 10px 28px rgba(0, 53, 128, 0.24);
 }
 
 .topBar {
@@ -37,7 +35,7 @@
     margin: 0;
     font-size: 22px;
     font-weight: 900;
-    letter-spacing: 0.05em;
+    letter-spacing: 0;
 }
 
 .backButton,
@@ -48,16 +46,10 @@
     place-items: center;
     padding: 0;
     color: #fff;
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.12);
     border: 0;
     border-radius: 50%;
     cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
-}
-
-.backButton:active,
-.actionButton:active {
-    transform: scale(0.95);
 }
 
 .actionButtonActive {
@@ -75,10 +67,9 @@
     height: 22px;
     fill: none;
     stroke: currentColor;
-    stroke-width: 2.5;
+    stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    transition: transform 0.2s;
 }
 
 .heroText {
@@ -93,15 +84,15 @@
 .heroText p {
     font-size: 13px;
     font-weight: 700;
-    color: #cfe0ff;
-    letter-spacing: 0.02em;
+    color: #bad4ff;
 }
 
 .heroText h1 {
     margin-top: 6px;
     font-size: 26px;
-    line-height: 1.25;
+    line-height: 1.2;
     font-weight: 900;
+    letter-spacing: 0;
 }
 
 .heroMeta {
@@ -113,14 +104,13 @@
 
 .heroMeta span {
     padding: 6px 12px;
-    color: #0b2d66;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 999px;
+    color: #44558d;
+    background: #fff;
+    border-radius: 6px;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 900;
     display: flex;
     align-items: center;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
 }
 
 .gallery {
@@ -132,10 +122,10 @@
     height: 220px;
     display: block;
     object-fit: cover;
-    background: #dbeafe;
-    border: 4px solid #fff;
-    border-radius: 16px;
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+    background: #d8e6fb;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(31, 41, 55, 0.08);
 }
 
 .thumbnailRow {
@@ -151,15 +141,14 @@
     border-radius: 10px;
     overflow: hidden;
     background: #fff;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 4px 12px rgba(31, 41, 55, 0.08);
     opacity: 0.6;
     cursor: pointer;
-    transition: opacity 0.2s, outline 0.1s;
 }
 
 .thumbnailActive {
     opacity: 1;
-    outline: 3px solid #0a58ca;
+    outline: 3px solid #44558d;
 }
 
 .thumbnailButton img {
@@ -179,16 +168,16 @@
 .section {
     padding: 18px;
     background: #fff;
-    border: 1px solid #eef2f6;
-    border-radius: 18px;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.04);
+    border: 1px solid #e3e8ef;
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgba(31, 41, 55, 0.08);
 }
 
 .actionCard {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    border-left: 5px solid #003b95;
+    border-left: 5px solid #44558d;
 }
 
 .actionTextContent {
@@ -198,7 +187,7 @@
 
 .actionLabel {
     margin: 0;
-    color: #0071c2;
+    color: #44558d;
     font-size: 11px;
     font-weight: 900;
     letter-spacing: 0.08em;
@@ -210,15 +199,15 @@
     margin: 0;
     font-size: 18px;
     line-height: 1.3;
-    font-weight: 800;
-    color: #0f172a;
+    font-weight: 900;
+    color: #1f2937;
 }
 
 .actionCard p,
 .description,
 .emptyState p {
     margin: 0;
-    color: #64748b;
+    color: #4b5563;
     font-size: 13px;
     line-height: 1.6;
     font-weight: 600;
@@ -228,23 +217,17 @@
     min-height: 48px;
     padding: 0 18px;
     color: #fff;
-    background: linear-gradient(135deg, #003b95 0%, #0a58ca 100%);
+    background: #44558d;
     border: 0;
-    border-radius: 12px;
+    border-radius: 10px;
     font-size: 15px;
-    font-weight: 800;
-    box-shadow: 0 6px 16px rgba(0, 59, 149, 0.2);
+    font-weight: 900;
+    box-shadow: none;
     cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-}
-
-.primaryButton:active {
-    transform: scale(0.98);
 }
 
 .primaryButtonActive {
-    background: linear-gradient(135deg, #0d9488 0%, #10b981 100%);
-    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.2);
+    background: #10b981;
 }
 
 .section {
@@ -263,11 +246,11 @@
 
 .tagBadge {
     padding: 4px 10px;
-    color: #003b95;
+    color: #44558d;
     background: #eef4ff;
     border-radius: 6px;
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 900;
 }
 
 .detailList {
@@ -291,16 +274,16 @@
 }
 
 .detailList dt {
-    color: #64748b;
+    color: #4b5563;
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 900;
     min-width: 70px;
     flex-shrink: 0;
 }
 
 .detailList dd {
     margin: 0;
-    color: #0f172a;
+    color: #1f2937;
     font-size: 13px;
     line-height: 1.5;
     font-weight: 700;
@@ -308,10 +291,107 @@
     word-break: break-all;
 }
 
+.facilitySection {
+    background: #f7fbfa;
+    border-color: #d7ebe5;
+    box-shadow: 0 12px 28px rgba(16, 91, 78, 0.08);
+}
+
+.sectionEyebrow {
+    margin: 0 0 3px;
+    color: #16806c;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+}
+
+.infoMark {
+    padding: 5px 8px;
+    color: #16806c;
+    background: #dff4ed;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+}
+
+.facilityGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin: 0;
+}
+
+.facilityItem {
+    min-width: 0;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid #e0eee9;
+    border-radius: 7px;
+}
+
+.facilityItem dt,
+.featureTitle {
+    margin: 0;
+    color: #6b7f7a;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.facilityItem dd {
+    margin: 6px 0 0;
+    color: #183b35;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+}
+
+.featureBlock {
+    display: grid;
+    gap: 9px;
+    padding-top: 2px;
+}
+
+.featureList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+}
+
+.featureBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 9px;
+    color: #657873;
+    background: #edf2f1;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.featureBadge[data-available="true"] {
+    color: #146b5a;
+    background: #dff4ed;
+}
+
+.featureDot {
+    width: 6px;
+    height: 6px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #94a3a0;
+}
+
+.featureBadge[data-available="true"] .featureDot {
+    background: #16a085;
+}
+
 .mapProvider {
     font-size: 11px;
     color: #94a3b8;
-    font-weight: 700;
+    font-weight: 900;
 }
 
 .mapContainer {
@@ -347,5 +427,9 @@
     
     .detailList dd {
         text-align: left;
+    }
+
+    .facilityGrid {
+        grid-template-columns: 1fr;
     }
 }

@@ -233,7 +233,20 @@ CREATE TABLE `trip_candidates` (
   `img_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '候補画像URL',
   `created_by` bigint NOT NULL COMMENT '候補を登録したユーザーID',
   `status` enum('candidate','selected','rejected') COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '候補状態 candidate=検討中 selected=採用 rejected=不採用',
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '登録日時'
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '登録日時',
+  `address` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '住所',
+  `latitude` decimal(10,7) DEFAULT NULL COMMENT '緯度',
+  `longitude` decimal(10,7) DEFAULT NULL COMMENT '経度',
+  `opening_hours` text COLLATE utf8mb4_unicode_ci COMMENT '営業時間',
+  `regular_holiday` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '定休日・休業日',
+  `phone_number` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '電話番号',
+  `fee_info` text COLLATE utf8mb4_unicode_ci COMMENT '料金情報',
+  `has_accessible_toilet` tinyint(1) DEFAULT NULL COMMENT '多目的トイレの有無',
+  `has_wheelchair_rental` tinyint(1) DEFAULT NULL COMMENT '車椅子貸出の有無',
+  `has_stroller_rental` tinyint(1) DEFAULT NULL COMMENT 'ベビーカー貸出の有無',
+  `has_nursing_room` tinyint(1) DEFAULT NULL COMMENT '授乳室の有無',
+  `has_coin_locker` tinyint(1) DEFAULT NULL COMMENT 'コインロッカーの有無',
+  `has_wifi` tinyint(1) DEFAULT NULL COMMENT 'Wi-Fiの有無'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='旅行候補テーブル';
 
 CREATE TABLE `trip_candidate_votes` (
@@ -736,15 +749,98 @@ INSERT INTO `trip_members` (`trip_id`, `user_id`, `participation_status`, `joine
   (2, 1, 'joined', '2026-06-19 14:10:00');
 
 INSERT INTO `trip_candidates`
-  (`trip_id`, `candidate_type`, `candidate_name`, `description`, `img_url`, `created_by`, `status`, `created_at`)
+  (`trip_id`, `candidate_type`, `candidate_name`, `description`, `img_url`, `created_by`, `status`, `created_at`, `address`, `latitude`, `longitude`)
 VALUES
-  ('1', 'destination', '三重県（伊勢・鳥羽エリア）', '伊勢神宮や鳥羽水族館、海の幸も楽しめる旅行先です。', NULL, 1, 'selected', '2026-06-18 11:00:00'),
-  ('1', 'destination', '三重県（志摩エリア）', '英虞湾の景色とリゾートを楽しめるエリアです。', NULL, 2, 'candidate', '2026-06-18 11:10:00'),
-  ('1', 'spot', '伊勢神宮', '内宮・外宮を巡る三重旅行の定番スポットです。', 'https://images.unsplash.com/photo-1627575191507-6a4a0619a909?auto=format&fit=crop&w=800&q=80', 2, 'candidate', '2026-06-18 11:20:00'),
-  ('1', 'spot', '鳥羽水族館', 'ジュゴンやラッコで有名な水族館です。', 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80', 3, 'candidate', '2026-06-18 11:30:00'),
-  ('1', 'hotel', '鳥羽シーサイドコテージ', '海を一望できるBBQ付きコテージです。グループ旅行に最適です。', NULL, 1, 'candidate', '2026-06-18 11:40:00'),
-  ('1', 'restaurant', '伊勢うどん 山口屋', '伊勢うどんを味わえる老舗です。', NULL, 3, 'candidate', '2026-06-18 11:50:00'),
-  ('2', 'destination', '北海道（札幌・小樽エリア）', '札幌の街歩きと小樽運河、海鮮グルメを楽しめます。', NULL, 2, 'candidate', '2026-06-19 15:00:00');
+  ('1', 'spot', '東京タワー', '東京都港区にある高さ333mの総合電波塔。', NULL, 1, 'candidate', '2026-09-03 03:16:44', '東京都港区芝公園4丁目2-8', 35.6585810, 139.7454330),
+  ('1', 'spot', '東京スカイツリー', '東京都墨田区にある高さ634mの電波塔。', NULL, 1, 'candidate', '2026-09-03 03:16:44', '東京都墨田区押上1丁目1-2', 35.7100630, 139.8107000),
+  ('1', 'spot', '浅草寺', '東京都台東区浅草を代表する寺院。', NULL, 1, 'candidate', '2026-09-03 03:16:44', '東京都台東区浅草2丁目3-1', 35.7147650, 139.7966550),
+  ('1', 'spot', '清水寺', '京都を代表する世界遺産の寺院。', NULL, 1, 'candidate', '2026-09-03 03:16:44', '京都府京都市東山区清水1丁目294', 34.9948560, 135.7850460),
+  ('1', 'spot', '伏見稲荷大社', '千本鳥居で有名な神社。', NULL, 1, 'candidate', '2026-09-03 03:16:44', '京都府京都市伏見区深草薮ノ内町68', 34.9671400, 135.7726710),
+  ('1', 'spot', '大阪城天守閣', '大阪を代表する歴史的観光スポット。', NULL, 1, 'candidate', '2026-09-03 03:16:44', '大阪府大阪市中央区大阪城1-1', 34.6873150, 135.5262010),
+  ('1', 'spot', '姫路城', '兵庫県姫路市にある世界遺産・国宝の城。', NULL, 1, 'candidate', '2026-09-03 03:16:44', '兵庫県姫路市本町68', 34.8394490, 134.6939040),
+  ('1', 'spot', '東大寺', '奈良を代表する世界遺産の寺院。', NULL, 1, 'candidate', '2026-09-03 03:16:44', '奈良県奈良市雑司町406-1', 34.6899850, 135.8398150),
+  ('1', 'spot', '嚴島神社', '海上の大鳥居で知られる世界遺産の神社。', NULL, 1, 'candidate', '2026-09-03 03:16:44', '広島県廿日市市宮島町1-1', 34.2959890, 132.3198850),
+  ('1', 'spot', '広島平和記念資料館', '平和記念公園内の資料館。', NULL, 1, 'candidate', '2026-09-03 03:16:44', '広島県広島市中区中島町1-2', 34.3917460, 132.4522960);
+
+UPDATE `trip_candidates`
+SET
+  `opening_hours` = CASE `candidate_name`
+    WHEN '東京タワー' THEN 'メインデッキ 9:00～23:00（最終入場22:30）'
+    WHEN '東京スカイツリー' THEN '通常10:00～22:00（最終入場21:00）'
+    WHEN '浅草寺' THEN '本堂 6:00～17:00'
+    WHEN '清水寺' THEN '通常6:00～18:00'
+    WHEN '伏見稲荷大社' THEN '境内は参拝自由'
+    WHEN '大阪城天守閣' THEN '9:00～18:00（最終入館17:30）'
+    WHEN '姫路城' THEN '9:00～17:00（入城16:00まで）'
+    WHEN '東大寺' THEN '大仏殿 7:30～17:30'
+    WHEN '嚴島神社' THEN '通常6:30開門'
+    WHEN '広島平和記念資料館' THEN '3月～11月 7:30～19:00'
+  END,
+  `regular_holiday` = CASE `candidate_name`
+    WHEN '東京タワー' THEN '原則無休'
+    WHEN '東京スカイツリー' THEN '原則無休'
+    WHEN '浅草寺' THEN '原則無休'
+    WHEN '清水寺' THEN '原則無休'
+    WHEN '伏見稲荷大社' THEN '年中無休'
+    WHEN '大阪城天守閣' THEN '12月28日～1月1日'
+    WHEN '姫路城' THEN '12月29日・30日'
+    WHEN '東大寺' THEN '原則無休'
+    WHEN '嚴島神社' THEN '原則無休'
+    WHEN '広島平和記念資料館' THEN '公式休館日カレンダーによる'
+  END,
+  `phone_number` = CASE `candidate_name`
+    WHEN '東京タワー' THEN '03-3433-5111'
+    WHEN '東京スカイツリー' THEN '0570-55-0634'
+    WHEN '浅草寺' THEN '03-3842-0181'
+    WHEN '清水寺' THEN '075-551-1234'
+    WHEN '伏見稲荷大社' THEN '075-641-7331'
+    WHEN '大阪城天守閣' THEN '06-6941-3044'
+    WHEN '姫路城' THEN '079-285-1146'
+    WHEN '東大寺' THEN '0742-22-5511'
+    WHEN '嚴島神社' THEN '0829-44-2020'
+    WHEN '広島平和記念資料館' THEN '082-241-4004'
+  END,
+  `fee_info` = CASE `candidate_name`
+    WHEN '東京タワー' THEN 'メインデッキ：大人1,500円、高校生1,200円、小中学生900円、4歳以上600円'
+    WHEN '東京スカイツリー' THEN '天望デッキ：大人1,800円～、こども900円～'
+    WHEN '浅草寺' THEN '境内参拝無料'
+    WHEN '清水寺' THEN '拝観有料'
+    WHEN '伏見稲荷大社' THEN '参拝無料'
+    WHEN '大阪城天守閣' THEN '大人1,200円'
+    WHEN '姫路城' THEN '一般18歳以上2,500円'
+    WHEN '東大寺' THEN '大人・中高生800円、小学生400円'
+    WHEN '嚴島神社' THEN '昇殿初穂料：大人300円'
+    WHEN '広島平和記念資料館' THEN '大人200円'
+  END
+WHERE `trip_id` = '1' AND `candidate_type` = 'spot';
+
+UPDATE `trip_candidates`
+SET
+  `has_accessible_toilet` = CASE `candidate_name`
+    WHEN '東京タワー' THEN 1
+    WHEN '浅草寺' THEN 1
+    WHEN '清水寺' THEN 1
+    ELSE NULL
+  END,
+  `has_wheelchair_rental` = CASE `candidate_name`
+    WHEN '東京タワー' THEN 1
+    WHEN '清水寺' THEN 0
+    ELSE NULL
+  END,
+  `has_stroller_rental` = CASE `candidate_name`
+    WHEN '東京タワー' THEN 1
+    ELSE NULL
+  END,
+  `has_nursing_room` = CASE `candidate_name`
+    WHEN '東京タワー' THEN 1
+    ELSE NULL
+  END,
+  `has_coin_locker` = CASE `candidate_name`
+    WHEN '東京タワー' THEN 1
+    ELSE NULL
+  END,
+  `has_wifi` = NULL
+WHERE `trip_id` = '1' AND `candidate_type` = 'spot';
 
 -- 候補投票は初期状態を空にし、各ユーザーが画面から投票します。
 

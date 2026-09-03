@@ -48,7 +48,7 @@ services:
 
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./api/test_data_rebuild.sql:/docker-entrypoint-initdb.d/01-test_data_rebuild.sql:ro
+      - ./database/test_data_rebuild.sql:/docker-entrypoint-initdb.d/01-test_data_rebuild.sql:ro
 
   phpmyadmin:
     image: phpmyadmin:5

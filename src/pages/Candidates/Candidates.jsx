@@ -8,11 +8,12 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import styles from './Candidates.module.css';
-import { candidatePlaces, categories, typeLabels } from './candidateData';
+import { categories, typeLabels } from './candidateData';
+
 
 /**
  * SearchIcon は、このファイルの中心となる処理をまとめた関数です。
@@ -56,21 +57,97 @@ function HeartIcon() {
  */
 function Candidates() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const contentRef = useRef(null);
+    // 各フィルターのスクロール位置を記憶する
+    const scrollPositionsRef = useRef({
+        all: 0,
+        spot: 0,
+        hotel: 0,
+        restaurant: 0,
+    });
+    const previousCategoryRef = useRef('all');
+
+    // グループ ID を URL パラメータから取得（デフォルト: 1）
+    const groupId = parseInt(searchParams.get('group_id') || '1', 10);
+
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [keyword, setKeyword] = useState('京都');
+    const [keyword, setKeyword] = useState('');
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [submittedArea, setSubmittedArea] = useState('京都');
+    const [submittedArea, setSubmittedArea] = useState('');
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [selectedCategory, setSelectedCategory] = useState('all');
+    // DBから取得したデータを保持する state
+    const [candidates, setCandidates] = useState([]);
+    // ローディング状態を管理
+    const [loading, setLoading] = useState(true);
+    // エラーメッセージを管理
+    const [error, setError] = useState(null);
+
+    // ページロード時に API からデータを取得
+    useEffect(() => {
+        const fetchCandidates = async () => {
+            try {
+                setLoading(true);
+                setError(null);
+                const response = await fetch(`/TABI/api/Trips/GetCandidates.php?group_id=${groupId}`, {
+                    credentials: 'include', // クッキー（セッション）を含める
+                });
+
+                if (!response.ok) {
+                    throw new Error('データの取得に失敗しました');
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.candidates) {
+                    // API から返ってきたデータを state に保存
+                    setCandidates(data.candidates);
+                } else {
+                    throw new Error(data.message || 'データ形式が不正です');
+                }
+            } catch (err) {
+                console.error('Error fetching candidates:', err);
+                setError(err.message || 'データ取得時にエラーが発生しました');
+                setCandidates([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCandidates();
+    }, [groupId]);
 
     const filteredPlaces = useMemo(() => {
         // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
-        return candidatePlaces.filter((place) => {
-            const matchesArea = submittedArea.trim() === '' || place.city.includes(submittedArea.trim()) || place.area.includes(submittedArea.trim());
-            const matchesCategory = selectedCategory === 'all' || place.type === selectedCategory;
+        return candidates.filter((place) => {
+            // DBの候補にはcity/areaがないため、candidate_nameで検索
+            const matchesArea = submittedArea.trim() === '' || place.candidate_name.includes(submittedArea.trim());
+            const matchesCategory = selectedCategory === 'all' || place.candidate_type === selectedCategory;
             return matchesArea && matchesCategory;
         });
-    }, [selectedCategory, submittedArea]);
+    }, [selectedCategory, submittedArea, candidates]);
+
+    // フィルター変更時にスクロール位置を保持・復元
+    useEffect(() => {
+        if (contentRef.current) {
+            // 前のカテゴリのスクロール位置を保存
+            scrollPositionsRef.current[previousCategoryRef.current] = contentRef.current.scrollTop;
+            previousCategoryRef.current = selectedCategory;
+            
+            // 新しいカテゴリのスクロール位置を復元
+            const scrollPos = scrollPositionsRef.current[selectedCategory] || 0;
+            
+            // DOM更新後、ブラウザのペイント前に復元する
+            const timer = setTimeout(() => {
+                if (contentRef.current) {
+                    contentRef.current.scrollTop = scrollPos;
+                }
+            }, 0);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [selectedCategory]);
 
     // handleSubmit は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleSubmit = (event) => {
@@ -80,7 +157,7 @@ function Candidates() {
 
     // openDetail は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const openDetail = (place) => {
-        navigate(`/Candidates/${place.id}`, { state: { place } });
+        navigate(`/Candidates/${place.candidate_id}`, { state: { place } });
     };
 
     return (
@@ -115,14 +192,23 @@ function Candidates() {
                     </form>
                 </header>
 
-                <main className={styles.content}>
+                <main className={styles.content} ref={contentRef}>
                     <section className={styles.quickFilters} aria-label="カテゴリ">
                         {categories.map((category) => (
                             <button
                                 className={`${styles.filterButton} ${selectedCategory === category.id ? styles.activeFilter : ''}`}
                                 type="button"
                                 key={category.id}
-                                onClick={() => setSelectedCategory(category.id)}
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    // 現在のカテゴリのスクロール位置を保存
+                                    if (contentRef.current) {
+                                        scrollPositionsRef.current[selectedCategory] = contentRef.current.scrollTop;
+                                    }
+                                    // 新しいカテゴリに切り替え
+                                    setSelectedCategory(category.id);
+                                }}
                             >
                                 {category.label}
                             </button>
@@ -134,46 +220,56 @@ function Candidates() {
                             <span>{filteredPlaces.length}件</span>
                             <h2>{submittedArea || 'すべてのエリア'}の候補先</h2>
                         </div>
-                        <button type="button">並び替え</button>
+                        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>並び替え</button>
                     </section>
 
-                    <div className={styles.list}>
-                        {filteredPlaces.map((place) => (
-                            <article className={styles.card} key={place.id}>
-                                <div className={styles.imageWrap}>
-                                    <img src={place.image} alt={place.name} />
-                                    <span>{typeLabels[place.type]}</span>
-                                </div>
-                                <div className={styles.cardBody}>
-                                    <div className={styles.cardHeader}>
-                                        <div>
-                                            <h3>{place.name}</h3>
-                                            <p>{place.area}</p>
+                    {loading && (
+                        <div className={styles.empty}>
+                            <h2>読み込み中...</h2>
+                            <p>データを取得しています</p>
+                        </div>
+                    )}
+
+                    {error && !loading && (
+                        <div className={styles.empty}>
+                            <h2>エラーが発生しました</h2>
+                            <p>{error}</p>
+                        </div>
+                    )}
+
+                    {!loading && !error && (
+                        <div className={styles.list}>
+                            {filteredPlaces.map((place) => (
+                                <article className={styles.card} key={place.candidate_id}>
+                                    <div className={styles.imageWrap}>
+                                        <img src={place.img_url} alt={place.candidate_name} />
+                                        <span>{typeLabels[place.candidate_type]}</span>
+                                    </div>
+                                    <div className={styles.cardBody}>
+                                        <div className={styles.cardHeader}>
+                                            <div>
+                                                <h3>{place.candidate_name}</h3>
+                                                <p>候補地</p>
+                                            </div>
+                                            <button type="button" aria-label={`${place.candidate_name}の詳細を見る`} onClick={() => openDetail(place)}>＋</button>
                                         </div>
-                                        <button type="button" aria-label={`${place.name}の詳細を見る`} onClick={() => openDetail(place)}>＋</button>
+
+                                        <p className={styles.description}>{place.description}</p>
+
+                                        <div className={styles.footerRow}>
+                                            <span>{place.candidate_type}</span>
+                                        </div>
+
+                                        <button className={styles.detailButton} type="button" onClick={() => openDetail(place)}>
+                                            詳細を見る
+                                        </button>
                                     </div>
+                                </article>
+                            ))}
+                        </div>
+                    )}
 
-                                    <p className={styles.description}>{place.description}</p>
-
-                                    <div className={styles.metaRow}>
-                                        <span className={styles.rating}>{place.rating}</span>
-                                        <span>口コミ {place.reviews}件</span>
-                                    </div>
-
-                                    <div className={styles.footerRow}>
-                                        <span>{place.tag}</span>
-                                        <strong>{place.price}</strong>
-                                    </div>
-
-                                    <button className={styles.detailButton} type="button" onClick={() => openDetail(place)}>
-                                        詳細を見る
-                                    </button>
-                                </div>
-                            </article>
-                        ))}
-                    </div>
-
-                    {filteredPlaces.length === 0 && (
+                    {!loading && !error && filteredPlaces.length === 0 && (
                         <div className={styles.empty}>
                             <h2>候補先が見つかりません</h2>
                             <p>地名を変えて検索してください。</p>
