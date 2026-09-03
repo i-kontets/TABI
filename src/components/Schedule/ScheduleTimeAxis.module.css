@@ -390,3 +390,7 @@
     line-height: 1.5;
     overflow-wrap: anywhere;
 }
+
+.detailDescription {
+    align-items: start;
+}
