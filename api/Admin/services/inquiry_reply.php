@@ -71,6 +71,14 @@ function post_json(string $url, array $payload): array
 
 // お問い合わせ返信を GAS 経由で送るための専用処理です。
 // PHP 側では送信に必要な情報をまとめ、メール送信の実処理は GAS に任せます。
+/**
+ * 外部サービスまたは別APIへデータを送信し、その結果を呼び出し元へ返します。
+ *
+ * @param array $inquiry 呼び出し元から渡される処理対象の値です。
+ * @param string $message 呼び出し元から渡される処理対象の値です。
+ * @return array 宣言された型に合わせて処理結果を返します。
+ * エラー時はHTTPステータス、ログ、または共通レスポンスで呼び出し元へ伝えます。
+ */
 function send_inquiry_reply_via_gas(array $inquiry, string $message): array
 {
     $gasUrl = app_config("GAS_INQUIRY_REPLY_URL", "");

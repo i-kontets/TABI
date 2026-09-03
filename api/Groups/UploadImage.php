@@ -22,6 +22,14 @@ require_once __DIR__ . "/../config/db.php";
 require_once __DIR__ . "/S3Common.php";
 
 // レスポンスをJSONで返して終了する共通関数
+/**
+ * APIレスポンスをJSON形式で返し、HTTPステータスもここでそろえます。
+ *
+ * @param array $payload 呼び出し元から渡される処理対象の値です。
+ * @param int $status = 200 呼び出し元から渡される処理対象の値です。
+ * @return void 宣言された型に合わせて処理結果を返します。
+ * エラー時はHTTPステータス、ログ、または共通レスポンスで呼び出し元へ伝えます。
+ */
 function respond(array $payload, int $status = 200): void
 {
     http_response_code($status);

@@ -12,7 +12,9 @@ import { createElement, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Modal from '../../components/Modal/Modal';
 import PasswordResetRequestModal from '../../components/PasswordReset/PasswordResetRequestModal';
+import MainBottomNav from '../../components/mainBottomNav/MainBottomNav';
 import styles from './MyPage.module.css';
+import { useUnreadNotificationBadge } from '../../api/useUnreadNotificationBadge';
 
 /**
  * BellIcon は、このファイルの中心となる処理をまとめた関数です。
@@ -23,20 +25,6 @@ function BellIcon({ className }) {
         <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
             <path d="M18 16v-5a6 6 0 0 0-12 0v5l-2 2v1h16v-1l-2-2Z" />
             <path d="M9.5 21a2.5 2.5 0 0 0 5 0" />
-        </svg>
-    );
-}
-
-/**
- * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
-function HomeIcon({ className }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 11.5 12 4l9 7.5" />
-            <path d="M5.5 10.5V20h13v-9.5" />
-            <path d="M9.5 20v-5h5v5" />
         </svg>
     );
 }
@@ -268,6 +256,8 @@ function MyPage() {
         const name = user?.name || '';
         return name.trim().slice(0, 1).toUpperCase();
     }, [user?.name]);
+    // ベルの未読件数は共通hookで取得し、通知画面で既読にした後も再取得できます。
+    const { badgeText: notificationBadgeText, unreadCount } = useUnreadNotificationBadge();
 
     // handleLogout は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleLogout = async () => {
@@ -289,8 +279,9 @@ function MyPage() {
             <header className={styles.header}>
                 <span className={styles.headerSpacer} />
                 <h1 className={styles.headerTitle}>マイページ</h1>
-                <button type="button" className={styles.noticeButton} aria-label="通知">
+                <button type="button" className={styles.noticeButton} onClick={() => navigate('/notifications')} aria-label={unreadCount > 0 ? `通知、未読${unreadCount}件` : '通知'}>
                     <BellIcon className={styles.headerIcon} />
+                    {notificationBadgeText && <span className={styles.noticeBadge}>{notificationBadgeText}</span>}
                 </button>
             </header>
 
@@ -390,27 +381,8 @@ function MyPage() {
                 </button>
             </main>
 
-            <footer className={styles.footer}>
-                <button
-                    type="button"
-                    className={styles.footerItem}
-                    onClick={() => navigate('/Home')}
-                    aria-label="ホーム"
-                >
-                    <HomeIcon className={styles.footerIcon} />
-                    <span>ホーム</span>
-                </button>
-
-                <button
-                    type="button"
-                    className={[styles.footerItem, styles.footerItemActive].join(' ')}
-                    onClick={() => navigate('/MyPage')}
-                    aria-label="マイページ"
-                >
-                    <UserIcon className={styles.footerIcon} />
-                    <span>マイページ</span>
-                </button>
-            </footer>
+            {/* Home・マイページ・通知画面で同じフッターを使い、画面ごとのリンク処理の差をなくします。 */}
+            <MainBottomNav />
 
             <PasswordResetRequestModal
                 isOpen={isPasswordOpen}

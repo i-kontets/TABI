@@ -14,7 +14,9 @@ import { TripContext } from "../../App";
 import TravelGroupCard from '../../components/TravelGroupCard/TravelGroupCard';
 import Modal from '../../components/Modal/Modal';
 import ImagePicker from '../../components/ImagePicker/ImagePicker';
+import MainBottomNav from '../../components/mainBottomNav/MainBottomNav';
 import styles from './Home.module.css';
+import { useUnreadNotificationBadge } from '../../api/useUnreadNotificationBadge';
 
 // ここから下は、画面内で使うアイコンを SVG で直接定義しています。
 // 画像素材を別ファイルに分けず、必要な見た目をこのコンポーネント内で完結させます。
@@ -53,39 +55,14 @@ function LogoutIcon({ className }) {
     );
 }
 
-/**
- * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
-function HomeIcon({ className }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 11.5 12 4l9 7.5" />
-            <path d="M5.5 10.5V20h13v-9.5" />
-            <path d="M9.5 20v-5h5v5" />
-        </svg>
-    );
-}
-
-/**
- * UserIcon は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
-function UserIcon({ className }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
-            <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
-        </svg>
-    );
-}
-
 // Home 画面の本体です。
 // 参加中の旅行グループ一覧を表示し、グループ作成と画像編集までを担当します。
 function Home() {
     const navigate = useNavigate();
     // TripContext には、選択中の旅行グループ情報を入れて次画面へ渡します。
     const { setTrip } = useContext(TripContext);
+    // ベルの未読件数は通知履歴APIから取り、0件ならバッジを出しません。
+    const { badgeText: notificationBadgeText, unreadCount } = useUnreadNotificationBadge();
 
     // 画面に表示する旅行グループ一覧です。
     const [travelGroups, setTravelGroups] = useState([]);
@@ -147,7 +124,7 @@ function Home() {
                 if (data.success && Array.isArray(data.groups)) {
                     setTravelGroups(
                         // 配列のデータを1件ずつ画面表示用の形に変換します。
-                        data.groups.map((group, index) => ({
+                        data.groups.map((group) => ({
                             ...group,
                             image: group.image_url ?? null,
                         }))
@@ -186,7 +163,8 @@ function Home() {
     const handleGroupClick = (trip) => {
         setTrip({
             id: trip.id,
-            name: trip.name
+            name: trip.name,
+            image: trip.image,
         });
 
         // 旅程画面へは groupId を付けて遷移します。
@@ -195,7 +173,7 @@ function Home() {
     };
 
     // ログアウト API を呼び、成功したらローカルのログイン情報も消してログイン画面へ戻します。
-    const handleLogout = async () => {
+    const _handleLogout = async () => {
         // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
         const response = await fetch(
             "/TABI/api/auth/logout.php",
@@ -379,9 +357,11 @@ function Home() {
                 <button
                     type="button"
                     className={styles.noticeButton}
-                    aria-label="通知"
+                    onClick={() => navigate('/notifications')}
+                    aria-label={unreadCount > 0 ? `通知、未読${unreadCount}件` : '通知'}
                 >
                     <BellIcon className={styles.headerIcon} />
+                    {notificationBadgeText && <span className={styles.noticeBadge}>{notificationBadgeText}</span>}
                 </button>
             </header>
 
@@ -485,28 +465,8 @@ function Home() {
                 </form>
             </Modal>
 
-            {/* 画面下部のナビゲーションです。ホームとマイページを切り替えます。 */}
-            <footer className={styles.footer}>
-                <button
-                    type="button"
-                    className={`${styles.footerItem} ${styles.footerItemActive}`}
-                    onClick={() => navigate('/Home')}
-                    aria-label="ホーム"
-                >
-                    <HomeIcon className={styles.footerIcon} />
-                    <span>ホーム</span>
-                </button>
-
-                <button
-                    type="button"
-                    className={styles.footerItem}
-                    onClick={() => navigate('/mypage')}
-                    aria-label="マイページ"
-                >
-                    <UserIcon className={styles.footerIcon} />
-                    <span>マイページ</span>
-                </button>
-            </footer>
+            {/* Home・マイページ・通知画面で同じフッターを使い、リンク先と見た目のずれを防ぎます。 */}
+            <MainBottomNav />
         </div>
     );
 }

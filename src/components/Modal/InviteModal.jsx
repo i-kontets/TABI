@@ -1,13 +1,3 @@
-/**
- * 画面の上に重ねて表示するモーダル部品を担当します。
- *
- * 主な流れ:
- * 1. 必要な部品や API 関数を読み込む
- * 2. 画面表示やデータ取得に必要な値を準備する
- * 3. ユーザー操作や API の結果に合わせて表示を更新する
- *
- * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
- */
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import QRCode from "react-qr-code";
@@ -23,41 +13,37 @@ export function InviteHeader({ title }) {
     );
 }
 
-export function InviteActions({ onCancel }) {
-    return (
-        <div className={styles.actions}>
-            <button className={styles.cancel} type="button" onClick={onCancel}>
-                閉じる
-            </button>
-        </div>
-    );
-}
-
-// コンポジション用の Invite コンテンツ。Modal の子として使う想定
-export default function InviteModalContent({ onClose }) {
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
+export default function InviteModalContent({ groupId, onClose }) {
     const [copyStatus, setCopyStatus] = useState("");
     const location = useLocation();
 
-    const inviteLink = useMemo(() => {
-        const basePath = import.meta.env.BASE_URL ?? "/";
-        const normalizedBasePath = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
-        const currentPath = `${location.pathname}${location.search}${location.hash}`;
-        return `${window.location.origin}${normalizedBasePath}${currentPath}++test`;
-    }, [location.hash, location.pathname, location.search]);
+    // Itinerary 側から groupId が渡らない場合でも、URLクエリから補完できるようにします。
+    const inviteGroupId = useMemo(() => {
+        if (groupId) return groupId;
 
-    // handleCopy は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
+        const params = new URLSearchParams(location.search);
+        return params.get("groupId");
+    }, [groupId, location.search]);
+
+    // QRコードには、参加画面のURLと対象グループIDを埋め込みます。
+    const inviteLink = useMemo(() => {
+        const baseUrl = new URL(import.meta.env.BASE_URL, window.location.origin);
+        const joinUrl = new URL("ItineraryJoin", baseUrl);
+
+        if (inviteGroupId) {
+            joinUrl.searchParams.set("groupId", inviteGroupId);
+        }
+
+        return joinUrl.toString();
+    }, [inviteGroupId]);
+
     const handleCopy = async () => {
         await navigator.clipboard.writeText(inviteLink);
         setCopyStatus("コピーしました");
     };
 
-    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
-        // ここで条件を確認し、状況に合う処理だけを実行します。
-        if (!copyStatus) {
-            return;
-        }
+        if (!copyStatus) return;
 
         const timer = window.setTimeout(() => setCopyStatus(""), 2000);
         return () => window.clearTimeout(timer);
@@ -69,7 +55,7 @@ export default function InviteModalContent({ onClose }) {
             <div className={styles.body}>
                 <div className={styles.linkSection}>
                     <label className={styles.linkLabel} htmlFor="invite-link">
-                        今開いているページの招待リンク
+                        この旅行グループへの招待リンク
                     </label>
                     <div className={styles.linkRow}>
                         <input
@@ -90,7 +76,6 @@ export default function InviteModalContent({ onClose }) {
                     <QRCodeComponent value={inviteLink} size={160} className={styles.qrCode} />
                 </div>
             </div>
-            <InviteActions onCancel={onClose} />
         </div>
     );
 }

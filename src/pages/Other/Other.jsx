@@ -1,6 +1,14 @@
-import { useContext } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { TripContext } from '../../App';
+/**
+ * React の画面または部品として、表示内容とユーザー操作を担当します。
+ *
+ * 主な流れ:
+ * 1. 必要な部品や API 関数を読み込む
+ * 2. 画面表示やデータ取得に必要な値を準備する
+ * 3. ユーザー操作や API の結果に合わせて表示を更新する
+ *
+ * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
+ */
+import { useLocation, useNavigate } from 'react-router-dom';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 import styles from './Other.module.css';
@@ -66,9 +74,17 @@ function ArrowIcon() {
  */
 export default function Other() {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const { trip } = useContext(TripContext);
-    const groupId = searchParams.get('groupId') || trip.id;
+    const location = useLocation();
+    const params = new URLSearchParams(location.search);
+    const groupId = params.get('groupId');
+
+    const buildPathWithGroupId = (path) => {
+        if (!groupId) {
+            return path;
+        }
+
+        return `${path}?groupId=${encodeURIComponent(groupId)}`;
+    };
 
     return (
         <>
@@ -84,12 +100,7 @@ export default function Other() {
                                 key={item.id}
                                 onClick={() => {
                                     if (item.path) {
-                                        if (item.withGroupId && groupId) {
-                                            navigate(`${item.path}?groupId=${encodeURIComponent(groupId)}`);
-                                            return;
-                                        }
-
-                                        navigate(item.path);
+                                        navigate(buildPathWithGroupId(item.path));
                                     }
                                 }}
                             >

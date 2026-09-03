@@ -1,0 +1,9 @@
+{
+    "name": "tabi/tabi-pwa",
+    "description": "TABI PWAのPHPバックエンド依存ライブラリ",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "google/auth": "^1.53"
+    }
+}
