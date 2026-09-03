@@ -75,7 +75,7 @@ export default function Login() {
             setIsLoading(true);
 
             // バックエンドのログインAPIにPOSTリクエストを送信
-            const response = await fetch("/TABI/api/auth/login.php", {
+            const response = await fetch("/TABI/api/Auth/login.php", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
