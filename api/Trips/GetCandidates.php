@@ -54,6 +54,19 @@ try {
             candidate.candidate_name,
             candidate.description,
             candidate.img_url,
+            candidate.address,
+            candidate.latitude,
+            candidate.longitude,
+            candidate.opening_hours,
+            candidate.regular_holiday,
+            candidate.phone_number,
+            candidate.fee_info,
+            candidate.has_accessible_toilet,
+            candidate.has_wheelchair_rental,
+            candidate.has_stroller_rental,
+            candidate.has_nursing_room,
+            candidate.has_coin_locker,
+            candidate.has_wifi,
             candidate.status,
             COUNT(DISTINCT vote.user_id) AS vote_count,
             MAX(CASE WHEN vote.user_id = :user_id THEN 1 ELSE 0 END) AS has_voted
@@ -62,6 +75,7 @@ try {
             ON vote.candidate_id = candidate.candidate_id
             AND vote.vote_type = 'like'
          WHERE candidate.trip_id = :trip_id
+            AND candidate.candidate_type <> 'destination'
             AND (candidate.status IS NULL OR candidate.status <> 'rejected')
          GROUP BY
             candidate.candidate_id,
@@ -69,6 +83,19 @@ try {
             candidate.candidate_name,
             candidate.description,
             candidate.img_url,
+            candidate.address,
+            candidate.latitude,
+            candidate.longitude,
+            candidate.opening_hours,
+            candidate.regular_holiday,
+            candidate.phone_number,
+            candidate.fee_info,
+            candidate.has_accessible_toilet,
+            candidate.has_wheelchair_rental,
+            candidate.has_stroller_rental,
+            candidate.has_nursing_room,
+            candidate.has_coin_locker,
+            candidate.has_wifi,
             candidate.status,
             candidate.created_at
          ORDER BY candidate.candidate_type, candidate.created_at DESC, candidate.candidate_id DESC"

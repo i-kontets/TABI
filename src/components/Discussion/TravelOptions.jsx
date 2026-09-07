@@ -320,7 +320,15 @@ function TravelOptions({ active }) {
                             {/* 説明がある場合は表示、ない場合はプレースホルダーテキストを表示 */}
                             <p>{selectedCandidate.description || "詳細情報はまだありません。"}</p>
                             <strong>地図</strong>
-                            <Minimap place={selectedCandidate.candidate_name} />
+                            <Minimap
+                                place={selectedCandidate.candidate_name}
+                                address={selectedCandidate.address}
+                                label={selectedCandidate.candidate_name}
+                                center={selectedCandidate.longitude != null && selectedCandidate.latitude != null
+                                    && Number.isFinite(Number(selectedCandidate.longitude)) && Number.isFinite(Number(selectedCandidate.latitude))
+                                    ? [Number(selectedCandidate.longitude), Number(selectedCandidate.latitude)]
+                                    : undefined}
+                            />
                         </div>
                     </div>
                 )}

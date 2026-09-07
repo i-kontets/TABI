@@ -20,6 +20,7 @@ const endpoint = `${import.meta.env.BASE_URL}api/SystemErrors/Report.php`;
 const resolveEndpoint = `${import.meta.env.BASE_URL}api/SystemErrors/Resolve.php`;
 const recentFingerprints = new Map();
 const unresolvedRecoveryKeys = new Set();
+let isAuthenticated = null;
 const unresolvedRecoveryStorageKey = 'tabi:unresolved-system-error-recovery-keys';
 const suppressMs = 60 * 1000;
 const systemErrorBroadcastChannel = 'tabi-admin-system-errors';
@@ -442,6 +443,11 @@ export function installSystemErrorListeners() {
         const requestUrl = typeof args[0] === 'string' ? args[0] : args[0]?.url || '';
         const requestMethod = readFetchMethod(args);
         const pagePath = window.location.pathname;
+
+        if (requestUrl.includes('/api/Auth/whoami.php')) {
+            isAuthenticated = response.ok;
+        }
+
         const recoveryKey = buildRecoveryKey({
             source: 'frontend',
             requestMethod,
@@ -484,7 +490,12 @@ export function installSystemErrorListeners() {
             });
             rememberUnresolvedRecoveryKey(recoveryKey);
             reportSystemError(failurePayload);
-        } else if (shouldTrackApiRequest(requestUrl) && response.ok && hasUnresolvedRecoveryKey(recoveryKey)) {
+        } else if (
+            shouldTrackApiRequest(requestUrl) &&
+            response.ok &&
+            isAuthenticated === true &&
+            hasUnresolvedRecoveryKey(recoveryKey)
+        ) {
             /*
              * 以前このAPIで失敗を記録した場合だけ、解決APIを呼びます。
              * すべての成功fetchで毎回問い合わせると、管理画面の一覧取得など無関係な通信でも

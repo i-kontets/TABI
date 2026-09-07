@@ -78,12 +78,20 @@ export default function UserRealtimeListener({ trip }) {
                 console.log("WebSocket connected:", socket.id);
             }
 
+            if (!localStorage.getItem("loginUser")) {
+                return;
+            }
+
             // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
             try {
                 // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                 const response = await fetch(`${import.meta.env.BASE_URL}api/Auth/whoami.php`, {
                     credentials: "include",
                 });
+                if (response.status === 401) {
+                    localStorage.removeItem("loginUser");
+                    return;
+                }
                 const data = await response.json().catch(() => null);
                 const userId = data?.user?.user_id;
                 // ここで条件を確認し、状況に合う処理だけを実行します。

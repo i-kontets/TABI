@@ -332,7 +332,6 @@
 .detailHeader {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
     gap: 16px;
 }
 
@@ -349,18 +348,6 @@
     color: var(--sub-color);
     font-size: 12px;
     font-weight: 800;
-}
-
-.detailCloseButton {
-    width: 34px;
-    height: 34px;
-    border: 0;
-    border-radius: 50%;
-    background: color-mix(in srgb, var(--sub-color) 10%, #ffffff);
-    color: var(--sub-color);
-    font-size: 22px;
-    line-height: 1;
-    cursor: pointer;
 }
 
 .detailList {
@@ -389,4 +376,8 @@
     font-weight: 700;
     line-height: 1.5;
     overflow-wrap: anywhere;
+}
+
+.detailDescription {
+    align-items: start;
 }
