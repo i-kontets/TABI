@@ -39,6 +39,9 @@
         padding: 16px;
     }
 }
-.actions { display: flex; justify-content: flex-end; }
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
 .cancel { background: transparent; border: none; color: #333; cursor: pointer; }
-

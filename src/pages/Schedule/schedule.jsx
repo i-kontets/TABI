@@ -100,12 +100,84 @@ export default function SchedulePage() {
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [selectedDay, setSelectedDay] = useState('day1');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [draftEvents, setDraftEvents] = useState([]);
+    const [eventForm, setEventForm] = useState({
+        day: 'day1',
+        title: '',
+        startTime: '09:00',
+        endTime: '10:00',
+        audience: 'all',
+        memberIds: [],
+        location: '',
+        detail: '',
+    });
     const headerTitle = trip?.name || 'スケジュール';
     const scheduleDays = useMemo(() => buildScheduleDays(tripPeriod), [tripPeriod]);
     const activeSelectedDay = scheduleDays.some((day) => day.id === selectedDay)
         ? selectedDay
         : scheduleDays[0]?.id || 'day1';
     const activeSelectedDate = scheduleDays.find((day) => day.id === activeSelectedDay)?.dateValue;
+
+    const openAddModal = () => {
+        setEventForm((current) => ({
+            ...current,
+            day: activeSelectedDay,
+            memberIds: current.memberIds.filter((memberId) => members.some((member) => Number(member.id) === memberId)),
+        }));
+        setIsAddModalOpen(true);
+    };
+
+    const closeAddModal = () => {
+        setIsAddModalOpen(false);
+    };
+
+    const updateEventForm = (field, value) => {
+        setEventForm((current) => ({ ...current, [field]: value }));
+    };
+
+    const toggleMember = (memberId) => {
+        setEventForm((current) => ({
+            ...current,
+            memberIds: current.memberIds.includes(memberId)
+                ? current.memberIds.filter((id) => id !== memberId)
+                : [...current.memberIds, memberId],
+        }));
+    };
+
+    const addScheduleEvent = (event) => {
+        event.preventDefault();
+
+        const title = eventForm.title.trim();
+        if (!title) {
+            return;
+        }
+
+        const creatorId = Number(getLoginUser()?.user_id) || Number(members[0]?.id) || null;
+        setDraftEvents((current) => [...current, {
+            id: `draft-${Date.now()}`,
+            day: eventForm.day,
+            time: eventForm.startTime,
+            endTime: eventForm.endTime,
+            title,
+            group: eventForm.audience === 'all' ? '全員' : null,
+            userIds: eventForm.audience === 'all' ? null : eventForm.memberIds,
+            createdByUserId: creatorId,
+            location: eventForm.location.trim() || null,
+            detail: eventForm.detail.trim(),
+        }]);
+        setSelectedDay(eventForm.day);
+        setEventForm({
+            day: eventForm.day,
+            title: '',
+            startTime: eventForm.startTime,
+            endTime: eventForm.endTime,
+            audience: 'all',
+            memberIds: [],
+            location: '',
+            detail: '',
+        });
+        closeAddModal();
+    };
 
     useEffect(() => {
         if (!groupId) {
@@ -225,6 +297,7 @@ export default function SchedulePage() {
                     selectedDay={activeSelectedDay}
                     selectedDateValue={activeSelectedDate}
                     members={members}
+                    draftEvents={draftEvents}
                 />
             </main>
 
@@ -233,13 +306,68 @@ export default function SchedulePage() {
             <button
                 type="button"
                 className={styles.createButton}
-                onClick={() => setIsAddModalOpen(true)}
+                onClick={openAddModal}
                 aria-label="予定を追加"
             >
                 <img src={addIcon} alt="" className={styles.plusIcon} />
             </button>
 
-            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+            <Modal isOpen={isAddModalOpen} onClose={closeAddModal}>
+                <form className={styles.addForm} onSubmit={addScheduleEvent}>
+                    <div className={styles.addFormHeader}>
+                        <p>新しい予定</p>
+                        <h2>予定を追加</h2>
+                    </div>
+
+                    <label className={styles.formField}>
+                        <span>予定名 <b>必須</b></span>
+                        <input
+                            type="text"
+                            value={eventForm.title}
+                            onChange={(event) => updateEventForm('title', event.target.value)}
+                            placeholder="例：ランチ"
+                            required
+                            autoFocus
+                        />
+                    </label>
+
+                    <div className={styles.formRow}>
+                        <label className={styles.formField}>
+                            <span>日付</span>
+                            <select value={eventForm.day} onChange={(event) => updateEventForm('day', event.target.value)}>
+                                {scheduleDays.map((day) => <option key={day.id} value={day.id}>{day.date}</option>)}
+                            </select>
+                        </label>
+                    </div>
+
+                    <fieldset className={styles.audienceField}>
+                        <legend>参加メンバー</legend>
+                        <div className={styles.audienceOptions}>
+                            <label><input type="radio" name="audience" checked={eventForm.audience === 'all'} onChange={() => updateEventForm('audience', 'all')} /> 全員</label>
+                            <label><input type="radio" name="audience" checked={eventForm.audience === 'selected'} onChange={() => updateEventForm('audience', 'selected')} /> 指定する</label>
+                        </div>
+                        {eventForm.audience === 'selected' && (
+                            <div className={styles.memberChoices}>
+                                {members.map((member) => {
+                                    const memberId = Number(member.id);
+                                    return <label key={memberId}><input type="checkbox" checked={eventForm.memberIds.includes(memberId)} onChange={() => toggleMember(memberId)} /> {member.name}</label>;
+                                })}
+                            </div>
+                        )}
+                    </fieldset>
+
+                    <label className={styles.formField}>
+                        <span>場所</span>
+                        <input type="text" value={eventForm.location} onChange={(event) => updateEventForm('location', event.target.value)} placeholder="例：駅前カフェ" />
+                    </label>
+                    <label className={styles.formField}>
+                        <span>詳細</span>
+                        <textarea value={eventForm.detail} onChange={(event) => updateEventForm('detail', event.target.value)} placeholder="補足があれば入力" rows="3" />
+                    </label>
+                    <button className={styles.submitButton} type="submit">予定を追加</button>
+                </form>
+            </Modal>
+
         </div>
     );
 }
