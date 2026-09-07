@@ -32,6 +32,8 @@ const tabs = [
     { id: "poll", label: "投票" },
 ];
 
+const validTabIds = new Set(tabs.map((tab) => tab.id));
+
 /**
  * Discussion は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
@@ -44,7 +46,8 @@ function Discussion() {
     const groupId = pathGroupId || queryGroupId || trip.id || "1";
     const tripTitle = trip.name || tripNames[groupId] || "旅行";
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [activeTab, setActiveTab] = useState("chat");
+    const queryTab = new URLSearchParams(location.search).get("tab");
+    const [activeTab, setActiveTab] = useState(validTabIds.has(queryTab) ? queryTab : "chat");
 
     return (
         <main className="discussionShell">
