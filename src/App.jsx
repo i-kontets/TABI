@@ -148,6 +148,8 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Login />} />
                     <Route path="/Newreg" element={<Newreg />} />
+                    {/* DB停止時に表示するメンテナンス画面 */}
+                    <Route path="/maintenance" element={<Maintenance />} />
                     <Route path="/Home" element={<Home />} />
                     <Route path="/MyPage" element={<MyPage />} />
                     <Route path="/mypage" element={<MyPage />} />

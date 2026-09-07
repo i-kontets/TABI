@@ -13,6 +13,8 @@ import styles from './header.module.css';
 import Home from '../../assets/icons/home.svg?react';
 import ArrowBack from '../../assets/icons/arrow_back.svg?react';
 import ChatIcon from '../../assets/icons/chat.svg?react';
+import { useContext } from 'react';
+import { TripContext } from '../../App';
 
 /**
  * Header は、このファイルの中心となる処理をまとめた関数です。
@@ -22,6 +24,15 @@ function Header({ tripName, isOther = false }) {
     const [searchParams] = useSearchParams();
     const groupId = searchParams.get('groupId');
     const navigate = useNavigate();
+    const { tripPeriod } = useContext(TripContext);
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+
+        const [year, month, day] = dateString.split('-');
+
+        return `${year}/${month}/${day}`;
+    };
 
     // handleBackClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleBackClick = () => {
@@ -50,6 +61,12 @@ function Header({ tripName, isOther = false }) {
 
             <div className={styles.titleWrapper}>
                 <h1 className={styles.title}>{tripName}</h1>
+
+                {tripPeriod?.startDate && tripPeriod?.endDate && (
+                    <div className={styles.tripPeriod}>
+                        {formatDate(tripPeriod.startDate)} - {formatDate(tripPeriod.endDate)}
+                    </div>
+                )}
             </div>
 
             <button
