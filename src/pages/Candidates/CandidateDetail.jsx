@@ -8,7 +8,7 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Minimap from '../../components/Minimap/Minimap';
 import styles from './CandidateDetail.module.css';
@@ -96,6 +96,7 @@ function CandidateDetail() {
     const navigate = useNavigate();
     const { candidateId } = useParams();
     const location = useLocation();
+    const groupId = new URLSearchParams(location.search).get('group_id') || new URLSearchParams(location.search).get('groupId') || '1';
     const candidateFromState = location.state?.place;
 
     const candidate = useMemo(() => {
@@ -103,15 +104,12 @@ function CandidateDetail() {
     }, [candidateFromState, candidateId]);
 
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [activeImageIndex, useStateImageIndex] = useState(0);
+    const [activeImageIndex, setActiveImageIndex] = useState(0);
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [isAdded, setIsAdded] = useState(false);
-
-    // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
-    useEffect(() => {
-        useStateImageIndex(0);
-        setIsAdded(false);
-    }, [candidateId]);
+    const [isAdded, setIsAdded] = useState(
+        candidate?.status === 'candidate' || candidate?.status === 'selected'
+    );
+    const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
     // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!candidate || (!candidate.name && !candidate.candidate_name)) {
@@ -168,8 +166,65 @@ function CandidateDetail() {
     ].filter(([, value]) => value !== null && value !== undefined && value !== '');
 
     // handleAdd は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
-    const handleAdd = () => {
-        setIsAdded(!isAdded);
+    const handleAdd = async () => {
+        if (!candidate?.candidate_id || isUpdatingStatus) {
+            return;
+        }
+
+        try {
+            setIsUpdatingStatus(true);
+            const response = await fetch(`${import.meta.env.BASE_URL}api/Trips/UpdateCandidateStatus.php`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    candidate_id: candidate.candidate_id,
+                    status: 'candidate',
+                }),
+            });
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || !data?.success) {
+                throw new Error(data?.message || '候補の追加に失敗しました');
+            }
+
+            setIsAdded(true);
+            navigate(`/group/${encodeURIComponent(groupId)}/talk?tab=candidate&category=${encodeURIComponent(candidate.candidate_type || candidate.type || 'destination')}`);
+        } catch (error) {
+            window.alert(error instanceof Error ? error.message : '候補の追加に失敗しました');
+        } finally {
+            setIsUpdatingStatus(false);
+        }
+    };
+
+    const handleRemove = async () => {
+        if (!candidate?.candidate_id || isUpdatingStatus || !isAdded) {
+            return;
+        }
+
+        try {
+            setIsUpdatingStatus(true);
+            const response = await fetch(`${import.meta.env.BASE_URL}api/Trips/UpdateCandidateStatus.php`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    candidate_id: candidate.candidate_id,
+                    status: 'rejected',
+                }),
+            });
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || !data?.success) {
+                throw new Error(data?.message || '候補の削除に失敗しました');
+            }
+
+            setIsAdded(false);
+        } catch (error) {
+            window.alert(error instanceof Error ? error.message : '候補の削除に失敗しました');
+        } finally {
+            setIsUpdatingStatus(false);
+        }
     };
 
     return (
@@ -185,7 +240,7 @@ function CandidateDetail() {
                             className={`${styles.actionButton} ${isAdded ? styles.actionButtonActive : ''}`} 
                             type="button" 
                             onClick={handleAdd}
-                            aria-label={isAdded ? "候補から削除" : "候補に追加"}
+                            aria-label={isAdded ? "候補に追加済み" : "候補に追加"}
                         >
                             <PlusIcon />
                         </button>
@@ -216,7 +271,7 @@ function CandidateDetail() {
                                     key={`${candidate.id}-${image}`}
                                     type="button"
                                     className={`${styles.thumbnailButton} ${index === activeImageIndex ? styles.thumbnailActive : ''}`}
-                                    onClick={() => useStateImageIndex(index)}
+                                    onClick={() => setActiveImageIndex(index)}
                                     aria-label={`画像 ${index + 1} を表示`}
                                 >
                                     <img src={image} alt="" />
@@ -238,8 +293,13 @@ function CandidateDetail() {
                             type="button" 
                             onClick={handleAdd}
                         >
-                            {isAdded ? '✓ 追加済み' : '候補に追加する'}
+                            {isUpdatingStatus ? '追加中...' : isAdded ? '追加済み' : '候補に追加する'}
                         </button>
+                        {isAdded && (
+                            <button className={styles.removeButton} type="button" onClick={handleRemove} disabled={isUpdatingStatus}>
+                                候補から削除
+                            </button>
+                        )}
                     </section>
 
                     <section className={styles.section}>
@@ -290,15 +350,6 @@ function CandidateDetail() {
                                     </div>
                                 </div>
                             )}
-                        </section>
-                    )}
-
-                    {candidate.description && (
-                        <section className={styles.section}>
-                            <div className={styles.sectionHeader}>
-                                <h3>説明</h3>
-                            </div>
-                            <p className={styles.description}>{candidate.description}</p>
                         </section>
                     )}
 

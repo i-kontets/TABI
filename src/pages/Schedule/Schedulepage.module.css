@@ -138,9 +138,134 @@
   filter: brightness(0) invert(1);
 }
 
+.addForm {
+  display: grid;
+  gap: 18px;
+}
+
+.addFormHeader p {
+  margin: 0 0 4px;
+  color: var(--sub-color);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.addFormHeader h2 {
+  margin: 0;
+  color: #1f2937;
+  font-size: 24px;
+}
+
+.formField {
+  display: grid;
+  gap: 7px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.formField b {
+  margin-left: 4px;
+  color: #d84b4b;
+  font-size: 11px;
+}
+
+.formField input,
+.formField select,
+.formField textarea {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #d6dae4;
+  border-radius: 10px;
+  background: #fff;
+  color: #1f2937;
+  font: inherit;
+  font-weight: 400;
+  padding: 11px 12px;
+}
+
+.formField textarea {
+  resize: vertical;
+}
+
+.formField input:focus,
+.formField select:focus,
+.formField textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--sub-color) 45%, transparent);
+  border-color: var(--sub-color);
+}
+
+.formRow {
+  display: grid;
+  gap: 10px;
+}
+
+.audienceField {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.audienceField legend {
+  margin-bottom: 7px;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.audienceOptions,
+.memberChoices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.audienceOptions label,
+.memberChoices label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: #f1f3f7;
+  color: #374151;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 8px 11px;
+}
+
+.audienceOptions input,
+.memberChoices input {
+  accent-color: var(--sub-color);
+}
+
+.memberChoices {
+  padding: 10px;
+  border-radius: 10px;
+  background: #f8f9fb;
+}
+
+.submitButton {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: var(--sub-color);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 13px;
+}
+
+.submitButton:hover {
+  filter: brightness(0.94);
+}
+
 @media screen and (max-width: 430px) {
   .createButton {
     left: auto;
     right: 20px;
   }
+
 }

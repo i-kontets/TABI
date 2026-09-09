@@ -37,6 +37,10 @@ try {
     // リクエストパラメータから group_id を取得（デフォルト値は1）
     // FILTER_VALIDATE_INT でintegerのバリデーションを実施
     $groupId = filter_input(INPUT_GET, "group_id", FILTER_VALIDATE_INT) ?: 1;
+    $scope = filter_input(INPUT_GET, "scope", FILTER_UNSAFE_RAW) ?: "list";
+    $statusCondition = $scope === "search"
+        ? "1 = 1"
+        : "candidate.status IN ('candidate', 'selected')";
 
     // グループIDから対応する旅行情報を取得
     // 最新の旅行1件を取得（update順、作成順でソート）
@@ -75,8 +79,7 @@ try {
             ON vote.candidate_id = candidate.candidate_id
             AND vote.vote_type = 'like'
          WHERE candidate.trip_id = :trip_id
-            AND candidate.candidate_type <> 'destination'
-            AND (candidate.status IS NULL OR candidate.status <> 'rejected')
+            AND {$statusCondition}
          GROUP BY
             candidate.candidate_id,
             candidate.candidate_type,
