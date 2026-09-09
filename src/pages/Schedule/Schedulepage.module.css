@@ -122,7 +122,7 @@
   height: 64px;
   border: 0;
   border-radius: 50%;
-  background: var(--fab-color);
+  background: var(--sub-color);
   color: #fff;
   box-shadow: 0 7px 18px rgba(68, 85, 141, 0.4);
   display: flex;
