@@ -581,7 +581,7 @@ function Album() {
 
     // 通常時はアルバム一覧画面を表示します。
     return (
-        <>
+        <div className={styles.page}>
             <Header tripName={tripName} />
 
             <div className={styles.container}>
@@ -609,7 +609,7 @@ function Album() {
             </button>
 
             <BtmNav />
-        </>
+        </div>
     );
 }
 

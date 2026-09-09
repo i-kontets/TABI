@@ -1,0 +1,135 @@
+.page {
+    max-width: 430px;
+    min-height: 100vh;
+    margin: 0 auto;
+    background: var(--main-color);
+    position: relative;
+}
+
+.container {
+    padding: 20px 10px;
+}
+
+.box {
+    padding: 10px;
+    border: 1px solid #eee;
+    background-color: #fff;
+    margin: 10px 0px;
+    border-radius: 10px;
+}
+
+.title {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #999;
+}
+
+.content {
+    margin: 0;
+    text-align: left;
+}
+
+.input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid var(--other-color);
+    border-radius: 8px;
+    background-color: #fff;
+    color: #222;
+    font-size: 14px;
+}
+
+.input:focus {
+    outline: 2px solid rgba(68, 85, 141, 0.2);
+    border-color: var(--sub-color);
+}
+
+.rangeSummary {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: #222;
+}
+
+.calendar {
+    overflow-x: auto;
+}
+
+.calendar :global(.rdp-root) {
+    --rdp-accent-color: var(--sub-color);
+    --rdp-accent-background-color: rgba(68, 85, 141, 0.12);
+    --rdp-day_button-border-radius: 10px;
+    --rdp-day_button-border: 1px solid transparent;
+    --rdp-day_button-width: 40px;
+    --rdp-day_button-height: 40px;
+    margin: 0 auto;
+    width: fit-content;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--sub-color);
+    border-bottom: 1px solid var(--other-color);
+
+    /* background-color: var(--sub-color);
+    border-bottom: 1px solid var(--sub-color); */
+    height: 70px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.titleWrapper {
+    flex: 1;
+    text-align: center;
+}
+
+.backButton,
+.chatButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+    position: fixed;
+}
+
+.chatButton{
+    padding-right: 10px;
+}
+
+/* .backButton:hover,
+.chatButton:hover {
+    background-color: rgba(45, 73, 81, 0.1);
+}
+
+.backButton:active,
+.chatButton:active {
+    background-color: rgba(45, 73, 81, 0.2);
+} */
+
+.icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+    fill: #fff;
+}
+
+.Htitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--main-color);
+    margin: 5px 0 0;
+}
+
+.subtitle {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--main-color);
+    opacity: 0.85;
+}
