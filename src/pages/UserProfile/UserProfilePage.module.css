@@ -18,7 +18,7 @@
     align-items: center;
     padding: 0 12px;
     box-sizing: border-box;
-    background: var(--header-color);
+    background: var(--sub-color);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
