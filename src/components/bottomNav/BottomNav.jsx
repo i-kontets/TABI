@@ -20,12 +20,12 @@ import Meet from '../../assets/icons/speaker_notes.svg';
  * BottomNav は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-function BottomNav() {
+function BottomNav({ groupId: groupIdProp }) {
     const navigate = useNavigate();
     const location = useLocation();
     const { groupId: pathGroupId } = useParams();
     const params = new URLSearchParams(location.search);
-    const groupId = pathGroupId || params.get('groupId') || '1';
+    const groupId = groupIdProp || pathGroupId || params.get('groupId') || '1';
 
     const menuItems = [
         { id: 'bookmark', label: 'しおり', path:'/Itinerary', icon: Tbook},

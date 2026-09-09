@@ -157,6 +157,43 @@
     font-weight: 800;
 }
 
+.profileList {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+}
+
+.profileList div {
+    display: grid;
+    gap: 5px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.profileList div:last-child {
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.profileList dt,
+.profileList dd {
+    margin: 0;
+}
+
+.profileList dt {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.profileList dd {
+    color: #111827;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.6;
+    word-break: break-word;
+}
+
 .bio {
     margin: 0;
     color: #334155;

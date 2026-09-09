@@ -165,7 +165,8 @@ try {
             u.name,
             {$iconSelect},
             u.created_at,
-            p.self_introduction
+            p.self_introduction,
+            p.birthday
         FROM users u
         LEFT JOIN user_profiles p ON p.user_id = u.user_id
         WHERE u.user_id = :user_id
@@ -227,6 +228,7 @@ try {
             "icon_key" => $iconKey,
             "icon_url" => $iconUrl,
             "self_introduction" => $user["self_introduction"] ?? null,
+            "birthday" => $user["birthday"] ?? null,
             "registered_at" => formatRegisteredDate($user["created_at"] ?? null),
             "common_groups" => $commonGroups,
         ],
