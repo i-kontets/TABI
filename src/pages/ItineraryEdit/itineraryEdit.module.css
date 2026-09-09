@@ -61,7 +61,7 @@
 
 .header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     background-color: var(--sub-color);
     border-bottom: 1px solid var(--other-color);
@@ -112,6 +112,9 @@
 }
 
 .Htitle {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     font-size: 18px;
     font-weight: 600;
     color: var(--main-color);

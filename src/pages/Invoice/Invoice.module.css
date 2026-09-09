@@ -645,6 +645,38 @@
     box-sizing: border-box;
 }
 
+.radioGroup {
+    margin: 0;
+    padding: 12px;
+    display: grid;
+    gap: 8px;
+    border: 1px solid #cfcfcf;
+    border-radius: 6px;
+}
+
+.radioGroup legend {
+    padding: 0 4px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.radioOption {
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: normal;
+}
+
+.radioOption input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    flex: 0 0 18px;
+    accent-color: var(--sub-color);
+}
+
 .memberSelect {
     margin: 0;
     padding: 12px;

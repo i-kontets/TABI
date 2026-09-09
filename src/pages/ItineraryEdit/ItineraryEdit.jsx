@@ -14,7 +14,6 @@ import { DayPicker } from "react-day-picker";
 import { ja } from "react-day-picker/locale";
 import "react-day-picker/style.css";
 import styles from "./itineraryEdit.module.css";
-import BtmNav from "../../components/bottomNav/BottomNav";
 import { TripContext } from "../../App";
 import ArrowBack from "../../assets/icons/arrow_back.svg?react";
 import Check from "../../assets/icons/check.svg?react";
@@ -288,7 +287,7 @@ export default function ItineraryEdit() {
                 >
                     <ArrowBack className={styles.icon} aria-hidden="true" />
                 </button>
-                <div className={styles.Htitle} style={{ margin: "auto" }}>編集画面</div>
+                <div className={styles.Htitle}>編集画面</div>
             </header>
 
             <form onSubmit={handleSubmit}>
@@ -374,8 +373,6 @@ export default function ItineraryEdit() {
                     </button>
                 </div>
             </form>
-
-            <BtmNav />
         </>
     );
 }
