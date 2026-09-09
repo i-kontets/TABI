@@ -220,7 +220,7 @@
     background-color: #f1f3f8;
 }
 
-.itemForm label {
+.itemForm > label {
     display: grid;
     gap: 5px;
     color: #444;
@@ -228,7 +228,7 @@
     font-weight: 700;
 }
 
-.itemForm input {
+.itemForm > label > input {
     width: 100%;
     height: 40px;
     padding: 0 10px;
@@ -237,6 +237,33 @@
     background-color: #fff;
     box-sizing: border-box;
     font-size: 15px;
+}
+
+/* 自分のみ / 全員 */
+.scopeGroup {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.radioLabel {
+    display: inline-flex !important;
+    grid-template-columns: none !important;
+    align-items: center;
+    gap: 6px;
+    color: #444;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.radioLabel input[type="radio"] {
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px;
+    min-height: 14px;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--sub-color);
 }
 
 .formActions {
@@ -268,4 +295,17 @@
     .sectionHeader {
         padding-left: 14px;
     }
+}
+
+.scopeBadge {
+    display: inline-block;
+    margin-left: 7px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background-color: #e9edf7;
+    color: #4a5b88;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.4;
+    vertical-align: middle;
 }

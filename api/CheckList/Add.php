@@ -8,15 +8,22 @@ require_once __DIR__ . "/../config/db.php";
 require_once __DIR__ . "/Common.php";
 
 checklistRequireMethod("POST");
+
 $userId = checklistRequireUserId();
 $input = checklistReadJsonBody();
 
 try {
     $tripId = checklistPositiveInt($input["trip_id"] ?? null);
-    $groupId = checklistPositiveInt($input["group_id"] ?? $input["groupId"] ?? null);
-    $name = trim((string) ($input["name"] ?? $input["item_name"] ?? ""));
-    $sectionId = (string) ($input["section_id"] ?? $input["sectionId"] ?? "shared");
-    $assignedUserId = checklistPositiveInt($input["assigned_user_id"] ?? null);
+    $groupId = checklistPositiveInt(
+        $input["group_id"] ?? $input["groupId"] ?? null
+    );
+
+    $name = trim(
+        (string) ($input["name"] ?? $input["item_name"] ?? "")
+    );
+
+    // 「自分」または「全員」
+    $scope = (string) ($input["scope"] ?? "all");
 
     if ($name === "" || checklistTextLength($name) > 200) {
         checklistRespond([
@@ -25,21 +32,51 @@ try {
         ], 400);
     }
 
-    if ($sectionId === "personal" && !$assignedUserId) {
-        $assignedUserId = $userId;
+    // scope は self / all の2種類だけ
+    if (!in_array($scope, ["self", "all"], true)) {
+        checklistRespond([
+            "success" => false,
+            "message" => "対象の指定が不正です",
+        ], 400);
     }
 
-    $resolvedTripId = checklistResolveTripId($pdo, $userId, $tripId, $groupId);
-    $checklist = checklistEnsurePacking($pdo, $resolvedTripId, $userId);
+    /*
+     * 自分     → logged-in user のIDを保存
+     * 全員     → NULLを保存
+     */
+    $assignedUserId = $scope === "self"
+        ? $userId
+        : null;
 
+    $resolvedTripId = checklistResolveTripId(
+        $pdo,
+        $userId,
+        $tripId,
+        $groupId
+    );
+
+    $checklist = checklistEnsurePacking(
+        $pdo,
+        $resolvedTripId,
+        $userId
+    );
+
+    // 並び順を決定
     $sortStmt = $pdo->prepare("
         SELECT COALESCE(MAX(sort_order), 0) + 1
         FROM checklist_items
         WHERE checklist_id = :checklist_id
     ");
-    $sortStmt->execute([":checklist_id" => $checklist["checklist_id"]]);
-    $sortOrder = checklistPositiveInt($input["sort_order"] ?? null) ?? (int) $sortStmt->fetchColumn();
 
+    $sortStmt->execute([
+        ":checklist_id" => $checklist["checklist_id"],
+    ]);
+
+    $sortOrder =
+        checklistPositiveInt($input["sort_order"] ?? null)
+        ?? (int) $sortStmt->fetchColumn();
+
+    // 持ちものを追加
     $insertStmt = $pdo->prepare("
         INSERT INTO checklist_items (
             checklist_id,
@@ -55,31 +92,65 @@ try {
             :sort_order
         )
     ");
-    $insertStmt->bindValue(":checklist_id", $checklist["checklist_id"], PDO::PARAM_INT);
-    $insertStmt->bindValue(":item_name", $name, PDO::PARAM_STR);
-    $insertStmt->bindValue(":assigned_user_id", $assignedUserId, $assignedUserId ? PDO::PARAM_INT : PDO::PARAM_NULL);
-    $insertStmt->bindValue(":sort_order", $sortOrder, PDO::PARAM_INT);
+
+    $insertStmt->bindValue(
+        ":checklist_id",
+        $checklist["checklist_id"],
+        PDO::PARAM_INT
+    );
+
+    $insertStmt->bindValue(
+        ":item_name",
+        $name,
+        PDO::PARAM_STR
+    );
+
+    $insertStmt->bindValue(
+        ":assigned_user_id",
+        $assignedUserId,
+        $assignedUserId !== null
+            ? PDO::PARAM_INT
+            : PDO::PARAM_NULL
+    );
+
+    $insertStmt->bindValue(
+        ":sort_order",
+        $sortOrder,
+        PDO::PARAM_INT
+    );
+
     $insertStmt->execute();
 
     $itemId = (int) $pdo->lastInsertId();
 
+    // 追加したデータを返す
     checklistRespond([
         "success" => true,
         "item" => [
             "id" => $itemId,
             "checklist_item_id" => $itemId,
             "checklist_id" => (int) $checklist["checklist_id"],
+
             "name" => $name,
             "item_name" => $name,
+
             "note" => "",
+
             "checked" => false,
             "is_checked" => false,
+
+            // フロント側で使いやすいように scope を返す
+            "scope" => $scope,
+
+            // DB上の値も返しておく
             "assigned_user_id" => $assignedUserId,
-            "assignee" => "",
+
             "sort_order" => $sortOrder,
         ],
     ], 201);
+
 } catch (Throwable $error) {
+
     checklistRespond([
         "success" => false,
         "message" => "持ちものの追加に失敗しました",

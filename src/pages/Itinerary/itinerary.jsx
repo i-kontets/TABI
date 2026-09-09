@@ -281,7 +281,7 @@ export default function Itinerary() {
 
   return (
     <div>
-      <Header />
+      <Header showDate={false} />
 
       {/* 旅行タイトル・日付・メンバーをまとめて表示するカバー部分 */}
       <div className={styles.coverHeader} style={coverHeaderStyle}>

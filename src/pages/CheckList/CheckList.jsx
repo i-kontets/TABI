@@ -8,17 +8,24 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
+
 import { useContext, useEffect, useMemo, useState } from "react";
+
 import { useLocation } from "react-router-dom";
+
 import { TripContext } from "../../App";
+
 import ChecklistSection from "../../components/CheckList/ChecklistSection";
 import { createItemKey } from "../../components/CheckList/checkListUtils";
+
 import Header from "../../components/header/Header";
 import BottomNav from "../../components/bottomNav/BottomNav";
+
 import checklistData from "./CheckList.json";
 import styles from "./CheckList.module.css";
 
 const CHECKLIST_API_BASE = "/TABI/api/CheckList";
+
 const CHECKLIST_API = {
     list: `${CHECKLIST_API_BASE}/List.php`,
     add: `${CHECKLIST_API_BASE}/Add.php`,
@@ -27,25 +34,24 @@ const CHECKLIST_API = {
     deleteChecked: `${CHECKLIST_API_BASE}/DeleteChecked.php`,
 };
 
-const initialSections = [
-    checklistData.sections.find((section) => section.id === "common"),
-    checklistData.personal,
-// 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
-]
-    .filter(Boolean)
-    .map((section) => ({
-        ...section,
-        id: section.id === "common" ? "shared" : section.id,
-    }));
+const initialItems = [
+    ...(checklistData.sections?.find(
+        (section) => section.id === "common"
+    )?.items || []),
 
-/**
- * createInitialChecks は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
+    ...(checklistData.personal?.items || []),
+];
+
+const initialSection = {
+    id: "checklist",
+    title: "持ちもの",
+    description: "旅行に必要な持ちものを確認します。",
+    items: initialItems,
+};
+
 function createChecks(nextSections) {
     return Object.fromEntries(
         nextSections.flatMap((section) =>
-            // 配列のデータを1件ずつ画面表示用の形に変換します。
             section.items.map((item) => [
                 createItemKey(section.id, item.id),
                 item.checked,
@@ -54,36 +60,33 @@ function createChecks(nextSections) {
     );
 }
 
-/**
- * CheckList は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
 export default function CheckList() {
     const { trip } = useContext(TripContext);
     const location = useLocation();
+
     const queryParams = useMemo(
         () => new URLSearchParams(location.search),
         [location.search]
     );
+
     const groupId =
         queryParams.get("groupId") ||
         queryParams.get("group_id") ||
         trip?.id ||
         "";
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [sections, setSections] = useState(initialSections);
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [checks, setChecks] = useState(() => createChecks(initialSections));
+
+    const [sections, setSections] = useState([
+        initialSection,
+    ]);
+
+    const [checks, setChecks] = useState(() =>
+        createChecks([initialSection])
+    );
+
     const [isLoading, setIsLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [addTarget, setAddTarget] = useState(null);
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [editingItem, setEditingItem] = useState(null);
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [activeSectionId, setActiveSectionId] = useState(
-        initialSections[0]?.id || ""
-    );
 
     useEffect(() => {
         let isMounted = true;
@@ -94,17 +97,23 @@ export default function CheckList() {
 
             try {
                 const params = new URLSearchParams();
+
                 if (groupId) {
                     params.set("group_id", groupId);
                 }
 
                 const response = await fetch(
-                    `${CHECKLIST_API.list}${params.toString() ? `?${params}` : ""}`,
+                    `${CHECKLIST_API.list}${
+                        params.toString()
+                            ? `?${params}`
+                            : ""
+                    }`,
                     {
                         method: "GET",
                         credentials: "include",
                     }
                 );
+
                 const data = await response.json();
 
                 if (!isMounted) {
@@ -112,20 +121,32 @@ export default function CheckList() {
                 }
 
                 if (!response.ok || !data.success) {
-                    throw new Error(data.message || "チェックリストを取得できませんでした");
+                    throw new Error(
+                        data.message ||
+                            "チェックリストを取得できませんでした"
+                    );
                 }
 
-                const nextSections =
-                    Array.isArray(data.sections) && data.sections.length > 0
-                        ? data.sections
-                        : initialSections;
+                const apiItems = Array.isArray(data.sections)
+                    ? data.sections.flatMap(
+                          (section) =>
+                              Array.isArray(section.items)
+                                  ? section.items
+                                  : []
+                      )
+                    : [];
 
-                setSections(nextSections);
-                setChecks(createChecks(nextSections));
-                setActiveSectionId((currentId) =>
-                    nextSections.some((section) => section.id === currentId)
-                        ? currentId
-                        : nextSections[0]?.id || ""
+                const nextSection = {
+                    id: "checklist",
+                    title: "持ちもの",
+                    description:
+                        "旅行に必要な持ちものを確認します。",
+                    items: apiItems,
+                };
+
+                setSections([nextSection]);
+                setChecks(
+                    createChecks([nextSection])
                 );
             } catch (error) {
                 if (isMounted) {
@@ -149,7 +170,11 @@ export default function CheckList() {
         };
     }, [groupId]);
 
-    const requestChecklistApi = async (endpoint, method, body) => {
+    const requestChecklistApi = async (
+        endpoint,
+        method,
+        body
+    ) => {
         const response = await fetch(endpoint, {
             method,
             credentials: "include",
@@ -161,30 +186,40 @@ export default function CheckList() {
                 ...body,
             }),
         });
+
         const data = await response.json();
 
         if (!response.ok || !data.success) {
-            throw new Error(data.message || "チェックリストを更新できませんでした");
+            throw new Error(
+                data.message ||
+                    "チェックリストを更新できませんでした"
+            );
         }
 
         return data;
     };
 
     const totalItemCount = sections.reduce(
-        (count, section) => count + section.items.length,
+        (count, section) =>
+            count + section.items.length,
         0
     );
+
     const checkedItemCount = sections.reduce(
         (count, section) =>
             count +
-            // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
             section.items.filter(
-                (item) => checks[createItemKey(section.id, item.id)]
+                (item) =>
+                    checks[
+                        createItemKey(
+                            section.id,
+                            item.id
+                        )
+                    ]
             ).length,
         0
     );
 
-    // handleCheck は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleCheck = async (itemKey) => {
         const itemId = itemKey.split("-").at(-1);
         const nextChecked = !checks[itemKey];
@@ -195,15 +230,20 @@ export default function CheckList() {
         }));
 
         try {
-            await requestChecklistApi(CHECKLIST_API.update, "PATCH", {
-                item_id: itemId,
-                checked: nextChecked,
-            });
+            await requestChecklistApi(
+                CHECKLIST_API.update,
+                "PATCH",
+                {
+                    item_id: itemId,
+                    checked: nextChecked,
+                }
+            );
         } catch (error) {
             setChecks((currentChecks) => ({
                 ...currentChecks,
                 [itemKey]: !nextChecked,
             }));
+
             setErrorMessage(
                 error instanceof Error
                     ? error.message
@@ -212,46 +252,66 @@ export default function CheckList() {
         }
     };
 
-    // handleStartAdd は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleStartAdd = (sectionId) => {
         setEditingItem(null);
         setAddTarget(sectionId);
     };
 
-    // handleStartEdit は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleStartEdit = (sectionId, item) => {
         setAddTarget(null);
-        setEditingItem({ sectionId, item });
+        setEditingItem({
+            sectionId,
+            item,
+        });
     };
 
-    // handleCancelForm は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleCancelForm = () => {
         setAddTarget(null);
         setEditingItem(null);
     };
 
-    // handleAddItem は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
-    const handleAddItem = async (sectionId, item) => {
+    const handleAddItem = async (
+        sectionId,
+        item
+    ) => {
         try {
-            const data = await requestChecklistApi(CHECKLIST_API.add, "POST", {
-                section_id: sectionId,
-                name: item.name,
-                assigned_user_id: item.assigned_user_id,
-            });
-            const savedItem = data.item || item;
+            const data =
+                await requestChecklistApi(
+                    CHECKLIST_API.add,
+                    "POST",
+                    {
+                        name: item.name,
+                        scope: item.scope,
+                    }
+                );
 
-            setSections((currentSections) =>
-                // 配列のデータを1件ずつ画面表示用の形に変換します。
-                currentSections.map((section) =>
-                    section.id === sectionId
-                        ? { ...section, items: [savedItem, ...section.items] }
-                        : section
-                )
+            const savedItem =
+                data.item || item;
+
+            setSections(
+                (currentSections) =>
+                    currentSections.map(
+                        (section) =>
+                            section.id === sectionId
+                                ? {
+                                      ...section,
+                                      items: [
+                                          savedItem,
+                                          ...section.items,
+                                      ],
+                                  }
+                                : section
+                    )
             );
+
             setChecks((currentChecks) => ({
                 ...currentChecks,
-                [createItemKey(sectionId, savedItem.id)]: Boolean(savedItem.checked),
+                [createItemKey(
+                    sectionId,
+                    savedItem.id
+                )]: Boolean(savedItem.checked),
             }));
+
             setAddTarget(null);
             setErrorMessage("");
         } catch (error) {
@@ -263,29 +323,44 @@ export default function CheckList() {
         }
     };
 
-    // handleEditItem は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
-    const handleEditItem = async (sectionId, updatedItem) => {
+    const handleEditItem = async (
+        sectionId,
+        updatedItem
+    ) => {
         try {
-            await requestChecklistApi(CHECKLIST_API.update, "PATCH", {
-                item_id: updatedItem.id,
-                name: updatedItem.name,
-                assigned_user_id: updatedItem.assigned_user_id,
-            });
+            const data =
+                await requestChecklistApi(
+                    CHECKLIST_API.update,
+                    "PATCH",
+                    {
+                        item_id: updatedItem.id,
+                        name: updatedItem.name,
+                        scope: updatedItem.scope,
+                    }
+                );
 
-            setSections((currentSections) =>
-                // 配列のデータを1件ずつ画面表示用の形に変換します。
-                currentSections.map((section) =>
-                    section.id === sectionId
-                        ? {
-                              ...section,
-                              // 配列のデータを1件ずつ画面表示用の形に変換します。
-                              items: section.items.map((item) =>
-                                  item.id === updatedItem.id ? updatedItem : item
-                              ),
-                          }
-                        : section
-                )
+            const savedItem =
+                data.item || updatedItem;
+
+            setSections(
+                (currentSections) =>
+                    currentSections.map(
+                        (section) =>
+                            section.id === sectionId
+                                ? {
+                                      ...section,
+                                      items: section.items.map(
+                                          (item) =>
+                                              item.id ===
+                                              savedItem.id
+                                                  ? savedItem
+                                                  : item
+                                      ),
+                                  }
+                                : section
+                    )
             );
+
             setEditingItem(null);
             setErrorMessage("");
         } catch (error) {
@@ -297,14 +372,20 @@ export default function CheckList() {
         }
     };
 
-    // handleDeleteItems は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
-    const handleDeleteItems = async (sectionId, itemIds, options = {}) => {
-        const section = sections.find((item) => item.id === sectionId);
-        const targetItems =
-            // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
-            section?.items.filter((item) => itemIds.includes(item.id)) || [];
+    const handleDeleteItems = async (
+        sectionId,
+        itemIds,
+        options = {}
+    ) => {
+        const section = sections.find(
+            (item) => item.id === sectionId
+        );
 
-        // ここで条件を確認し、状況に合う処理だけを実行します。
+        const targetItems =
+            section?.items.filter((item) =>
+                itemIds.includes(item.id)
+            ) || [];
+
         if (
             targetItems.length === 0 ||
             !confirm(
@@ -318,34 +399,50 @@ export default function CheckList() {
 
         try {
             await requestChecklistApi(
-                options.checkedOnly ? CHECKLIST_API.deleteChecked : CHECKLIST_API.delete,
+                options.checkedOnly
+                    ? CHECKLIST_API.deleteChecked
+                    : CHECKLIST_API.delete,
                 "DELETE",
                 {
-                item_ids: itemIds,
+                    item_ids: itemIds,
                 }
             );
 
-            setSections((currentSections) =>
-                // 配列のデータを1件ずつ画面表示用の形に変換します。
-                currentSections.map((currentSection) =>
-                    currentSection.id === sectionId
-                        ? {
-                              ...currentSection,
-                              // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
-                              items: currentSection.items.filter(
-                                  (item) => !itemIds.includes(item.id)
-                              ),
-                          }
-                        : currentSection
-                )
+            setSections(
+                (currentSections) =>
+                    currentSections.map(
+                        (currentSection) =>
+                            currentSection.id === sectionId
+                                ? {
+                                      ...currentSection,
+                                      items: currentSection.items.filter(
+                                          (item) =>
+                                              !itemIds.includes(
+                                                  item.id
+                                              )
+                                      ),
+                                  }
+                                : currentSection
+                    )
             );
+
             setChecks((currentChecks) => {
-                const nextChecks = { ...currentChecks };
+                const nextChecks = {
+                    ...currentChecks,
+                };
+
                 targetItems.forEach((item) => {
-                    delete nextChecks[createItemKey(sectionId, item.id)];
+                    delete nextChecks[
+                        createItemKey(
+                            sectionId,
+                            item.id
+                        )
+                    ];
                 });
+
                 return nextChecks;
             });
+
             setErrorMessage("");
         } catch (error) {
             setErrorMessage(
@@ -358,62 +455,47 @@ export default function CheckList() {
 
     return (
         <>
-            <Header tripName={trip.name || "持ちものチェック"} />
+            <Header
+                tripName={trip?.name || "持ちものチェック"}
+            />
 
             <main className={styles.page}>
                 {isLoading ? (
-                    <p className={styles.stateMessage}>読み込み中...</p>
+                    <p className={styles.stateMessage}>
+                        読み込み中...
+                    </p>
                 ) : null}
+
                 {errorMessage ? (
-                    <p className={styles.errorMessage}>{errorMessage}</p>
+                    <p className={styles.errorMessage}>
+                        {errorMessage}
+                    </p>
                 ) : null}
 
                 <div className={styles.toolbar}>
-                    <div className={styles.tabs} role="tablist" aria-label="持ちものの分類">
-                        {sections.map((section) => (
-                            <button
-                                key={section.id}
-                                className={`${styles.tabButton} ${
-                                    activeSectionId === section.id ? styles.activeTab : ""
-                                }`}
-                                type="button"
-                                role="tab"
-                                aria-selected={activeSectionId === section.id}
-                                onClick={() => {
-                                    setActiveSectionId(section.id);
-                                    setAddTarget(null);
-                                    setEditingItem(null);
-                                }}
-                            >
-                                {section.id === "personal" ? "個人の分" : "全員の分"}
-                            </button>
-                        ))}
-                    </div>
-
                     <span className={styles.progress}>
-                        {checkedItemCount}/{totalItemCount}
+                        {checkedItemCount}/
+                        {totalItemCount}
                     </span>
                 </div>
 
                 <div className={styles.sections}>
-                    {sections
-                        .filter((section) => section.id === activeSectionId)
-                        .map((section) => (
-                            <ChecklistSection
-                                key={section.id}
-                                section={section}
-                                checks={checks}
-                                addTarget={addTarget}
-                                editingItem={editingItem}
-                                onCheck={handleCheck}
-                                onStartAdd={handleStartAdd}
-                                onStartEdit={handleStartEdit}
-                                onCancelForm={handleCancelForm}
-                                onAdd={handleAddItem}
-                                onEdit={handleEditItem}
-                                onDelete={handleDeleteItems}
-                            />
-                        ))}
+                    {sections.map((section) => (
+                        <ChecklistSection
+                            key={section.id}
+                            section={section}
+                            checks={checks}
+                            addTarget={addTarget}
+                            editingItem={editingItem}
+                            onCheck={handleCheck}
+                            onStartAdd={handleStartAdd}
+                            onStartEdit={handleStartEdit}
+                            onCancelForm={handleCancelForm}
+                            onAdd={handleAddItem}
+                            onEdit={handleEditItem}
+                            onDelete={handleDeleteItems}
+                        />
+                    ))}
                 </div>
             </main>
 
