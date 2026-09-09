@@ -160,6 +160,7 @@ function App() {
                     <Route path="/mypage/notification-permission" element={<NotificationPermissionPage />} />
                     <Route path="/mypage/contact" element={<ContactPage />} />
                     <Route path="/mypage/faq" element={<FaqPage />} />
+                    <Route path="/user/:userId" element={<UserProfilePage />} />
                     <Route path="/Itinerary" element={<Itinerary />} />
                     <Route path="/ItineraryJoin" element={<ItineraryJoin />} />
                     <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
