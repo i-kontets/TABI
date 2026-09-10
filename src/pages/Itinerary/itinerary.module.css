@@ -1,3 +1,7 @@
+.page {
+  padding-bottom: 80px;
+}
+
 .mainLayout {
 display: flex;
 flex: 1;
@@ -162,9 +166,12 @@ transform: translateY(-1px);
 .WidgetFrame {
   box-shadow: var(--other-color) 0px 1px 3px;
   margin: 10px;
+  background-color: #ffffff;
   padding-top: 7px;
   padding-bottom: 7px;
   border-radius: 5px;
+  width: calc(100% - 20px);
+  box-sizing: border-box;
 }
 
 .WidgetTitle {
@@ -179,35 +186,148 @@ transform: translateY(-1px);
     font-size: 17px;
 }
 
-.subWidget {
-   display: flex;
-  margin: 10px;
+.widgetRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  align-items: flex-start;
+  margin: 10px;
+}
+
+.halfWidget {
+  width: 100%;
+  min-height: 118px;
+  margin: 0;
+  padding: 12px;
+  border-radius: 10px;
 }
 
 .liquidationWidget {
-  box-shadow: var(--other-color) 0px 1px 3px;
-  padding: 7px;
-  border-radius: 5px;
-  width: 50%;
-  height: auto;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  border: 0;
   cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.liquidationWidget .WidgetTitle,
+.weatherWidget .WidgetTitle {
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.widgetLabel {
+  color: #667085;
+  font-size: 11px;
+}
+
+.myPaidAmount {
+  margin-top: 4px;
+  color: var(--sub-color);
+  font-size: clamp(17px, 5vw, 23px);
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.weatherWidget {
+  min-width: 0;
+}
+
+.transportItem {
+  margin: 0 10px;
+  display: grid;
+  gap: 7px;
+}
+
+.transportSummary {
+  padding: 7px 10px;
+  border-radius: 8px;
+  background-color: rgba(68, 85, 141, 0.07);
+}
+
+.transportSummaryMain {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--sub-color);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.transportSummarySub {
+  margin-top: 2px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #555;
+  font-size: 12px;
+}
+
+.transportTimeline {
+  --tl-color: var(--sub-color);
+  padding: 2px 4px 0;
+}
+
+.transportTimeline :global(.mantine-Timeline-item) {
+  padding-bottom: 7px;
+}
+
+.transportTimeline :global(.mantine-Timeline-itemBullet) {
+  border-color: var(--sub-color);
+  background-color: var(--sub-color);
+}
+
+.timelineTitleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.timelineTime {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  color: #666;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.timelineStation {
+  color: #222;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.timelineDetail,
+.timelineNote {
+  margin: 2px 0 0;
+  color: #666;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.timelineNote {
+  color: #888;
+}
+
+.transportDetailLink {
+  justify-self: end;
+  color: var(--sub-color);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .appointmentHeader {
   padding: 10px;
   cursor: pointer;
-}
-
-.weatherWidget {
-  box-shadow: var(--other-color) 0px 1px 3px;
-  padding: 7px;
-  border-radius: 5px;
-  width: 50%;
-  height: auto;
 }
 
 .appointmentAccordion {

@@ -6,6 +6,7 @@
  */
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useContext, useState, useEffect } from "react";
+import { Timeline } from "@mantine/core";
 import { TripContext } from "../../App";
 import BtmNav from "../../components/bottomNav/BottomNav";
 import Header from "../../components/header/Header";
@@ -127,33 +128,69 @@ export default function Itinerary() {
     fetchTripInfo();
   }, [groupId, navigate, setTrip, setTripPeriod]);
 
-  // TODO: 予約APIができたら、ここを実データ取得に置き換えます。
+  // TODO: 交通手段APIができたら、ここを実データ取得に置き換えます。
+  // 現時点ではYahoo乗換検索のURLをもとにした仮データを表示します。
   const appointmentList = [
     {
       id: 1,
-      type: "新幹線",
-      from: "東京",
-      to: "大阪",
-      departure: "09:00",
-      arrival: "11:30",
-    },
-    {
-      id: 2,
-      type: "レンタカー",
-      from: "大阪駅",
-      to: "USJ",
-      departure: "13:00",
-      arrival: "13:30",
+      routeName: "ルート1",
+      departure: "14:25",
+      arrival: "14:46",
+      duration: "21分",
+      rideTime: "乗車15分",
+      transfers: "乗換：1回",
+      distance: "7.5km",
+      fare: "IC優先：290円",
+      link: "https://transit.yahoo.co.jp/search/result?from=%E8%B0%B7%E7%94%BA%E7%B7%9A%E5%A4%A9%E7%8E%8B%E5%AF%BA%E9%A7%85&to=%E9%98%AA%E7%A5%9E%E7%99%BE%E8%B2%A8%E5%BA%97%20%E9%98%AA%E7%A5%9E%E6%A2%85%E7%94%B0%E6%9C%AC%E5%BA%97&fromgid=&togid=giBHAlW82T6&flatlon=&tlatlon=34.7010807%2C135.4986125%2C%E9%98%AA%E7%A5%9E%E7%99%BE%E8%B2%A8%E5%BA%97%20%E9%98%AA%E7%A5%9E%E6%A2%85%E7%94%B0%E6%9C%AC%E5%BA%97&via=&viacode=&y=2026&m=09&d=07&hh=14&m1=1&m2=8&type=1&ticket=ic&expkind=1&userpass=1&ws=3&s=0&al=1&shin=1&ex=1&hb=1&lb=1&sr=1",
+      steps: [
+        {
+          id: "tennoji",
+          time: "14:25",
+          badge: "発",
+          station: "天王寺",
+          links: ["時刻表", "出口", "地図"],
+          detail: "OsakaMetro御堂筋線 / 新大阪行",
+          note: "[発] 2番線 → [着] 4番線",
+          lineColor: "red",
+        },
+        {
+          id: "daikokucho",
+          time: "14:29着\n14:31発",
+          station: "大国町",
+          links: ["時刻表", "出口", "地図"],
+          detail: "OsakaMetro四つ橋線 / 西梅田行",
+          note: "[発] 3番線 → [着] 1番線",
+          lineColor: "blue",
+        },
+        {
+          id: "nishiumeda",
+          time: "14:42着\n14:44発",
+          station: "西梅田",
+          links: ["時刻表", "出口", "地図"],
+          detail: "同駅内徒歩",
+          note: "",
+          lineColor: "walk",
+        },
+        {
+          id: "osakaumeda",
+          time: "14:46",
+          badge: "着",
+          station: "大阪梅田(阪神線)",
+          links: ["時刻表", "地図"],
+          detail: "",
+          note: "",
+          lineColor: "none",
+        },
+      ],
     },
   ];
 
-  // 清算Widgetに表示する、自分が払う必要のある最新の未払いデータです。
-  const [liquidationResult, setLiquidationResult] = useState({
+  // 清算Widgetに表示する、この旅行でログイン中のユーザーが立て替えた合計金額です。
+  const [myPaidAmount, setMyPaidAmount] = useState({
     groupId: null,
-    debts: [],
+    amount: 0,
   });
-  const liquidationList = liquidationResult.groupId === groupId ? liquidationResult.debts : [];
-  const isLiquidationLoading = Boolean(groupId) && liquidationResult.groupId !== groupId;
+  const isMyPaidAmountLoading = Boolean(groupId && loginUserId) && myPaidAmount.groupId !== groupId;
 
   const closeInviteModal = () => {
     setIsInviteModalOpen(false);
@@ -171,16 +208,16 @@ export default function Itinerary() {
     navigate(invoiceLiquidationPath);
   };
 
-  // groupId とログインセッションをもとに、自分が払うべき未払い清算を最新3件だけ取得します。
+  // 支払い一覧から、自分が追加した支払いの合計額を取得します。
   useEffect(() => {
-    if (!groupId) {
+    if (!groupId || !loginUserId) {
       return;
     }
 
-    const fetchMyDebts = async () => {
+    const fetchMyPaidAmount = async () => {
       try {
         const response = await fetch(
-          `/TABI/api/Invoice/MyDebts.php?group_id=${encodeURIComponent(groupId)}&limit=3`,
+          `/TABI/api/Invoice/List.php?group_id=${encodeURIComponent(groupId)}`,
           {
             method: "GET",
             credentials: "include",
@@ -195,29 +232,37 @@ export default function Itinerary() {
 
         const data = await response.json();
 
-        if (data.success && Array.isArray(data.debts)) {
-          setLiquidationResult({
+        if (data.success && Array.isArray(data.pay)) {
+          const amount = data.pay.reduce((sum, payment) => {
+            if (Number(payment.paidById) !== loginUserId) {
+              return sum;
+            }
+
+            return sum + Number(payment.totalAmount || payment.amount || 0);
+          }, 0);
+
+          setMyPaidAmount({
             groupId,
-            debts: data.debts,
+            amount,
           });
           return;
         }
 
-        setLiquidationResult({
+        setMyPaidAmount({
           groupId,
-          debts: [],
+          amount: 0,
         });
       } catch (error) {
         console.error(error);
-        setLiquidationResult({
+        setMyPaidAmount({
           groupId,
-          debts: [],
+          amount: 0,
         });
       }
     };
 
-    fetchMyDebts();
-  }, [groupId, navigate]);
+    fetchMyPaidAmount();
+  }, [groupId, loginUserId, navigate]);
 
   const coverHeaderStyle = trip?.image
     ? { backgroundImage: `url("${trip.image}")` }
@@ -280,7 +325,7 @@ export default function Itinerary() {
   };
 
   return (
-    <div>
+    <div className={styles.page}>
       <Header />
 
       {/* 旅行タイトル・日付・メンバーをまとめて表示するカバー部分 */}
@@ -335,30 +380,10 @@ export default function Itinerary() {
         ) : null}
       </div>
 
-      {/* しおりタイトル */}
-      <div className={styles.WidgetFrame}>
-        <div className={styles.WidgetTitle}>しおりタイトル</div>
-        <div className={styles.WidgetText}>{trip.name}</div>
-      </div>
-
-      {/* 旅行期間 */}
-      <div className={styles.WidgetFrame}>
-        <div className={styles.WidgetTitle}>旅行期間</div>
-        <div className={styles.WidgetText}>
-          {tripPeriod?.startDate && tripPeriod?.endDate
-            ? `${formatDate(tripPeriod.startDate)} - ${formatDate(tripPeriod.endDate)}`
-            : "旅行期間未設定"}
-        </div>
-      </div>
-
-      {/* メンバー数 */}
-      <div className={styles.WidgetFrame}>
-        <div className={styles.WidgetTitle}>メンバー数</div>
-        <div className={styles.WidgetText}>{members.length}人</div>
-      </div>
-
       {/* 移動手段。現在はダミーデータを表示しています。 */}
       <div className={styles.WidgetFrame}>
+        <div className={styles.WidgetTitle}>交通手段</div>
+
         {appointmentList.length === 0 ? (
           <div
             className={styles.WidgetText}
@@ -367,51 +392,85 @@ export default function Itinerary() {
             移動手段の予約に進む
           </div>
         ) : (
-          <div className={styles.WidgetTitle}>
-            <div className={styles.WidgetText}>
-              {appointmentList[0].type}
-            </div>
-            <div>
-              ここにマップ表示
-            </div>
-          </div>
+          <>
+            {appointmentList.map((appointment) => (
+              <div className={styles.transportItem} key={appointment.id}>
+                <div className={styles.transportSummary}>
+                  <div className={styles.transportSummaryMain}>
+                    <span>{appointment.departure}発</span>
+                    <span>→</span>
+                    <span>{appointment.arrival}着</span>
+                  </div>
+
+                  <div className={styles.transportSummarySub}>
+                    <span>{appointment.duration}</span>
+                    <span>{appointment.fare}</span>
+                  </div>
+                </div>
+
+                <Timeline
+                  active={appointment.steps.length - 1}
+                  bulletSize={12}
+                  lineWidth={2}
+                  className={styles.transportTimeline}
+                >
+                  {appointment.steps.map((step) => (
+                    <Timeline.Item
+                      key={step.id}
+                      title={
+                        <div className={styles.timelineTitleRow}>
+                          <span className={styles.timelineStation}>{step.station}</span>
+                          <span className={styles.timelineTime}>
+                            {step.time.split("\n").map((line) => (
+                              <span key={line}>{line}</span>
+                            ))}
+                          </span>
+                        </div>
+                      }
+                    >
+                      {step.detail ? (
+                        <p className={styles.timelineDetail}>{step.detail}</p>
+                      ) : null}
+
+                      {step.note ? (
+                        <p className={styles.timelineNote}>{step.note}</p>
+                      ) : null}
+                    </Timeline.Item>
+                  ))}
+                </Timeline>
+
+                <a
+                  className={styles.transportDetailLink}
+                  href={appointment.link}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  ルート詳細を見る
+                </a>
+              </div>
+            ))}
+          </>
         )}
       </div>
 
-      {/* 清算・天気などのサブ情報 */}
-      <div className={styles.subWidget}>
-        <div className={styles.liquidationWidget} onClick={handleLiquidationClick}>
-          <div className={styles.WidgetTitle}>清算</div>
+      {/* 交通手段の下は、清算と天気予報を横並びで表示します。 */}
+      <div className={styles.widgetRow}>
+        {/* 清算情報。自分がこの旅行で立て替えた金額を表示します。 */}
+        <button
+          type="button"
+          className={`${styles.WidgetFrame} ${styles.halfWidget} ${styles.liquidationWidget}`}
+          onClick={handleLiquidationClick}
+        >
+          <span className={styles.WidgetTitle}>清算</span>
+          <span className={styles.widgetLabel}>自分の支払い</span>
+          <span className={styles.myPaidAmount}>
+            {isMyPaidAmountLoading ? "読み込み中..." : formatYen(myPaidAmount.amount)}
+          </span>
+        </button>
 
-          {isLiquidationLoading ? (
-            <div className={styles.WidgetText}>
-              読み込み中...
-            </div>
-          ) : liquidationList.length === 0 ? (
-            <div className={styles.WidgetText}>
-              請求はありません
-            </div>
-          ) : (
-            <>
-              <div className={styles.WidgetText}>
-                合計：{formatYen(liquidationList.reduce((sum, item) => sum + item.amount, 0))}
-              </div>
-
-              {liquidationList.map((item) => (
-                <div
-                  key={item.payment_id}
-                  className={styles.WidgetText}
-                >
-                  {item.to_user_name}さんへ：{formatYen(item.amount)}
-                </div>
-              ))}
-            </>
-          )}
-        </div>
-
-        <div className={styles.weatherWidget}>
+        {/* 天気予報は、表示内容が決まり次第ここへ追加します。 */}
+        <div className={`${styles.WidgetFrame} ${styles.halfWidget} ${styles.weatherWidget}`}>
           <div className={styles.WidgetTitle}>天気予報</div>
-          <div className={styles.WidgetText}></div>
         </div>
       </div>
 
