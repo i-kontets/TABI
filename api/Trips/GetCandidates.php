@@ -40,7 +40,7 @@ try {
     $scope = filter_input(INPUT_GET, "scope", FILTER_UNSAFE_RAW) ?: "list";
     $statusCondition = $scope === "search"
         ? "1 = 1"
-        : "candidate.status IN ('candidate', 'selected')";
+        : "candidate.status = 'selected'";
 
     // グループIDから対応する旅行情報を取得
     // 最新の旅行1件を取得（update順、作成順でソート）
