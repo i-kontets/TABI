@@ -98,6 +98,7 @@ function normalizePayItem(payItem, members) {
         amount: totalAmount,
         paidById: Number(payItem.paidById || payItem.paid_by || payMembers[0]?.id || memberIds[0] || 0),
         category: payItem.category || "other",
+        paymentMethod: payItem.paymentMethod || payItem.payment_method || "either",
         members: payMembers,
         totalAmount,
         createdAt: payItem.createdAt || new Date().toISOString(),

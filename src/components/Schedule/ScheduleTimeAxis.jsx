@@ -531,6 +531,18 @@ function filterVisibleItems(items) {
     ));
 }
 
+function addDraftEvents(items, draftEvents, selectedDay) {
+    return items.map((item) => ({
+        ...item,
+        events: [
+            ...item.events,
+            ...draftEvents.filter((event) => (
+                event.day === selectedDay && getHourSlot(event.time) === item.time
+            )),
+        ].sort((first, second) => first.time.localeCompare(second.time)),
+    }));
+}
+
 function MemberAvatars({ userIds = [], members = [] }) {
     const containerRef = useRef(null);
     const [availableWidth, setAvailableWidth] = useState(null);
@@ -595,14 +607,18 @@ function MemberAvatars({ userIds = [], members = [] }) {
  * ScheduleTimeAxis は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-export default function ScheduleTimeAxis({ selectedDay, selectedDateValue, members = [] }) {
+export default function ScheduleTimeAxis({ selectedDay, selectedDateValue, members = [], draftEvents = [] }) {
     const [now, setNow] = useState(() => new Date());
     const [viewMode, setViewMode] = useState('all');
     const [selectedEvent, setSelectedEvent] = useState(null);
     const loginUserId = getLoginUserId();
     const memberAppliedItems = useMemo(
-        () => applyGroupMembersToTestItems(scheduleData[selectedDay] ?? [], members),
-        [members, selectedDay],
+        () => addDraftEvents(
+            applyGroupMembersToTestItems(scheduleData[selectedDay] ?? [], members),
+            draftEvents,
+            selectedDay,
+        ),
+        [draftEvents, members, selectedDay],
     );
     const items = filterVisibleItems(filterItemsByView(memberAppliedItems, viewMode, loginUserId));
 

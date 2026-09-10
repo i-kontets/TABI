@@ -331,7 +331,7 @@ function Chat({ active }) {
             const openProfile = () => {
                 // ここで条件を確認し、状況に合う処理だけを実行します。
                 if (canOpenProfile) {
-                    navigate(`/user/${senderUserId}`);
+                    navigate(`/user/${senderUserId}`, { state: { groupId } });
                 }
             };
             // openReport は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
@@ -463,7 +463,7 @@ function Chat({ active }) {
                 </div>
             );
         });
-    }, [memberCount, messages, navigate]);
+    }, [groupId, memberCount, messages, navigate]);
 
     // submitMessageReport は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const submitMessageReport = async (event) => {
@@ -722,7 +722,7 @@ function Chat({ active }) {
                                 const senderUserId = Number(actionTarget.sender_user_id || actionTarget.user_id || 0);
                                 setActionTarget(null);
                                 if (senderUserId > 0) {
-                                    navigate(`/user/${senderUserId}`);
+                                    navigate(`/user/${senderUserId}`, { state: { groupId } });
                                 }
                             }}
                         >

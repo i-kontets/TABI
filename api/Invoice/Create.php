@@ -15,7 +15,13 @@ $groupId = $input["group_id"] ?? $input["groupId"] ?? null;
 $title = trim((string) ($input["title"] ?? $input["storeName"] ?? ""));
 $amount = (int) ($input["amount"] ?? $input["totalAmount"] ?? 0);
 $category = trim((string) ($input["category"] ?? "other"));
+$paymentMethod = trim((string) ($input["payment_method"] ?? $input["paymentMethod"] ?? "either"));
 $members = $input["members"] ?? [];
+$allowedPaymentMethods = ["cash", "paypay", "either"];
+
+if (!in_array($paymentMethod, $allowedPaymentMethods, true)) {
+    $paymentMethod = "either";
+}
 
 if (!$groupId) {
     respond([
@@ -86,6 +92,7 @@ try {
             title,
             amount,
             category,
+            payment_method,
             created_at,
             updated_at
         )
@@ -95,6 +102,7 @@ try {
             :title,
             :amount,
             :category,
+            :payment_method,
             NOW(),
             NOW()
         )
@@ -105,6 +113,7 @@ try {
         ":title" => $title,
         ":amount" => $amount,
         ":category" => $category !== "" ? $category : "other",
+        ":payment_method" => $paymentMethod,
     ]);
 
     $paymentId = (int) $pdo->lastInsertId();

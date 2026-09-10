@@ -34,7 +34,7 @@
 }
 
 .footerItemActive {
-    color: var(--footer-active-color);
+    color: var(--sub-color);
 }
 
 .footerIcon {

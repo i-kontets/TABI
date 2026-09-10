@@ -9,12 +9,27 @@
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import BottomNav from '../../components/bottomNav/BottomNav';
 import styles from './UserProfilePage.module.css';
 
 const profileApi = `${import.meta.env.BASE_URL}api/User/PublicProfile.php`;
 const reportApi = `${import.meta.env.BASE_URL}api/User/Report.php`;
 const REPORT_REASONS = ['迷惑行為', '不適切な内容', 'なりすまし', 'その他'];
+
+function formatBirthday(value) {
+    if (!value) {
+        return '未設定';
+    }
+
+    const date = new Date(`${value}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+}
 
 /**
  * BackIcon は、このファイルの中心となる処理をまとめた関数です。
@@ -43,39 +58,14 @@ function MoreIcon({ className }) {
 }
 
 /**
- * HomeIcon は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
-function HomeIcon({ className }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 11.5 12 4l9 7.5" />
-            <path d="M5.5 10.5V20h13v-9.5" />
-            <path d="M9.5 20v-5h5v5" />
-        </svg>
-    );
-}
-
-/**
- * UserIcon は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
-function UserIcon({ className }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" />
-            <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
-        </svg>
-    );
-}
-
-/**
  * UserProfilePage は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
 export default function UserProfilePage() {
     const { userId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+    const sourceGroupId = location.state?.groupId;
     const menuRef = useRef(null);
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [profile, setProfile] = useState(null);
@@ -164,8 +154,6 @@ export default function UserProfilePage() {
     const initial = useMemo(() => {
         return (profile?.name || '?').trim().slice(0, 1) || '?';
     }, [profile?.name]);
-
-    const commonGroups = Array.isArray(profile?.common_groups) ? profile.common_groups : [];
 
     // handleReportClick は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleReportClick = () => {
@@ -265,44 +253,33 @@ export default function UserProfilePage() {
                                 )}
                             </div>
                             <h2 className={styles.userName}>{profile.name}</h2>
-                            {profile.registered_at && (
-                                <p className={styles.registeredAt}>登録日 {profile.registered_at}</p>
-                            )}
                         </section>
 
-                        {profile.self_introduction && (
-                            <section className={styles.sectionCard}>
-                                <h2 className={styles.sectionTitle}>自己紹介</h2>
-                                <p className={styles.bio}>{profile.self_introduction}</p>
-                            </section>
-                        )}
-
-                        {commonGroups.length > 0 && (
-                            <section className={styles.sectionCard}>
-                                <h2 className={styles.sectionTitle}>共通の旅行グループ</h2>
-                                <div className={styles.groupList}>
-                                    {commonGroups.map((group) => (
-                                        <div key={group.group_id} className={styles.groupItem}>
-                                            {group.group_name}
-                                        </div>
-                                    ))}
+                        <section className={styles.sectionCard}>
+                            <h2 className={styles.sectionTitle}>プロフィール</h2>
+                            <dl className={styles.profileList}>
+                                <div>
+                                    <dt>ユーザー名</dt>
+                                    <dd>{profile.name || '未設定'}</dd>
                                 </div>
-                            </section>
-                        )}
+                                <div>
+                                    <dt>生年月日</dt>
+                                    <dd>{formatBirthday(profile.birthday)}</dd>
+                                </div>
+                                <div>
+                                    <dt>自己紹介</dt>
+                                    <dd className={styles.bio}>
+                                        {profile.self_introduction || '自己紹介はまだ登録されていません。'}
+                                    </dd>
+                                </div>
+                            </dl>
+                        </section>
+
                     </>
                 )}
             </main>
 
-            <footer className={styles.footer}>
-                <button type="button" className={styles.footerItem} onClick={() => navigate('/Home')} aria-label="ホーム">
-                    <HomeIcon className={styles.footerIcon} />
-                    <span>ホーム</span>
-                </button>
-                <button type="button" className={styles.footerItem} onClick={() => navigate('/mypage')} aria-label="マイページ">
-                    <UserIcon className={styles.footerIcon} />
-                    <span>マイページ</span>
-                </button>
-            </footer>
+            <BottomNav groupId={sourceGroupId} />
 
             {reportOpen && (
                 <div className={styles.modalBackdrop} role="presentation">

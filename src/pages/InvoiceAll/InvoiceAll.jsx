@@ -123,6 +123,7 @@ function normalizePayItem(payItem, members) {
         paidById: Number(payItem.paidById || payItem.paid_by || payMembers[0]?.id || memberIds[0] || 0),
         paidByName: payItem.paidByName || "",
         category: payItem.category || "other",
+        paymentMethod: payItem.paymentMethod || payItem.payment_method || "either",
         members: payMembers,
         participantCount: payMembers.length,
         totalAmount,
