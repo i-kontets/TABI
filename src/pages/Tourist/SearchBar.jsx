@@ -17,7 +17,7 @@ import styles from './SearchBar.module.css';
  * SearchBar は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-function SearchBar({ initialValue = '京都', onSearch }) {
+function SearchBar({ initialValue = '', onSearch }) {
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [city, setCity] = useState(initialValue);
 
@@ -26,21 +26,14 @@ function SearchBar({ initialValue = '京都', onSearch }) {
     const handleSubmit = (event) => {
         event.preventDefault();
 
-        const keyword = city.trim();
-
-        // ここで条件を確認し、状況に合う処理だけを実行します。
-        if (!keyword) {
-            return;
-        }
-
-        onSearch(keyword);
+        onSearch(city.trim());
 
     };
 
     return (
         <form className={styles.searchBar} onSubmit={handleSubmit}>
             <label className={styles.label} htmlFor="tourist-city">
-                地域名
+                キーワード
             </label>
             <div className={styles.formRow}>
                 <input
@@ -49,7 +42,7 @@ function SearchBar({ initialValue = '京都', onSearch }) {
                     type="search"
                     value={city}
                     onChange={(event) => setCity(event.target.value)}
-                    placeholder="京都"
+                    placeholder="観光地名・市区町村・カテゴリ"
                 />
                 <button className={styles.button} type="submit">
                     検索

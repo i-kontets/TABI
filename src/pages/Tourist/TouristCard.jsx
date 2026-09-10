@@ -41,22 +41,24 @@ function TouristCard({
                     onClick={handleSelect}
                     aria-label={`${spot.name}の詳細を見る`}
                 >
-                    <div className={styles.pin} aria-hidden="true">
-                        📍
+                    <div className={styles.visual} aria-hidden="true">
+                        {spot.image_url ? (
+                            <img src={spot.image_url} alt="" />
+                        ) : (
+                            <span>📍</span>
+                        )}
                     </div>
                     <div className={styles.body}>
-                        <h3>{spot.name}</h3>
-                        <p>{spot.address || `${spot.prefecture || ''}${spot.city || ''}` || '住所未登録'}</p>
-                        <dl className={styles.meta}>
-                            <div>
-                                <dt>地域</dt>
-                                <dd>{spot.city || spot.prefecture || '未設定'}</dd>
-                            </div>
-                            <div>
-                                <dt>カテゴリ</dt>
-                                <dd>{spot.category || spot.type || '未設定'}</dd>
-                            </div>
-                        </dl>
+                        <div className={styles.titleRow}>
+                            <span className={styles.rank}>{spot.rank}位</span>
+                            <h3>{spot.name}</h3>
+                        </div>
+                        <p>{[spot.prefecture, spot.city].filter(Boolean).join(' ') || spot.address || '地域未登録'}</p>
+                        <div className={styles.metrics}>
+                            <span>★ {spot.average_rating == null ? '未評価' : Number(spot.average_rating).toFixed(1)}</span>
+                            <span>レビュー {spot.review_count || 0}件</span>
+                            <span>お気に入り {spot.favorite_count || 0}件</span>
+                        </div>
                     </div>
                 </button>
                 <div className={styles.headerRow}>
