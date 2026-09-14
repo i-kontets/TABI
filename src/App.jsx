@@ -184,6 +184,8 @@ function App() {
                     <Route path="/CottageChatPage" element={<CottageChatPage />} />
                     <Route path="/CheckList" element={<CheckList />} />
                     <Route path="/admin/*" element={<AdminRoutes />} />
+                    <Route path="/notifications" element={<NotificationListPage />} />
+                    <Route path="/notifications/:notificationId" element={<NotificationDetailPage />} />
                 </Routes>
             </BrowserRouter>
         </TripContext.Provider>
