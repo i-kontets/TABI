@@ -10,19 +10,17 @@
  */
 import Tripmap from './Tripmap.module.css'
 
-import { useState, useEffect } from 'react'
-
 /**
- * map は、このファイルの中心となる処理をまとめた関数です。
+ * Map は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-function map() {
+function Map() {
     return (
-    <>
+    <main className={Tripmap.page}>
         <a href="Itinerary">旅のしおり</a>
-    </>
+    </main>
 
     )
 }
 
-export default map
+export default Map

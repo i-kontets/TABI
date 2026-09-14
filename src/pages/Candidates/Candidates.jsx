@@ -166,7 +166,11 @@ function Candidates() {
         navigate(`/Candidates/${place.candidate_id}?group_id=${encodeURIComponent(groupId)}`, { state: { place } });
     };
 
-    const handleAddCandidate = async (place) => {
+    const returnToCandidateTab = () => {
+        navigate(`/group/${encodeURIComponent(groupId)}/talk?tab=candidate`);
+    };
+
+    const updateCandidateStatus = async (place, status) => {
         if (!place?.candidate_id || updatingIds.includes(place.candidate_id)) {
             return;
         }
@@ -180,7 +184,7 @@ function Candidates() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     candidate_id: place.candidate_id,
-                    status: 'candidate',
+                    status,
                 }),
             });
             const data = await response.json().catch(() => null);
@@ -191,23 +195,27 @@ function Candidates() {
 
             setCandidates((current) => current.map((candidate) => (
                 candidate.candidate_id === place.candidate_id
-                    ? { ...candidate, status: 'candidate' }
+                    ? { ...candidate, status }
                     : candidate
             )));
-            navigate(`/group/${encodeURIComponent(groupId)}/talk?tab=candidate&category=${encodeURIComponent(place.candidate_type || 'destination')}`);
         } catch (err) {
-            setNotice(err instanceof Error ? err.message : '候補の追加に失敗しました');
+            setNotice(err instanceof Error ? err.message : status === 'selected'
+                ? '候補の追加に失敗しました'
+                : '候補の削除に失敗しました');
         } finally {
             setUpdatingIds((current) => current.filter((id) => id !== place.candidate_id));
         }
     };
+
+    const handleAddCandidate = (place) => updateCandidateStatus(place, 'selected');
+    const handleRemoveCandidate = (place) => updateCandidateStatus(place, 'rejected');
 
     return (
         <div className={styles.page}>
             <div className={styles.phone}>
                 <header className={styles.hero}>
                     <div className={styles.topBar}>
-                        <button className={styles.iconButton} type="button" onClick={() => navigate(-1)} aria-label="戻る">
+                        <button className={styles.iconButton} type="button" onClick={returnToCandidateTab} aria-label="候補タブへ戻る">
                             <BackIcon />
                         </button>
                         <p className={styles.brand}>TABI</p>
@@ -286,6 +294,10 @@ function Candidates() {
                     {!loading && !error && (
                         <div className={styles.list}>
                             {filteredPlaces.map((place) => (
+                                (() => {
+                                    const isAdded = place.status === 'selected';
+
+                                    return (
                                 <article className={styles.card} key={place.candidate_id}>
                                     <div className={styles.imageWrap}>
                                         <img src={place.img_url} alt={place.candidate_name} />
@@ -297,21 +309,14 @@ function Candidates() {
                                                 <h3>{place.candidate_name}</h3>
                                                 <p>候補地</p>
                                             </div>
-                                            {place.status === 'selected' && (
-                                                <span className={styles.statusBadge} data-status={place.status}>
-                                                    採用
-                                                </span>
-                                            )}
                                             <button
                                                 type="button"
-                                                disabled={updatingIds.includes(place.candidate_id) || place.status === 'selected'}
-                                                onClick={() => handleAddCandidate(place)}
+                                                disabled={updatingIds.includes(place.candidate_id)}
+                                                onClick={() => (isAdded ? handleRemoveCandidate(place) : handleAddCandidate(place))}
                                             >
                                                 {updatingIds.includes(place.candidate_id)
-                                                    ? '追加中'
-                                                    : place.status === 'selected'
-                                                        ? '採用済み'
-                                                        : '候補に追加'}
+                                                    ? isAdded ? '削除中' : '追加中'
+                                                    : isAdded ? '候補から削除' : '候補に追加'}
                                             </button>
                                         </div>
 
@@ -326,6 +331,8 @@ function Candidates() {
                                         </button>
                                     </div>
                                 </article>
+                                    );
+                                })()
                             ))}
                         </div>
                     )}

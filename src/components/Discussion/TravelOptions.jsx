@@ -173,7 +173,7 @@ function TravelOptions({ active }) {
         // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         () => candidates.filter((candidate) => (
             candidate.candidate_type === activeCategory
-            && (candidate.status === "candidate" || candidate.status === "selected")
+            && candidate.status === "selected"
         )),
         [activeCategory, candidates],
     );
