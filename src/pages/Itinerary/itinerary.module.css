@@ -96,6 +96,15 @@ display: flex;
 align-items: center;
 }
 
+.memberListButton {
+display: flex;
+align-items: center;
+padding: 0;
+border: 0;
+background: transparent;
+cursor: pointer;
+}
+
 /* アバター内に文字を中央配置できるように修正 */
 .avatar {
 width: 34px;
@@ -114,6 +123,21 @@ box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 
 .avatar:first-child {
 margin-left: 0;
+}
+
+.memberMore {
+width: 34px;
+height: 34px;
+margin-left: -8px;
+border: 2px solid #ffffff;
+border-radius: 9999px;
+display: flex;
+align-items: center;
+justify-content: center;
+background-color: rgba(255, 255, 255, 0.88);
+color: var(--sub-color);
+font-size: 11px;
+font-weight: 700;
 }
 
 .inviteBtn {
@@ -136,6 +160,56 @@ transition: background-color 0.2s;
 
 .inviteBtn:hover {
 background-color: rgba(255, 255, 255, 0.3);
+}
+
+.memberModalContent {
+min-width: min(280px, 76vw);
+padding: 6px 4px 12px;
+}
+
+.memberModalTitle {
+margin: 0;
+color: var(--sub-color);
+font-size: 20px;
+}
+
+.memberModalCount {
+margin: 4px 0 14px;
+color: #667085;
+font-size: 13px;
+}
+
+.memberList {
+margin: 0;
+padding: 0;
+list-style: none;
+display: grid;
+gap: 8px;
+}
+
+.memberListItem {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 9px 10px;
+border-radius: 9px;
+background-color: color-mix(in srgb, var(--sub-color) 7%, #ffffff);
+color: #1f2937;
+font-size: 15px;
+font-weight: 700;
+}
+
+.memberListAvatar {
+width: 32px;
+height: 32px;
+border: 2px solid #ffffff;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+color: #1e293b;
+font-size: 12px;
+font-weight: 700;
 }
 
 .editBtn {
@@ -236,48 +310,23 @@ transform: translateY(-1px);
 }
 
 .transportItem {
-  margin: 0 10px;
+  margin: 2px 14px 4px;
   display: grid;
-  gap: 7px;
-}
-
-.transportSummary {
-  padding: 7px 10px;
-  border-radius: 8px;
-  background-color: rgba(68, 85, 141, 0.07);
-}
-
-.transportSummaryMain {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  color: var(--sub-color);
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.transportSummarySub {
-  margin-top: 2px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  color: #555;
-  font-size: 12px;
+  gap: 11px;
 }
 
 .transportTimeline {
-  --tl-color: var(--sub-color);
-  padding: 2px 4px 0;
+  padding: 8px 8px 0;
 }
 
 .transportTimeline :global(.mantine-Timeline-item) {
-  padding-bottom: 7px;
+  padding-bottom: 18px;
 }
 
 .transportTimeline :global(.mantine-Timeline-itemBullet) {
-  border-color: var(--sub-color);
-  background-color: var(--sub-color);
+  border: 3px solid var(--sub-color);
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sub-color) 12%, transparent);
 }
 
 .timelineTitleRow {
@@ -293,14 +342,14 @@ transform: translateY(-1px);
   align-items: flex-end;
   flex-shrink: 0;
   color: #666;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.2;
 }
 
 .timelineStation {
-  color: #222;
-  font-size: 14px;
+  color: var(--sub-color);
+  font-size: 17px;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -309,20 +358,12 @@ transform: translateY(-1px);
 .timelineNote {
   margin: 2px 0 0;
   color: #666;
-  font-size: 11px;
-  line-height: 1.35;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .timelineNote {
   color: #888;
-}
-
-.transportDetailLink {
-  justify-self: end;
-  color: var(--sub-color);
-  font-size: 11px;
-  font-weight: 700;
-  text-decoration: none;
 }
 
 .appointmentHeader {

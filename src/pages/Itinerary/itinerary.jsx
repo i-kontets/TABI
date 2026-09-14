@@ -56,6 +56,8 @@ export default function Itinerary() {
 
   // 招待モーダルの開閉状態です。
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  // カバー画像内のメンバーアイコンから開く、参加メンバー一覧モーダルの状態です。
+  const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
 
   // groupId が変わるたびに、共通化された fetchMembers で参加メンバーを取得します。
   useEffect(() => {
@@ -194,6 +196,10 @@ export default function Itinerary() {
 
   const closeInviteModal = () => {
     setIsInviteModalOpen(false);
+  };
+
+  const closeMemberModal = () => {
+    setIsMemberModalOpen(false);
   };
 
   const handleAppointmentClick = () => {
@@ -349,18 +355,30 @@ export default function Itinerary() {
           {/* 参加メンバーの頭文字アイコンと、招待モーダルを開くボタン */}
           <div className={styles.memberRow}>
             <div className={styles.avatarGroup}>
-              {members.map((member) => (
-                <span
-                  key={member.id}
-                  className={styles.avatar}
-                  style={{ backgroundColor: member.color }}
-                  title={member.name}
-                >
-                  {member.initial}
-                </span>
-              ))}
+              <button
+                type="button"
+                className={styles.memberListButton}
+                onClick={() => setIsMemberModalOpen(true)}
+                aria-label={`参加メンバー${members.length}人を表示`}
+              >
+                {members.slice(0, 4).map((member) => (
+                  <span
+                    key={member.id}
+                    className={styles.avatar}
+                    style={{ backgroundColor: member.color }}
+                    title={member.name}
+                  >
+                    {member.initial}
+                  </span>
+                ))}
+
+                {members.length > 4 ? (
+                  <span className={styles.memberMore}>+{members.length - 4}</span>
+                ) : null}
+              </button>
 
               <button
+                type="button"
                 className={styles.inviteBtn}
                 onClick={() => setIsInviteModalOpen(true)}
               >
@@ -395,23 +413,11 @@ export default function Itinerary() {
           <>
             {appointmentList.map((appointment) => (
               <div className={styles.transportItem} key={appointment.id}>
-                <div className={styles.transportSummary}>
-                  <div className={styles.transportSummaryMain}>
-                    <span>{appointment.departure}発</span>
-                    <span>→</span>
-                    <span>{appointment.arrival}着</span>
-                  </div>
-
-                  <div className={styles.transportSummarySub}>
-                    <span>{appointment.duration}</span>
-                    <span>{appointment.fare}</span>
-                  </div>
-                </div>
-
                 <Timeline
                   active={appointment.steps.length - 1}
-                  bulletSize={12}
-                  lineWidth={2}
+                  bulletSize={22}
+                  color="var(--sub-color)"
+                  lineWidth={4}
                   className={styles.transportTimeline}
                 >
                   {appointment.steps.map((step) => (
@@ -439,14 +445,6 @@ export default function Itinerary() {
                   ))}
                 </Timeline>
 
-                <a
-                  className={styles.transportDetailLink}
-                  href={appointment.link}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  ルート詳細を見る
-                </a>
               </div>
             ))}
           </>
@@ -485,6 +483,31 @@ export default function Itinerary() {
         onClose={closeInviteModal}
       >
         <InviteModal groupId={groupId} onClose={closeInviteModal} />
+      </Modal>
+
+      {/* 参加メンバーの全員一覧モーダル */}
+      <Modal
+        isOpen={isMemberModalOpen}
+        onClose={closeMemberModal}
+      >
+        <div className={styles.memberModalContent}>
+          <h2 className={styles.memberModalTitle}>参加メンバー</h2>
+          <p className={styles.memberModalCount}>{members.length}人</p>
+
+          <ul className={styles.memberList}>
+            {members.map((member) => (
+              <li key={member.id} className={styles.memberListItem}>
+                <span
+                  className={styles.memberListAvatar}
+                  style={{ backgroundColor: member.color }}
+                >
+                  {member.initial}
+                </span>
+                <span>{member.name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </Modal>
     </div>
   );
