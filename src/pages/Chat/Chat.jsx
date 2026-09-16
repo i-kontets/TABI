@@ -181,6 +181,11 @@ const Chat = ({ embedded = false, groupId: groupIdProp = null }) => {
 
         if (mountedRef.current) {
             setMessages((currentMessages) => mergeReadStatuses(currentMessages, data.reads || []));
+            setContacts((currentContacts) => currentContacts.map((contact) => (
+                Number(contact.id) === Number(chatId)
+                    ? { ...contact, unread: 0 }
+                    : contact
+            )));
         }
     }, []);
 
@@ -392,6 +397,11 @@ const Chat = ({ embedded = false, groupId: groupIdProp = null }) => {
         const nextChatId = Number(id);
         currentChatIdRef.current = nextChatId;
         setActiveContactId(id);
+        setContacts((currentContacts) => currentContacts.map((contact) => (
+            Number(contact.id) === nextChatId
+                ? { ...contact, unread: 0 }
+                : contact
+        )));
         setIsMobileChatView(true);
         loadMessages(nextChatId);
     };
