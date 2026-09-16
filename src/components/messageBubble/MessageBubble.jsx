@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import styles from './MessageBubble.module.css';
 import UserAvatar from '../UserAvatar';
 
-const MessageBubble = ({ message, memberCount = 0 }) => {
+const MessageBubble = ({ message, memberCount = 0, groupId = null }) => {
     const navigate = useNavigate();
     const isUser = Boolean(message.isMine) || message.sender === 'user';
     const senderName = message.senderName || message.sender_name || message.sender || '';
@@ -26,7 +26,7 @@ const MessageBubble = ({ message, memberCount = 0 }) => {
     const openProfile = () => {
         // ここで条件を確認し、状況に合う処理だけを実行します。
         if (canOpenProfile) {
-            navigate(`/user/${senderUserId}`);
+            navigate(`/user/${senderUserId}`, groupId ? { state: { groupId } } : undefined);
         }
     };
 

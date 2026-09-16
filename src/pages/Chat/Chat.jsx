@@ -579,7 +579,11 @@ const Chat = ({ embedded = false, groupId: groupIdProp = null }) => {
                 ) : messages.length === 0 ? (
                     <div className={styles.stateMessage}>まだメッセージはありません。</div>
                 ) : (
-                    <MessageList messages={messages} memberCount={activeContact?.memberCount || 0} />
+                    <MessageList
+                        messages={messages}
+                        memberCount={activeContact?.memberCount || 0}
+                        groupId={groupIdProp}
+                    />
                 )}
 
                 <MessageInput
