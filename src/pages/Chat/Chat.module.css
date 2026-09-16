@@ -16,6 +16,92 @@
     overflow: hidden;
 }
 
+.embedded {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    margin: 0;
+    --main-color: var(--discussion-blue, #1769c2);
+    --sub-color: var(--discussion-bg, #f4f7fb);
+    --accent-color: var(--discussion-blue, #1769c2);
+    --nav-bg: var(--discussion-blue-dark, #0f57a7);
+    --other-color: var(--discussion-line, #e1e7ef);
+}
+
+.memberPickerBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: grid;
+    align-items: end;
+    background: rgba(23, 32, 51, 0.28);
+}
+.memberPicker {
+    width: min(100%, 430px);
+    height: min(70dvh, 560px);
+    max-height: calc(100dvh - 24px);
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 18px 18px 0 0;
+    background: #FFFFFF;
+    box-shadow: 0 -8px 28px rgba(23, 32, 51, 0.18);
+}
+.memberPickerHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--other-color);
+}
+.memberPickerHeader h2 {
+    margin: 0;
+    font-size: 16px;
+}
+.memberPickerClose {
+    border: 0;
+    background: transparent;
+    color: #667085;
+    font-size: 26px;
+    line-height: 1;
+}
+.memberPickerList {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+}
+.memberPickerItem {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 12px;
+    padding: 12px 6px;
+    border: 0;
+    border-bottom: 1px solid #edf1f5;
+    background: #FFFFFF;
+    color: #333333;
+    text-align: left;
+    font-size: 14px;
+}
+.memberPickerAvatar {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--other-color);
+    color: var(--nav-bg);
+    font-weight: 700;
+}
+.memberPickerState {
+    padding: 28px 18px;
+    color: #667085;
+    text-align: center;
+    font-size: 13px;
+}
+
 /* ----------------------------------
    スマートフォン（767px以下）のレイアウト
 ----------------------------------- */

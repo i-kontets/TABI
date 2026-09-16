@@ -65,7 +65,7 @@ function mergeReadStatuses(messages, reads) {
     });
 }
 
-const Chat = () => {
+const Chat = ({ embedded = false, groupId: groupIdProp = null }) => {
     const location = useLocation();
     const pollingRef       = useRef(false);
     const loadingContactsRef = useRef(false);
@@ -92,6 +92,10 @@ const Chat = () => {
     const [notice, setNotice] = useState('');
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [isMobileChatView, setIsMobileChatView] = useState(false);
+    const [isMemberPickerOpen, setIsMemberPickerOpen] = useState(false);
+    const [groupMembers, setGroupMembers] = useState([]);
+    const [memberLoading, setMemberLoading] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState(null);
 
     const urlParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const requestedChatId = urlParams.get('chat_id') || urlParams.get('chatId');
@@ -101,6 +105,13 @@ const Chat = () => {
         ? contacts
         // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         : contacts.filter((contact) => contact.category === activeCategory);
+    const visibleContacts = filteredContacts;
+    const availableMembers = groupMembers.filter((member) => (
+        Number(member.id) !== currentUserId
+        && !contacts.some((contact) => (
+            contact.category === 'friend' && Number(contact.manager_user_id) === Number(member.id)
+        ))
+    ));
 
     useEffect(() => {
         mountedRef.current = true;
@@ -124,10 +135,18 @@ const Chat = () => {
         // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-            const response = await fetch(`${chatApiBase}/List.php`, {
+            const listParams = new URLSearchParams();
+            if (groupIdProp) {
+                listParams.set('group_id', groupIdProp);
+            }
+
+            const response = await fetch(
+                `${chatApiBase}/List.php${listParams.toString() ? `?${listParams.toString()}` : ''}`,
+                {
                 credentials: 'include',
                 signal,
-            });
+                },
+            );
             const data = await parseApiResponse(response);
             const nextContacts = data.contacts || [];
 
@@ -145,7 +164,7 @@ const Chat = () => {
         } finally {
             loadingContactsRef.current = false;
         }
-    }, []);
+    }, [groupIdProp]);
 
     const markMessagesAsRead = useCallback(async (chatId, signal = undefined) => {
         // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
@@ -377,6 +396,52 @@ const Chat = () => {
         loadMessages(nextChatId);
     };
 
+    const handleOpenMemberPicker = async () => {
+        if (!groupIdProp) return;
+
+        setMemberLoading(true);
+        setIsMemberPickerOpen(true);
+        try {
+            const response = await fetch(`${import.meta.env.BASE_URL}api/Itinerary/Members.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ group_id: groupIdProp }),
+            });
+            const data = await response.json().catch(() => null);
+            if (!response.ok || !data?.success) throw new Error(data?.message || 'メンバーを取得できませんでした。');
+            setGroupMembers(data.members || []);
+            setCurrentUserId(Number(data.current_user_id) || null);
+        } catch (error) {
+            setNotice(error.message);
+            setIsMemberPickerOpen(false);
+        } finally {
+            setMemberLoading(false);
+        }
+    };
+
+    const handleMemberSelect = async (member) => {
+        setMemberLoading(true);
+        try {
+            const response = await fetch(`${import.meta.env.BASE_URL}api/Chat/CreateDirect.php`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ group_id: groupIdProp, user_id: member.id }),
+            });
+            const data = await response.json().catch(() => null);
+            if (!response.ok || !data?.success) throw new Error(data?.message || '個人チャットを作成できませんでした。');
+
+            setIsMemberPickerOpen(false);
+            await loadContacts(undefined, { showNotice: false });
+            handleContactSelect(Number(data.chat_id));
+        } catch (error) {
+            setNotice(error.message);
+        } finally {
+            setMemberLoading(false);
+        }
+    };
+
     // handleSendMessage は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleSendMessage = async (event) => {
         event.preventDefault();
@@ -477,18 +542,21 @@ const Chat = () => {
     };
 
     return (
-        <div className={`${styles.appContainer} ${isMobileChatView ? styles.mobileChatActive : ''}`}>
+        <div className={`${styles.appContainer} ${embedded ? styles.embedded : ''} ${isMobileChatView ? styles.mobileChatActive : ''}`}>
             {/* 左側: グローバルナビとチャット相手一覧 */}
             <div className={styles.sidebarWrapper}>
-                <GlobalNav
-                    activeCategory={activeCategory}
-                    onSelectCategory={setActiveCategory}
-                    onBack={handleBackToApp}
-                />
+                {!embedded && (
+                    <GlobalNav
+                        activeCategory={activeCategory}
+                        onSelectCategory={setActiveCategory}
+                        onBack={handleBackToApp}
+                    />
+                )}
                 <ChatSidebar
-                    contacts={filteredContacts}
+                    contacts={visibleContacts}
                     activeId={activeContactId}
                     onSelect={handleContactSelect}
+                    onAddChat={handleOpenMemberPicker}
                 />
             </div>
 
@@ -522,6 +590,31 @@ const Chat = () => {
                     disabled={sending || !activeContactId}
                 />
             </div>
+
+            {isMemberPickerOpen && (
+                <div className={styles.memberPickerBackdrop} role="presentation" onClick={() => setIsMemberPickerOpen(false)}>
+                    <section className={styles.memberPicker} role="dialog" aria-modal="true" aria-labelledby="member-picker-title" onClick={(event) => event.stopPropagation()}>
+                        <div className={styles.memberPickerHeader}>
+                            <h2 id="member-picker-title">メンバーから追加</h2>
+                            <button type="button" className={styles.memberPickerClose} onClick={() => setIsMemberPickerOpen(false)} aria-label="閉じる">×</button>
+                        </div>
+                        {memberLoading ? (
+                            <p className={styles.memberPickerState}>メンバーを読み込んでいます...</p>
+                        ) : availableMembers.length === 0 ? (
+                            <p className={styles.memberPickerState}>追加できるチャットがありません</p>
+                        ) : (
+                            <div className={styles.memberPickerList}>
+                                {availableMembers.map((member) => (
+                                    <button type="button" className={styles.memberPickerItem} key={member.id} onClick={() => handleMemberSelect(member)}>
+                                        <span className={styles.memberPickerAvatar}>{member.initial || member.name?.slice(0, 1) || '?'}</span>
+                                        <span>{member.name}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                </div>
+            )}
         </div>
     );
 };

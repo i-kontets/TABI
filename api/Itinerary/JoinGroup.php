@@ -157,6 +157,30 @@ try {
         }
     }
 
+    if (!empty($group["trip_id"])) {
+        // 招待参加が確定したメンバーを、対象プロジェクトのグループチャットにも追加します。
+        $chatStmt = $pdo->prepare("\n            SELECT c.chat_id\n            FROM chats c\n            WHERE c.trip_id = :trip_id AND c.chat_type = 'group'\n            ORDER BY c.chat_id ASC\n            LIMIT 1\n        ");
+        $chatStmt->execute([":trip_id" => (int) $group["trip_id"]]);
+        $chatId = $chatStmt->fetchColumn();
+
+        if ($chatId) {
+            $chatMemberExistsStmt = $pdo->prepare("\n                SELECT 1 FROM chat_members\n                WHERE chat_id = :chat_id AND user_id = :user_id\n                LIMIT 1\n            ");
+            $chatMemberExistsStmt->execute([
+                ":chat_id" => (int) $chatId,
+                ":user_id" => $userId,
+            ]);
+
+            if (!$chatMemberExistsStmt->fetchColumn()) {
+                $chatMemberInsertStmt = $pdo->prepare("\n                    INSERT INTO chat_members (chat_id, user_id, joined_at)\n                    VALUES (:chat_id, :user_id, :joined_at)\n                ");
+                $chatMemberInsertStmt->execute([
+                    ":chat_id" => (int) $chatId,
+                    ":user_id" => $userId,
+                    ":joined_at" => $now,
+                ]);
+            }
+        }
+    }
+
     $pdo->commit();
 
     respond([

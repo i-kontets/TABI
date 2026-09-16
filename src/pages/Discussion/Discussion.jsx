@@ -13,7 +13,7 @@ import { useLocation, useParams } from "react-router-dom";
 import { TripContext } from "../../App";
 import Header from "../../components/header/Header";
 import BottomNav from "../../components/bottomNav/BottomNav";
-import Chat from "../../components/Discussion/Chat";
+import ChatPage from "../Chat/Chat";
 import TravelOptions from "../../components/Discussion/TravelOptions";
 import Vote from "../../components/Discussion/Vote";
 import "./Discussion.css";
@@ -68,7 +68,7 @@ function Discussion() {
                 </nav>
 
                 <div className="contentArea">
-                    <Chat active={activeTab === "chat"} />
+                    {activeTab === "chat" && <ChatPage embedded groupId={groupId} />}
                     <TravelOptions active={activeTab === "candidate"} />
                     <Vote active={activeTab === "poll"} />
                 </div>
