@@ -15,17 +15,46 @@
 }
 
 .modal {
+    position: relative;
     width: min(100%, 420px);
     /* 100dvh はスマホのアドレスバー変化を含めた現在の表示高さに合わせます。 */
     max-height: calc(100dvh - 32px);
     background: #fff;
     border-radius: 16px;
-    padding: 20px;
+    padding: 20px 56px 20px 20px;
     /* max-height を超えた入力欄や画像編集部分は、モーダル本体の中で縦スクロールします。 */
     overflow-y: auto;
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.closeButton {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: grid;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    color: var(--sub-color);
+    background: transparent;
+    border: 0;
+    border-radius: 50%;
+    place-items: center;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.closeButton:hover,
+.closeButton:focus-visible {
+    background: var(--main-color);
+}
+
+.closeButton:focus-visible {
+    outline: 2px solid var(--sub-color);
+    outline-offset: 2px;
 }
 
 @media (max-width: 480px) {
@@ -36,12 +65,6 @@
     .modal {
         width: 100%;
         max-height: calc(100dvh - 32px);
-        padding: 16px;
+        padding: 16px 52px 16px 16px;
     }
 }
-.actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 24px;
-}
-.cancel { background: transparent; border: none; color: #333; cursor: pointer; }

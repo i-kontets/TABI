@@ -12,17 +12,6 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import styles from "./Modal.module.css";
 
-export function InviteActions({ onCancel }) {
-    return (
-        <div className={styles.actions}>
-            <button className={styles.cancel} type="button" onClick={onCancel}>
-                閉じる
-            </button>
-        </div>
-    );
-}
-
-
 function Modal({ isOpen, onClose, children }) {
     // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
@@ -72,8 +61,15 @@ function Modal({ isOpen, onClose, children }) {
                 aria-modal="true"
                 onClick={(event) => event.stopPropagation()}
             >
+                <button
+                    className={styles.closeButton}
+                    type="button"
+                    onClick={onClose}
+                    aria-label="閉じる"
+                >
+                    ✕
+                </button>
                 {children}
-            <InviteActions onCancel={onClose} />
             </div>
         </div>,
         document.body
