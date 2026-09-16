@@ -10,7 +10,7 @@
  */
 // React Hooks と React Router のインポート
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 // モーダル表示用コンポーネント
 import Modal from "../Modal/Modal";
 import "./TravelOptions.css";
@@ -67,7 +67,7 @@ async function requestCandidates(groupId) {
     // GetCandidates.php への HTTP GETリクエストを送信
     // credentials: "include" により、クッキー（セッション情報）を自動的に含める
     const response = await fetch(
-        `${import.meta.env.BASE_URL}api/Trips/GetCandidates.php?group_id=${encodeURIComponent(groupId)}`,
+        `${import.meta.env.BASE_URL}api/Trips/GetCandidates.php?group_id=${encodeURIComponent(groupId)}&scope=list`,
         { credentials: "include" },
     );
     // レスポンス本体をJSON形式にパース
@@ -95,11 +95,16 @@ async function requestCandidates(groupId) {
 function TravelOptions({ active }) {
     // URL パラメータから groupId を取得（デフォルト値は "1"）
     const { groupId = "1" } = useParams();
+    const location = useLocation();
     const navigate = useNavigate();
+    const queryCategory = new URLSearchParams(location.search).get("category");
+    const initialCategory = Object.prototype.hasOwnProperty.call(categoryLabels, queryCategory)
+        ? queryCategory
+        : "destination";
 
     // 状態管理
     // activeCategory: 現在選択されているカテゴリー（destination, spot, hotel, restaurant）
-    const [activeCategory, setActiveCategory] = useState("destination");
+    const [activeCategory, setActiveCategory] = useState(initialCategory);
 
     // candidates: 取得した候補データの配列
     const [candidates, setCandidates] = useState([]);
@@ -123,44 +128,38 @@ function TravelOptions({ active }) {
             return undefined;
         }
 
-        setLoading(true);
-        setNotice("");
-
         // cleanup 関数用の cancelled フラグ：非同期処理完了後に状態を更新しないようにするため
         // （コンポーネント がアンマウントされた場合、古い状態更新を防ぐ）
         let cancelled = false;
 
-        // GetCandidates.php から候補データと旅行情報を非同期に取得
-        requestCandidates(groupId)
-            // 取得成功時
-            .then((data) => {
-                // ここで条件を確認し、状況に合う処理だけを実行します。
+        const loadCandidates = async () => {
+            setLoading(true);
+            setNotice("");
+
+            try {
+                const data = await requestCandidates(groupId);
+
                 if (cancelled) {
                     return;
                 }
 
-                // API から取得したデータで状態を更新
                 setCandidates(data.candidates);
                 setTripTitle(data.trip?.title || "");
-            })
-            // 取得失敗時
-            .catch(() => {
-                // ここで条件を確認し、状況に合う処理だけを実行します。
+            } catch {
                 if (cancelled) {
                     return;
                 }
 
                 setCandidates([]);
                 setNotice("候補データを取得できませんでした");
-            })
-            // 成功・失敗の両方で実行
-            .finally(() => {
-                // ここで条件を確認し、状況に合う処理だけを実行します。
+            } finally {
                 if (!cancelled) {
-                    // ローディング状態を終了
                     setLoading(false);
                 }
-            });
+            }
+        };
+
+        loadCandidates();
 
         // cleanup 関数：コンポーネント のアンマウント時に古い非同期処理の状態更新を防ぐ
         return () => {
@@ -172,7 +171,10 @@ function TravelOptions({ active }) {
     // activeCategory が変更されたときのみ再計算される
     const visibleCandidates = useMemo(
         // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
-        () => candidates.filter((candidate) => candidate.candidate_type === activeCategory),
+        () => candidates.filter((candidate) => (
+            candidate.candidate_type === activeCategory
+            && candidate.status === "selected"
+        )),
         [activeCategory, candidates],
     );
 
@@ -184,9 +186,40 @@ function TravelOptions({ active }) {
         setNotice("");
     };
 
+    const removeCandidate = async () => {
+        if (!selectedCandidate?.candidate_id) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${import.meta.env.BASE_URL}api/Trips/UpdateCandidateStatus.php`, {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    candidate_id: selectedCandidate.candidate_id,
+                    status: "rejected",
+                }),
+            });
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || !data?.success) {
+                throw new Error(data?.message || "候補の削除に失敗しました");
+            }
+
+            setCandidates((current) => current.filter(
+                (candidate) => candidate.candidate_id !== selectedCandidate.candidate_id,
+            ));
+            setSelectedCandidate(null);
+            setNotice("候補から削除しました");
+        } catch (error) {
+            setNotice(error instanceof Error ? error.message : "候補の削除に失敗しました");
+        }
+    };
+
     // openCandidateSearch は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const openCandidateSearch = () => {
-        navigate(`/Candidates?groupId=${encodeURIComponent(groupId)}`);
+        navigate(`/Candidates?group_id=${encodeURIComponent(groupId)}`);
     };
 
     return (
@@ -269,6 +302,11 @@ function TravelOptions({ active }) {
                                     <div className="candidateMeta">
                                         {/* カテゴリーラベル */}
                                         <span>{categoryLabels[candidate.candidate_type]}</span>
+                                        {candidate.status === "selected" && (
+                                            <small className="candidateStatus candidateStatus--selected">
+                                                採用
+                                            </small>
+                                        )}
                                         {/* destination の場合は行き先候補と明記 */}
                                         {candidate.candidate_type === "destination" && (
                                             <small>行き先候補</small>
@@ -329,6 +367,9 @@ function TravelOptions({ active }) {
                                     ? [Number(selectedCandidate.longitude), Number(selectedCandidate.latitude)]
                                     : undefined}
                             />
+                            <button className="removeCandidateButton" type="button" onClick={removeCandidate}>
+                                候補から削除
+                            </button>
                         </div>
                     </div>
                 )}

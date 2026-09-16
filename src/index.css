@@ -8,13 +8,9 @@
   --main-color: #F8F8FB;
   --sub-color: #44558D;
   --other-color: #CDD4E3;
-  /* 共通ブランドカラー (#44558d) */
-  --header-color: #44558D;
-  --footer-active-color: #44558D;
-  --fab-color: #44558D;
 }
 
 body {
-    margin: 0px;
-    background-color: var(--main-color);
+	margin: 0px;
+	background-color: var(--main-color);
 }

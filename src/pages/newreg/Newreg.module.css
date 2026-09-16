@@ -1,5 +1,7 @@
 .loginPage {
     min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
     padding: 24px 16px;
     box-sizing: border-box;
     /* background-image: url("/public/assets/login_umi.jpg"); */

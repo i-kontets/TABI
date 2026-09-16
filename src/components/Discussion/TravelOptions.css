@@ -220,6 +220,16 @@
     font-weight: 700;
 }
 
+.candidateMeta .candidateStatus {
+    color: #8a5a12;
+    background: #fff5d9;
+}
+
+.candidateMeta .candidateStatus--selected {
+    color: #146b5a;
+    background: #dff4ed;
+}
+
 .candidateInfo h3 {
     margin: 4px 0 4px;
     font-size: 15px;
@@ -342,6 +352,18 @@
     line-height: 1.65;
 }
 
+.removeCandidateButton {
+    width: 100%;
+    min-height: 42px;
+    margin-top: 12px;
+    color: #b42318;
+    background: #fff;
+    border: 1px solid #f0c7c3;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
 @media (max-width: 360px) {
     .candidateHeading {
         padding-inline: 12px;

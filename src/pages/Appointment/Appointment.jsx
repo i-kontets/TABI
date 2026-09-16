@@ -878,7 +878,7 @@ export default function AppointmentPage() {
     };
 
     return (
-        <div>
+        <div className={styles.page}>
             <AppointmentHeader title={stepTitles[step]} onBack={handleBack} />
 
             <div style={{ paddingBottom: 24 }}>

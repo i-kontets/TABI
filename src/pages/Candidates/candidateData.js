@@ -10,12 +10,14 @@
  */
 export const categories = [
     { id: 'all', label: 'すべて' },
+    { id: 'destination', label: '旅行先' },
     { id: 'spot', label: '観光スポット' },
     { id: 'hotel', label: '宿泊先' },
     { id: 'restaurant', label: '飲食店' },
 ];
 
 export const typeLabels = {
+    destination: '旅行先',
     spot: '観光',
     hotel: '宿泊',
     restaurant: '飲食',

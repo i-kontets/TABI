@@ -1,3 +1,10 @@
+.page {
+    max-width: 760px;
+    min-height: 100vh;
+    margin: 0 auto;
+    background: var(--main-color);
+}
+
 .container {
     padding: 16px;
     padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px)); /* フッター分の余白を確保して結果を上に表示 */

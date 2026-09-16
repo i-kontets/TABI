@@ -148,6 +148,8 @@ function App() {
                 <Routes>
                     <Route path="/" element={<Login />} />
                     <Route path="/Newreg" element={<Newreg />} />
+                    {/* DB停止時に表示するメンテナンス画面 */}
+                    <Route path="/maintenance" element={<Maintenance />} />
                     <Route path="/Home" element={<Home />} />
                     <Route path="/MyPage" element={<MyPage />} />
                     <Route path="/mypage" element={<MyPage />} />
@@ -158,6 +160,7 @@ function App() {
                     <Route path="/mypage/notification-permission" element={<NotificationPermissionPage />} />
                     <Route path="/mypage/contact" element={<ContactPage />} />
                     <Route path="/mypage/faq" element={<FaqPage />} />
+                    <Route path="/user/:userId" element={<UserProfilePage />} />
                     <Route path="/Itinerary" element={<Itinerary />} />
                     <Route path="/ItineraryJoin" element={<ItineraryJoin />} />
                     <Route path="/ItineraryEdit" element={<ItineraryEdit />} />
@@ -182,6 +185,8 @@ function App() {
                     <Route path="/CheckList" element={<CheckList />} />
                     <Route path="/maintenance" element={<Maintenance />} />
                     <Route path="/admin/*" element={<AdminRoutes />} />
+                    <Route path="/notifications" element={<NotificationListPage />} />
+                    <Route path="/notifications/:notificationId" element={<NotificationDetailPage />} />
                 </Routes>
             </BrowserRouter>
         </TripContext.Provider>

@@ -40,6 +40,7 @@ const emptyForm = {
     storeName: "",
     amount: "",
     category: "food",
+    paymentMethod: "either",
     selectedMemberIds: [],
 };
 
@@ -52,6 +53,12 @@ const categories = [
     { value: "sightseeing", label: "観光費", icon: "🎡" },
     { value: "shopping", label: "買い物", icon: "🛒" },
     { value: "other", label: "その他", icon: "💰" },
+];
+
+const paymentMethodOptions = [
+    { value: "cash", label: "現金のみ" },
+    { value: "paypay", label: "PayPayのみ" },
+    { value: "either", label: "どちらでもよい" },
 ];
 
 const yenFormatter = new Intl.NumberFormat("ja-JP");
@@ -153,6 +160,7 @@ function normalizePayItem(payItem, members) {
         paidById: Number(payItem.paidById || payItem.paid_by || payMembers[0]?.id || memberIds[0] || 0),
         paidByName: payItem.paidByName || "",
         category: payItem.category || "other",
+        paymentMethod: payItem.paymentMethod || payItem.payment_method || "either",
         members: payMembers,
         participantCount: payMembers.length,
         totalAmount,
@@ -410,6 +418,7 @@ export default function Invoice() {
                     title: form.storeName.trim(),
                     amount: totalAmount,
                     category: form.category,
+                    payment_method: form.paymentMethod,
                     members: members.map((member) => ({
                         user_id: member.id,
                         amount: member.amount,
@@ -732,6 +741,22 @@ export default function Invoice() {
                                     ))}
                                 </select>
                             </label>
+
+                            <fieldset className={styles.radioGroup}>
+                                <legend>支払い方法</legend>
+                                {paymentMethodOptions.map((option) => (
+                                    <label className={styles.radioOption} key={option.value}>
+                                        <input
+                                            type="radio"
+                                            name="paymentMethod"
+                                            value={option.value}
+                                            checked={form.paymentMethod === option.value}
+                                            onChange={handleChange}
+                                        />
+                                        {option.label}
+                                    </label>
+                                ))}
+                            </fieldset>
 
                             <fieldset className={styles.memberSelect}>
                                 <legend>対象メンバー</legend>

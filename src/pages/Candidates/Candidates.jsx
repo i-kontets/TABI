@@ -69,7 +69,7 @@ function Candidates() {
     const previousCategoryRef = useRef('all');
 
     // グループ ID を URL パラメータから取得（デフォルト: 1）
-    const groupId = parseInt(searchParams.get('group_id') || '1', 10);
+    const groupId = parseInt(searchParams.get('group_id') || searchParams.get('groupId') || '1', 10);
 
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [keyword, setKeyword] = useState('');
@@ -83,6 +83,8 @@ function Candidates() {
     const [loading, setLoading] = useState(true);
     // エラーメッセージを管理
     const [error, setError] = useState(null);
+    const [notice, setNotice] = useState('');
+    const [updatingIds, setUpdatingIds] = useState([]);
 
     // ページロード時に API からデータを取得
     useEffect(() => {
@@ -90,7 +92,11 @@ function Candidates() {
             try {
                 setLoading(true);
                 setError(null);
-                const response = await fetch(`/TABI/api/Trips/GetCandidates.php?group_id=${groupId}`, {
+                const query = new URLSearchParams({
+                    group_id: String(groupId),
+                    scope: 'search',
+                });
+                const response = await fetch(`${import.meta.env.BASE_URL}api/Trips/GetCandidates.php?${query}`, {
                     credentials: 'include', // クッキー（セッション）を含める
                 });
 
@@ -157,15 +163,59 @@ function Candidates() {
 
     // openDetail は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const openDetail = (place) => {
-        navigate(`/Candidates/${place.candidate_id}`, { state: { place } });
+        navigate(`/Candidates/${place.candidate_id}?group_id=${encodeURIComponent(groupId)}`, { state: { place } });
     };
+
+    const returnToCandidateTab = () => {
+        navigate(`/group/${encodeURIComponent(groupId)}/talk?tab=candidate`);
+    };
+
+    const updateCandidateStatus = async (place, status) => {
+        if (!place?.candidate_id || updatingIds.includes(place.candidate_id)) {
+            return;
+        }
+
+        try {
+            setNotice('');
+            setUpdatingIds((current) => [...current, place.candidate_id]);
+            const response = await fetch(`${import.meta.env.BASE_URL}api/Trips/UpdateCandidateStatus.php`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    candidate_id: place.candidate_id,
+                    status,
+                }),
+            });
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || !data?.success) {
+                throw new Error(data?.message || '候補の追加に失敗しました');
+            }
+
+            setCandidates((current) => current.map((candidate) => (
+                candidate.candidate_id === place.candidate_id
+                    ? { ...candidate, status }
+                    : candidate
+            )));
+        } catch (err) {
+            setNotice(err instanceof Error ? err.message : status === 'selected'
+                ? '候補の追加に失敗しました'
+                : '候補の削除に失敗しました');
+        } finally {
+            setUpdatingIds((current) => current.filter((id) => id !== place.candidate_id));
+        }
+    };
+
+    const handleAddCandidate = (place) => updateCandidateStatus(place, 'selected');
+    const handleRemoveCandidate = (place) => updateCandidateStatus(place, 'rejected');
 
     return (
         <div className={styles.page}>
             <div className={styles.phone}>
                 <header className={styles.hero}>
                     <div className={styles.topBar}>
-                        <button className={styles.iconButton} type="button" onClick={() => navigate(-1)} aria-label="戻る">
+                        <button className={styles.iconButton} type="button" onClick={returnToCandidateTab} aria-label="候補タブへ戻る">
                             <BackIcon />
                         </button>
                         <p className={styles.brand}>TABI</p>
@@ -237,9 +287,17 @@ function Candidates() {
                         </div>
                     )}
 
+                    {notice && !loading && !error && (
+                        <p className={styles.notice} role="status">{notice}</p>
+                    )}
+
                     {!loading && !error && (
                         <div className={styles.list}>
                             {filteredPlaces.map((place) => (
+                                (() => {
+                                    const isAdded = place.status === 'selected';
+
+                                    return (
                                 <article className={styles.card} key={place.candidate_id}>
                                     <div className={styles.imageWrap}>
                                         <img src={place.img_url} alt={place.candidate_name} />
@@ -251,7 +309,15 @@ function Candidates() {
                                                 <h3>{place.candidate_name}</h3>
                                                 <p>候補地</p>
                                             </div>
-                                            <button type="button" aria-label={`${place.candidate_name}の詳細を見る`} onClick={() => openDetail(place)}>＋</button>
+                                            <button
+                                                type="button"
+                                                disabled={updatingIds.includes(place.candidate_id)}
+                                                onClick={() => (isAdded ? handleRemoveCandidate(place) : handleAddCandidate(place))}
+                                            >
+                                                {updatingIds.includes(place.candidate_id)
+                                                    ? isAdded ? '削除中' : '追加中'
+                                                    : isAdded ? '候補から削除' : '候補に追加'}
+                                            </button>
                                         </div>
 
                                         <p className={styles.description}>{place.description}</p>
@@ -265,6 +331,8 @@ function Candidates() {
                                         </button>
                                     </div>
                                 </article>
+                                    );
+                                })()
                             ))}
                         </div>
                     )}
