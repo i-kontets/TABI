@@ -65,6 +65,6 @@
     .modal {
         width: 100%;
         max-height: calc(100dvh - 32px);
-        padding: 16px 52px 16px 16px;
+        padding: 16px 16px 16px 16px;
     }
 }

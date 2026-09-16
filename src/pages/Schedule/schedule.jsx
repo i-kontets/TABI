@@ -236,6 +236,12 @@ export default function SchedulePage() {
         setIsAddModalOpen(false);
     };
 
+    const closeDateTimePickerOnOtherFocus = (event) => {
+        if (!event.target.closest('[data-date-time-control]')) {
+            setActiveDateTimePicker(null);
+        }
+    };
+
     const updateEventForm = (field, value) => {
         setEventFormError('');
         setEventForm((current) => {
@@ -508,7 +514,7 @@ export default function SchedulePage() {
             </button>
 
             <Modal isOpen={isAddModalOpen} onClose={closeAddModal}>
-                <form className={styles.addForm} onSubmit={addScheduleEvent}>
+                <form className={styles.addForm} onSubmit={addScheduleEvent} onFocusCapture={closeDateTimePickerOnOtherFocus}>
                     <div className={styles.addFormHeader}>
                         <p>新しい予定</p>
                         <h2>予定を追加</h2>
@@ -525,7 +531,7 @@ export default function SchedulePage() {
                         />
                     </label>
 
-                    <section className={styles.dateTimeFields} aria-label="開始と終了の日時">
+                    <section className={styles.dateTimeFields} aria-label="開始と終了の日時" data-date-time-control>
                         <div className={styles.dateTimeColumn}>
                             <h3>開始</h3>
                             <button
@@ -572,7 +578,7 @@ export default function SchedulePage() {
                     </section>
 
                     {activeDateTimePicker?.endsWith('Date') && (
-                        <section className={styles.dateTimePickerPanel} aria-label="日付を選択">
+                        <section className={styles.dateTimePickerPanel} aria-label="日付を選択" data-date-time-control>
                             <p>{activeDateTimePicker === 'startDate' ? '開始日を選択' : '終了日を選択'}</p>
                             <DayPicker
                                 mode="single"
@@ -593,7 +599,7 @@ export default function SchedulePage() {
                     )}
 
                     {activeDateTimePicker?.endsWith('Time') && (
-                        <section className={styles.dateTimePickerPanel} aria-label="時間を選択">
+                        <section className={styles.dateTimePickerPanel} aria-label="時間を選択" data-date-time-control>
                             <ScheduleTimeWheel
                                 label={activeDateTimePicker === 'startTime' ? '開始時間を選択' : '終了時間を選択'}
                                 value={activeDateTimePicker === 'startTime' ? eventForm.startTime : eventForm.endTime}
