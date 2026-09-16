@@ -183,7 +183,10 @@ function App() {
                     <Route path="/TouristRanking" element={<Tourist />} />
                     <Route path="/CottageChatPage" element={<CottageChatPage />} />
                     <Route path="/CheckList" element={<CheckList />} />
+                    <Route path="/maintenance" element={<Maintenance />} />
                     <Route path="/admin/*" element={<AdminRoutes />} />
+                    <Route path="/notifications" element={<NotificationListPage />} />
+                    <Route path="/notifications/:notificationId" element={<NotificationDetailPage />} />
                 </Routes>
             </BrowserRouter>
         </TripContext.Provider>

@@ -7,6 +7,8 @@
 
 .loginPage {
     min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
     /* background-image: url("/public/assets/login_umi.jpg"); */
     background-size: cover;
     background-position: center;

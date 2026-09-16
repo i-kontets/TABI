@@ -10,6 +10,14 @@ const knownPlaceCoordinates = {
     "伊勢神宮": [136.7194, 34.4854],
 };
 
+function getKnownPlaceCoordinates(place) {
+    const normalizedPlace = normalizePlaceName(place);
+
+    return Object.entries(knownPlaceCoordinates).find(([name]) =>
+        normalizedPlace === name || normalizedPlace.includes(name)
+    )?.[1] ?? null;
+}
+
 function formatDistance(distance) {
     const km = distance / 1000;
 
@@ -25,14 +33,6 @@ function formatDuration(duration) {
 }
 
 function normalizePlaceName(place) {
-
-    function getKnownPlaceCoordinates(place) {
-        const normalizedPlace = normalizePlaceName(place);
-
-        return Object.entries(knownPlaceCoordinates).find(([name]) =>
-            normalizedPlace === name || normalizedPlace.includes(name)
-        )?.[1] ?? null;
-    }
     if (typeof place !== "string") {
         return "";
     }
@@ -41,6 +41,15 @@ function normalizePlaceName(place) {
         .replace(/[()（）]/g, " ")
         .replace(/エリア/g, "")
         .trim();
+}
+
+function getBearing([lng1, lat1], [lng2, lat2]) {
+    const deltaLng = toRadians(lng2 - lng1);
+    const y = Math.sin(deltaLng) * Math.cos(toRadians(lat2));
+    const x = Math.cos(toRadians(lat1)) * Math.sin(toRadians(lat2))
+        - Math.sin(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.cos(deltaLng);
+
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
 
 function toRadians(value) {
@@ -169,6 +178,8 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
     const spokenStepIndexRef = useRef(-1);
     const lastRerouteAtRef = useRef(0);
     const initialLocationRequestRef = useRef(false);
+    const routeRequestRef = useRef(null);
+    const previousLocationRef = useRef(null);
 
     const destinationMarker = useRef(null);
     const currentMarker = useRef(null);
@@ -179,6 +190,7 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
     ]);
 
     const [currentLocation, setCurrentLocation] = useState(null);
+    const [locationMeta, setLocationMeta] = useState({ accuracy: null, heading: null, speed: null });
     const [routeSummary, setRouteSummary] = useState(null);
     const [routePlan, setRoutePlan] = useState(null);
     const [activeStepIndex, setActiveStepIndex] = useState(0);
@@ -194,6 +206,7 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
     );
 
     const zoom = initialZoom;
+    const initialCenterKey = Array.isArray(initialCenter) ? initialCenter.join(",") : "";
 
     const routeSteps = routePlan?.steps ?? [];
     const currentStep = routeSteps[activeStepIndex] ?? null;
@@ -257,22 +270,33 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
             .join(" ");
     }
 
-    async function fetchRoute(origin) {
+    async function fetchRoute(origin, { isReroute = false } = {}) {
         if (!origin) {
             return null;
         }
 
         try {
+            routeRequestRef.current?.abort();
+            const controller = new AbortController();
+            routeRequestRef.current = controller;
             setNavigationState("loading");
             setNavigationError("");
 
+            const heading = locationMeta.heading;
+            const bearingParameter = Number.isFinite(heading)
+                ? `&bearings=${Math.round(heading)},45;`
+                : "";
+            const rerouteParameter = isReroute
+                ? "&avoid_maneuver_radius=100"
+                : "";
+
             const url =
-                `https://api.mapbox.com/directions/v5/mapbox/driving/` +
+                `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/` +
                 `${origin[0]},${origin[1]};` +
                 `${center[0]},${center[1]}` +
-                `?geometries=geojson&steps=true&overview=full&banner_instructions=true&voice_instructions=true&voice_units=metric&language=ja&access_token=${mapboxgl.accessToken}`;
+                `?geometries=geojson&steps=true&overview=full&alternatives=false&depart_at=now&banner_instructions=true&voice_instructions=true&voice_units=metric&language=ja${bearingParameter}${rerouteParameter}&access_token=${mapboxgl.accessToken}`;
 
-            const res = await fetch(url);
+            const res = await fetch(url, { signal: controller.signal });
             const data = await res.json();
 
             if (!data.routes?.length) {
@@ -329,6 +353,9 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
             setNavigationState("ready");
             return nextRoutePlan;
         } catch (error) {
+            if (error.name === "AbortError") {
+                return null;
+            }
             console.error("Route Error", error);
             setNavigationState("ready");
             setNavigationError("ルート案内の取得に失敗しました。");
@@ -368,6 +395,7 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
                 origin = await getCurrentPosition();
                 setCurrentLocation(origin);
             }
+            previousLocationRef.current = origin;
 
             if (!routePlanRef.current) {
                 const nextRoutePlan = await fetchRoute(origin);
@@ -384,10 +412,27 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
             if (!watchIdRef.current && navigator.geolocation) {
                 watchIdRef.current = navigator.geolocation.watchPosition(
                     (position) => {
-                        setCurrentLocation([
+                        const nextLocation = [
                             position.coords.longitude,
                             position.coords.latitude,
-                        ]);
+                        ];
+                        const previousLocation = previousLocationRef.current;
+                        const movedDistance = previousLocation
+                            ? haversineDistance(previousLocation, nextLocation)
+                            : 0;
+                        const heading = Number.isFinite(position.coords.heading)
+                            ? position.coords.heading
+                            : previousLocation && movedDistance >= 3
+                                ? getBearing(previousLocation, nextLocation)
+                                : locationMeta.heading;
+
+                        previousLocationRef.current = nextLocation;
+                        setCurrentLocation(nextLocation);
+                        setLocationMeta({
+                            accuracy: position.coords.accuracy,
+                            heading,
+                            speed: position.coords.speed,
+                        });
                     },
                     (error) => {
                         console.error("現在地追跡失敗", error);
@@ -395,15 +440,15 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
                     },
                     {
                         enableHighAccuracy: true,
-                        maximumAge: 2000,
+                        maximumAge: 1000,
                         timeout: 15000,
                     }
                 );
             }
 
-            if (routeSteps.length > 0) {
+            if (routePlanRef.current?.steps.length > 0) {
                 announceInstruction(
-                    makeRouteAnnouncement(routeSteps[0], routePlanRef.current.distance, routePlanRef.current.duration)
+                    makeRouteAnnouncement(routePlanRef.current.steps[0], routePlanRef.current.distance, routePlanRef.current.duration)
                 );
             }
         } catch (error) {
@@ -428,7 +473,7 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
 
         lastRerouteAtRef.current = now;
         spokenStepIndexRef.current = -1;
-        fetchRoute(currentLocation);
+        fetchRoute(currentLocation, { isReroute: true });
     }
 
     // 地図生成
@@ -489,6 +534,7 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
             currentMarker.current?.remove();
             map.current?.remove();
             map.current = null;
+            routeRequestRef.current?.abort();
         };
     }, []);
 
@@ -502,7 +548,14 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
 
         getCurrentPosition()
             .then((position) => {
-                setCurrentLocation(position);
+                const nextLocation = [position.coords.longitude, position.coords.latitude];
+                previousLocationRef.current = nextLocation;
+                setCurrentLocation(nextLocation);
+                setLocationMeta({
+                    accuracy: position.coords.accuracy,
+                    heading: position.coords.heading,
+                    speed: position.coords.speed,
+                });
             })
             .catch((error) => {
                 console.error("現在地取得失敗", error);
@@ -513,9 +566,12 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
     // 初期位置が親から渡されている場合はそれを優先
     useEffect(() => {
         if (Array.isArray(initialCenter) && initialCenter.length === 2) {
+            routePlanRef.current = null;
+            setRoutePlan(null);
+            setRouteSummary(null);
             setCenter(initialCenter);
         }
-    }, [initialCenter]);
+    }, [initialCenterKey]);
 
 
     // 地名 → 座標
@@ -572,11 +628,12 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
     }, [address, place]);
 
 
-    // ルート取得
+    // ルート取得は目的地の確定時と、まだ経路がない時だけに行います。
+    // GPS更新ごとにDirections APIを呼ばず、逸脱時は別の再探索処理に任せます。
     useEffect(() => {
         if (!map.current || !mapLoaded || !center || !destinationReady) return;
 
-        if (!currentLocation) {
+        if (!currentLocation || routePlanRef.current) {
             return;
         }
 
@@ -599,7 +656,7 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
         return () => {
             cancelled = true;
         };
-    }, [center, currentLocation, mapLoaded]);
+    }, [center, currentLocation, destinationReady, mapLoaded]);
 
 
     // マーカー・ルート更新
@@ -610,6 +667,7 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
             map.current.easeTo({
                 center: currentLocation,
                 zoom: Math.max(zoom, 14),
+                bearing: Number.isFinite(locationMeta.heading) ? locationMeta.heading : map.current.getBearing(),
                 duration: 700,
             });
         } else {
@@ -641,6 +699,8 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
 
             currentMarker.current = new mapboxgl.Marker({
                 color: "#2563eb",
+                rotation: Number.isFinite(locationMeta.heading) ? locationMeta.heading : 0,
+                rotationAlignment: "map",
             })
                 .setLngLat(currentLocation)
                 .setPopup(
@@ -656,6 +716,7 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
         destinationReady,
         currentLocation,
         isNavigating,
+        locationMeta.heading,
         mapLoaded
     ]);
 
@@ -770,6 +831,12 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
                     </div>
                 </div>
 
+                {locationMeta.accuracy != null && (
+                    <p className={styles.navigationDetail}>
+                        現在地の精度: ±{Math.round(locationMeta.accuracy)} m
+                    </p>
+                )}
+
                 {navigationError && (
                     <p className={styles.navigationError}>{navigationError}</p>
                 )}
@@ -787,6 +854,12 @@ function MiniMap({ place, address, label, center: initialCenter, zoom: initialZo
                             </p>
                         )}
                     </div>
+                )}
+
+                {isNavigating && (
+                    <p className={styles.navigationWarn}>
+                        運転中は画面を操作せず、音声案内を利用してください。
+                    </p>
                 )}
 
                 {!isNavigating && routeSteps[activeStepIndex] && (

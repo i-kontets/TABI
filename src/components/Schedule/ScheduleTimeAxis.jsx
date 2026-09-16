@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Tabs, Timeline } from '@mantine/core';
+import { Timeline } from '@mantine/core';
 import Modal from '../Modal/Modal';
-import groupIcon from '../../assets/icons/groups.svg';
-import personIcon from '../../assets/icons/person.svg';
 import styles from './ScheduleTimeAxis.module.css';
 
 const GROUP_COLORS = {
@@ -607,9 +605,8 @@ function MemberAvatars({ userIds = [], members = [] }) {
  * ScheduleTimeAxis は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-export default function ScheduleTimeAxis({ selectedDay, selectedDateValue, members = [], draftEvents = [] }) {
+export default function ScheduleTimeAxis({ selectedDay, selectedDateValue, viewMode, members = [], draftEvents = [] }) {
     const [now, setNow] = useState(() => new Date());
-    const [viewMode, setViewMode] = useState('all');
     const [selectedEvent, setSelectedEvent] = useState(null);
     const loginUserId = getLoginUserId();
     const memberAppliedItems = useMemo(
@@ -642,33 +639,6 @@ export default function ScheduleTimeAxis({ selectedDay, selectedDateValue, membe
 
     return (
         <section className={styles.timelineSection} aria-label="スケジュール時間軸">
-            <Tabs
-                value={viewMode}
-                onChange={setViewMode}
-                data-view-mode={viewMode}
-                className={styles.viewToggle}
-                classNames={{
-                    list: styles.viewToggleList,
-                    tab: styles.viewToggleTab,
-                }}
-                aria-label="スケジュール表示切り替え"
-            >
-                <Tabs.List grow>
-                    <Tabs.Tab value="all">
-                        <span className={styles.viewToggleTabLabel}>
-                            <img className={styles.viewToggleIcon} src={groupIcon} alt="" aria-hidden="true" />
-                            全体
-                        </span>
-                    </Tabs.Tab>
-                    <Tabs.Tab value="mine">
-                        <span className={styles.viewToggleTabLabel}>
-                            <img className={styles.viewToggleIcon} src={personIcon} alt="" aria-hidden="true" />
-                            自分
-                        </span>
-                    </Tabs.Tab>
-                </Tabs.List>
-            </Tabs>
-
             <div key={viewMode} className={styles.timelineBody}>
                 <Timeline
                     active={items.length - 1}

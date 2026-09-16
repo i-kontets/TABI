@@ -96,7 +96,6 @@ function CandidateDetail() {
     const navigate = useNavigate();
     const { candidateId } = useParams();
     const location = useLocation();
-    const groupId = new URLSearchParams(location.search).get('group_id') || new URLSearchParams(location.search).get('groupId') || '1';
     const candidateFromState = location.state?.place;
 
     const candidate = useMemo(() => {
@@ -107,7 +106,7 @@ function CandidateDetail() {
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [isAdded, setIsAdded] = useState(
-        candidate?.status === 'candidate' || candidate?.status === 'selected'
+        candidate?.status === 'selected'
     );
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
@@ -179,7 +178,7 @@ function CandidateDetail() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     candidate_id: candidate.candidate_id,
-                    status: 'candidate',
+                    status: 'selected',
                 }),
             });
             const data = await response.json().catch(() => null);
@@ -189,7 +188,6 @@ function CandidateDetail() {
             }
 
             setIsAdded(true);
-            navigate(`/group/${encodeURIComponent(groupId)}/talk?tab=candidate&category=${encodeURIComponent(candidate.candidate_type || candidate.type || 'destination')}`);
         } catch (error) {
             window.alert(error instanceof Error ? error.message : '候補の追加に失敗しました');
         } finally {
@@ -239,8 +237,9 @@ function CandidateDetail() {
                         <button 
                             className={`${styles.actionButton} ${isAdded ? styles.actionButtonActive : ''}`} 
                             type="button" 
-                            onClick={handleAdd}
-                            aria-label={isAdded ? "候補に追加済み" : "候補に追加"}
+                            onClick={isAdded ? handleRemove : handleAdd}
+                            disabled={isUpdatingStatus}
+                            aria-label={isAdded ? "候補から削除" : "候補に追加"}
                         >
                             <PlusIcon />
                         </button>
@@ -291,15 +290,11 @@ function CandidateDetail() {
                         <button 
                             className={`${styles.primaryButton} ${isAdded ? styles.primaryButtonActive : ''}`} 
                             type="button" 
-                            onClick={handleAdd}
+                            onClick={isAdded ? handleRemove : handleAdd}
+                            disabled={isUpdatingStatus}
                         >
-                            {isUpdatingStatus ? '追加中...' : isAdded ? '追加済み' : '候補に追加する'}
+                            {isUpdatingStatus ? '処理中...' : isAdded ? '候補から削除' : '候補に追加する'}
                         </button>
-                        {isAdded && (
-                            <button className={styles.removeButton} type="button" onClick={handleRemove} disabled={isUpdatingStatus}>
-                                候補から削除
-                            </button>
-                        )}
                     </section>
 
                     <section className={styles.section}>

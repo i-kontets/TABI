@@ -16,6 +16,8 @@ import BottomNav from '../../components/bottomNav/BottomNav';
 import Header from '../../components/header/Header';
 import Modal from '../../components/Modal/Modal';
 import addIcon from '../../assets/icons/add.svg';
+import groupIcon from '../../assets/icons/groups.svg';
+import personIcon from '../../assets/icons/person.svg';
 import styles from './Schedulepage.module.css';
 
 const fallbackDays = [
@@ -99,6 +101,7 @@ export default function SchedulePage() {
     const groupId = searchParams.get('groupId');
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [selectedDay, setSelectedDay] = useState('day1');
+    const [viewMode, setViewMode] = useState('all');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [draftEvents, setDraftEvents] = useState([]);
     const [eventForm, setEventForm] = useState({
@@ -291,11 +294,39 @@ export default function SchedulePage() {
                             })}
                         </div>
                     </div>
+
+                    <div className={styles.viewModeTabs} role="tablist" aria-label="スケジュール表示切り替え">
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={viewMode === 'all'}
+                            className={`${styles.viewModeTab} ${viewMode === 'all' ? styles.viewModeTabActive : ''}`}
+                            onClick={() => setViewMode('all')}
+                        >
+                            <span className={styles.viewModeTabContent}>
+                                <img src={groupIcon} alt="" aria-hidden="true" />
+                                全員の予定
+                            </span>
+                        </button>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={viewMode === 'mine'}
+                            className={`${styles.viewModeTab} ${viewMode === 'mine' ? styles.viewModeTabActive : ''}`}
+                            onClick={() => setViewMode('mine')}
+                        >
+                            <span className={styles.viewModeTabContent}>
+                                <img src={personIcon} alt="" aria-hidden="true" />
+                                自分の予定
+                            </span>
+                        </button>
+                    </div>
                 </section>
 
                 <ScheduleTimeAxis
                     selectedDay={activeSelectedDay}
                     selectedDateValue={activeSelectedDate}
+                    viewMode={viewMode}
                     members={members}
                     draftEvents={draftEvents}
                 />
