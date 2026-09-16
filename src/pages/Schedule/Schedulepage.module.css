@@ -10,9 +10,9 @@
 }
 
 .dayPanel {
-  padding: 32px 18px 22px;
+  padding: 30px 18px 0px;
   border: 1px solid color-mix(in srgb, var(--other-color) 78%, #ffffff);
-  border-radius: 999px;
+  border-radius: 44px;
   background: #ffffff;
   box-shadow: 0 5px 14px rgba(32, 35, 50, 0.08);
 }
@@ -97,6 +97,63 @@
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
+}
+
+.viewModeTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 16px;
+  border-top: 2px solid color-mix(in srgb, var(--other-color) 48%, #ffffff);
+}
+
+.viewModeTab {
+  position: relative;
+  min-height: 50px;
+  padding: 11px 12px 9px;
+  border: 0;
+  background: transparent;
+  color: color-mix(in srgb, var(--sub-color) 62%, #ffffff);
+  cursor: pointer;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  transition: color 180ms ease, font-size 180ms ease;
+}
+
+.viewModeTabContent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.viewModeTabContent img {
+  width: 18px;
+  height: 18px;
+  opacity: 0.62;
+  filter: grayscale(1);
+  transition: width 180ms ease, height 180ms ease, opacity 180ms ease, filter 180ms ease;
+}
+
+.viewModeTabActive .viewModeTabContent img {
+  width: 22px;
+  height: 22px;
+  opacity: 1;
+  filter: none;
+}
+
+.viewModeTabActive {
+  color: var(--sub-color);
+  font-size: 18px;
+}
+
+.viewModeTab:focus-visible {
+  z-index: 1;
+  outline: 2px solid var(--sub-color);
+  outline-offset: -4px;
+  border-radius: 8px;
 }
 
 .dayStepConnector {
