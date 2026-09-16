@@ -257,6 +257,133 @@
   gap: 10px;
 }
 
+.dateTimeFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dateTimeColumn {
+  min-width: 0;
+  padding: 12px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--sub-color) 6%, #ffffff);
+}
+
+.dateTimeColumn h3 {
+  margin: 0 0 10px;
+  color: var(--sub-color);
+  font-size: 16px;
+}
+
+.dateTimeTrigger {
+  display: grid;
+  width: 100%;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 9px 8px;
+  border: 1px solid #d6dae4;
+  border-radius: 9px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.dateTimeTrigger:first-of-type {
+  margin-top: 0;
+}
+
+.dateTimeTrigger span {
+  color: #6b7280;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.dateTimeTrigger strong {
+  overflow: hidden;
+  color: var(--sub-color);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dateTimeTrigger[aria-expanded='true'] {
+  border-color: var(--sub-color);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--sub-color) 16%, transparent);
+}
+
+.dateTimePickerPanel {
+  overflow: hidden;
+  margin: 2px 0;
+  padding: 12px;
+  border: 1px solid #e1e5ed;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.dateTimePickerPanel > p {
+  margin: 0 0 8px;
+  color: var(--sub-color);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.dateTimePickerPanel :global(.rdp-root) {
+  --rdp-accent-color: var(--sub-color);
+  --rdp-day-width: 34px;
+  --rdp-day-height: 34px;
+  margin: 0 auto;
+}
+
+.tripCalendarDay:not(:global(.rdp-selected)) button {
+  background: color-mix(in srgb, var(--sub-color) 9%, #ffffff);
+}
+
+.timeWheelField {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  overscroll-behavior: contain;
+  touch-action: none;
+}
+
+.timeWheelLabel {
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.timeWheelWrapper {
+  height: 96px;
+  overflow: hidden;
+  border: 1px solid #d6dae4;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.timePickerItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  color: #9aa1b2;
+  font-size: 14px;
+}
+
+.timePickerItemSelected {
+  color: var(--sub-color);
+  font-weight: 800;
+}
+
+.formError {
+  margin: -8px 0 0;
+  color: #c74444;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .audienceField {
   display: grid;
   gap: 10px;

@@ -8,8 +8,12 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import Picker from 'react-mobile-picker';
+import { DayPicker } from 'react-day-picker';
+import { ja } from 'react-day-picker/locale';
+import 'react-day-picker/style.css';
 import { TripContext } from '../../App';
 import ScheduleTimeAxis from '../../components/Schedule/ScheduleTimeAxis';
 import BottomNav from '../../components/bottomNav/BottomNav';
@@ -28,6 +32,14 @@ const fallbackDays = [
     { id: 'day5', date: '7/2(木)' },
 ];
 const weekLabels = ['日', '月', '火', '水', '木', '金', '土'];
+const hourOptions = Array.from({ length: 24 }, (_, hour) => ({
+    label: String(hour).padStart(2, '0'),
+    value: String(hour).padStart(2, '0'),
+}));
+const minuteOptions = ['00', '10', '20', '30', '40', '50'].map((minute) => ({
+    label: minute,
+    value: minute,
+}));
 
 function parseLocalDate(dateText) {
     if (!dateText) {
@@ -45,6 +57,11 @@ function parseLocalDate(dateText) {
 
 function formatScheduleDate(date) {
     return `${date.getMonth() + 1}/${date.getDate()}(${weekLabels[date.getDay()]})`;
+}
+
+function formatPickerDate(dateValue) {
+    const date = parseLocalDate(dateValue);
+    return date ? formatScheduleDate(date) : '日付を選択';
 }
 
 function buildScheduleDays(tripPeriod) {
@@ -83,6 +100,79 @@ function getLoginUser() {
     }
 }
 
+function splitTime(value) {
+    const [hour = '09', minute = '00'] = value.split(':');
+    return { hour, minute };
+}
+
+function ScheduleTimeWheel({ label, value, onChange }) {
+    const { hour, minute } = splitTime(value);
+    const lastWheelAt = useRef({ hour: 0, minute: 0 });
+
+    const handleDesktopWheel = (event) => {
+        const column = event.target.closest('[data-time-part]');
+        const part = column?.dataset.timePart;
+
+        if (!part || event.deltaY === 0) {
+            return;
+        }
+
+        event.preventDefault();
+        const now = Date.now();
+        if (now - lastWheelAt.current[part] < 180) {
+            return;
+        }
+        lastWheelAt.current[part] = now;
+
+        const options = part === 'hour' ? hourOptions : minuteOptions;
+        const currentValue = part === 'hour' ? hour : minute;
+        const currentIndex = options.findIndex((option) => option.value === currentValue);
+        const direction = event.deltaY > 0 ? 1 : -1;
+        const nextIndex = Math.max(0, Math.min(options.length - 1, currentIndex + direction));
+        const nextValue = options[nextIndex].value;
+
+        onChange(part === 'hour' ? `${nextValue}:${minute}` : `${hour}:${nextValue}`);
+    };
+
+    return (
+        <div className={styles.timeWheelField}>
+            <span className={styles.timeWheelLabel}>{label}</span>
+            <Picker
+                value={{ hour, minute }}
+                onChange={(nextValue) => onChange(`${nextValue.hour}:${nextValue.minute}`)}
+                height={96}
+                itemHeight={32}
+                wheelMode="off"
+                onWheelCapture={handleDesktopWheel}
+                className={styles.timeWheelWrapper}
+            >
+                <Picker.Column name="hour" data-time-part="hour">
+                    {hourOptions.map((option) => (
+                        <Picker.Item key={option.value} value={option.value}>
+                            {({ selected }) => (
+                                <span className={`${styles.timePickerItem} ${selected ? styles.timePickerItemSelected : ''}`}>
+                                    {option.label}時
+                                </span>
+                            )}
+                        </Picker.Item>
+                    ))}
+                </Picker.Column>
+                <Picker.Column name="minute" data-time-part="minute">
+                    {minuteOptions.map((option) => (
+                        <Picker.Item key={option.value} value={option.value}>
+                            {({ selected }) => (
+                                <span className={`${styles.timePickerItem} ${selected ? styles.timePickerItemSelected : ''}`}>
+                                    {option.label}分
+                                </span>
+                            )}
+                        </Picker.Item>
+                    ))}
+                </Picker.Column>
+            </Picker>
+        </div>
+    );
+}
+
 /**
  * SchedulePage は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
@@ -104,8 +194,13 @@ export default function SchedulePage() {
     const [viewMode, setViewMode] = useState('all');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [draftEvents, setDraftEvents] = useState([]);
+    const [eventFormError, setEventFormError] = useState('');
+    const [activeDateTimePicker, setActiveDateTimePicker] = useState(null);
     const [eventForm, setEventForm] = useState({
         day: 'day1',
+        endDay: 'day1',
+        startDate: '',
+        endDate: '',
         title: '',
         startTime: '09:00',
         endTime: '10:00',
@@ -121,12 +216,19 @@ export default function SchedulePage() {
         : scheduleDays[0]?.id || 'day1';
     const activeSelectedDate = scheduleDays.find((day) => day.id === activeSelectedDay)?.dateValue;
 
+    const getDayId = (dateValue) => scheduleDays.find((day) => day.dateValue === dateValue)?.id || `date-${dateValue}`;
+
     const openAddModal = () => {
         setEventForm((current) => ({
             ...current,
             day: activeSelectedDay,
+            endDay: activeSelectedDay,
+            startDate: activeSelectedDate || current.startDate,
+            endDate: activeSelectedDate || current.endDate,
             memberIds: current.memberIds.filter((memberId) => members.some((member) => Number(member.id) === memberId)),
         }));
+        setEventFormError('');
+        setActiveDateTimePicker(null);
         setIsAddModalOpen(true);
     };
 
@@ -135,7 +237,54 @@ export default function SchedulePage() {
     };
 
     const updateEventForm = (field, value) => {
-        setEventForm((current) => ({ ...current, [field]: value }));
+        setEventFormError('');
+        setEventForm((current) => {
+            const nextForm = { ...current, [field]: value };
+
+            if (field === 'startTime' && current.startDate === current.endDate && value > current.endTime) {
+                nextForm.endTime = value;
+            }
+
+            if (field === 'endTime' && current.startDate === current.endDate && value < current.startTime) {
+                nextForm.endTime = current.startTime;
+            }
+
+            return nextForm;
+        });
+    };
+
+    const selectEventDate = (field, date) => {
+        if (!date) {
+            return;
+        }
+
+        const dateValue = [
+            date.getFullYear(),
+            String(date.getMonth() + 1).padStart(2, '0'),
+            String(date.getDate()).padStart(2, '0'),
+        ].join('-');
+        const dayField = field === 'startDate' ? 'day' : 'endDay';
+
+        setEventFormError('');
+        setEventForm((current) => {
+            const nextForm = {
+                ...current,
+                [field]: dateValue,
+                [dayField]: getDayId(dateValue),
+            };
+
+            if (nextForm.endDate < nextForm.startDate) {
+                nextForm.endDate = nextForm.startDate;
+                nextForm.endDay = getDayId(nextForm.startDate);
+            }
+
+            if (nextForm.startDate === nextForm.endDate && nextForm.endTime < nextForm.startTime) {
+                nextForm.endTime = nextForm.startTime;
+            }
+
+            return nextForm;
+        });
+        setActiveDateTimePicker(null);
     };
 
     const toggleMember = (memberId) => {
@@ -151,7 +300,16 @@ export default function SchedulePage() {
         event.preventDefault();
 
         const title = eventForm.title.trim();
+        const isEndBeforeStart = eventForm.endDate < eventForm.startDate ||
+            (eventForm.endDate === eventForm.startDate && eventForm.endTime < eventForm.startTime);
+
         if (!title) {
+            setEventFormError('予定名を入力してください。');
+            return;
+        }
+
+        if (isEndBeforeStart) {
+            setEventFormError('終了日時は開始日時と同時刻以降にしてください。');
             return;
         }
 
@@ -159,6 +317,9 @@ export default function SchedulePage() {
         setDraftEvents((current) => [...current, {
             id: `draft-${Date.now()}`,
             day: eventForm.day,
+            endDay: eventForm.endDay,
+            startDate: eventForm.startDate,
+            endDate: eventForm.endDate,
             time: eventForm.startTime,
             endTime: eventForm.endTime,
             title,
@@ -171,6 +332,9 @@ export default function SchedulePage() {
         setSelectedDay(eventForm.day);
         setEventForm({
             day: eventForm.day,
+            endDay: eventForm.endDay,
+            startDate: eventForm.startDate,
+            endDate: eventForm.endDate,
             title: '',
             startTime: eventForm.startTime,
             endTime: eventForm.endTime,
@@ -358,18 +522,86 @@ export default function SchedulePage() {
                             onChange={(event) => updateEventForm('title', event.target.value)}
                             placeholder="例：ランチ"
                             required
-                            autoFocus
                         />
                     </label>
 
-                    <div className={styles.formRow}>
-                        <label className={styles.formField}>
-                            <span>日付</span>
-                            <select value={eventForm.day} onChange={(event) => updateEventForm('day', event.target.value)}>
-                                {scheduleDays.map((day) => <option key={day.id} value={day.id}>{day.date}</option>)}
-                            </select>
-                        </label>
-                    </div>
+                    <section className={styles.dateTimeFields} aria-label="開始と終了の日時">
+                        <div className={styles.dateTimeColumn}>
+                            <h3>開始</h3>
+                            <button
+                                type="button"
+                                className={styles.dateTimeTrigger}
+                                aria-expanded={activeDateTimePicker === 'startDate'}
+                                onClick={() => setActiveDateTimePicker((current) => current === 'startDate' ? null : 'startDate')}
+                            >
+                                <span>開始日</span>
+                                <strong>{formatPickerDate(eventForm.startDate)}</strong>
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.dateTimeTrigger}
+                                aria-expanded={activeDateTimePicker === 'startTime'}
+                                onClick={() => setActiveDateTimePicker((current) => current === 'startTime' ? null : 'startTime')}
+                            >
+                                <span>開始時間</span>
+                                <strong>{eventForm.startTime}</strong>
+                            </button>
+                        </div>
+
+                        <div className={styles.dateTimeColumn}>
+                            <h3>終了</h3>
+                            <button
+                                type="button"
+                                className={styles.dateTimeTrigger}
+                                aria-expanded={activeDateTimePicker === 'endDate'}
+                                onClick={() => setActiveDateTimePicker((current) => current === 'endDate' ? null : 'endDate')}
+                            >
+                                <span>終了日</span>
+                                <strong>{formatPickerDate(eventForm.endDate)}</strong>
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.dateTimeTrigger}
+                                aria-expanded={activeDateTimePicker === 'endTime'}
+                                onClick={() => setActiveDateTimePicker((current) => current === 'endTime' ? null : 'endTime')}
+                            >
+                                <span>終了時間</span>
+                                <strong>{eventForm.endTime}</strong>
+                            </button>
+                        </div>
+                    </section>
+
+                    {activeDateTimePicker?.endsWith('Date') && (
+                        <section className={styles.dateTimePickerPanel} aria-label="日付を選択">
+                            <p>{activeDateTimePicker === 'startDate' ? '開始日を選択' : '終了日を選択'}</p>
+                            <DayPicker
+                                mode="single"
+                                selected={parseLocalDate(activeDateTimePicker === 'startDate' ? eventForm.startDate : eventForm.endDate)}
+                                onSelect={(date) => selectEventDate(activeDateTimePicker, date)}
+                                defaultMonth={parseLocalDate(activeDateTimePicker === 'startDate' ? eventForm.startDate : eventForm.endDate)}
+                                locale={ja}
+                                weekStartsOn={0}
+                                modifiers={{
+                                    trip: {
+                                        from: parseLocalDate(tripPeriod?.startDate),
+                                        to: parseLocalDate(tripPeriod?.endDate),
+                                    },
+                                }}
+                                modifiersClassNames={{ trip: styles.tripCalendarDay }}
+                            />
+                        </section>
+                    )}
+
+                    {activeDateTimePicker?.endsWith('Time') && (
+                        <section className={styles.dateTimePickerPanel} aria-label="時間を選択">
+                            <ScheduleTimeWheel
+                                label={activeDateTimePicker === 'startTime' ? '開始時間を選択' : '終了時間を選択'}
+                                value={activeDateTimePicker === 'startTime' ? eventForm.startTime : eventForm.endTime}
+                                onChange={(value) => updateEventForm(activeDateTimePicker === 'startTime' ? 'startTime' : 'endTime', value)}
+                            />
+                        </section>
+                    )}
+                    {eventFormError && <p className={styles.formError} role="alert">{eventFormError}</p>}
 
                     <fieldset className={styles.audienceField}>
                         <legend>参加メンバー</legend>

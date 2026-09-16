@@ -146,6 +146,16 @@ const scheduleData = {
                 detail: 'ロビーに集合してから、バス乗り場へ移動します。',
                 location: 'ホテルロビー',
             },
+            {
+                id: 70,
+                group: '全員',
+                title: 'test',
+                endTime: '09:00',
+                userIds: null,
+                createdByUserId: 1,
+                detail: 'ロビーに集合してから、バス乗り場へ移動します。',
+                location: 'ホテルロビー',
+            },
         ],
         '10:10': [
             {
