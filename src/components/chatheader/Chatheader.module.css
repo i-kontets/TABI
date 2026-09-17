@@ -147,3 +147,12 @@
   font-size: 16px;
   font-weight: 700;
 }
+.embeddedHeader .mobileBackBtn {
+  display: flex;
+}
+.embeddedMobileBackBtn {
+  display: flex;
+}
+.embeddedHeader .contactInfoArea {
+  padding: 12px 16px;
+}
