@@ -10,7 +10,6 @@ import { TripContext } from "../../App";
 import styles from "./Invoice.module.css";
 import Header from "../../components/header/Header";
 import BtmNav from "../../components/bottomNav/BottomNav";
-import invoiceJson from "./Invoice.json";
 
 const legacyGroupIds = {
     mie: 1,
@@ -43,8 +42,6 @@ const emptyForm = {
     paymentMethod: "either",
     selectedMemberIds: [],
 };
-
-const invoiceStorageKey = "tabi:invoice-data";
 
 const categories = [
     { value: "food", label: "食費", icon: "🍽️" },
@@ -187,34 +184,6 @@ function createEmptyGroupData(members = defaultMembers) {
     });
 }
 
-function normalizeInvoiceFile(data) {
-    if (data?.groups) {
-        return {
-            groups: Object.fromEntries(
-                Object.entries(data.groups).map(([groupId, groupData]) => [
-                    normalizeGroupId(groupId),
-                    normalizeGroupData(groupData),
-                ])
-            ),
-        };
-    }
-
-    return {
-        groups: {
-            1: normalizeGroupData(data),
-        },
-    };
-}
-
-function loadStoredInvoiceData() {
-    try {
-        const storedData = localStorage.getItem(invoiceStorageKey);
-        return storedData ? JSON.parse(storedData) : invoiceJson;
-    } catch {
-        return invoiceJson;
-    }
-}
-
 function splitAmount(totalAmount, memberIds) {
     const baseAmount = Math.floor(totalAmount / memberIds.length);
     const remainder = totalAmount % memberIds.length;
@@ -250,11 +219,12 @@ export default function Invoice() {
     const loginUserId = Number(loginUser?.user_id) || 0;
     const loginUserName = loginUser?.name || "ログイン中のユーザー";
 
-    const [invoiceData, setInvoiceData] = useState(() =>
-        normalizeInvoiceFile(loadStoredInvoiceData()).groups[groupId] || createEmptyGroupData()
-    );
+    // 総支出はAPIから支払いデータをすべて取得した後にだけ表示します。
+    const [invoiceData, setInvoiceData] = useState(() => createEmptyGroupData());
+    const [loadedInvoiceGroupId, setLoadedInvoiceGroupId] = useState(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [form, setForm] = useState(emptyForm);
+    const isInvoiceLoading = loadedInvoiceGroupId !== groupId;
 
     useEffect(() => {
         let isMounted = true;
@@ -277,11 +247,19 @@ export default function Invoice() {
 
                 const data = await response.json();
 
-                if (isMounted && data.success) {
-                    setInvoiceData(buildInvoiceData(data));
+                if (!isMounted) {
+                    return;
                 }
+
+                setInvoiceData(data.success ? buildInvoiceData(data) : createEmptyGroupData());
+                setLoadedInvoiceGroupId(groupId);
             } catch (error) {
                 console.error(error);
+
+                if (isMounted) {
+                    setInvoiceData(createEmptyGroupData());
+                    setLoadedInvoiceGroupId(groupId);
+                }
             }
         };
 
@@ -550,9 +528,13 @@ export default function Invoice() {
                     <p className={styles.tripPeriodText}>{tripPeriodText}</p>
 
                     <p className={styles.tripSummaryLabel}>総支出</p>
-                    <p className={styles.totalExpense}>{formatYen(totalExpense)}</p>
+                    <p className={styles.totalExpense}>
+                        {isInvoiceLoading ? "計算中…" : formatYen(totalExpense)}
+                    </p>
                     <p className={styles.tripSummaryMeta}>
-                        1人あたり {formatYen(perPersonExpense)}・{recentPayments.length}件の支払い
+                        {isInvoiceLoading
+                            ? "支払いデータを取得中…"
+                            : `1人あたり ${formatYen(perPersonExpense)}・${recentPayments.length}件の支払い`}
                     </p>
 
                     <div className={styles.summaryActions}>
