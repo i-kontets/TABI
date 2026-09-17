@@ -165,11 +165,10 @@ try {
     // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $stmt->execute();
 
-    // 3. 日程が指定されていれば旅行レコードも作成（状態は draft = 計画中）
+    // 3. 旅行レコードを作成（状態は draft = 計画中）。日程未定でも作成します。
     $tripId = null;
 
     // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
-    if ($startDate && $endDate) {
         // SQL を準備し、あとから値を安全に入れられる形にします。
         $stmt = $pdo->prepare("
             INSERT INTO trips (group_id, title, start_date, end_date, status, created_by, created_at, updated_at)
@@ -207,7 +206,21 @@ try {
         $stmt->bindValue(":joined_at", $now);
         // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
         $stmt->execute();
-    }
+    // 4. プロジェクト作成時にグループチャットを作成し、作成者を参加させます。
+    $chatIdStmt = $pdo->query("SELECT COALESCE(MAX(chat_id), 0) + 1 FROM chats FOR UPDATE");
+    $chatId = (int) $chatIdStmt->fetchColumn();
+    $chatStmt = $pdo->prepare("\n        INSERT INTO chats (chat_id, trip_id, chat_type, created_at)\n        VALUES (:chat_id, :trip_id, 'group', :created_at)\n    ");
+    $chatStmt->execute([
+        ":chat_id" => $chatId,
+        ":trip_id" => $tripId,
+        ":created_at" => $now,
+    ]);
+    $chatMemberStmt = $pdo->prepare("\n        INSERT INTO chat_members (chat_id, user_id, joined_at)\n        VALUES (:chat_id, :user_id, :joined_at)\n    ");
+    $chatMemberStmt->execute([
+        ":chat_id" => $chatId,
+        ":user_id" => $userId,
+        ":joined_at" => $now,
+    ]);
 
     $pdo->commit();
 

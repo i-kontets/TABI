@@ -12,7 +12,7 @@ import React, { useLayoutEffect, useRef } from 'react';
 import styles from './MessageList.module.css';
 import MessageBubble from '../MessageBubble/MessageBubble';
 
-const MessageList = ({ messages, memberCount = 0 }) => {
+const MessageList = ({ messages, memberCount = 0, groupId = null }) => {
   let currentDate = '';
   const bottomRef = useRef(null);
 
@@ -36,7 +36,7 @@ const MessageList = ({ messages, memberCount = 0 }) => {
                 <span className={styles.dateBadge}>{msg.date}</span>
               </div>
             )}
-            <MessageBubble message={msg} memberCount={memberCount} />
+            <MessageBubble message={msg} memberCount={memberCount} groupId={groupId} />
           </React.Fragment>
         );
       })}

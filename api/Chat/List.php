@@ -158,6 +158,7 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 $userId = (int) $_SESSION["user_id"];
+$groupId = filter_input(INPUT_GET, "group_id", FILTER_VALIDATE_INT);
 // このAPIはログイン中のユーザーIDを読むだけで、セッション自体は変更しません。
 // ここでロックを外すと、メッセージ取得や既読処理などの別APIが同時に進めます。
 session_write_close();
@@ -221,6 +222,7 @@ try {
                   AND mr.user_id = :read_user_id
             )
         WHERE cm_self.user_id = :user_id
+          AND (:group_id_filter IS NULL OR t.group_id = :group_id_value)
         GROUP BY
             c.chat_id,
             c.chat_type,
@@ -244,6 +246,10 @@ try {
     $stmt->bindValue(":unread_user_id", $userId, PDO::PARAM_INT);
     // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
     $stmt->bindValue(":read_user_id", $userId, PDO::PARAM_INT);
+    $groupIdValue = $groupId === false ? null : $groupId;
+    $groupIdType = $groupId === false ? PDO::PARAM_NULL : PDO::PARAM_INT;
+    $stmt->bindValue(":group_id_filter", $groupIdValue, $groupIdType);
+    $stmt->bindValue(":group_id_value", $groupIdValue, $groupIdType);
     // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
     $stmt->execute();
 
@@ -254,10 +260,7 @@ try {
         $memberCount = (int) $chat["member_count"];
         $category = normalizeCategory($chat["chat_type"] ?? null);
 
-        // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
-        if ($category !== "hotel" && $memberCount <= 2) {
-            $category = "friend";
-        }
+        // chat_typeを優先します。作成直後のグループチャットは参加者が1人でも、個人チャットには分類しません。
 
         $name = $chat["trip_title"] ?: "チャット #" . $chatId;
         $avatar = "";

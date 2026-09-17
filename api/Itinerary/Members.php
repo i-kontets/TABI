@@ -37,6 +37,7 @@ if (!isset($_SESSION["user_id"])) {
 // フロントエンドから送られたJSONを連想配列として読み取ります。
 $input = json_decode(file_get_contents("php://input"), true);
 $groupId = $input["group_id"] ?? null;
+$currentUserId = (int) $_SESSION["user_id"];
 
 // group_id が無い場合は、どの旅行グループか判定できないため 400 を返します。
 if (!$groupId) {
@@ -85,7 +86,8 @@ try {
     // 取得できたメンバー一覧を返します。0件の場合も members: [] として返します。
     echo json_encode([
         "success" => true,
-        "members" => $members
+        "members" => $members,
+        "current_user_id" => $currentUserId
     ]);
 } catch (Throwable $error) {
     // DBエラーなどが起きた場合は 500 を返します。

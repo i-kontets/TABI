@@ -36,6 +36,7 @@ function TouristDetailModal({
     favoriteMessage,
     isFavoriteLoading,
     onToggleFavorite,
+    onReviewChanged,
     onClose,
 }) {
     // localStorage からログインユーザー情報を読み取ります(初回のみ計算)。
@@ -59,7 +60,7 @@ function TouristDetailModal({
     const [reviewMessage, setReviewMessage] = useState('');  // レビュー関連のメッセージ
     const [isReviewLoading, setIsReviewLoading] = useState(false);     // 一覧取得中フラグ
     const [isSubmittingReview, setIsSubmittingReview] = useState(false); // 投稿・削除の処理中フラグ
-    const [rating, setRating] = useState('5');               // フォームの評価(select用に文字列)
+    const [rating, setRating] = useState('');                // フォームの評価(未選択または1〜5の文字列)
     const [comment, setComment] = useState('');              // フォームのコメント
 
     // レビュー一覧から自分の投稿を探します(無ければ null = 新規投稿モード)。
@@ -124,7 +125,7 @@ function TouristDetailModal({
         const timerId = window.setTimeout(() => {
             // 閉じたとき: フォームとレビュー表示をすべて初期状態へ戻します。
             if (!isOpen) {
-                setRating('5');
+                setRating('');
                 setComment('');
                 setReviewMessage('');
                 setReviews([]);
@@ -141,7 +142,7 @@ function TouristDetailModal({
             }
 
             // 自分のレビューが無い場合: フォームを新規投稿用の初期値にします。
-            setRating('5');
+            setRating('');
             setComment('');
         }, 0);
 
@@ -206,6 +207,7 @@ function TouristDetailModal({
             // 成功時はメッセージを表示し、一覧を取り直して最新化します。
             setReviewMessage(data.message || 'レビューを保存しました。');
             await loadReviews(spot.tourist_spot_id);
+            await onReviewChanged?.();
         } catch (error) {
             console.error('レビューの保存に失敗しました。', error);
             setReviewMessage('通信に失敗しました。時間をおいて再度お試しください。');
@@ -243,10 +245,11 @@ function TouristDetailModal({
             }
 
             // 削除成功: フォームを初期化し、一覧を取り直します。
-            setRating('5');
+            setRating('');
             setComment('');
             setReviewMessage(data.message || 'レビューを削除しました。');
             await loadReviews(spot.tourist_spot_id);
+            await onReviewChanged?.();
         } catch (error) {
             console.error('レビュー削除に失敗しました。', error);
             setReviewMessage('通信に失敗しました。時間をおいて再度お試しください。');
@@ -361,22 +364,25 @@ function TouristDetailModal({
                                     <>
                                         {/* ===== レビュー投稿・編集フォーム ===== */}
                                         <form className={styles.reviewForm} onSubmit={handleReviewSubmit}>
-                                            <label className={styles.formLabel}>
-                                                評価
-                                                {/* 星評価(1〜5)の選択です */}
-                                                <select
-                                                    className={styles.select}
-                                                    value={rating}
-                                                    onChange={(event) => setRating(event.target.value)}
-                                                    disabled={isSubmittingReview}
-                                                >
-                                                    <option value="5">5</option>
-                                                    <option value="4">4</option>
-                                                    <option value="3">3</option>
-                                                    <option value="2">2</option>
-                                                    <option value="1">1</option>
-                                                </select>
-                                            </label>
+                                            <div className={styles.formLabel}>
+                                                <span>評価</span>
+                                                <div className={styles.starRating} role="radiogroup" aria-label="評価">
+                                                    {[1, 2, 3, 4, 5].map((score) => (
+                                                        <button
+                                                            key={score}
+                                                            className={`${styles.starButton} ${Number(rating) >= score ? styles.starSelected : ''}`}
+                                                            type="button"
+                                                            role="radio"
+                                                            aria-checked={Number(rating) === score}
+                                                            aria-label={`${score}点`}
+                                                            disabled={isSubmittingReview}
+                                                            onClick={() => setRating(String(score))}
+                                                        >
+                                                            {Number(rating) >= score ? '★' : '☆'}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
                                             <label className={styles.formLabel}>
                                                 コメント
                                                 {/* コメント入力欄(最大1000文字。API側の上限と合わせています) */}
@@ -392,7 +398,7 @@ function TouristDetailModal({
                                             </label>
                                             <div className={styles.formActions}>
                                                 {/* 自分のレビュー有無でボタンの文言が変わります */}
-                                                <button className={styles.submitButton} type="submit" disabled={isSubmittingReview}>
+                                                <button className={styles.submitButton} type="submit" disabled={isSubmittingReview || !rating}>
                                                     {isSubmittingReview ? '保存中...' : ownReview ? 'レビュー更新' : 'レビュー投稿'}
                                                 </button>
                                                 {/* 削除ボタンは自分のレビューがあるときだけ表示します */}

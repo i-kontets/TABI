@@ -12,12 +12,9 @@ import React from 'react';
 import styles from './ChatSidebar.module.css';
 import UserAvatar from '../UserAvatar';
 
-const ChatSidebar = ({ contacts, activeId, onSelect }) => {
+const ChatSidebar = ({ contacts, activeId, onSelect, onAddChat }) => {
   return (
     <div className={styles.sidebarContainer}>
-      <div className={styles.searchContainer}>
-        <input type="text" placeholder="チャットを検索..." className={styles.searchInput} />
-      </div>
       <div className={styles.contactList}>
         {contacts.length === 0 && (
           <div style={{ textAlign: 'center', color: '#999', marginTop: '20px' }}>
@@ -68,6 +65,11 @@ const ChatSidebar = ({ contacts, activeId, onSelect }) => {
             </div>
           );
         })}
+      </div>
+      <div className={styles.listFooter}>
+        <button type="button" className={styles.addButton} onClick={onAddChat} aria-label="チャットを追加">
+          <span aria-hidden="true">＋</span>
+        </button>
       </div>
     </div>
   );

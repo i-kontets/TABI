@@ -220,7 +220,6 @@
     font-weight: 700;
 }
 
-.select,
 .textarea {
     box-sizing: border-box;
     width: 100%;
@@ -231,9 +230,46 @@
     font-size: 14px;
 }
 
-.select {
-    height: 42px;
-    padding: 0 12px;
+.starRating {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 1px;
+}
+
+.starButton {
+    display: grid;
+    place-items: center;
+    flex: 0 0 40px;
+    width: 40px;
+    height: 44px;
+    padding: 0;
+    color: #c7cdd9;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    font-size: 34px;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.starButton:hover:not(:disabled) {
+    color: var(--sub-color);
+    transform: scale(1.08);
+}
+
+.starButton:focus-visible {
+    outline: 2px solid rgba(68, 85, 141, 0.18);
+    outline-offset: 1px;
+}
+
+.starSelected {
+    color: var(--sub-color);
+}
+
+.starButton:disabled {
+    cursor: wait;
+    opacity: 0.65;
 }
 
 .textarea {
