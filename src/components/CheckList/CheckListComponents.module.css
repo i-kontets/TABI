@@ -7,7 +7,7 @@
     padding: 4px 0 10px;
     display: grid;
     grid-template-columns: 1fr auto;
-    align-items: center;
+    align-items: start;
     gap: 12px;
     box-sizing: border-box;
 }
@@ -32,6 +32,25 @@
     line-height: 1.5;
 }
 
+/* 右上の＋ボタンと一括削除ボタン */
+.headerActions {
+    position: relative;
+    width: 36px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* チェック済みを一括削除 */
+.headerActions .deleteActions {
+    position: absolute;
+    right: 0;
+    bottom: 42px;
+    margin: 0;
+    white-space: nowrap;
+}
+
 .addHeaderButton {
     width: 36px;
     height: 36px;
@@ -46,7 +65,7 @@
     font-size: 22px;
     line-height: 1;
     font-weight: 700;
-    transform: translateY(-1px);
+    transform: translateY(0);
 }
 
 .addHeaderButton:hover,
@@ -69,7 +88,7 @@
     min-height: 62px;
     padding: 12px 0;
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     align-items: center;
     gap: 10px;
     border-bottom: 1px solid #eceef4;
@@ -78,10 +97,14 @@
 
 .itemContent {
     display: grid;
-    grid-template-columns: 24px 1fr;
+    grid-template-columns: 24px minmax(0, 1fr);
     align-items: center;
     gap: 10px;
-    cursor: pointer;
+    min-width: 0;
+}
+
+.itemText {
+    min-width: 0;
 }
 
 .itemContent input {
@@ -92,16 +115,60 @@
 }
 
 .itemName {
+    display: block;
     color: #2d2d2d;
     font-size: 15px;
     font-weight: 600;
 }
 
+.scopeBadge {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    background-color: #e8f1ff;
+    color: #1d5fa7;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.4;
+    vertical-align: middle;
+}
+
 .itemNote {
+    display: block;
+    width: 100%;
+    min-width: 0;
     margin-top: 3px;
+    padding: 0;
+    border: none;
+    background: transparent;
     color: #777;
+    font-family: inherit;
     font-size: 12px;
     line-height: 1.45;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.itemNoteOpen {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin-top: 3px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #777;
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.45;
+    text-align: left;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    cursor: pointer;
 }
 
 .assignee {
@@ -186,7 +253,7 @@
 
 .deleteActions button {
     min-height: 36px;
-    padding: 6px;
+    padding: 6px 8px;
     border: 1px solid #d9a1a1;
     border-radius: 6px;
     background-color: #fff;
@@ -295,17 +362,4 @@
     .sectionHeader {
         padding-left: 14px;
     }
-}
-
-.scopeBadge {
-    display: inline-block;
-    margin-left: 7px;
-    padding: 2px 6px;
-    border-radius: 8px;
-    background-color: #e9edf7;
-    color: #4a5b88;
-    font-size: 10px;
-    font-weight: 700;
-    line-height: 1.4;
-    vertical-align: middle;
 }

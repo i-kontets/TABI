@@ -13,26 +13,63 @@ $userId = checklistRequireUserId();
 $input = checklistReadJsonBody();
 
 try {
-    $tripId = checklistPositiveInt($input["trip_id"] ?? null);
+    $tripId = checklistPositiveInt(
+        $input["trip_id"] ?? null
+    );
+
     $groupId = checklistPositiveInt(
-        $input["group_id"] ?? $input["groupId"] ?? null
+        $input["group_id"]
+            ?? $input["groupId"]
+            ?? null
     );
 
     $name = trim(
-        (string) ($input["name"] ?? $input["item_name"] ?? "")
+        (string) (
+            $input["name"]
+                ?? $input["item_name"]
+                ?? ""
+        )
     );
 
-    // 「自分」または「全員」
-    $scope = (string) ($input["scope"] ?? "all");
+    $note = trim(
+        (string) ($input["note"] ?? "")
+    );
 
-    if ($name === "" || checklistTextLength($name) > 200) {
+    $scope = (string) (
+        $input["scope"] ?? "all"
+    );
+
+    /*
+     * 持ちもの名チェック
+     */
+    if (
+        $name === ""
+        || checklistTextLength($name) > 200
+    ) {
         checklistRespond([
             "success" => false,
-            "message" => "持ちもの名は1文字以上200文字以内で入力してください",
+            "message" =>
+                "持ちもの名は1文字以上200文字以内で入力してください",
         ], 400);
     }
 
-    // scope は self / all の2種類だけ
+    /*
+     * メモチェック
+     */
+    if (checklistTextLength($note) > 2000) {
+        checklistRespond([
+            "success" => false,
+            "message" =>
+                "メモは2000文字以内で入力してください",
+        ], 400);
+    }
+
+    /*
+     * 自分のみ / 全員
+     *
+     * self = 0
+     * all  = 1
+     */
     if (!in_array($scope, ["self", "all"], true)) {
         checklistRespond([
             "success" => false,
@@ -40,14 +77,13 @@ try {
         ], 400);
     }
 
-    /*
-     * 自分     → logged-in user のIDを保存
-     * 全員     → NULLを保存
-     */
     $assignedUserId = $scope === "self"
         ? $userId
         : null;
 
+    /*
+     * 旅行IDを決定
+     */
     $resolvedTripId = checklistResolveTripId(
         $pdo,
         $userId,
@@ -55,13 +91,18 @@ try {
         $groupId
     );
 
+    /*
+     * 持ちものチェックリストを取得 / 作成
+     */
     $checklist = checklistEnsurePacking(
         $pdo,
         $resolvedTripId,
         $userId
     );
 
-    // 並び順を決定
+    /*
+     * 表示順を決定
+     */
     $sortStmt = $pdo->prepare("
         SELECT COALESCE(MAX(sort_order), 0) + 1
         FROM checklist_items
@@ -69,24 +110,31 @@ try {
     ");
 
     $sortStmt->execute([
-        ":checklist_id" => $checklist["checklist_id"],
+        ":checklist_id" =>
+            $checklist["checklist_id"],
     ]);
 
     $sortOrder =
-        checklistPositiveInt($input["sort_order"] ?? null)
+        checklistPositiveInt(
+            $input["sort_order"] ?? null
+        )
         ?? (int) $sortStmt->fetchColumn();
 
-    // 持ちものを追加
+    /*
+     * 持ちもの追加
+     */
     $insertStmt = $pdo->prepare("
         INSERT INTO checklist_items (
             checklist_id,
             item_name,
+            note,
             is_checked,
             assigned_user_id,
             sort_order
         ) VALUES (
             :checklist_id,
             :item_name,
+            :note,
             0,
             :assigned_user_id,
             :sort_order
@@ -106,11 +154,17 @@ try {
     );
 
     $insertStmt->bindValue(
+        ":note",
+        $note,
+        PDO::PARAM_STR
+    );
+
+    $insertStmt->bindValue(
         ":assigned_user_id",
         $assignedUserId,
-        $assignedUserId !== null
-            ? PDO::PARAM_INT
-            : PDO::PARAM_NULL
+        $assignedUserId === null
+            ? PDO::PARAM_NULL
+            : PDO::PARAM_INT
     );
 
     $insertStmt->bindValue(
@@ -123,27 +177,26 @@ try {
 
     $itemId = (int) $pdo->lastInsertId();
 
-    // 追加したデータを返す
     checklistRespond([
         "success" => true,
         "item" => [
             "id" => $itemId,
             "checklist_item_id" => $itemId,
-            "checklist_id" => (int) $checklist["checklist_id"],
+            "checklist_id" =>
+                (int) $checklist["checklist_id"],
 
             "name" => $name,
             "item_name" => $name,
 
-            "note" => "",
+            "note" => $note,
 
             "checked" => false,
             "is_checked" => false,
 
-            // フロント側で使いやすいように scope を返す
             "scope" => $scope,
 
-            // DB上の値も返しておく
-            "assigned_user_id" => $assignedUserId,
+            "assigned_user_id" =>
+                $assignedUserId,
 
             "sort_order" => $sortOrder,
         ],

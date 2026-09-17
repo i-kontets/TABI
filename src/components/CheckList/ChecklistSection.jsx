@@ -12,7 +12,10 @@
 import ChecklistDeleteActions from "./ChecklistDeleteActions";
 import ChecklistItemForm from "./ChecklistItemForm";
 import ChecklistItems from "./ChecklistItems";
+import Modal from "../Modal/Modal";
+
 import { createItemKey } from "./checkListUtils";
+
 import AddButtonIcon from "../../assets/icons/add_button.svg?react";
 
 import styles from "./CheckListComponents.module.css";
@@ -33,7 +36,12 @@ export default function ChecklistSection({
     const checkedItemIds = section.items
         .filter(
             (item) =>
-                checks[createItemKey(section.id, item.id)]
+                checks[
+                    createItemKey(
+                        section.id,
+                        item.id
+                    )
+                ]
         )
         .map((item) => item.id);
 
@@ -57,19 +65,43 @@ export default function ChecklistSection({
                 </span>
 
                 {!isEditing && !isAdding ? (
-                    <button
-                        className={styles.addHeaderButton}
-                        type="button"
-                        aria-label="持ちものを追加"
-                        onClick={() =>
-                            onStartAdd(section.id)
-                        }
-                    >
-                        <AddButtonIcon
-                            className={styles.addHeaderIcon}
-                            aria-hidden="true"
+                    <div className={styles.headerActions}>
+                        <ChecklistDeleteActions
+                            hasItems={
+                                section.items.length > 0
+                            }
+                            hasCheckedItems={
+                                checkedItemIds.length > 0
+                            }
+                            onDeleteChecked={() =>
+                                onDelete(
+                                    section.id,
+                                    checkedItemIds,
+                                    {
+                                        checkedOnly: true,
+                                    }
+                                )
+                            }
                         />
-                    </button>
+
+                        <button
+                            className={
+                                styles.addHeaderButton
+                            }
+                            type="button"
+                            aria-label="持ちものを追加"
+                            onClick={() =>
+                                onStartAdd(section.id)
+                            }
+                        >
+                            <AddButtonIcon
+                                className={
+                                    styles.addHeaderIcon
+                                }
+                                aria-hidden="true"
+                            />
+                        </button>
+                    </div>
                 ) : null}
             </div>
 
@@ -91,33 +123,20 @@ export default function ChecklistSection({
                     onStartEdit(section.id, item)
                 }
                 onDelete={(itemId) =>
-                    onDelete(section.id, [itemId])
-                }
-            />
-
-            <ChecklistDeleteActions
-                hasItems={section.items.length > 0}
-                hasCheckedItems={
-                    checkedItemIds.length > 0
-                }
-                onDeleteChecked={() =>
                     onDelete(
                         section.id,
-                        checkedItemIds,
-                        { checkedOnly: true }
+                        [itemId]
                     )
                 }
             />
 
-            {isEditing ? (
+            <Modal isOpen={isEditing} onClose={onCancelForm} showActions={false}>
                 <ChecklistItemForm
-                    initialItem={editingItem.item}
-                    onSave={(item) =>
-                        onEdit(section.id, item)
-                    }
+                    initialItem={editingItem?.item}
+                    onSave={(item) => onEdit(section.id, item)}
                     onCancel={onCancelForm}
                 />
-            ) : null}
+            </Modal>
         </section>
     );
 }

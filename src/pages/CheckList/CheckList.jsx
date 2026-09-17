@@ -60,8 +60,31 @@ function createChecks(nextSections) {
     );
 }
 
+function getLoginUserId() {
+    try {
+        const loginUser = JSON.parse(
+            localStorage.getItem("loginUser") || "null"
+        );
+
+        return Number(loginUser?.user_id) || null;
+    } catch {
+        return null;
+    }
+}
+
+function canDisplayItem(item, loginUserId) {
+    const assignedUserId = item?.assigned_user_id;
+
+    return (
+        assignedUserId === null
+        || assignedUserId === undefined
+        || Number(assignedUserId) === loginUserId
+    );
+}
+
 export default function CheckList() {
     const { trip } = useContext(TripContext);
+
     const location = useLocation();
 
     const queryParams = useMemo(
@@ -84,8 +107,11 @@ export default function CheckList() {
     );
 
     const [isLoading, setIsLoading] = useState(true);
+
     const [errorMessage, setErrorMessage] = useState("");
+
     const [addTarget, setAddTarget] = useState(null);
+
     const [editingItem, setEditingItem] = useState(null);
 
     useEffect(() => {
@@ -127,24 +153,34 @@ export default function CheckList() {
                     );
                 }
 
-                const apiItems = Array.isArray(data.sections)
+                const apiItems = Array.isArray(
+                    data.sections
+                )
                     ? data.sections.flatMap(
                           (section) =>
-                              Array.isArray(section.items)
+                              Array.isArray(
+                                  section.items
+                              )
                                   ? section.items
                                   : []
                       )
                     : [];
+
+                const loginUserId = getLoginUserId();
+                const visibleItems = apiItems.filter((item) =>
+                    canDisplayItem(item, loginUserId)
+                );
 
                 const nextSection = {
                     id: "checklist",
                     title: "持ちもの",
                     description:
                         "旅行に必要な持ちものを確認します。",
-                    items: apiItems,
+                    items: visibleItems,
                 };
 
                 setSections([nextSection]);
+
                 setChecks(
                     createChecks([nextSection])
                 );
@@ -222,6 +258,7 @@ export default function CheckList() {
 
     const handleCheck = async (itemKey) => {
         const itemId = itemKey.split("-").at(-1);
+
         const nextChecked = !checks[itemKey];
 
         setChecks((currentChecks) => ({
@@ -259,6 +296,7 @@ export default function CheckList() {
 
     const handleStartEdit = (sectionId, item) => {
         setAddTarget(null);
+
         setEditingItem({
             sectionId,
             item,
@@ -281,6 +319,7 @@ export default function CheckList() {
                     "POST",
                     {
                         name: item.name,
+                        note: item.note,
                         scope: item.scope,
                     }
                 );
@@ -335,6 +374,7 @@ export default function CheckList() {
                     {
                         item_id: updatedItem.id,
                         name: updatedItem.name,
+                        note: updatedItem.note,
                         scope: updatedItem.scope,
                     }
                 );
@@ -412,7 +452,8 @@ export default function CheckList() {
                 (currentSections) =>
                     currentSections.map(
                         (currentSection) =>
-                            currentSection.id === sectionId
+                            currentSection.id ===
+                            sectionId
                                 ? {
                                       ...currentSection,
                                       items: currentSection.items.filter(
@@ -456,7 +497,9 @@ export default function CheckList() {
     return (
         <>
             <Header
-                tripName={trip?.name || "持ちものチェック"}
+                tripName={
+                    trip?.name || "持ちものチェック"
+                }
             />
 
             <main className={styles.page}>
