@@ -8,14 +8,13 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
+
 import { useState } from "react";
+
 import { createItemKey } from "./checkListUtils";
+
 import styles from "./CheckListComponents.module.css";
 
-/**
- * ChecklistItems は、このファイルの中心となる処理をまとめた関数です。
- * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
- */
 export default function ChecklistItems({
     items,
     sectionId,
@@ -24,15 +23,28 @@ export default function ChecklistItems({
     onEdit,
     onDelete,
 }) {
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [openMenuId, setOpenMenuId] = useState(null);
+
     const sortedItems = items
         .map((item, index) => ({ item, index }))
         .sort((current, next) => {
-            const currentKey = createItemKey(sectionId, current.item.id);
-            const nextKey = createItemKey(sectionId, next.item.id);
-            const currentChecked = Boolean(checks[currentKey]);
-            const nextChecked = Boolean(checks[nextKey]);
+            const currentKey = createItemKey(
+                sectionId,
+                current.item.id
+            );
+
+            const nextKey = createItemKey(
+                sectionId,
+                next.item.id
+            );
+
+            const currentChecked = Boolean(
+                checks[currentKey]
+            );
+
+            const nextChecked = Boolean(
+                checks[nextKey]
+            );
 
             if (currentChecked === nextChecked) {
                 return current.index - next.index;
@@ -45,59 +57,115 @@ export default function ChecklistItems({
     return (
         <div className={styles.itemList}>
             {sortedItems.map((item) => {
-                const itemKey = createItemKey(sectionId, item.id);
+                const itemKey = createItemKey(
+                    sectionId,
+                    item.id
+                );
 
                 return (
-                    <div className={styles.item} key={item.id}>
-                        <label className={styles.itemContent}>
+                    <div
+                        className={styles.item}
+                        key={item.id}
+                    >
+                        <label
+                            className={styles.itemContent}
+                        >
                             <input
                                 type="checkbox"
-                                checked={Boolean(checks[itemKey])}
-                                onChange={() => onCheck(itemKey)}
+                                checked={Boolean(
+                                    checks[itemKey]
+                                )}
+                                onChange={() =>
+                                    onCheck(itemKey)
+                                }
                             />
+
                             <span>
-                                <span className={styles.itemName}>{item.name}</span>
+                                <span
+                                    className={
+                                        styles.itemName
+                                    }
+                                >
+                                    {item.name}
+
+                                    {item.scope ===
+                                    "self" ? (
+                                        <span
+                                            className={
+                                                styles.scopeBadge
+                                            }
+                                        >
+                                            自分のみ
+                                        </span>
+                                    ) : null}
+                                </span>
+
                                 {item.note ? (
-                                    <span className={styles.itemNote}>{item.note}</span>
-                                ) : null}
-                                {sectionId === "shared" ? (
-                                    <span className={styles.assignee}>
-                                        担当：{item.assignee || "未定"}
+                                    <span
+                                        className={
+                                            styles.itemNote
+                                        }
+                                    >
+                                        {item.note}
                                     </span>
                                 ) : null}
                             </span>
                         </label>
 
-                        <div className={styles.itemMenu}>
+                        <div
+                            className={styles.itemMenu}
+                        >
                             <button
-                                className={styles.menuButton}
+                                className={
+                                    styles.menuButton
+                                }
                                 type="button"
                                 aria-label={`${item.name}のメニュー`}
-                                aria-expanded={openMenuId === item.id}
+                                aria-expanded={
+                                    openMenuId === item.id
+                                }
                                 onClick={() =>
-                                    setOpenMenuId((currentId) =>
-                                        currentId === item.id ? null : item.id
+                                    setOpenMenuId(
+                                        (currentId) =>
+                                            currentId ===
+                                            item.id
+                                                ? null
+                                                : item.id
                                     )
                                 }
                             >
                                 ⋮
                             </button>
+
                             {openMenuId === item.id ? (
-                                <div className={styles.menuList}>
+                                <div
+                                    className={
+                                        styles.menuList
+                                    }
+                                >
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setOpenMenuId(null);
+                                            setOpenMenuId(
+                                                null
+                                            );
+
                                             onEdit(item);
                                         }}
                                     >
                                         編集
                                     </button>
+
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            setOpenMenuId(null);
-                                            onDelete(item.id);
+                                            setOpenMenuId(
+                                                null
+                                            );
+
+                                            onDelete(
+                                                item.id
+                                            );
                                         }}
                                     >
                                         削除

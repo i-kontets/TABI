@@ -20,6 +20,7 @@ import CarIcon from '../../assets/icons/car.svg?react';
 import styles from './Appointment.module.css';
 import transportData from './Appointment.json';
 import stops from './Confirmation_options.json';
+import Header from '../../components/header/Header';
 
 const latestBookingStorageKey = 'tabiLatestBooking';
 const savedRoutesStorageKey = 'tabiMyRoutes';

@@ -23,7 +23,7 @@ export function InviteActions({ onCancel }) {
 }
 
 
-function Modal({ isOpen, onClose, children }) {
+function Modal({ isOpen, onClose, children, showActions = true }) {
     // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         // ここで条件を確認し、状況に合う処理だけを実行します。
@@ -73,7 +73,7 @@ function Modal({ isOpen, onClose, children }) {
                 onClick={(event) => event.stopPropagation()}
             >
                 {children}
-            <InviteActions onCancel={onClose} />
+            {showActions ? <InviteActions onCancel={onClose} /> : null}
             </div>
         </div>,
         document.body
