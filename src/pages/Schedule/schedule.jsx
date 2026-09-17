@@ -194,6 +194,8 @@ export default function SchedulePage() {
     const [viewMode, setViewMode] = useState('all');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [draftEvents, setDraftEvents] = useState([]);
+    const [hiddenEventIds, setHiddenEventIds] = useState([]);
+    const [editingEvent, setEditingEvent] = useState(null);
     const [eventFormError, setEventFormError] = useState('');
     const [activeDateTimePicker, setActiveDateTimePicker] = useState(null);
     const [eventForm, setEventForm] = useState({
@@ -219,6 +221,7 @@ export default function SchedulePage() {
     const getDayId = (dateValue) => scheduleDays.find((day) => day.dateValue === dateValue)?.id || `date-${dateValue}`;
 
     const openAddModal = () => {
+        setEditingEvent(null);
         setEventForm((current) => ({
             ...current,
             day: activeSelectedDay,
@@ -234,6 +237,7 @@ export default function SchedulePage() {
 
     const closeAddModal = () => {
         setIsAddModalOpen(false);
+        setEditingEvent(null);
     };
 
     const closeDateTimePickerOnOtherFocus = (event) => {
@@ -302,6 +306,37 @@ export default function SchedulePage() {
         }));
     };
 
+    const openEditModal = (event) => {
+        const isAllMembers = event.group === '全員';
+
+        setEditingEvent(event);
+        setEventForm({
+            day: event.day,
+            endDay: event.endDay || event.day,
+            startDate: event.startDate || activeSelectedDate,
+            endDate: event.endDate || event.startDate || activeSelectedDate,
+            title: event.title,
+            startTime: event.time,
+            endTime: event.endTime || event.time,
+            audience: isAllMembers ? 'all' : 'selected',
+            memberIds: isAllMembers ? [] : (event.userIds || []).map(Number),
+            location: event.location || '',
+            detail: event.detail || '',
+        });
+        setEventFormError('');
+        setActiveDateTimePicker(null);
+        setIsAddModalOpen(true);
+    };
+
+    const deleteScheduleEvent = (event) => {
+        if (event.isDraft) {
+            setDraftEvents((current) => current.filter((draftEvent) => draftEvent.id !== event.id));
+            return;
+        }
+
+        setHiddenEventIds((current) => [...new Set([...current, String(event.id)])]);
+    };
+
     const addScheduleEvent = (event) => {
         event.preventDefault();
 
@@ -320,8 +355,10 @@ export default function SchedulePage() {
         }
 
         const creatorId = Number(getLoginUser()?.user_id) || Number(members[0]?.id) || null;
-        setDraftEvents((current) => [...current, {
-            id: `draft-${Date.now()}`,
+        const savedEvent = {
+            id: editingEvent?.isDraft ? editingEvent.id : `draft-${Date.now()}`,
+            sourceEventId: editingEvent?.sourceEventId || (editingEvent ? String(editingEvent.id) : null),
+            isDraft: true,
             day: eventForm.day,
             endDay: eventForm.endDay,
             startDate: eventForm.startDate,
@@ -334,7 +371,18 @@ export default function SchedulePage() {
             createdByUserId: creatorId,
             location: eventForm.location.trim() || null,
             detail: eventForm.detail.trim(),
-        }]);
+        };
+
+        setDraftEvents((current) => {
+            if (!editingEvent) {
+                return [...current, savedEvent];
+            }
+
+            return [...current.filter((draftEvent) => draftEvent.id !== editingEvent.id), savedEvent];
+        });
+        if (editingEvent && !editingEvent.isDraft) {
+            setHiddenEventIds((current) => [...new Set([...current, String(editingEvent.id)])]);
+        }
         setSelectedDay(eventForm.day);
         setEventForm({
             day: eventForm.day,
@@ -349,6 +397,7 @@ export default function SchedulePage() {
             location: '',
             detail: '',
         });
+        setEditingEvent(null);
         closeAddModal();
     };
 
@@ -499,6 +548,9 @@ export default function SchedulePage() {
                     viewMode={viewMode}
                     members={members}
                     draftEvents={draftEvents}
+                    hiddenEventIds={hiddenEventIds}
+                    onEditEvent={openEditModal}
+                    onDeleteEvent={deleteScheduleEvent}
                 />
             </main>
 
@@ -516,8 +568,8 @@ export default function SchedulePage() {
             <Modal isOpen={isAddModalOpen} onClose={closeAddModal}>
                 <form className={styles.addForm} onSubmit={addScheduleEvent} onFocusCapture={closeDateTimePickerOnOtherFocus}>
                     <div className={styles.addFormHeader}>
-                        <p>新しい予定</p>
-                        <h2>予定を追加</h2>
+                        <p>{editingEvent ? '予定を編集' : '新しい予定'}</p>
+                        <h2>{editingEvent ? '予定を編集' : '予定を追加'}</h2>
                     </div>
 
                     <label className={styles.formField}>
@@ -633,7 +685,7 @@ export default function SchedulePage() {
                         <span>詳細</span>
                         <textarea value={eventForm.detail} onChange={(event) => updateEventForm('detail', event.target.value)} placeholder="補足があれば入力" rows="3" />
                     </label>
-                    <button className={styles.submitButton} type="submit">予定を追加</button>
+                    <button className={styles.submitButton} type="submit">{editingEvent ? '変更を保存' : '予定を追加'}</button>
                 </form>
             </Modal>
 

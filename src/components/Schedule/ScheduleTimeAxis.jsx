@@ -539,11 +539,13 @@ function filterVisibleItems(items) {
     ));
 }
 
-function addDraftEvents(items, draftEvents, selectedDay) {
+function addDraftEvents(items, draftEvents, selectedDay, hiddenEventIds) {
+    const hiddenEventIdSet = new Set(hiddenEventIds);
+
     return items.map((item) => ({
         ...item,
         events: [
-            ...item.events,
+            ...item.events.filter((event) => !hiddenEventIdSet.has(String(event.id))),
             ...draftEvents.filter((event) => (
                 event.day === selectedDay && getHourSlot(event.time) === item.time
             )),
@@ -615,17 +617,28 @@ function MemberAvatars({ userIds = [], members = [] }) {
  * ScheduleTimeAxis は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-export default function ScheduleTimeAxis({ selectedDay, selectedDateValue, viewMode, members = [], draftEvents = [] }) {
+export default function ScheduleTimeAxis({
+    selectedDay,
+    selectedDateValue,
+    viewMode,
+    members = [],
+    draftEvents = [],
+    hiddenEventIds = [],
+    onEditEvent,
+    onDeleteEvent,
+}) {
     const [now, setNow] = useState(() => new Date());
     const [selectedEvent, setSelectedEvent] = useState(null);
+    const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
     const loginUserId = getLoginUserId();
     const memberAppliedItems = useMemo(
         () => addDraftEvents(
             applyGroupMembersToTestItems(scheduleData[selectedDay] ?? [], members),
             draftEvents,
             selectedDay,
+            hiddenEventIds,
         ),
-        [draftEvents, members, selectedDay],
+        [draftEvents, hiddenEventIds, members, selectedDay],
     );
     const items = filterVisibleItems(filterItemsByView(memberAppliedItems, viewMode, loginUserId));
 
@@ -641,6 +654,18 @@ export default function ScheduleTimeAxis({ selectedDay, selectedDateValue, viewM
     // ここで条件を確認し、状況に合う処理だけを実行します。
     const closeDetailSheet = () => {
         setSelectedEvent(null);
+        setIsDeleteConfirming(false);
+    };
+
+    const selectEvent = (event) => {
+        setSelectedEvent({
+            ...event,
+            day: event.day || selectedDay,
+            startDate: event.startDate || selectedDateValue,
+            endDate: event.endDate || event.startDate || selectedDateValue,
+            endDay: event.endDay || event.day || selectedDay,
+        });
+        setIsDeleteConfirming(false);
     };
 
     if (items.length === 0) {
@@ -696,7 +721,7 @@ export default function ScheduleTimeAxis({ selectedDay, selectedDateValue, viewM
                                                     key={event.id ?? `${event.time}-${i}`}
                                                     className={styles.scheduleCard}
                                                     type="button"
-                                                    onClick={() => setSelectedEvent(event)}
+                                                    onClick={() => selectEvent(event)}
                                                     aria-label={`${event.title}の詳細を表示`}
                                                 >
                                                     <span className={styles.cardMeta}>
@@ -765,6 +790,38 @@ export default function ScheduleTimeAxis({ selectedDay, selectedDateValue, viewM
                                 <dd>{selectedEvent.detail || '詳細は未設定です。'}</dd>
                             </div>
                         </dl>
+
+                        {isDeleteConfirming ? (
+                            <div className={styles.deleteConfirm} role="alert">
+                                <p>この予定を削除しますか？</p>
+                                <div>
+                                    <button type="button" onClick={() => setIsDeleteConfirming(false)}>キャンセル</button>
+                                    <button
+                                        type="button"
+                                        className={styles.deleteConfirmButton}
+                                        onClick={() => {
+                                            onDeleteEvent?.(selectedEvent);
+                                            closeDetailSheet();
+                                        }}
+                                    >
+                                        削除する
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className={styles.detailActions}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        onEditEvent?.(selectedEvent);
+                                        closeDetailSheet();
+                                    }}
+                                >
+                                    編集
+                                </button>
+                                <button type="button" className={styles.deleteButton} onClick={() => setIsDeleteConfirming(true)}>削除</button>
+                            </div>
+                        )}
                     </div>
                 )}
             </Modal>

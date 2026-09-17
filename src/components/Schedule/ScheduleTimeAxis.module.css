@@ -292,3 +292,43 @@
 .detailDescription {
     align-items: start;
 }
+
+.detailActions,
+.deleteConfirm > div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.detailActions button,
+.deleteConfirm button {
+    min-height: 44px;
+    border: 1px solid color-mix(in srgb, var(--sub-color) 34%, #ffffff);
+    border-radius: 10px;
+    background: #ffffff;
+    color: var(--sub-color);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+}
+
+.detailActions .deleteButton,
+.deleteConfirm .deleteConfirmButton {
+    border-color: color-mix(in srgb, #c74444 45%, #ffffff);
+    color: #c74444;
+}
+
+.deleteConfirm {
+    display: grid;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 10px;
+    background: color-mix(in srgb, #c74444 7%, #ffffff);
+}
+
+.deleteConfirm p {
+    margin: 0;
+    color: #7f1d1d;
+    font-size: 14px;
+    font-weight: 700;
+}
