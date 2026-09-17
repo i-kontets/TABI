@@ -325,8 +325,10 @@ export default function Itinerary() {
   };
 
   return (
-    <div className={styles.page}>
-      <Header />
+
+    <div>
+      <Header showDate={false} />
+
 
       {/* 旅行タイトル・日付・メンバーをまとめて表示するカバー部分 */}
       <div className={styles.coverHeader} style={coverHeaderStyle}>

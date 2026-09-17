@@ -20,7 +20,7 @@ import { TripContext } from '../../App';
  * Header は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-function Header({ tripName, isOther = false }) {
+function Header({ tripName, isOther = false, showDate = true }) {
     const [searchParams] = useSearchParams();
     const groupId = searchParams.get('groupId');
     const navigate = useNavigate();
@@ -62,7 +62,7 @@ function Header({ tripName, isOther = false }) {
             <div className={styles.titleWrapper}>
                 <h1 className={styles.title}>{tripName}</h1>
 
-                {tripPeriod?.startDate && tripPeriod?.endDate && (
+                {showDate && tripPeriod?.startDate && tripPeriod?.endDate && (
                     <div className={styles.tripPeriod}>
                         {formatDate(tripPeriod.startDate)} - {formatDate(tripPeriod.endDate)}
                     </div>
