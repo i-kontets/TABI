@@ -575,6 +575,7 @@ const Chat = ({ embedded = false, groupId: groupIdProp = null }) => {
                 <ChatHeader
                     contact={activeContact}
                     reservation={null}
+                    embedded={embedded}
                     onMobileBack={() => setIsMobileChatView(false)}
                 />
 

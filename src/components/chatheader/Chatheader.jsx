@@ -12,7 +12,7 @@ import React from 'react';
 import styles from './ChatHeader.module.css';
 import UserAvatar from '../UserAvatar';
 
-const ChatHeader = ({ contact, reservation, onMobileBack }) => {
+const ChatHeader = ({ contact, reservation, onMobileBack, embedded = false }) => {
   // ここで条件を確認し、状況に合う処理だけを実行します。
   if (!contact) return null;
 
@@ -38,9 +38,9 @@ const ChatHeader = ({ contact, reservation, onMobileBack }) => {
     : (contact.avatar || contact.name);
 
   return (
-    <div className={styles.headerContainer}>
+    <div className={`${styles.headerContainer} ${embedded ? styles.embeddedHeader : ''}`}>
       <div className={styles.contactInfoArea}>
-        <button className={styles.mobileBackBtn} onClick={onMobileBack} title="一覧に戻る">
+        <button className={`${styles.mobileBackBtn} ${embedded ? styles.embeddedMobileBackBtn : ''}`} onClick={onMobileBack} title="一覧に戻る">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
