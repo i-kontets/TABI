@@ -61,43 +61,56 @@ function getGroupIdFromPath(pathname) {
 export default function UserRealtimeListener({ trip }) {
     const location = useLocation();
     const isAdminRoute = location.pathname.startsWith("/admin");
+    // ログイン画面へ戻ると接続を閉じ、前の利用者の部屋を持ち越しません。
+    const isPublicRoute = ['/', '/Newreg'].includes(location.pathname);
     const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const groupId = getGroupIdFromPath(location.pathname) || queryParams.get("groupId") || queryParams.get("group_id") || trip?.id || null;
 
     // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         // ここで条件を確認し、状況に合う処理だけを実行します。
-        if (isAdminRoute) return;
+        if (isAdminRoute || isPublicRoute) {
+            getUserSocket().disconnect();
+            return;
+        }
 
         const socket = getUserSocket();
+        let disposed = false;
+        let authRequest = null;
 
         // handleConnect は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const handleConnect = async () => {
+            // 接続やアカウントが切り替わった後、古い認証応答で入室しないよう中断・照合します。
+            authRequest?.abort();
+            const controller = new AbortController();
+            authRequest = controller;
+            const connectionId = socket.id;
             // ここで条件を確認し、状況に合う処理だけを実行します。
             if (import.meta.env.DEV) {
                 console.log("WebSocket connected:", socket.id);
             }
 
-            if (!localStorage.getItem("loginUser")) {
-                return;
-            }
-
             // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
             try {
                 // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-                const response = await fetch(`${import.meta.env.BASE_URL}api/Auth/whoami.php`, {
+                const response = await fetch(`${import.meta.env.BASE_URL}api/auth/whoami.php`, {
                     credentials: "include",
+                    signal: controller.signal,
                 });
+                if (disposed || controller.signal.aborted || socket.id !== connectionId) return;
                 if (response.status === 401) {
                     localStorage.removeItem("loginUser");
+                    socket.disconnect();
                     return;
                 }
                 const data = await response.json().catch(() => null);
                 const userId = data?.user?.user_id;
                 // ここで条件を確認し、状況に合う処理だけを実行します。
-                if (userId) {
+                if (userId && !disposed && !controller.signal.aborted && socket.id === connectionId && socket.connected) {
                     // join_userで「この接続はこのユーザーの通知を受け取る」とWebSocketサーバーへ知らせます。
                     socket.emit("join_user", userId);
+                    // 再接続中に発生した通知はイベント再送に頼らず本人用APIから回復します。
+                    window.dispatchEvent(new Event('user:reconnected'));
                     // ここで条件を確認し、状況に合う処理だけを実行します。
                     if (import.meta.env.DEV) {
                         console.log("join_user sent:", userId);
@@ -124,6 +137,14 @@ export default function UserRealtimeListener({ trip }) {
         });
 
         socket.on("connect", handleConnect);
+        // 別タブでログイン・ログアウトした場合も、前の利用者の部屋を破棄します。
+        const handleAccountChange = (event) => {
+            if (event.key !== 'loginUser') return;
+            authRequest?.abort();
+            socket.disconnect();
+            if (event.newValue) socket.connect();
+        };
+        window.addEventListener('storage', handleAccountChange);
 
         // ここで条件を確認し、状況に合う処理だけを実行します。
         if (socket.connected) {
@@ -133,18 +154,22 @@ export default function UserRealtimeListener({ trip }) {
         }
 
         return () => {
+            disposed = true;
+            authRequest?.abort();
+            window.removeEventListener('storage', handleAccountChange);
             // クリーンアップで接続イベントと各通知イベントを外し、画面遷移後の二重受信を防ぎます。
             socket.off("connect", handleConnect);
             handlers.forEach(([eventName, handler]) => {
                 socket.off(eventName, handler);
             });
+            socket.disconnect();
         };
-    }, [isAdminRoute]);
+    }, [isAdminRoute, isPublicRoute]);
 
     // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         // ここで条件を確認し、状況に合う処理だけを実行します。
-        if (isAdminRoute) return;
+        if (isAdminRoute || isPublicRoute) return;
         // ここで条件を確認し、状況に合う処理だけを実行します。
         if (!groupId) return;
 
@@ -170,7 +195,7 @@ export default function UserRealtimeListener({ trip }) {
         return () => {
             socket.off("connect", joinTrip);
         };
-    }, [groupId, isAdminRoute]);
+    }, [groupId, isAdminRoute, isPublicRoute]);
 
     return null;
 }

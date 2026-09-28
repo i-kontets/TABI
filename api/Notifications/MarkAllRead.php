@@ -40,7 +40,9 @@ try {
 
     // 現在表示対象になる未読通知だけを既読にし、期限切れ通知は更新しません。
     // read_at は COALESCE により「既に日時が入っていればそのまま、なければ現在時刻」を設定します。
-    $stmt = $pdo->prepare("UPDATE notification_recipients AS nr INNER JOIN notifications AS n ON n.notification_id = nr.notification_id SET nr.is_read = 1, nr.read_at = COALESCE(nr.read_at, NOW()) WHERE nr.user_id = :user_id AND nr.is_read = 0 AND (n.expires_at IS NULL OR n.expires_at > NOW())");
+    // 予約中のお知らせを一括既読に含めないため、一覧と共通の公開条件を使います。
+    $visible = notificationVisibleSql();
+    $stmt = $pdo->prepare("UPDATE notification_recipients AS nr INNER JOIN notifications AS n ON n.notification_id = nr.notification_id SET nr.is_read = 1, nr.read_at = COALESCE(nr.read_at, NOW()) WHERE nr.user_id = :user_id AND nr.is_read = 0 AND {$visible}");
     // SQLインジェクション対策として、ユーザーIDはプレースホルダ経由で渡します。
     $stmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
     $stmt->execute();

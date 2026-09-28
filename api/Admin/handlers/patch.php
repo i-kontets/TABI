@@ -90,18 +90,23 @@ function handle_admin_patch(PDO $pdo, string $resource, $id, array $input): void
 
     // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。
     if ($resource === "notices") {
-        // SQL を準備し、あとから値を安全に入れられる形にします。
-        $stmt = $pdo->prepare("UPDATE admin_notices SET title = :title, body = :body, target_type = :target_type, start_at = :start_at, end_at = :end_at, push_enabled = :push_enabled, updated_at = NOW() WHERE notice_id = :id");
-        // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
-        $stmt->execute([
-            "title" => $input["title"] ?? "",
-            "body" => $input["body"] ?? "",
-            "target_type" => $input["target"] ?? "全ユーザー",
-            "start_at" => str_replace("/", "-", $input["startAt"] ?? null),
-            "end_at" => str_replace("/", "-", $input["endAt"] ?? null),
-            "push_enabled" => !empty($input["push"]) ? 1 : 0,
-            "id" => $numericId,
-        ]);
+        // 配信済みの通知の宛先と既読状態を守るため、対象・公開開始の変更は新規作成で行います。
+        $notice = noticeValidate($input);
+        $pdo->beginTransaction();
+        $stmt = $pdo->prepare('SELECT * FROM admin_notices WHERE notice_id = ? AND deleted_at IS NULL FOR UPDATE');
+        $stmt->execute([$numericId]);
+        $saved = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$saved) throw new InvalidArgumentException('お知らせが見つかりません。');
+        if ($saved['notification_id'] && ($saved['target_type'] !== $notice['target'] || (string) $saved['target_id'] !== (string) $notice['targetId'] || $saved['start_at'] !== $notice['startAt'])) {
+            throw new InvalidArgumentException('通知作成後の対象・公開開始は変更できません。新しいお知らせを作成してください。');
+        }
+        // 編集時もPushの希望を保持し、通知本文の更新と別の送信機能として扱います。
+        $pdo->prepare('UPDATE admin_notices SET title = ?, body = ?, target_type = ?, target_id = ?, start_at = ?, end_at = ?, push_enabled = ?, updated_at = NOW() WHERE notice_id = ?')->execute([$notice['title'], $notice['body'], $notice['target'], $notice['targetId'], $notice['startAt'], $notice['endAt'], (int) $notice['push'], $numericId]);
+        if ($saved['notification_id']) {
+            // 管理画面だけが更新されないよう、ユーザーが読む通知本体も同時に更新します。
+            $pdo->prepare('UPDATE notifications SET title = ?, body = ?, expires_at = ? WHERE notification_id = ?')->execute([$notice['title'], $notice['body'], noticeExpiryUtc($notice['endAt']), $saved['notification_id']]);
+        }
+        $pdo->commit();
         sendRealtimeEvent("admin:global", "notice_updated", [
             "notice_id" => $numericId,
         ]);

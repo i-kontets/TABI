@@ -1,0 +1,16 @@
+Options -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /TABI/
+
+    # 旧URLの利用者も同じ認証・通知保存処理へ通すため、ファイルを削除せず入口を統一します。
+    # /TABI/api/.htaccessから評価されるため、重複経路はapi/Adminで始まります。
+    RewriteRule ^api/Admin(?:/index\.php(?:/.*)?)?/?$ /TABI/api/Admin/index.php [END]
+
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    RewriteRule ^ index.html [L]
+</IfModule>

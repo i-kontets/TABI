@@ -288,6 +288,9 @@ function fetch_notices(PDO $pdo): array
         "title" => $row["title"],
         "body" => $row["body"],
         "target" => $row["target_type"],
+        // 編集画面で宛先を復元します。旧データは対象IDを持たないのでnullです。
+        "targetId" => $row["target_id"] ?? null,
+        "notificationId" => $row["notification_id"] ?? null,
         "status" => notice_status_label($row["status"]),
         "startAt" => format_dt($row["start_at"]),
         "endAt" => format_dt($row["end_at"]),
@@ -1158,4 +1161,3 @@ function fetch_notification_permissions(PDO $pdo): array
         ["label" => "未許可", "value" => $disabledUsers],
     ];
 }
-

@@ -29,9 +29,15 @@ $input = body();
 
 // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
+    // 管理者追加APIなどから権限確認を迂回できないよう、管理APIの入口で認証します。
+    $adminId = noticeRequireAdmin($pdo, $method !== 'GET');
     // 実際のCRUD処理は handler 側へ委譲し、この入口ファイルは振り分けに集中します。
     handle_admin_request($pdo, $method, $resource, $id, $input);
 // エラーが起きた場合は、詳細をログに残し、利用者には安全なメッセージを返します。
+} catch (InvalidArgumentException $e) {
+    // 検証で用意した日本語メッセージだけを返し、SQLや接続情報は公開しません。
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    respond(["success" => false, "message" => $e->getMessage()], 422);
 } catch (Throwable $e) {
     // 途中で例外が発生した場合は、開いているトランザクションを巻き戻してからエラーを返します。
     // これにより、一部のテーブルだけ更新された中途半端な状態を避けます。
@@ -43,9 +49,9 @@ try {
         logSystemError("php", "error", "Admin API error.", [
             "resource" => $resource,
             "method" => $method,
-            "error" => $e->getMessage(),
+            "error_type" => get_class($e),
         ]);
     }
     // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
-    respond(["success" => false, "message" => "Admin API error.", "error" => $e->getMessage()], 500);
+    respond(["success" => false, "message" => "管理APIの処理に失敗しました。"], 500);
 }

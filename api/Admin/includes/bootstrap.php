@@ -24,6 +24,8 @@ require_once __DIR__ . "/config.php";
 require_once __DIR__ . "/../services/system_errors.php";
 // 共通設定や別ファイルの関数を読み込み、この API から使えるようにします。
 require_once __DIR__ . "/../services/realtime.php";
+// お知らせと既存通知Repositoryを接続する処理です。
+require_once __DIR__ . "/../services/notices.php";
 // 共通設定や別ファイルの関数を読み込み、この API から使えるようにします。
 require_once __DIR__ . "/../services/inquiry_reply.php";
 // 共通設定や別ファイルの関数を読み込み、この API から使えるようにします。

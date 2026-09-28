@@ -1,0 +1,21 @@
+Options -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /TABI/
+
+    # BEGIN TABI_ADMIN_WRITE_MAINTENANCE
+    # PHPとフロントの切り替え中に旧形式の書き込みを受け付けないため、両方の入口を止めます。
+    RewriteCond %{REQUEST_METHOD} !^(GET|HEAD|OPTIONS)$
+    RewriteRule ^(?:api/)?Admin(?:/|$) - [R=503,L]
+    # END TABI_ADMIN_WRITE_MAINTENANCE
+
+    # 旧URLの利用者も同じ認証・通知保存処理へ通すため、ファイルを削除せず入口を統一します。
+    RewriteRule ^api/Admin(?:/index\.php(?:/.*)?)?/?$ /TABI/api/Admin/index.php [END]
+
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    RewriteRule ^ index.html [L]
+</IfModule>

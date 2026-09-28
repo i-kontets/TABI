@@ -22,6 +22,11 @@ export function getUserSocket() {
         socket = io(SOCKET_URL, {
             transports: ["websocket"],
             autoConnect: false,
+            // Socket.IO標準の再接続を使い、切断時に高速で接続を繰り返さないよう上限を設けます。
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 30000,
+            randomizationFactor: 0.5,
         });
     }
 

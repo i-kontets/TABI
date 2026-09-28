@@ -8,7 +8,7 @@
  *
  * 扱うデータ: 未読通知の件数と、バッジ表示用の文字列("3" や "99+" など)。
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchUnreadNotificationCount } from './notificationApi';
 
 // 「未読件数が変わったよ」と画面間で知らせ合うための独自イベント名です。
@@ -53,12 +53,21 @@ function useUnreadNotificationBadge() {
 	const [badgeText, setBadgeText] = useState(null);
 	// 未読件数の数値。
 	const [unreadCount, setUnreadCount] = useState(0);
+	// 古いAPI応答が新しい件数を上書きしないよう、直前の通信を中断します。
+	const requestRef = useRef(null);
 
 	// 未読件数をAPIから取り直す関数です。useCallback で同じ関数を使い回します。
 	const refresh = useCallback(async (signal) => {
+		requestRef.current?.abort();
+		const controller = new AbortController();
+		requestRef.current = controller;
+		const cancel = () => controller.abort();
+		if (signal?.aborted) controller.abort();
+		signal?.addEventListener('abort', cancel, { once: true });
 		try {
 			// APIから最新の未読件数を取得し、state を更新します。
-			const data = await fetchUnreadNotificationCount({ signal });
+			const data = await fetchUnreadNotificationCount({ signal: controller.signal });
+			if (controller.signal.aborted) return { unreadCount: 0, badgeText: null };
 			const next = formatBadgeText(data);
 			setUnreadCount(next.unreadCount);
 			setBadgeText(next.badgeText);
@@ -71,6 +80,8 @@ function useUnreadNotificationBadge() {
 				setBadgeText(null);
 			}
 			return { unreadCount: 0, badgeText: null };
+		} finally {
+			signal?.removeEventListener('abort', cancel);
 		}
 	}, []);
 
@@ -88,10 +99,20 @@ function useUnreadNotificationBadge() {
 
 		// ベルがある画面を開いている間だけ、通知画面からの更新合図を受け取ります。
 		window.addEventListener(NOTIFICATION_BADGE_EVENT, handleBadgeUpdate);
+		// イベントの重複時も加算せずDBから取り直すので、未読件数が二重に増えません。
+		const realtimeEvents = ['user:notification_created', 'user:reconnected', 'focus'];
+		realtimeEvents.forEach((event) => window.addEventListener(event, handleBadgeUpdate));
+		// 期限切れや配信失敗も回復できるよう、表示中だけ低頻度で同期します。
+		const timer = window.setInterval(() => {
+			if (document.visibilityState === 'visible') handleBadgeUpdate();
+		}, 60000);
 
 		// 後片付け: 画面を離れるときにリクエストを中断し、イベント購読も解除します。
 		return () => {
 			controller.abort();
+			requestRef.current?.abort();
+			window.clearInterval(timer);
+			realtimeEvents.forEach((event) => window.removeEventListener(event, handleBadgeUpdate));
 			window.removeEventListener(NOTIFICATION_BADGE_EVENT, handleBadgeUpdate);
 		};
 	}, [refresh]);
