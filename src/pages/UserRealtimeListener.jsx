@@ -75,51 +75,12 @@ export default function UserRealtimeListener({ trip }) {
         }
 
         const socket = getUserSocket();
-        let disposed = false;
-        let authRequest = null;
-
-        // handleConnect は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
-        const handleConnect = async () => {
-            // 接続やアカウントが切り替わった後、古い認証応答で入室しないよう中断・照合します。
-            authRequest?.abort();
-            const controller = new AbortController();
-            authRequest = controller;
-            const connectionId = socket.id;
-            // ここで条件を確認し、状況に合う処理だけを実行します。
-            if (import.meta.env.DEV) {
-                console.log("WebSocket connected:", socket.id);
-            }
-
-            // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
-            try {
-                // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-                const response = await fetch(`${import.meta.env.BASE_URL}api/auth/whoami.php`, {
-                    credentials: "include",
-                    signal: controller.signal,
-                });
-                if (disposed || controller.signal.aborted || socket.id !== connectionId) return;
-                if (response.status === 401) {
-                    localStorage.removeItem("loginUser");
-                    socket.disconnect();
-                    return;
-                }
-                const data = await response.json().catch(() => null);
-                const userId = data?.user?.user_id;
-                // ここで条件を確認し、状況に合う処理だけを実行します。
-                if (userId && !disposed && !controller.signal.aborted && socket.id === connectionId && socket.connected) {
-                    // join_userで「この接続はこのユーザーの通知を受け取る」とWebSocketサーバーへ知らせます。
-                    socket.emit("join_user", userId);
-                    // 再接続中に発生した通知はイベント再送に頼らず本人用APIから回復します。
-                    window.dispatchEvent(new Event('user:reconnected'));
-                    // ここで条件を確認し、状況に合う処理だけを実行します。
-                    if (import.meta.env.DEV) {
-                        console.log("join_user sent:", userId);
-                    }
-                }
-            // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
-            } catch {
-                // Not logged in, or whoami failed. Keep the socket available for trip rooms.
-            }
+        // 本人roomは認証後にAWS側で自動参加します。受信できなかった履歴はAPIで回復します。
+        const handleConnect = () => {
+            // 新フロントを先に配備する短い期間だけ旧サーバーも動かせる互換イベントです。
+            // IDはSession確認済みAPIから取得し、新サーバーでは署名済み本人IDとの一致が必須です。
+            if (socket.authenticatedUserId) socket.emit('join_user', socket.authenticatedUserId);
+            window.dispatchEvent(new Event('user:reconnected'));
         };
 
         // 配列のデータを1件ずつ画面表示用の形に変換します。
@@ -140,7 +101,6 @@ export default function UserRealtimeListener({ trip }) {
         // 別タブでログイン・ログアウトした場合も、前の利用者の部屋を破棄します。
         const handleAccountChange = (event) => {
             if (event.key !== 'loginUser') return;
-            authRequest?.abort();
             socket.disconnect();
             if (event.newValue) socket.connect();
         };
@@ -154,8 +114,6 @@ export default function UserRealtimeListener({ trip }) {
         }
 
         return () => {
-            disposed = true;
-            authRequest?.abort();
             window.removeEventListener('storage', handleAccountChange);
             // クリーンアップで接続イベントと各通知イベントを外し、画面遷移後の二重受信を防ぎます。
             socket.off("connect", handleConnect);
@@ -171,9 +129,10 @@ export default function UserRealtimeListener({ trip }) {
         // ここで条件を確認し、状況に合う処理だけを実行します。
         if (isAdminRoute || isPublicRoute) return;
         // ここで条件を確認し、状況に合う処理だけを実行します。
-        if (!groupId) return;
-
         const socket = getUserSocket();
+        // groupIdは既存trip roomで使うグループIDです。署名前にPHPが所属を検証します。
+        socket.setRequestedRooms(groupId ? [`trip:${groupId}`] : []);
+        if (!groupId) return;
         // joinTrip は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const joinTrip = () => {
             // join_tripで現在の旅行グループの部屋へ参加し、同じグループ内の変更通知を受け取ります。
@@ -185,15 +144,16 @@ export default function UserRealtimeListener({ trip }) {
         };
 
         // ここで条件を確認し、状況に合う処理だけを実行します。
+        socket.on("connect", joinTrip);
         if (socket.connected) {
             joinTrip();
         } else {
-            socket.once("connect", joinTrip);
             socket.connect();
         }
 
         return () => {
             socket.off("connect", joinTrip);
+            socket.emit("leave_trip", groupId);
         };
     }, [groupId, isAdminRoute, isPublicRoute]);
 

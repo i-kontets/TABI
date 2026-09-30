@@ -1,0 +1,7 @@
+{
+  "name": "tabi-websocket-auth-staging",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test auth.test.mjs" },
+  "dependencies": { "express": "5.2.1", "socket.io": "4.8.3", "dotenv": "17.4.2" }
+}

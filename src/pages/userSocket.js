@@ -8,10 +8,7 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { io } from "socket.io-client";
-
-// 接続先URLです。ローカル検証では環境変数、本番では公開済みWebSocketサーバーを使う想定です。
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "https://ws.tabital.com";
+import { createAuthenticatedSocket } from '../api/authenticatedSocket';
 
 let socket = null;
 
@@ -19,15 +16,7 @@ export function getUserSocket() {
     // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!socket) {
         // transportsをwebsocketに固定し、ポーリングではなくリアルタイム通信用の接続を優先します。
-        socket = io(SOCKET_URL, {
-            transports: ["websocket"],
-            autoConnect: false,
-            // Socket.IO標準の再接続を使い、切断時に高速で接続を繰り返さないよう上限を設けます。
-            reconnection: true,
-            reconnectionDelay: 1000,
-            reconnectionDelayMax: 30000,
-            randomizationFactor: 0.5,
-        });
+        socket = createAuthenticatedSocket();
     }
 
     return socket;

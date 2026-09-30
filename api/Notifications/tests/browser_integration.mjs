@@ -3,7 +3,8 @@
 import process from 'node:process';
 import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, randomBytes } from 'node:crypto';
+import { verifyToken } from '../../../deployment/websocket/auth.mjs';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
 
@@ -17,6 +18,8 @@ let running = false;
 let fixture = null;
 let browser = null;
 let checks = 0;
+// 検証用署名鍵はメモリ内だけで共有し、実PHPが発行したtokenを検証します。
+const wsAuthSecret = randomBytes(48).toString('hex');
 const check = (ok, label) => { if (!ok) throw new Error(label); checks++; console.log('PASS: ' + label); };
 
 // セッション・資格情報は子プロセスとのメモリ上の受け渡しに限定し、ログへ出しません。
@@ -47,7 +50,7 @@ try {
     const meta = JSON.parse(docker(['inspect', 'tabi-apache-1']))[0];
     const env = Object.fromEntries(meta.Config.Env.map((item) => { const i = item.indexOf('='); return [item.slice(0, i), item.slice(i + 1)]; }));
     check(env.DB_HOST === 'db' && env.DB_NAME === 'tabi', '接続先はローカルDocker DB');
-    const envLines = ['DB_HOST=db', 'DB_NAME=tabi', 'DB_USER=' + env.DB_USER, 'DB_PASSWORD=' + env.DB_PASSWORD, 'REALTIME_EMIT_URL=http://127.0.0.1:18093/emit', 'REALTIME_SECRET=local-browser-placeholder', 'NOTICE_TEST_EVENTS=/tmp/tabi-browser-events'];
+    const envLines = ['DB_HOST=db', 'DB_NAME=tabi', 'DB_USER=' + env.DB_USER, 'DB_PASSWORD=' + env.DB_PASSWORD, 'REALTIME_EMIT_URL=http://127.0.0.1:18093/emit', 'REALTIME_SECRET=local-browser-placeholder', 'NOTICE_TEST_EVENTS=/tmp/tabi-browser-events', 'WS_AUTH_SECRET=' + wsAuthSecret];
     docker(['run', '-d', '--rm', '--name', container, '--network', Object.keys(meta.NetworkSettings.Networks)[0], '-p', '127.0.0.1:18094:18094', '--env-file', '/dev/stdin', '-v', root + ':/var/www/html/TABI:ro', meta.Config.Image, 'php', '-S', '0.0.0.0:18094', '-t', '/var/www/html'], envLines.join('\n') + '\n');
     running = true;
     docker(['exec', '-d', container, 'php', '-S', '127.0.0.1:18093', '/var/www/html/TABI/api/Notifications/tests/emit_stub.php']);
@@ -76,18 +79,30 @@ try {
     for (const role of ['admin', 'A', 'B']) {
         const context = await browser.newContext();
         await context.addCookies([{ name: 'PHPSESSID', value: fixture.sessions[role], domain: 'localhost', path: '/' }]);
-        // 外部の実ユーザー用ルームへ入らず、実クライアントのjoin_userと受信イベントを検証します。
+        // 外部のroomへ入らず、実PHPの署名tokenから本人roomを確定する接続を再現します。
         await context.routeWebSocket('**/socket.io/**', (ws) => {
             ws.send('0' + JSON.stringify({ sid: role, upgrades: [], pingInterval: 25000, pingTimeout: 20000, maxPayload: 1000000 }));
             ws.onMessage((message) => {
-                if (message === '40') ws.send('40' + JSON.stringify({ sid: role }));
-                if (typeof message === 'string' && message.startsWith('42')) {
+                if (typeof message === 'string' && message.startsWith('40')) {
+                    try {
+                        const claims = verifyToken(JSON.parse(message.slice(2)).token, wsAuthSecret);
+                        const room = 'user:' + claims.sub;
+                        if (process.env.WS_TEST_LEGACY !== '1') {
+                            const entries = connections.get(room) ?? [];
+                            entries.push({ ws, role }); connections.set(room, entries);
+                            ws.onClose(() => connections.set(room, (connections.get(room) ?? []).filter((entry) => entry.ws !== ws)));
+                        }
+                        ws.send('40' + JSON.stringify({ sid: role }));
+                    } catch { ws.send('44' + JSON.stringify({ message: 'AUTH_INVALID' })); }
+                }
+                // 本番切り替え前の旧サーバーでも、新クライアントの本人joinが維持されることを確認します。
+                if (process.env.WS_TEST_LEGACY === '1' && typeof message === 'string' && message.startsWith('42')) {
                     const [event, id] = JSON.parse(message.slice(2));
                     if (event === 'join_user') {
                         const room = 'user:' + id;
                         const entries = connections.get(room) ?? [];
                         entries.push({ ws, role }); connections.set(room, entries);
-                        ws.onClose(() => connections.set(room, (connections.get(room) ?? []).filter((entry) => entry.ws !== ws)));
+                        ws.onClose(() => connections.set(room, (connections.get(room) ?? []).filter(entry => entry.ws !== ws)));
                     }
                 }
             });

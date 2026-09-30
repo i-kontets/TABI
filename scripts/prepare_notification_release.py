@@ -19,6 +19,7 @@ PHP_FILES = [
     'api/Notifications/Service/NotificationRepository.php',
     'api/Notifications/Service/RdsShutdownWarning.php',
     'api/Notifications/cli/publish_admin_notices.php', 'api/config/serviceSchedule.php',
+    'api/auth/WebSocketAuth.php', 'api/auth/WebSocketToken.php',
 ]
 
 
