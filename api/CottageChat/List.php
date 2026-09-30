@@ -252,6 +252,7 @@ try {
 
             "lastMessage" => $chat["last_message"] ?: "",
             "time" => formatTime($chat["last_sent_at"]),
+            "lastSentAt" => $chat["last_sent_at"],
             "unread" => (int)$chat["unread_count"],
 
             "trip_title" => $chat["trip_title"] ?: "",

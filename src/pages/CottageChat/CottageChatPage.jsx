@@ -54,6 +54,42 @@ function mergeReadStatuses(messages, reads) {
     });
 }
 
+function getContactTimestamp(contact) {
+    const rawTimestamp = contact.lastSentAt || contact.last_sent_at;
+
+    if (rawTimestamp) {
+        const timestamp = Date.parse(String(rawTimestamp).replace(' ', 'T'));
+        if (!Number.isNaN(timestamp)) {
+            return timestamp;
+        }
+    }
+
+    return 0;
+}
+
+function sortContactsByPriority(contacts) {
+    return contacts
+        .map((contact, index) => ({ contact, index }))
+        .sort((left, right) => {
+            const leftUnread = Number(left.contact.unread) || 0;
+            const rightUnread = Number(right.contact.unread) || 0;
+            const leftHasUnread = leftUnread > 0;
+            const rightHasUnread = rightUnread > 0;
+
+            if (leftHasUnread !== rightHasUnread) {
+                return rightHasUnread ? 1 : -1;
+            }
+
+            if (leftUnread !== rightUnread) {
+                return rightUnread - leftUnread;
+            }
+
+            const latestFirst = getContactTimestamp(right.contact) - getContactTimestamp(left.contact);
+            return latestFirst || left.index - right.index;
+        })
+        .map(({ contact }) => contact);
+}
+
 /**
  * CottageChatPage は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
@@ -102,7 +138,7 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                 signal,
             });
             const data = await parseApiResponse(response);
-            const nextContacts = data.contacts || [];
+            const nextContacts = sortContactsByPriority(data.contacts || []);
 
             setContacts(nextContacts);
             return nextContacts;
@@ -170,6 +206,11 @@ export default function CottageChatPage({ active, isAdmin = false }) {
             const maxId = msgs.reduce((max, m) => Math.max(max, m.message_id ?? 0), 0);
             lastMessageIdRef.current = maxId;
             await markMessagesAsRead(resolvedChatId, signal);
+            setContacts((currentContacts) => sortContactsByPriority(currentContacts.map((contact) => (
+                Number(contact.id) === resolvedChatId
+                    ? { ...contact, unread: 0 }
+                    : contact
+            ))));
         // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
             // ここで条件を確認し、状況に合う処理だけを実行します。
@@ -285,6 +326,11 @@ export default function CottageChatPage({ active, isAdmin = false }) {
     const handleContactSelect = (id) => {
         setActiveContactId(id);
         setIsMobileChatView(true);
+        setContacts((currentContacts) => sortContactsByPriority(currentContacts.map((contact) => (
+            Number(contact.id) === Number(id)
+                ? { ...contact, unread: 0 }
+                : contact
+        ))));
         loadMessages(id);
     };
 
@@ -396,20 +442,11 @@ export default function CottageChatPage({ active, isAdmin = false }) {
             id="appScreen"
             className={`screen ${isMobileChatView ? 'mobileChatActive' : ''} ${isAdmin ? 'admin-view' : ''}`}
         >
-            <header className="app-header">
-                <span className="hd-logo">TABI コテージ管理人チャット</span>
-                <div className="hd-right">
-                    <button type="button" className="btn-logout" onClick={handleBackToApp}>
-                        戻る
-                    </button>
-                </div>
-            </header>
-
             <div className="app-body">
                 <aside className="list-pane">
                     <div className="list-header">
-                        <h2>コテージチャット</h2>
-                        <span className="list-sub">{notice || 'コテージごとのメッセージ'}</span>
+                        <h2>宿泊者からの問い合わせ</h2>
+                        <span className="list-sub">{notice || '宿泊予約ごとのメッセージ'}</span>
                     </div>
 
                     <div className="chat-list">
@@ -439,8 +476,8 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                                         />
                                         <span className="ci-body">
                                             <div className="ci-top">
-                                                <span className="ci-user">
-                                                    {contact.representative_name}
+                                                <span className="ci-title">
+                                                    {contact.trip_title || '旅行グループ'}
                                                 </span>
 
                                                 <span className="ci-time">
@@ -448,8 +485,16 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                                                 </span>
                                             </div>
 
+                                            <div className="ci-property">
+                                                {contact.name || '宿泊先'}
+                                            </div>
+
                                             <div className="ci-info">
-                                                {contact.stay_period} ・ {contact.people_count}名
+                                                {[
+                                                    contact.representative_name && `${contact.representative_name}さん`,
+                                                    contact.stay_period,
+                                                    contact.people_count ? `${contact.people_count}名` : '',
+                                                ].filter(Boolean).join(' ・ ')}
                                             </div>
 
                                             <div className="ci-bottom">
@@ -485,7 +530,19 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                             source="Cottage chat header manager icon"
                         />
                         <div className="chat-title-block">
-                            <h3 className="chat-title">{activeContact?.name || 'コテージチャット'}</h3>
+                            <h3 className="chat-title">{activeContact?.name || '宿泊者とのやりとり'}</h3>
+                            <span className="chat-sub">
+                                {activeContact?.trip_title || '旅行グループ'}
+                            </span>
+                            {activeContact && (
+                                <span className="chat-meta">
+                                    {[
+                                        activeContact.stay_period,
+                                        activeContact.people_count ? `${activeContact.people_count}名` : '',
+                                        activeContact.representative_name && `代表者：${activeContact.representative_name}さん`,
+                                    ].filter(Boolean).join(' ・ ')}
+                                </span>
+                            )}
                         </div>
                     </div>
 
