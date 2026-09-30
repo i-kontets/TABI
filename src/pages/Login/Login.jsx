@@ -31,9 +31,9 @@ export default function Login() {
     const [searchParams] = useSearchParams();
     const returnPath = getReturnPathFromSearchParams(searchParams);
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [email, setEmail] = useState("");
+    const [email, setEmail] = useState("2410041@i-seifu.jp");
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [password, setPassword] = useState("");
+    const [password, setPassword] = useState("2024gakusei");
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [showPassword, setShowPassword] = useState(false);
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
