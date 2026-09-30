@@ -1,5 +1,7 @@
 <?php
 declare(strict_types=1);
+/** 既存の接続用認可を担当します。本人とroomを照合し、管理roomにも共通の管理者条件を適用します。 */
+require_once __DIR__ . '/AdminAccess.php';
 
 // Token APIから呼びます。共有ホスティングで環境変数を設定できない場合も、
 // Web公開領域の外に置いた本人だけが読めるファイルを使い、.htaccessへ秘密値を書きません。
@@ -25,9 +27,8 @@ function wsAllowedRooms(PDO $pdo, int $userId, array $requested): array
     if (!$stmt->fetchColumn()) throw new DomainException('有効なログインが必要です。');
     $rooms = ['user:' . $userId];
     // 管理APIの閲覧条件（level>=1）を再利用します。書き込み条件のlevel>=5とは区別します。
-    $stmt = $pdo->prepare('SELECT MAX(admin_level) FROM admin_users WHERE user_id=?');
-    $stmt->execute([$userId]);
-    if ((int) $stmt->fetchColumn() >= 1) $rooms[] = 'admin:global';
+    // 接続基盤は変えず、管理データの購読も管理APIと同じ許可条件にそろえます。
+    if (tabiAdminLevel($pdo, $userId) >= 1) $rooms[] = 'admin:global';
     foreach ($requested as $room) {
         if (!is_string($room) || !preg_match('/^(trip|cottage):([1-9][0-9]{0,14})$/D', $room, $match)) {
             throw new InvalidArgumentException('要求roomの形式が不正です。');

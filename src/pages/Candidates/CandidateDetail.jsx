@@ -8,11 +8,12 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import Minimap from '../../components/Minimap/Minimap';
 import styles from './CandidateDetail.module.css';
-import { getCandidatePlaceById, typeLabels } from './candidateData';
+import { typeLabels } from './candidateData';
+import { buildAuthPath } from '../../utils/authReturnPath';
 
 // 主要な観光地の緯度経度マッピング（テスト用）
 const LOCATION_MAP = {
@@ -96,19 +97,48 @@ function CandidateDetail() {
     const navigate = useNavigate();
     const { candidateId } = useParams();
     const location = useLocation();
-    const candidateFromState = location.state?.place;
-
-    const candidate = useMemo(() => {
-        return candidateFromState || getCandidatePlaceById(candidateId);
-    }, [candidateFromState, candidateId]);
-
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
+    const params = new URLSearchParams(location.search);
+    const groupId = params.get('groupId') || params.get('group_id');
+    const listPath = groupId ? `/Candidates?groupId=${encodeURIComponent(groupId)}&category=${encodeURIComponent(params.get('category') || 'hotel')}` : '/Home';
+    const [candidate, setCandidate] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [activeImageIndex, setActiveImageIndex] = useState(0);
-    // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [isAdded, setIsAdded] = useState(
-        candidate?.status === 'selected'
-    );
+    const [isAdded, setIsAdded] = useState(false);
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+
+    useEffect(() => {
+        const controller = new AbortController();
+        // state内の施設やサンプルIDを信用せず、URLの旅行・候補を既存APIで確認します。
+        // これで直接アクセスや再読み込みでも同じ施設になり、別施設への誤接続を防げます。
+        const load = async () => {
+            setLoading(true);
+            setCandidate(null);
+            setError('');
+            try {
+                if (!groupId) throw new Error('旅行グループを選択してください。');
+                const query = new URLSearchParams({ group_id: groupId, scope: 'search' });
+                const response = await fetch(`${import.meta.env.BASE_URL}api/Trips/GetCandidates.php?${query}`, { credentials: 'include', signal: controller.signal });
+                if (response.status === 401) {
+                    navigate(buildAuthPath('/', `/Candidates/${candidateId}?groupId=${encodeURIComponent(groupId)}`), { replace: true });
+                    return;
+                }
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || '施設を取得できませんでした。');
+                const place = data.candidates?.find((item) => String(item.candidate_id) === candidateId);
+                if (!place) throw new Error('この旅行の候補地が見つかりません。');
+                setCandidate(place);
+                setIsAdded(place.status === 'selected');
+                setActiveImageIndex(0);
+            } catch (error) {
+                if (!controller.signal.aborted) setError(error.message);
+            } finally {
+                if (!controller.signal.aborted) setLoading(false);
+            }
+        };
+        load();
+        return () => controller.abort();
+    }, [candidateId, groupId, navigate]);
 
     // ここで条件を確認し、状況に合う処理だけを実行します。
     if (!candidate || (!candidate.name && !candidate.candidate_name)) {
@@ -116,15 +146,15 @@ function CandidateDetail() {
             <main className={styles.page}>
                 <section className={styles.phone}>
                     <header className={styles.hero}>
-                        <button className={styles.backButton} type="button" onClick={() => navigate(-1)} aria-label="戻る">
+                        <button className={styles.backButton} type="button" onClick={() => navigate(listPath)} aria-label="戻る">
                             <BackIcon />
                         </button>
                         <p className={styles.brand}>TABI</p>
                     </header>
                     <div className={styles.emptyState}>
-                        <h1>候補地が見つかりません</h1>
-                        <p>一覧から選び直してください。</p>
-                        <button className={styles.primaryButton} type="button" onClick={() => navigate('/Candidates')}>
+                        <h1>{loading ? '読み込み中…' : '候補地を表示できません'}</h1>
+                        <p role="status">{error || '施設情報を確認しています。'}</p>
+                        <button className={styles.primaryButton} type="button" onClick={() => navigate(listPath)}>
                             候補一覧へ戻る
                         </button>
                     </div>
@@ -230,7 +260,7 @@ function CandidateDetail() {
             <section className={styles.phone}>
                 <header className={styles.hero}>
                     <div className={styles.topBar}>
-                        <button className={styles.backButton} type="button" onClick={() => navigate(-1)} aria-label="戻る">
+                        <button className={styles.backButton} type="button" onClick={() => navigate(listPath)} aria-label="戻る">
                             <BackIcon />
                         </button>
                         <p className={styles.brand}>TABI</p>
@@ -281,6 +311,11 @@ function CandidateDetail() {
                 </div>
 
                 <div className={styles.content}>
+                    {/* 宿泊候補だけに入口を表示します。旅行と施設のIDをURLに残し、更新後も復元できます。 */}
+                    {candidate.candidate_type === 'hotel' && <section className={styles.actionCard} aria-label="宿泊の手続き">
+                        <button className={styles.primaryButton} type="button" onClick={() => navigate(`/Candidates/${candidateId}/reservation?groupId=${encodeURIComponent(groupId)}`)}>予約画面へ</button>
+                        <button className={styles.primaryButton} type="button" onClick={() => navigate(`/CottageChatPage?candidate_id=${candidateId}&groupId=${encodeURIComponent(groupId)}`)}>予約前チャット・問い合わせ</button>
+                    </section>}
                     <section className={styles.actionCard}>
                         <div className={styles.actionTextContent}>
                             <p className={styles.actionLabel}>MY PLAN</p>

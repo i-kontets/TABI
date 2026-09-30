@@ -1,0 +1,10 @@
+/* 専用認証画面の配置です。共通カラーを使い、狭い画面でも入力欄とリンクを折り返します。 */
+.page { min-height: 100dvh; padding: 24px 16px; display: grid; place-items: center; }
+.card { width: min(100%, 400px); padding: 24px; box-sizing: border-box; border: 1px solid var(--other-color); border-radius: 20px; background: white; color: var(--sub-color); }
+.card h1 { font-size: 22px; }
+.card p { line-height: 1.7; }
+.card fieldset { margin: 20px 0; min-width: 0; border: 1px solid var(--other-color); }
+.card label, .card a { display: block; margin: 16px 0; }
+.card a { color: var(--sub-color); text-decoration: underline; }
+.card input, .card button { width: 100%; box-sizing: border-box; padding: 12px; margin-top: 8px; }
+.card button:disabled { cursor: not-allowed; }

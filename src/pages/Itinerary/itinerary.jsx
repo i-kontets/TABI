@@ -328,6 +328,8 @@ export default function Itinerary() {
 
     <div>
       <Header showDate={false} />
+      {/* しおりから候補タブへグループIDを渡します。未選択ならHomeで選び直します。 */}
+      <button className={styles.candidateLink} type="button" onClick={() => navigate(groupId ? `/group/${encodeURIComponent(groupId)}/talk?tab=candidate` : '/Home')}>候補を見る</button>
 
 
       {/* 旅行タイトル・日付・メンバーをまとめて表示するカバー部分 */}

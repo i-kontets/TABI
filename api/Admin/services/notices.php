@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 
+/**
+ * 管理APIの共通認可とお知らせ処理を担当します。セッションID→固定メールと既存権限→操作可否の順に確認します。
+ * 管理権限はDBのadmin_usersから読み、メール入力やクライアント保存値では付与しません。
+ */
+require_once __DIR__ . '/../../auth/AdminAccess.php';
 require_once __DIR__ . '/../../Notifications/Service/NotificationRepository.php';
 
 // 管理者IDを入力から受け取らず、既存ログインセッションとDBの権限を照合します。
@@ -9,9 +14,8 @@ function noticeRequireAdmin(PDO $pdo, bool $write): int
     if (session_status() !== PHP_SESSION_ACTIVE) session_start();
     $userId = (int) ($_SESSION['user_id'] ?? 0);
     if ($userId < 1) respond(['success' => false, 'message' => 'ログインが必要です。'], 401);
-    $stmt = $pdo->prepare('SELECT MAX(a.admin_level) FROM admin_users a INNER JOIN users u ON u.user_id = a.user_id WHERE a.user_id = ? AND u.status = \'active\' AND u.deleted_at IS NULL');
-    $stmt->execute([$userId]);
-    $level = (int) $stmt->fetchColumn();
+    // ログインと同じ条件を各管理APIでも照合し、URL直打ちを防ぎます。
+    $level = tabiAdminLevel($pdo, $userId);
     if ($level < ($write ? 5 : 1)) respond(['success' => false, 'message' => 'この操作を行う管理者権限がありません。'], 403);
     if ($write) {
         // JSON以外の書き込みを拒否し、ブラウザの別サイトからの送信も拒否します。

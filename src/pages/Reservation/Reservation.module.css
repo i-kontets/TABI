@@ -1,0 +1,4 @@
+/* 仮予約ページの共通導線と本文の余白。固定フッターに本文が重ならないようにします。 */
+.page { max-width: 430px; min-height: 100dvh; margin: auto; padding: 24px 16px calc(100px + env(safe-area-inset-bottom)); box-sizing: border-box; }
+.page header { margin-bottom: 32px; }
+.page a { color: var(--sub-color); }

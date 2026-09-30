@@ -1,3 +1,15 @@
+/* しおりの表示と候補への入口。旅行データの表示は既存配置を保ち、候補ボタンに共通カラーを使います。 */
+.candidateLink {
+    display: block;
+    margin: 12px auto;
+    padding: 12px 24px;
+    border: 1px solid var(--other-color);
+    border-radius: 12px;
+    background: var(--sub-color);
+    color: white;
+    cursor: pointer;
+}
+
 .page {
 	padding-bottom: 80px;
 }
