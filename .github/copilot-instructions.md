@@ -25,11 +25,6 @@
   - Vite の base: `vite.config.js`（`base: '/TABI/'`）
   - Router の basename: `BrowserRouter basename={import.meta.env.BASE_URL}`
   ホスティング先のパスやリポジトリ名を変更する場合は、この2つをそろえて更新する。
-- 現在の機能フローはクライアント側完結（バックエンド API 未接続）。
-  - `Login` / `Newreg` は資格情報入力後に `useNavigate` で画面遷移する。
-  - `Newreg` は `components/Zxcvbn/Password.jsx` を使ってパスワード強度と再入力一致を検証する。
-  - `Home` は価値観すり合わせ UI（`components/chchch/Chchch.jsx`）を表示する。
-  - `Itinerary` は現時点では簡易的な土台ページ。
 
 ## このコードベース固有の主要ルール
 
