@@ -71,6 +71,14 @@ if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL) || !preg_match("/^\d{6}$/", $c
 
 $userId = (int) $_SESSION["user_id"];
 
+// 公開操作から管理者用メールを取得させません。権限付与は承認済みの別運用だけで行います。
+require_once __DIR__ . '/../auth/AdminAccess.php';
+if (isTabiAdminEmail($newEmail)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'このメールアドレスは指定できません。'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
     // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。

@@ -20,6 +20,10 @@ require_once __DIR__ . "/system_errors.php";
  */
 function realtime_config(string $key, $default = null)
 {
+    // 環境別の上書きを優先し、ローカル検証が本番WebSocketへ誤送信しないようにします。
+    $envKey = ['realtime_url' => 'REALTIME_EMIT_URL', 'realtime_secret' => 'REALTIME_SECRET'][$key] ?? null;
+    $envValue = $envKey ? getenv($envKey) : false;
+    if ($envValue !== false && $envValue !== '') return $envValue;
     static $realtimeConfig = null;
 
     // ここで条件を確認し、正しくないリクエストや対象外の処理を分けます。

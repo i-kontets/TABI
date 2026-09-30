@@ -1,6 +1,7 @@
+/* 6つの旅行機能を既存フッター内に並べます。宿泊は候補一覧の宿泊タブへ進みます。 */
 .bottomNav {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     align-items: center;
     position: fixed;
     bottom: 0;

@@ -9,7 +9,8 @@
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { buildAuthPath } from '../../utils/authReturnPath';
 import UserAvatar from '../../components/UserAvatar';
 import './CottageChatPage.css';
 
@@ -94,8 +95,9 @@ function sortContactsByPriority(contacts) {
  * CottageChatPage は、このファイルの中心となる処理をまとめた関数です。
  * 画面から渡された値や API の結果を使い、次に表示する内容を決めます。
  */
-export default function CottageChatPage({ active, isAdmin = false }) {
+export default function CottageChatPage({ isAdmin = false }) {
     const location = useLocation();
+    const navigate = useNavigate();
     const pollingRef = useRef(false);
     const lastMessageIdRef = useRef(0);
     const msgAreaRef = useRef(null);
@@ -118,6 +120,8 @@ export default function CottageChatPage({ active, isAdmin = false }) {
 
     const urlParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const requestedChatId = urlParams.get('chat_id') || urlParams.get('chatId');
+    const candidateId = urlParams.get('candidate_id');
+    const groupId = urlParams.get('groupId');
 
     const activeContact = contacts.find((contact) => contact.id === activeContactId) || null;
     // メッセージ内には相手ユーザーのアイコンが入っているため、一覧APIの管理人アイコンが空でもここから補えます。
@@ -133,10 +137,16 @@ export default function CottageChatPage({ active, isAdmin = false }) {
         // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-            const response = await fetch(`${cottageChatApiBase}/List.php`, {
+            // 選択施設のIDを既存APIへ渡します。会話作成APIは未実装なので作成はしません。
+            const query = candidateId ? `?${new URLSearchParams({ candidate_id: candidateId, groupId: groupId || '' })}` : '';
+            const response = await fetch(`${cottageChatApiBase}/List.php${query}`, {
                 credentials: 'include',
                 signal,
             });
+            if (response.status === 401) {
+                navigate(buildAuthPath('/', location.pathname + location.search), { replace: true });
+                return [];
+            }
             const data = await parseApiResponse(response);
             const nextContacts = sortContactsByPriority(data.contacts || []);
 
@@ -150,7 +160,7 @@ export default function CottageChatPage({ active, isAdmin = false }) {
             }
             return [];
         }
-    }, []);
+    }, [candidateId, groupId, navigate, location.pathname, location.search]);
 
     const markMessagesAsRead = useCallback(async (chatId, signal = undefined) => {
         // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
@@ -274,12 +284,18 @@ export default function CottageChatPage({ active, isAdmin = false }) {
 
             const nextContacts = await loadContacts(controller.signal);
             const requestedId = requestedChatId ? Number(requestedChatId) : null;
-            const firstChatId = requestedId || nextContacts[0]?.id || null;
+            // 指定会話が返却一覧にない場合、別施設の最初の会話で代用しません。
+            const firstChatId = requestedChatId
+                ? nextContacts.find((contact) => Number(contact.id) === requestedId)?.id || null
+                : nextContacts[0]?.id || null;
+            if (controller.signal.aborted) return;
+            setMessages([]);
+            lastMessageIdRef.current = 0;
 
             setActiveContactId(firstChatId);
             await loadMessages(firstChatId, controller.signal, { showLoading: false });
             // ここで条件を確認し、状況に合う処理だけを実行します。
-            if (!requestedId) {
+            if (!firstChatId || (!requestedId && !candidateId)) {
                 setIsMobileChatView(false);
             } else {
                 setIsMobileChatView(true);
@@ -292,7 +308,7 @@ export default function CottageChatPage({ active, isAdmin = false }) {
 
         initialize();
         return () => controller.abort();
-    }, [loadContacts, loadMessages, requestedChatId]);
+    }, [loadContacts, loadMessages, requestedChatId, candidateId]);
 
     // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
@@ -418,7 +434,10 @@ export default function CottageChatPage({ active, isAdmin = false }) {
 
     // handleBackToApp は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const handleBackToApp = () => {
-        window.history.back();
+        // 直接アクセスでも戻れるよう、施設からの入口には明示的な戻り先を用意します。
+        navigate(candidateId && groupId
+            ? `/Candidates/${encodeURIComponent(candidateId)}?groupId=${encodeURIComponent(groupId)}`
+            : '/Home');
     };
 
     // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
@@ -453,7 +472,7 @@ export default function CottageChatPage({ active, isAdmin = false }) {
                         {loading && contacts.length === 0 ? (
                             <div className="loading-txt">読み込み中...</div>
                         ) : contacts.length === 0 ? (
-                            <div className="loading-txt">チャットがありません</div>
+                            <div className="loading-txt">{candidateId ? 'この施設の参加可能な会話はありません。新規の問い合わせ開始機能は準備中です。' : 'チャットがありません'}</div>
                         ) : (
                             contacts.map((contact) => {
                                 const isActive = contact.id === activeContactId;

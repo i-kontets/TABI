@@ -1,0 +1,6 @@
+/* Homeの既存カードに合わせた旅行メニュー。フッターは維持し、選択欄と6つのリンクを配置します。 */
+.menu { padding: 16px; margin-bottom: 16px; background: white; border: 1px solid var(--other-color); border-radius: 16px; color: var(--sub-color); }
+.menu select { display: block; width: 100%; min-width: 0; padding: 12px 4px; margin: 8px 0; }
+.menu nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.menu a, .menu span { padding: 12px 2px; text-align: center; font-size: 13px; border-radius: 8px; background: var(--other-color); color: var(--sub-color); }
+.menu span { opacity: .5; }

@@ -134,7 +134,7 @@ if ($email === "" || $password === "") {
 // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
     // データベースからメールアドレスに一致するユーザーを検索
-    $sql = " SELECT user_id, name, email, password_hash, status FROM users WHERE email = :email LIMIT 1";
+    $sql = " SELECT user_id, name, email, password_hash, status FROM users WHERE email = :email AND deleted_at IS NULL LIMIT 1";
 
     // プリペアドステートメントでSQLインジェクション対策
     $stmt = $pdo->prepare($sql);
@@ -179,6 +179,11 @@ try {
         exit;
     }
 
+    // 正規のパスワード確認後にDBの管理権限を読みます。入力メールだけでは許可しません。
+    require_once __DIR__ . '/AdminAccess.php';
+    $isTabiAdmin = tabiAdminLevel($pdo, (int) $user['user_id']) >= 1;
+    session_regenerate_id(true);
+
     // ログイン成功：セッション情報を設定
     $_SESSION["user_id"] = $user["user_id"];
     $_SESSION["user_name"] = $user["name"];
@@ -196,7 +201,8 @@ try {
         "user" => [
             "user_id" => $user["user_id"],
             "name" => $user["name"],
-            "email" => $user["email"]
+            "email" => $user["email"],
+            "is_tabi_admin" => $isTabiAdmin
         ]
     ]);
 

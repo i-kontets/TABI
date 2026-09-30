@@ -8,12 +8,14 @@
  *
  * 扱うデータ: 通知1件分のオブジェクト(detailData に投票結果や補足情報を含むことがある)。
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import MainBottomNav from '../../components/mainBottomNav/MainBottomNav';
 import { CategoryIcon, NotificationEmptyState } from './NotificationComponents';
 import { formatNotificationDateTime, getNotificationAction, normalizeInternalActionPath, normalizeNotification } from './notificationUtils';
 import styles from './Notifications.module.css';
+import { fetchNotifications, markNotificationAsRead } from '../../api/notificationApi';
+import { notifyUnreadNotificationBadgeChanged } from '../../api/useUnreadNotificationBadge';
 
 // 画面で使う文言をまとめた定数です(変更やレビューをしやすくするため)。
 const TEXT = {
@@ -96,17 +98,28 @@ export default function NotificationDetailPage() {
   // 「関連ページを開けない」ときに表示するメッセージ用の state です。
   const [notice, setNotice] = useState('');
 
-  // 一覧画面から遷移時に渡された通知データを取り出して検証します。
-  // useMemo で、依存値が変わらない限り再計算を省きます。
-  const notification = useMemo(() => {
-    const stateNotification = location.state?.notification;
-    // データが渡されていない場合(URL直打ちやリロード)は null になります。
-    if (!stateNotification) return null;
-    // キー名の揺れを吸収して統一形式にします。
-    const normalized = normalizeNotification(stateNotification);
-    // URLのIDと通知データのIDが一致することを確認します(別の通知の誤表示防止)。
-    return String(normalized.id) === String(notificationId) ? normalized : null;
-  }, [location.state, notificationId]);
+  // 履歴のstateを信用せず、直接アクセス・再読み込みでも本人用APIから復元します。
+  const [loaded, setLoaded] = useState(null);
+  const notification = loaded?.id === String(notificationId) ? loaded : null;
+  useEffect(() => {
+    const controller = new AbortController();
+    const load = async () => {
+      try {
+        const data = await fetchNotifications({ recipientId: notificationId, limit: 1, signal: controller.signal });
+        const item = data?.data?.notifications?.[0];
+        if (controller.signal.aborted) return;
+        setLoaded(item ? normalizeNotification(item) : null);
+        if (item && !item.isRead) {
+          await markNotificationAsRead(item.recipientId);
+          if (!controller.signal.aborted) notifyUnreadNotificationBadgeChanged();
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') setLoaded(null);
+      }
+    };
+    load();
+    return () => controller.abort();
+  }, [notificationId, location.key]);
 
   // 通知データが取得できなかった場合は「見つかりません」画面を表示します。
   if (!notification) {

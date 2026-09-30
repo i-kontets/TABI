@@ -105,9 +105,10 @@ async function updateNotificationSettings(settings) {
  * 通知一覧を取得します。カテゴリ絞り込みとページング(limit/offset)に対応しています。
  * signal は画面遷移時などにリクエストを中断するための AbortSignal です。
  */
-async function fetchNotifications({ category = 'all', limit = 20, offset = 0, signal } = {}) {
+async function fetchNotifications({ category = 'all', limit = 20, offset = 0, recipientId, signal } = {}) {
 	// 通知一覧はDB上の履歴を正として表示するため、モックではなくPHP APIから取得します。
-	const query = createNotificationQuery({ category, limit, offset });
+	// 詳細を再読み込みするときも、同じ本人限定APIを利用します。
+	const query = createNotificationQuery({ category, limit, offset, recipientId });
 	const response = await fetch(notificationApi.list + query, {
 		method: 'GET',
 		credentials: 'include',

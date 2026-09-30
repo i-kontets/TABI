@@ -118,13 +118,18 @@ export default function NotificationListPage() {
   const [isMarkingAll, setIsMarkingAll] = useState(false);     // 一括既読の処理中フラグ
   // 既読処理中IDの「最新の値」を同期的に参照するための ref です(連打による二重送信防止)。
   const readingRecipientIdsRef = useRef(new Set());
+  // 一覧の再取得と追加ページが競合した場合、古い追加ページを破棄する世代番号です。
+  const listGenerationRef = useRef(0);
+  const countGenerationRef = useRef(0);
 
   // 通知一覧を「今日/昨日/それ以前」のグループへ分類します(一覧が変わったときだけ再計算)。
   const groupedNotifications = useMemo(() => groupNotificationsByDate(notifications), [notifications]);
 
   // 未読件数APIを呼び、画面の未読件数を更新します。
   const refreshUnreadCount = useCallback(async (signal) => {
+    const generation = ++countGenerationRef.current;
     const countData = await fetchUnreadNotificationCount({ signal });
+    if (signal?.aborted || generation !== countGenerationRef.current) return;
     const count = Number(countData?.data?.unreadCount ?? 0);
     // 数値でない値が来た場合は0件として扱います。
     setUnreadCount(Number.isFinite(count) ? count : 0);
@@ -132,9 +137,12 @@ export default function NotificationListPage() {
 
   // 1ページ目の通知を読み込みます(初回表示時・タブ切り替え時・再試行時に使用)。
   const loadFirstPage = useCallback(async (category, signal) => {
+    const generation = ++listGenerationRef.current;
     // タブとAPIのcategoryを同じ値にして、選択中カテゴリだけをDBから取り直します。
     // まず読み込み中の表示に切り替え、以前の状態をリセットします。
     setLoading(true);
+    // 古い追加ページの待機状態を解除し、結果は世代番号で破棄します。
+    setIsLoadingMore(false);
     setError('');
     setNotice('');
     setNotifications([]);
@@ -148,6 +156,7 @@ export default function NotificationListPage() {
         refreshUnreadCount(signal),
       ]);
       const nextNotifications = listData?.data?.notifications ?? [];
+      if (signal?.aborted || generation !== listGenerationRef.current) return;
       // APIが0件なら0件のまま表示し、確認用に残しているモック通知へは戻しません。
       setNotifications(nextNotifications.map(normalizeNotification));
       setOffset(nextNotifications.length);
@@ -156,7 +165,7 @@ export default function NotificationListPage() {
       notifyUnreadNotificationBadgeChanged();
     } catch (caughtError) {
       // 画面遷移によるキャンセル(AbortError)はエラー表示しません。
-      if (caughtError?.name !== 'AbortError') {
+      if (caughtError?.name !== 'AbortError' && generation === listGenerationRef.current) {
         // 未ログイン(401)ならログイン画面へ戻します。
         if (caughtError?.status === 401) {
           navigate('/');
@@ -170,16 +179,31 @@ export default function NotificationListPage() {
       }
     } finally {
       // キャンセルされていなければ読み込み中表示を解除します。
-      if (!signal?.aborted) setLoading(false);
+      if (!signal?.aborted && generation === listGenerationRef.current) setLoading(false);
     }
   }, [navigate, refreshUnreadCount]);
 
   // タブが切り替わるたびに1ページ目を読み込み直します。
   useEffect(() => {
-    const controller = new AbortController();
+    let controller;
+    // 新規通知・再接続でDBの先頭ページに置き換え、切断中の取りこぼしと重複を防ぎます。
+    const reload = () => {
+      controller?.abort();
+      controller = new AbortController();
+      loadFirstPage(activeTab, controller.signal);
+    };
     // タブをすばやく切り替えた時、古いAPI通信の結果で新しいタブの表示を上書きしないよう中断します。
-    Promise.resolve().then(() => loadFirstPage(activeTab, controller.signal));
-    return () => controller.abort();
+    let disposed = false;
+    Promise.resolve().then(() => { if (!disposed) reload(); });
+    const events = ['user:notification_created', 'user:reconnected', 'focus'];
+    events.forEach((event) => window.addEventListener(event, reload));
+    const timer = window.setInterval(() => { if (document.visibilityState === 'visible') reload(); }, 60000);
+    return () => {
+      disposed = true;
+      controller?.abort();
+      window.clearInterval(timer);
+      events.forEach((event) => window.removeEventListener(event, reload));
+    };
   }, [activeTab, loadFirstPage]);
 
   // 「戻る」ボタンの処理: ブラウザ履歴があれば1つ戻り、なければマイページへ移動します。
@@ -327,11 +351,13 @@ export default function NotificationListPage() {
 
     setIsLoadingMore(true);
     setError('');
+    const generation = listGenerationRef.current;
 
     try {
       // 現在の offset から次の PAGE_SIZE 件を取得します。
       const listData = await fetchNotifications({ category: activeTab, limit: PAGE_SIZE, offset });
       const nextNotifications = (listData?.data?.notifications ?? []).map(normalizeNotification);
+      if (generation !== listGenerationRef.current) return;
       // 重複を除きながら既存の一覧へ追加します。
       setNotifications((current) => mergeNotifications(current, nextNotifications));
       setOffset((current) => current + nextNotifications.length);
@@ -340,13 +366,14 @@ export default function NotificationListPage() {
       await refreshUnreadCount();
       notifyUnreadNotificationBadgeChanged();
     } catch (caughtError) {
+      if (generation !== listGenerationRef.current) return;
       if (caughtError?.status === 401) {
         navigate('/');
         return;
       }
       setError(TEXT.loadMoreError);
     } finally {
-      setIsLoadingMore(false);
+      if (generation === listGenerationRef.current) setIsLoadingMore(false);
     }
   };
 

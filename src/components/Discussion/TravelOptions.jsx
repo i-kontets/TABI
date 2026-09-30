@@ -92,9 +92,10 @@ async function requestCandidates(groupId) {
  * - 候補をクリックしてモーダルで詳細情報を表示
  * - API から候補データを取得
  */
-function TravelOptions({ active }) {
-    // URL パラメータから groupId を取得（デフォルト値は "1"）
-    const { groupId = "1" } = useParams();
+function TravelOptions({ active, groupId: selectedGroupId }) {
+    // 親画面の選択を優先し、固定の旅行を補いません。
+    const { groupId: pathGroupId } = useParams();
+    const groupId = selectedGroupId || pathGroupId;
     const location = useLocation();
     const navigate = useNavigate();
     const queryCategory = new URLSearchParams(location.search).get("category");
@@ -104,7 +105,7 @@ function TravelOptions({ active }) {
 
     // 状態管理
     // activeCategory: 現在選択されているカテゴリー（destination, spot, hotel, restaurant）
-    const [activeCategory, setActiveCategory] = useState(initialCategory);
+    const activeCategory = initialCategory;
 
     // candidates: 取得した候補データの配列
     const [candidates, setCandidates] = useState([]);
@@ -180,8 +181,11 @@ function TravelOptions({ active }) {
 
     // カテゴリー変更時の処理
     const changeCategory = (category) => {
-        // アクティブなカテゴリーを変更
-        setActiveCategory(category);
+        // 宿泊などのタブをURLへ保存し、戻る・再読み込みでも同じカテゴリを表示します。
+        const params = new URLSearchParams(location.search);
+        params.set('category', category);
+        params.set('tab', 'candidate');
+        navigate(`/group/${encodeURIComponent(groupId)}/talk?${params}`);
         // 通知メッセージをクリア
         setNotice("");
     };
@@ -219,7 +223,8 @@ function TravelOptions({ active }) {
 
     // openCandidateSearch は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const openCandidateSearch = () => {
-        navigate(`/Candidates?group_id=${encodeURIComponent(groupId)}`);
+        // 宿泊タブから同じ候補一覧の宿泊絞り込みを開きます。
+        navigate(`/Candidates?groupId=${encodeURIComponent(groupId)}&category=${encodeURIComponent(activeCategory)}`);
     };
 
     return (
@@ -236,7 +241,7 @@ function TravelOptions({ active }) {
                 </div>
                 {/* 候補追加ボタン */}
                 <button className="addCandidateButton" type="button" onClick={openCandidateSearch}>
-                    候補に追加
+                    {activeCategory === 'hotel' ? '宿泊一覧を見る' : '候補に追加'}
                 </button>
             </header>
 

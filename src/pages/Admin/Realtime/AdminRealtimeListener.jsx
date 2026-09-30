@@ -102,6 +102,14 @@ export default function AdminRealtimeListener() {
         socket.on("connect", handleConnect);
         socket.on("disconnect", handleDisconnect);
 
+        // 別タブでアカウントが変わった場合は、旧管理者の接続を破棄してSessionを再確認します。
+        const accountChanged = event => {
+            if (event.key !== 'loginUser') return;
+            socket.disconnect();
+            if (event.newValue) socket.connect();
+        };
+        window.addEventListener('storage', accountChanged);
+
         // すでに接続済みならすぐ参加処理を行い、未接続ならここで接続を開始します。
         if (socket.connected) {
             handleConnect();
@@ -116,6 +124,8 @@ export default function AdminRealtimeListener() {
             handlers.forEach(([eventName, handler]) => {
                 socket.off(eventName, handler);
             });
+            window.removeEventListener('storage', accountChanged);
+            socket.disconnect();
         };
     }, []);
 

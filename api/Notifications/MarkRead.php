@@ -46,7 +46,9 @@ try {
     // 既読済みの場合でも失敗にしないことで、同じリクエストを複数回送っても安全にします。
     if ((int) $current["is_read"] === 0) {
         // 未読の場合のみ既読フラグを立て、read_at には初回既読時刻を記録します。
-        $stmt = $pdo->prepare("UPDATE notification_recipients SET is_read = 1, read_at = COALESCE(read_at, NOW()) WHERE recipient_id = :recipient_id AND user_id = :user_id AND is_read = 0");
+        // 検索後に公開期限を迎えても更新しないよう、UPDATE自体にも公開条件を付けます。
+        $visible = notificationVisibleSql();
+        $stmt = $pdo->prepare("UPDATE notification_recipients nr INNER JOIN notifications n ON n.notification_id = nr.notification_id SET nr.is_read = 1, nr.read_at = COALESCE(nr.read_at, NOW()) WHERE nr.recipient_id = :recipient_id AND nr.user_id = :user_id AND nr.is_read = 0 AND {$visible}");
         // SQLインジェクション対策として、値はプレースホルダ経由で渡します。
         $stmt->bindValue(":recipient_id", $recipientId, PDO::PARAM_INT);
         $stmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
@@ -55,6 +57,8 @@ try {
 
     // 更新後の最新状態を取り直し、既読日時をレスポンスに含めます。
     $updated = notificationFetchRecipient($pdo, $recipientId, $userId);
+    // 更新中に公開終了・削除が起きた場合、既読にできたという誤った応答を返しません。
+    if (!$updated) notificationRespond(["success" => false, "message" => "通知が見つかりません。"], 404);
     notificationRespond(["success" => true, "message" => "通知を既読にしました。", "data" => ["recipientId" => $recipientId, "isRead" => true, "readAt" => $updated["read_at"] ?? $current["read_at"]]]);
 } catch (Throwable $error) {
     // 失敗時は詳細を出さず、安全なメッセージだけを500エラーで返します。

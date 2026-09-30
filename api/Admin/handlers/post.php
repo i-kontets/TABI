@@ -95,18 +95,9 @@ function handle_admin_post(PDO $pdo, string $resource, $id, array $input): void
 
     // POST は新規作成や外部送信のような、データを増やす処理に使います。
     if ($resource === "notices") {
-        // お知らせを新規登録します。
-        $stmt = $pdo->prepare("INSERT INTO admin_notices (title, body, target_type, status, start_at, end_at, push_enabled, created_by, created_at, updated_at) VALUES (:title, :body, :target_type, 'published', :start_at, :end_at, :push_enabled, 1, NOW(), NOW())");
-        // 準備した SQL を実行し、データベースへの取得・登録・更新を行います。
-        $stmt->execute([
-            "title" => $input["title"] ?? "",
-            "body" => $input["body"] ?? "",
-            "target_type" => $input["target"] ?? "全ユーザー",
-            "start_at" => str_replace("/", "-", $input["startAt"] ?? null),
-            "end_at" => str_replace("/", "-", $input["endAt"] ?? null),
-            "push_enabled" => !empty($input["push"]) ? 1 : 0,
-        ]);
-        $noticeId = (int) $pdo->lastInsertId();
+        // 作成者はセッションから決定し、commit後にだけWebSocket配信を依頼します。
+        $noticeId = noticeCreate($pdo, $input, (int) $_SESSION['user_id']);
+        noticePublishRealtime($pdo, $noticeId);
         sendRealtimeEvent("admin:global", "notice_created", [
             "notice_id" => $noticeId,
         ]);

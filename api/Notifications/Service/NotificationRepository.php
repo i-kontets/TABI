@@ -58,21 +58,23 @@ final class NotificationRepository
         }
     }
 
-    public function createNotificationWithRecipients(array $input, array $recipientUserIds): array
+    public function createNotificationWithRecipients(array $input, array $recipientUserIds, ?callable $canContinue = null): array
     {
-        $this->pdo->beginTransaction();
+        // お知らせ保存と同じトランザクションに参加できます。開始した呼び出し元だけが確定します。
+        $ownsTransaction = !$this->pdo->inTransaction();
+        if ($ownsTransaction) $this->pdo->beginTransaction();
 
         try {
             $notificationId = $this->insertNotification($input);
-            $recipientRows = $this->insertRecipients($notificationId, $recipientUserIds);
-            $this->pdo->commit();
+            $recipientRows = $this->insertRecipients($notificationId, $recipientUserIds, $canContinue);
+            if ($ownsTransaction) $this->pdo->commit();
 
             return [
                 'notificationId' => $notificationId,
                 'recipients' => $recipientRows,
             ];
         } catch (Throwable $error) {
-            if ($this->pdo->inTransaction()) {
+            if ($ownsTransaction && $this->pdo->inTransaction()) {
                 $this->pdo->rollBack();
             }
             throw $error;
@@ -120,7 +122,7 @@ final class NotificationRepository
         return (int) $this->pdo->lastInsertId();
     }
 
-    private function insertRecipients(int $notificationId, array $recipientUserIds): array
+    private function insertRecipients(int $notificationId, array $recipientUserIds, ?callable $canContinue = null): array
     {
         $stmt = $this->pdo->prepare(
             'INSERT INTO notification_recipients
@@ -131,6 +133,9 @@ final class NotificationRepository
 
         $rows = [];
         foreach ($recipientUserIds as $userId) {
+            // 全員分の保存が長引いた場合も停止時刻を越えてINSERTを続けないため、宛先ごとに確認します。
+            // 中断は例外として呼び出し元へ返し、通知本体も含むトランザクションを取り消します。
+            if ($canContinue !== null && !$canContinue()) throw new RuntimeException('通知保存の終了時刻です。');
             $stmt->execute([
                 ':notification_id' => $notificationId,
                 ':user_id' => $userId,
