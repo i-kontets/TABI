@@ -37,6 +37,7 @@ const supportItems = [
         description: 'テキストや会話を翻訳',
         icon: '文',
         tone: 'paper',
+        path: '/weather',
     },
     {
         id: 'transport',

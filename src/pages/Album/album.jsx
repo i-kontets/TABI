@@ -8,6 +8,7 @@
  *
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
+
 import { useState, useContext, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { TripContext } from '../../App';
@@ -17,6 +18,8 @@ import styles from './album.module.css';
 
 const MAX_HASHTAG_COUNT = 5;
 const MAX_HASHTAG_LENGTH = 20;
+const MAX_HASHTAG_SUGGESTIONS = 10;
+
 
 // parseHashtags は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
 const parseHashtags = (value) =>
@@ -25,7 +28,7 @@ const parseHashtags = (value) =>
         .replace(/\u3000/g, ' ')
         .split(/\s+/)
         // 配列のデータを1件ずつ画面表示用の形に変換します。
-        .map((tag) => tag.replace(/^[#＃]+/, '').trim())
+        .map((tag) => tag.replace(/[#＃]+/g, '').trim())
         // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
         .filter(Boolean);
 
@@ -71,7 +74,7 @@ const truncateHashtagPreview = (value) => {
 };
 
 const formatHashtagLabel = (value) => {
-    const tag = String(value || '').replace(/^[#＃]+/, '').trim();
+    const tag = String(value || '').replace(/[#＃]+/g, '').trim();
     return tag ? `#${tag}` : '';
 };
 
@@ -93,6 +96,9 @@ function Album() {
 
     // アルバムに表示する写真一覧です。
     const [photos, setPhotos] = useState([]);
+
+    // アルバム一覧で絞り込むハッシュタグの検索語です。
+    const [hashtagQuery, setHashtagQuery] = useState('');
 
     // 追加画面で選択済みだが、まだアルバムに追加確定していない写真です。
     const [pendingPhotos, setPendingPhotos] = useState([]);
@@ -123,7 +129,7 @@ function Album() {
             try {
                 // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                 const response = await fetch(
-                    `https://genshin.mond.jp/TABI/api/Photos/GetAlbum.php?group_id=${groupId}`
+                    `/TABI/api/Photos/GetAlbum.php?group_id=${groupId}`
                 );
 
                 const data = await response.json();
@@ -153,7 +159,7 @@ function Album() {
             try {
                 // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                 const response = await fetch(
-                    `https://genshin.mond.jp/TABI/api/Photos/List.php?album_id=${albumId}`
+                    `/TABI/api/Photos/List.php?album_id=${albumId}`
                 );
                 const data = await response.json();
 
@@ -275,6 +281,16 @@ function Album() {
         // ここで条件を確認し、状況に合う処理だけを実行します。
         if (pendingPhotos.length === 0) return;
 
+        const invalidPhoto = pendingPhotos.find((photo) =>
+            getHashtagNotice(photo.hashtags)
+        );
+
+        if (invalidPhoto) {
+            setActivePendingPhotoId(invalidPhoto.id);
+            alert(getHashtagNotice(invalidPhoto.hashtags));
+            return;
+        }
+
         // ここで条件を確認し、状況に合う処理だけを実行します。
         if(!albumId){
             alert("アルバムIdが取得できていません")
@@ -297,7 +313,7 @@ function Album() {
 
                 // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
                 const response = await fetch (
-                    '/TABI/api/Photos/Upload.php',
+                    `/TABI/api/Photos/Upload.php`,
                     {
                         method: 'POST',
                         credentials: 'include',
@@ -344,8 +360,11 @@ function Album() {
     };
 
     // 一覧の写真を押したとき、詳細画面を開く処理です。
-    const handlePhotoClick = (index) => {
-        setSelectedIndex(index);
+    const handlePhotoClick = (photoId) => {
+        const photoIndex = photos.findIndex((photo) => photo.id === photoId);
+        if (photoIndex === -1) return;
+
+        setSelectedIndex(photoIndex);
         setIsMenuOpen(false);
         setView('detail');
     };
@@ -377,7 +396,7 @@ function Album() {
 
         try{
             const response = await fetch(
-                'https://genshin.mond.jp/TABI/api/Photos/Delete.php',
+                `/TABI/api/Photos/Delete.php`,
                 {
                     method:'POST',
                     headers: {
@@ -633,28 +652,109 @@ function Album() {
         );
     }
 
+    const normalizedHashtagQuery = String(hashtagQuery)
+        .replace(/[#＃]/g, '')
+        .trim()
+        .toLocaleLowerCase('ja-JP');
+
+    const filteredPhotos = photos.filter((photo) => {
+        if (!normalizedHashtagQuery) return true;
+
+        return parseHashtags(photo.hashtags).some((tag) =>
+            tag.toLocaleLowerCase('ja-JP').includes(normalizedHashtagQuery)
+        );
+    });
+
+    const hashtagSuggestions = Array.from(
+        photos.reduce((tagCounts, photo) => {
+            parseHashtags(photo.hashtags).forEach((tag) => {
+                const normalizedTag = tag.toLocaleLowerCase('ja-JP');
+                const currentTag = tagCounts.get(normalizedTag);
+
+                tagCounts.set(normalizedTag, {
+                    label: currentTag?.label || tag,
+                    count: (currentTag?.count || 0) + 1,
+                });
+            });
+
+            return tagCounts;
+        }, new Map()).entries()
+    )
+        .map(([id, tag]) => ({ id, ...tag }))
+        .sort((firstTag, secondTag) =>
+            secondTag.count - firstTag.count
+            || firstTag.label.localeCompare(secondTag.label, 'ja-JP')
+        )
+        .slice(0, MAX_HASHTAG_SUGGESTIONS);
+
     // 通常時はアルバム一覧画面を表示します。
     return (
         <>
             <Header tripName={tripName} />
 
             <div className={styles.container}>
-                <div className={styles.photoGrid}>
-                    {photos.map((photo, index) => (
+                <div className={styles.searchArea}>
+                    <label className={styles.searchLabel} htmlFor="hashtagSearch">
+                        ハッシュタグで検索
+                    </label>
+                    <div className={styles.searchInputArea}>
+                        <span className={styles.searchIcon} aria-hidden="true">#</span>
+                        <input
+                            id="hashtagSearch"
+                            className={styles.searchInput}
+                            type="search"
+                            value={hashtagQuery}
+                            onChange={(event) => setHashtagQuery(event.target.value)}
+                            placeholder="例：旅行、海"
+                        />
+                    </div>
+                    {normalizedHashtagQuery && (
+                        <p className={styles.searchResultCount}>
+                            {filteredPhotos.length}件の写真
+                        </p>
+                    )}
+                </div>
+
+                {hashtagSuggestions.length > 0 && (
+                    <section className={styles.suggestionSection} aria-label="よく使われているハッシュタグ">
+                        <p className={styles.suggestionTitle}>よく使われているタグ</p>
+                        <div className={styles.suggestionList}>
+                            {hashtagSuggestions.map((tag) => (
+                                <button
+                                    key={tag.id}
+                                    className={styles.suggestionButton}
+                                    type="button"
+                                    onClick={() => setHashtagQuery(tag.label)}
+                                >
+                                    #{tag.label} <span>{tag.count}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {filteredPhotos.length > 0 ? (
+                    <div className={styles.photoGrid}>
+                        {filteredPhotos.map((photo) => (
                         <div
                             key={photo.id}
                             className={styles.photoCard}
-                            onClick={() => handlePhotoClick(index)}
+                            onClick={() => handlePhotoClick(photo.id)}
                             role="button"
                             tabIndex={0}
                             onKeyDown={(event) => {
-                                if (event.key === 'Enter') handlePhotoClick(index);
+                                if (event.key === 'Enter') handlePhotoClick(photo.id);
                             }}
                         >
                             <img src={photo.image_url} alt={photo.caption || 'アルバム写真'} />
                         </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className={styles.emptySearchResult}>
+                        「{hashtagQuery}」に一致するハッシュタグの写真はありません
+                    </p>
+                )}
             </div>
 
             <button className={styles.addButton} onClick={() => setView('add')} aria-label="写真を追加">
