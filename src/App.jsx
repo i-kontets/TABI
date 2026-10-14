@@ -56,6 +56,7 @@ import Maintenance from './pages/Maintenance/Maintenance.jsx';  // メンテナ�
 import NotificationListPage from './pages/Notifications/NotificationListPage.jsx';   // 通知一覧
 import NotificationDetailPage from './pages/Notifications/NotificationDetailPage.jsx'; // 通知詳細
 import ServiceAvailabilityGate from './components/ServiceAvailabilityGate.jsx'; // DB稼働状態の門番
+import WeatherForecast from './components/weather/WeatherForecast.jsx'; // 天気予報
 
 // 選択中の旅行グループ情報を全画面で共有するための Context です。
 // 各画面は useContext(TripContext) で { trip, setTrip } を受け取れます。
@@ -183,6 +184,7 @@ function App() {
                     <Route path="/InvoiceTotal" element={<InvoiceTotal />} />
                     <Route path="/Appointment" element={<Appointment />} />
                     <Route path="/Other" element={<Other />} />
+                    <Route path="/weather" element={<WeatherForecast />} />
                     {/* <Route path="/TouristRanking" element={<TouristRanking />} /> */}
                     <Route path="/Candidates" element={<Candidates />} />
                     <Route path="/Candidates/:candidateId" element={<CandidateDetail />} />

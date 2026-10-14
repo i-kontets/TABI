@@ -190,13 +190,31 @@
     height: 25px;
 }
 
+/* PC画面用 */
 @media screen and (min-width: 768px) {
     .page {
-        max-width: 560px;
+        max-width: 760px;
+    }
+
+    .content {
+        /* フッターが高くなるので、本文が隠れないように下余白も増やす */
+        padding-bottom: calc(130px + env(safe-area-inset-bottom));
     }
 
     .footer {
-        width: min(100%, 560px);
+        width: min(90%, 760px);
+        height: calc(96px + env(safe-area-inset-bottom));
+    }
+
+    .footerItem {
+        height: 96px;
+        gap: 6px;
+        font-size: 15px;
+    }
+
+    .footerIcon {
+        width: 34px;
+        height: 34px;
     }
 }
 
