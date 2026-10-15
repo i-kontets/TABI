@@ -72,7 +72,9 @@ function notificationRequireMethod(string $expectedMethod): void
 function notificationRejectIfCrossOrigin(): void
 {
     // 自サイトのホスト名と、リクエスト元の情報を取得します。
-    $host = $_SERVER["HTTP_HOST"] ?? "";
+    // 一覧・詳細画面からの既読APIで、開発用ポート付きHostも同じホストとして比較します。
+    // Originから取り出す値にはポートがないため、HTTP_HOST側も同じ形式にそろえます。
+    $host = parse_url('http://' . ($_SERVER["HTTP_HOST"] ?? ""), PHP_URL_HOST) ?: "";
     $origin = $_SERVER["HTTP_ORIGIN"] ?? "";
     $referer = $_SERVER["HTTP_REFERER"] ?? "";
     // Originヘッダーを優先し、なければRefererを使います。
@@ -176,6 +178,13 @@ function notificationSafeActionPath($path): ?string
  */
 function notificationRowToResponse(array $row): array
 {
+    // 管理者通知と停止予告はUTCで記録するため、ブラウザが日本時間と誤認しない形式で返します。
+    // 既存の他種類の通知データは、この変更で時刻の解釈を変更しません。
+    if (in_array($row['notification_subtype'] ?? null, ['admin_notice', 'rds_shutdown_warning'], true)) {
+        foreach (['read_at', 'created_at', 'received_at', 'expires_at'] as $key) {
+            if (!empty($row[$key])) $row[$key] = (new DateTimeImmutable($row[$key], new DateTimeZone('UTC')))->format(DateTimeInterface::ATOM);
+        }
+    }
     return [
         "recipientId" => (int) $row["recipient_id"], "notificationId" => (int) $row["notification_id"], "category" => (string) $row["notification_type"], "subtype" => $row["notification_subtype"] !== null ? (string) $row["notification_subtype"] : null,
         "title" => (string) $row["title"], "body" => (string) $row["body"], "targetType" => $row["target_type"] !== null ? (string) $row["target_type"] : null, "targetId" => $row["target_id"] !== null ? (int) $row["target_id"] : null,
@@ -191,7 +200,9 @@ function notificationFetchRecipient(PDO $pdo, int $recipientId, int $userId): ?a
 {
     // recipient_id and user_id are both required to protect other users' notifications.
     // recipient_id だけでなく user_id も条件に入れることで、他ユーザーの通知を守ります。
-    $stmt = $pdo->prepare("SELECT recipient_id, is_read, read_at FROM notification_recipients WHERE recipient_id = :recipient_id AND user_id = :user_id LIMIT 1");
+    // 公開前・終了後・削除済み通知は、IDを知っていても既読にできません。
+    $visible = notificationVisibleSql();
+    $stmt = $pdo->prepare("SELECT nr.recipient_id, nr.is_read, nr.read_at FROM notification_recipients nr INNER JOIN notifications n ON n.notification_id = nr.notification_id WHERE nr.recipient_id = :recipient_id AND nr.user_id = :user_id AND {$visible} LIMIT 1");
     $stmt->bindValue(":recipient_id", $recipientId, PDO::PARAM_INT);
     $stmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
     $stmt->execute();
@@ -206,10 +217,26 @@ function notificationFetchRecipient(PDO $pdo, int $recipientId, int $userId): ?a
 function notificationUnreadCount(PDO $pdo, int $userId): int
 {
     // 期限切れ通知は現在画面に出ないため、未読件数にも含めません。
-    $stmt = $pdo->prepare("SELECT COUNT(*) AS unread_count FROM notification_recipients AS nr INNER JOIN notifications AS n ON n.notification_id = nr.notification_id WHERE nr.user_id = :user_id AND nr.is_read = 0 AND (n.expires_at IS NULL OR n.expires_at > NOW())");
+    $visible = notificationVisibleSql();
+    $stmt = $pdo->prepare("SELECT COUNT(*) AS unread_count FROM notification_recipients AS nr INNER JOIN notifications AS n ON n.notification_id = nr.notification_id WHERE nr.user_id = :user_id AND nr.is_read = 0 AND {$visible}");
     $stmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
     $stmt->execute();
     return (int) $stmt->fetchColumn();
+}
+
+// 一覧・詳細・未読数・既読操作で同じ公開条件を使います。
+// 予約通知は先にDBへ保存しても、管理者お知らせの公開時刻になるまで外へ出しません。
+function notificationVisibleSql(): string
+{
+    // 既存通知の期限比較は維持し、管理者通知と停止予告はUTCの期限として判定します。
+    return "(n.expires_at IS NULL OR n.expires_at > CASE WHEN n.notification_subtype IN ('admin_notice', 'rds_shutdown_warning') THEN UTC_TIMESTAMP() ELSE NOW() END) AND (
+        COALESCE(n.notification_subtype, '') <> 'admin_notice' OR EXISTS (
+            SELECT 1 FROM admin_notices a WHERE a.notice_id = n.target_id
+            AND a.deleted_at IS NULL AND a.status = 'published'
+            AND (a.start_at IS NULL OR a.start_at <= DATE_ADD(UTC_TIMESTAMP(), INTERVAL 9 HOUR))
+            AND (a.end_at IS NULL OR a.end_at > DATE_ADD(UTC_TIMESTAMP(), INTERVAL 9 HOUR))
+        )
+    )";
 }
 
 /**

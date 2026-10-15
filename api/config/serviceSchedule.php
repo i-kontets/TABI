@@ -29,18 +29,36 @@ function tabiServiceSchedule(): array {
     return [
         "timezone" => "Asia/Tokyo",
         "weekly" => [
-            1 => [["08:00", "20:00"]],
+            1 => [["08:30", "20:00"]],
             2 => [],
-            3 => [["08:00", "20:00"]],
-            4 => [["08:00", "20:00"]],
-            5 => [["08:00", "12:00"]],
+            3 => [["08:30", "20:00"]],
+            4 => [["08:30", "20:00"]],
+            5 => [["08:30", "12:30"]],
             6 => [],
             7 => [],
         ],
-        "special_dates" => [
-            "2026-08-15" => [["12:00", "23:00"]],
-            "2026-08-16" => [["12:00", "23:00"]],
-        ],
+        // 正式な週次運用へ統一します。過去の臨時稼働日は通知判定に持ち越しません。
+        "special_dates" => [],
+    ];
+}
+
+/** 停止予告と公開CLIで同じ稼働枠を使い、停止後のDB接続を防ぎます。 */
+function tabiShutdownWarningPlan(DateTimeImmutable $now): array {
+    $status = tabiEvaluateServiceSchedule($now);
+    $current = $now->setTimezone(new DateTimeZone($status['timezone']));
+    $close = $status['nextCloseAt'] === null ? null : new DateTimeImmutable($status['nextCloseAt']);
+    $notify = $close ? $close->modify('-30 minutes') : null;
+    // 停止直前に新しい処理を始めないよう、外部送信のタイムアウトより長い余裕を残します。
+    $canRun = $close !== null && $current < $close->modify('-1 minute');
+    return [
+        'available' => $status['available'],
+        'canRun' => $canRun,
+        'due' => $canRun && $current >= $notify,
+        'serviceDate' => $current->format('Y-m-d'),
+        'dedupKey' => 'rds_shutdown_warning_' . $current->format('Y-m-d'),
+        'notificationAt' => $notify ? $notify->format(DateTimeInterface::ATOM) : null,
+        'shutdownAt' => $close ? $close->format(DateTimeInterface::ATOM) : null,
+        'timezone' => $status['timezone'],
     ];
 }
 

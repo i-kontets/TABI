@@ -31,10 +31,10 @@ import { ProfileEditPage, UserEditPage, EmailChangePage, NotificationSettingsPag
 import Terms from './pages/Terms/Terms.jsx';                    // 利用規約
 import PrivacyPolicy from './pages/PrivacyPolicy/PrivacyPolicy.jsx'; // プライバシーポリシー
 import UserProfilePage from './pages/UserProfile/UserProfilePage.jsx'; // 他ユーザーの公開プロフィール
-import Itinerary from './pages/Itinerary/Itinerary.jsx';        // 旅程(しおり)表示
+import Itinerary from './pages/Itinerary/itinerary.jsx';        // 実ファイルの大小文字に合わせ、Linux配備でも読み込みます。
 import ItineraryEdit from './pages/ItineraryEdit/ItineraryEdit.jsx'; // 旅程編集
 import Tripmap from './pages/Tripmap/Tripmap';                  // 旅行マップ
-import Schedule from './pages/Schedule/Schedule.jsx';           // スケジュール
+import Schedule from './pages/Schedule/schedule.jsx';           // スケジュール（実ファイル名に一致）
 import Chat from './pages/Chat/Chat';                           // グループチャット
 import Album from './pages/Album/album.jsx';                    // アルバム(写真共有)
 import Invoice from './pages/Invoice/Invoice';                  // 割り勘・精算
@@ -43,6 +43,9 @@ import Discussion from './pages/Discussion/Discussion';         // 話し合い(
 import CheckList from './pages/CheckList/CheckList';            // 持ち物チェックリスト
 import Other from './pages/Other/Other.jsx';                    // その他メニュー
 // import TouristRanking from './pages/TouristRanking/TouristRanking';
+import Reservation from './pages/Reservation/Reservation';
+import CottageOwnerLogin from './pages/CottageOwner/auth/CottageOwnerLogin';
+import CottageOwnerRegister from './pages/CottageOwner/auth/CottageOwnerRegister';
 import Candidates from './pages/Candidates/Candidates';         // 行き先候補一覧
 import CandidateDetail from './pages/Candidates/CandidateDetail.jsx'; // 候補の詳細
 import Tourist from './pages/Tourist/Tourist';                  // 観光スポット一覧
@@ -53,6 +56,7 @@ import Maintenance from './pages/Maintenance/Maintenance.jsx';  // メンテナ�
 import NotificationListPage from './pages/Notifications/NotificationListPage.jsx';   // 通知一覧
 import NotificationDetailPage from './pages/Notifications/NotificationDetailPage.jsx'; // 通知詳細
 import ServiceAvailabilityGate from './components/ServiceAvailabilityGate.jsx'; // DB稼働状態の門番
+import WeatherForecast from './components/weather/WeatherForecast.jsx'; // 天気予報
 
 // 選択中の旅行グループ情報を全画面で共有するための Context です。
 // 各画面は useContext(TripContext) で { trip, setTrip } を受け取れます。
@@ -147,6 +151,10 @@ function App() {
                 <UserRealtimeListener trip={trip} />
                 <Routes>
                     <Route path="/" element={<Login />} />
+                    {/* 施設管理者の認証入口は一般ユーザーと別フォルダーで管理します。 */}
+                    <Route path="/CottageOwner/login" element={<CottageOwnerLogin />} />
+                    <Route path="/CottageOwner/register" element={<CottageOwnerRegister />} />
+                    <Route path="/Candidates/:candidateId/reservation" element={<Reservation />} />
                     <Route path="/Newreg" element={<Newreg />} />
                     {/* DB停止時に表示するメンテナンス画面 */}
                     <Route path="/maintenance" element={<Maintenance />} />
@@ -176,6 +184,7 @@ function App() {
                     <Route path="/InvoiceTotal" element={<InvoiceTotal />} />
                     <Route path="/Appointment" element={<Appointment />} />
                     <Route path="/Other" element={<Other />} />
+                    <Route path="/weather" element={<WeatherForecast />} />
                     {/* <Route path="/TouristRanking" element={<TouristRanking />} /> */}
                     <Route path="/Candidates" element={<Candidates />} />
                     <Route path="/Candidates/:candidateId" element={<CandidateDetail />} />

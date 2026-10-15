@@ -34,9 +34,17 @@ if ($_SERVER["REQUEST_METHOD"] !== "GET") {
 
 // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
-    // リクエストパラメータから group_id を取得（デフォルト値は1）
-    // FILTER_VALIDATE_INT でintegerのバリデーションを実施
-    $groupId = filter_input(INPUT_GET, "group_id", FILTER_VALIDATE_INT) ?: 1;
+    // 一覧・詳細の入口で本人と参加グループを確認します。未指定を固定の旅行で補いません。
+    $userId = requireUserId();
+    $groupId = filter_input(INPUT_GET, "group_id", FILTER_VALIDATE_INT);
+    if (!$groupId || $groupId < 1) respond(400, ['success' => false, 'message' => '旅行グループを選択してください。']);
+    $membership = $pdo->prepare("SELECT 1 FROM group_members gm
+        INNER JOIN user_groups g ON g.group_id = gm.group_id
+        INNER JOIN users u ON u.user_id = gm.user_id
+        WHERE gm.group_id = ? AND gm.user_id = ? AND gm.invitation_status = 'accepted'
+          AND g.status = 'active' AND u.status = 'active' AND u.deleted_at IS NULL LIMIT 1");
+    $membership->execute([$groupId, $userId]);
+    if (!$membership->fetchColumn()) respond(403, ['success' => false, 'message' => 'この旅行グループには参加していません。']);
     $scope = filter_input(INPUT_GET, "scope", FILTER_UNSAFE_RAW) ?: "list";
     $statusCondition = $scope === "search"
         ? "1 = 1"
@@ -45,10 +53,6 @@ try {
     // グループIDから対応する旅行情報を取得
     // 最新の旅行1件を取得（update順、作成順でソート）
     $trip = findTrip($pdo, $groupId);
-
-    // セッションから user_id を取得（ログイン中のユーザーID）
-    // ログインしていない場合は 0 をデフォルト値とする（ログインなしでも候補一覧は取得可能）
-    $userId = isset($_SESSION["user_id"]) ? (int) $_SESSION["user_id"] : 0;
 
     // データベースから候補一覧を取得するクエリを実行
     $stmt = $pdo->prepare(

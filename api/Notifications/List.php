@@ -43,9 +43,16 @@ $fetchLimit = $limit + 1;
 
 // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
+    // 同じAPIで詳細1件も復元します。必ずログイン本人の受信者ID条件と併用します。
+    $recipientSql = '';
+    if (isset($_GET['recipientId'])) {
+        $recipientSql = ' AND nr.recipient_id = :recipient_id';
+        $categoryParams[':recipient_id'] = notificationReadPositiveInt($_GET['recipientId'], 'recipientId');
+    }
+    $visible = notificationVisibleSql();
     // 通知一覧はログインユーザー宛だけを、受信日時の新しい順で取得します。
     // expires_at が過去の通知(期限切れ)は表示対象から除外します。
-    $sql = "SELECT nr.recipient_id, nr.notification_id, nr.is_read, nr.read_at, nr.created_at AS received_at, n.notification_type, n.notification_subtype, n.title, n.body, n.target_type, n.target_id, n.action_path, n.detail_data, n.created_at, n.expires_at FROM notification_recipients AS nr INNER JOIN notifications AS n ON n.notification_id = nr.notification_id WHERE nr.user_id = :user_id AND (n.expires_at IS NULL OR n.expires_at > NOW()) {$categorySql} ORDER BY nr.created_at DESC, nr.recipient_id DESC LIMIT :limit OFFSET :offset";
+    $sql = "SELECT nr.recipient_id, nr.notification_id, nr.is_read, nr.read_at, nr.created_at AS received_at, n.notification_type, n.notification_subtype, n.title, n.body, n.target_type, n.target_id, n.action_path, n.detail_data, n.created_at, n.expires_at FROM notification_recipients AS nr INNER JOIN notifications AS n ON n.notification_id = nr.notification_id WHERE nr.user_id = :user_id AND {$visible} {$categorySql} {$recipientSql} ORDER BY nr.created_at DESC, nr.recipient_id DESC LIMIT :limit OFFSET :offset";
     $stmt = $pdo->prepare($sql);
 
     // SQLインジェクション対策として、すべての値はプレースホルダ経由で渡します。

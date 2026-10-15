@@ -61,52 +61,26 @@ function getGroupIdFromPath(pathname) {
 export default function UserRealtimeListener({ trip }) {
     const location = useLocation();
     const isAdminRoute = location.pathname.startsWith("/admin");
+    // ログイン画面へ戻ると接続を閉じ、前の利用者の部屋を持ち越しません。
+    const isPublicRoute = ['/', '/Newreg'].includes(location.pathname);
     const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
     const groupId = getGroupIdFromPath(location.pathname) || queryParams.get("groupId") || queryParams.get("group_id") || trip?.id || null;
 
     // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         // ここで条件を確認し、状況に合う処理だけを実行します。
-        if (isAdminRoute) return;
+        if (isAdminRoute || isPublicRoute) {
+            getUserSocket().disconnect();
+            return;
+        }
 
         const socket = getUserSocket();
-
-        // handleConnect は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
-        const handleConnect = async () => {
-            // ここで条件を確認し、状況に合う処理だけを実行します。
-            if (import.meta.env.DEV) {
-                console.log("WebSocket connected:", socket.id);
-            }
-
-            if (!localStorage.getItem("loginUser")) {
-                return;
-            }
-
-            // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
-            try {
-                // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-                const response = await fetch(`${import.meta.env.BASE_URL}api/Auth/whoami.php`, {
-                    credentials: "include",
-                });
-                if (response.status === 401) {
-                    localStorage.removeItem("loginUser");
-                    return;
-                }
-                const data = await response.json().catch(() => null);
-                const userId = data?.user?.user_id;
-                // ここで条件を確認し、状況に合う処理だけを実行します。
-                if (userId) {
-                    // join_userで「この接続はこのユーザーの通知を受け取る」とWebSocketサーバーへ知らせます。
-                    socket.emit("join_user", userId);
-                    // ここで条件を確認し、状況に合う処理だけを実行します。
-                    if (import.meta.env.DEV) {
-                        console.log("join_user sent:", userId);
-                    }
-                }
-            // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
-            } catch {
-                // Not logged in, or whoami failed. Keep the socket available for trip rooms.
-            }
+        // 本人roomは認証後にAWS側で自動参加します。受信できなかった履歴はAPIで回復します。
+        const handleConnect = () => {
+            // 新フロントを先に配備する短い期間だけ旧サーバーも動かせる互換イベントです。
+            // IDはSession確認済みAPIから取得し、新サーバーでは署名済み本人IDとの一致が必須です。
+            if (socket.authenticatedUserId) socket.emit('join_user', socket.authenticatedUserId);
+            window.dispatchEvent(new Event('user:reconnected'));
         };
 
         // 配列のデータを1件ずつ画面表示用の形に変換します。
@@ -124,6 +98,13 @@ export default function UserRealtimeListener({ trip }) {
         });
 
         socket.on("connect", handleConnect);
+        // 別タブでログイン・ログアウトした場合も、前の利用者の部屋を破棄します。
+        const handleAccountChange = (event) => {
+            if (event.key !== 'loginUser') return;
+            socket.disconnect();
+            if (event.newValue) socket.connect();
+        };
+        window.addEventListener('storage', handleAccountChange);
 
         // ここで条件を確認し、状況に合う処理だけを実行します。
         if (socket.connected) {
@@ -133,22 +114,25 @@ export default function UserRealtimeListener({ trip }) {
         }
 
         return () => {
+            window.removeEventListener('storage', handleAccountChange);
             // クリーンアップで接続イベントと各通知イベントを外し、画面遷移後の二重受信を防ぎます。
             socket.off("connect", handleConnect);
             handlers.forEach(([eventName, handler]) => {
                 socket.off(eventName, handler);
             });
+            socket.disconnect();
         };
-    }, [isAdminRoute]);
+    }, [isAdminRoute, isPublicRoute]);
 
     // 画面が表示された直後や監視している値が変わった時に、必要なデータ取得や初期設定を行います。
     useEffect(() => {
         // ここで条件を確認し、状況に合う処理だけを実行します。
-        if (isAdminRoute) return;
+        if (isAdminRoute || isPublicRoute) return;
         // ここで条件を確認し、状況に合う処理だけを実行します。
-        if (!groupId) return;
-
         const socket = getUserSocket();
+        // groupIdは既存trip roomで使うグループIDです。署名前にPHPが所属を検証します。
+        socket.setRequestedRooms(groupId ? [`trip:${groupId}`] : []);
+        if (!groupId) return;
         // joinTrip は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
         const joinTrip = () => {
             // join_tripで現在の旅行グループの部屋へ参加し、同じグループ内の変更通知を受け取ります。
@@ -160,17 +144,18 @@ export default function UserRealtimeListener({ trip }) {
         };
 
         // ここで条件を確認し、状況に合う処理だけを実行します。
+        socket.on("connect", joinTrip);
         if (socket.connected) {
             joinTrip();
         } else {
-            socket.once("connect", joinTrip);
             socket.connect();
         }
 
         return () => {
             socket.off("connect", joinTrip);
+            socket.emit("leave_trip", groupId);
         };
-    }, [groupId, isAdminRoute]);
+    }, [groupId, isAdminRoute, isPublicRoute]);
 
     return null;
 }

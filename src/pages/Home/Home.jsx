@@ -14,6 +14,7 @@ import { TripContext } from "../../App";
 import TravelGroupCard from '../../components/TravelGroupCard/TravelGroupCard';
 import Modal from '../../components/Modal/Modal';
 import ImagePicker from '../../components/ImagePicker/ImagePicker';
+import TravelNavigation from '../../components/TravelNavigation/TravelNavigation';
 import MainBottomNav from '../../components/mainBottomNav/MainBottomNav';
 import styles from './Home.module.css';
 import { useUnreadNotificationBadge } from '../../api/useUnreadNotificationBadge';
@@ -366,6 +367,8 @@ function Home() {
             </header>
 
             <main className={styles.content}>
+                {/* フッターの既存配置を保ち、参加グループを選んで6つの機能へ進めます。 */}
+                <TravelNavigation groups={travelGroups} />
                 {isLoading ? (
                     <p className={styles.stateMessage}>読み込み中...</p>
                 ) : travelGroups.length === 0 ? (

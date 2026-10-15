@@ -9,7 +9,7 @@
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { buildAuthPath, getReturnPathFromSearchParams, resolveAuthReturnPath } from "../../utils/authReturnPath";
 import styles from "./Login.module.css";
 import PasswordResetRequestModal from "../../components/PasswordReset/PasswordResetRequestModal";
@@ -75,7 +75,7 @@ export default function Login() {
             setIsLoading(true);
 
             // バックエンドのログインAPIにPOSTリクエストを送信
-            const response = await fetch("/TABI/api/auth/login.php", {
+            const response = await fetch("/TABI/api/Auth/login.php", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -100,8 +100,12 @@ export default function Login() {
             // ログイン成功：ユーザー情報をローカルストレージに保存（クライアント側のキャッシュ）
             localStorage.setItem("loginUser", JSON.stringify(data.user));
 
-            // ホームページにリダイレクト
-            navigate(resolveAuthReturnPath(returnPath));
+            // サーバーが正規認証後に返した判定で表示先を選びます。実際の権限は各APIでも再確認します。
+            const destination = resolveAuthReturnPath(returnPath);
+            const isAdminPath = /^\/admin(?:\/|[?#]|$)/i.test(destination);
+            navigate(data.user?.is_tabi_admin === true
+                ? (isAdminPath ? destination : '/admin')
+                : (isAdminPath ? '/Home' : destination), { replace: true });
 
         // エラーが起きた場合は、画面にメッセージを出すなど安全な処理に切り替えます。
         } catch (error) {
@@ -180,6 +184,8 @@ export default function Login() {
                     >
                         新規登録
                     </button>
+                    {/* コテージ管理者は一般ユーザーとは別の画面へ案内します。 */}
+                    <Link className={styles.forgotPasswordLink} to="/CottageOwner/login">コテージ管理者の方はこちら</Link>
                 </div>
             </div>
 

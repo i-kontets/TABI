@@ -441,3 +441,22 @@
 .messageActionItem:active {
     background: rgba(255, 255, 255, 0.1);
 }
+/* PC画面ではチャットを横幅いっぱいにする */
+@media (min-width: 768px) {
+    .chatPanel {
+        width: 100%;
+        max-width: none;
+    }
+
+    .messageList {
+        width: 100%;
+        max-width: none;
+        box-sizing: border-box;
+    }
+
+    .composer {
+        width: 100%;
+        max-width: none;
+        box-sizing: border-box;
+    }
+}

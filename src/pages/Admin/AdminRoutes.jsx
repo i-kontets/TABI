@@ -31,6 +31,7 @@ import Managers from './Managers/Managers';
 import Settings from './Settings/Settings';
 import SystemErrors from './SystemErrors/SystemErrors';
 import AdminServiceGate from './AdminServiceGate';
+import AdminAuthGate from './AdminAuthGate';
 import AdminRealtimeListener from "./Realtime/AdminRealtimeListener";
 
 /**
@@ -41,6 +42,7 @@ import AdminRealtimeListener from "./Realtime/AdminRealtimeListener";
 export default function AdminRoutes() {
     return (
         <AdminServiceGate>
+            <AdminAuthGate>
             <AdminRealtimeListener />
             <Routes>
                 <Route index element={<Dashboard />} />
@@ -68,6 +70,7 @@ export default function AdminRoutes() {
                 <Route path="settings" element={<Settings />} />
                 <Route path="system-errors" element={<SystemErrors />} />
             </Routes>
+            </AdminAuthGate>
         </AdminServiceGate>
     );
 }

@@ -264,12 +264,14 @@ function MyPage() {
         // API 通信やデータ処理で失敗する可能性があるため、例外を受け取れる形で実行します。
         try {
             // バックエンド API へ通信し、画面で使うデータの取得や保存を依頼します。
-            await fetch('/TABI/api/Auth/logout.php', {
+            await fetch('/TABI/api/auth/logout.php', {
                 method: 'POST',
                 credentials: 'include',
             });
         // 成功・失敗に関係なく最後に必要な後片付けを行います。
         } finally {
+            // 他のタブにもログアウトを知らせ、古い利用者のWebSocket接続を残しません。
+            localStorage.removeItem('loginUser');
             navigate('/');
         }
     };

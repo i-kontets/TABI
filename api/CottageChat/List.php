@@ -118,6 +118,16 @@ if (!isset($_SESSION["user_id"])) {
 }
 
 $userId = (int) $_SESSION["user_id"];
+// 施設詳細から来たときだけ旅行と施設で絞ります。IDが不正なら全会話へ逃がしません。
+$candidateId = filter_input(INPUT_GET, 'candidate_id', FILTER_VALIDATE_INT);
+$groupId = filter_input(INPUT_GET, 'groupId', FILTER_VALIDATE_INT);
+$facilityRequest = isset($_GET['candidate_id']);
+if ($facilityRequest && (!$candidateId || $candidateId < 1 || !$groupId || $groupId < 1)) {
+    respond(['success' => false, 'message' => '施設と旅行グループを選び直してください。'], 400);
+}
+$facilityCondition = $facilityRequest
+    ? " AND tc.candidate_id = :candidate_id AND t.group_id = :group_id AND tc.trip_id = c.trip_id AND tc.candidate_type = 'hotel'"
+    : '';
 
 // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
@@ -186,7 +196,7 @@ try {
                 WHERE mr.message_id = unread.message_id
                   AND mr.user_id = :user_id_read
             )
-        WHERE c.chat_type = 'hotel'
+        WHERE c.chat_type = 'hotel' {$facilityCondition}
         GROUP BY
             c.chat_id,
             c.trip_id,
@@ -202,6 +212,11 @@ try {
         ORDER BY COALESCE(latest.sent_at, c.created_at) DESC, c.chat_id DESC
     ");
     // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。
+    // chat_membersの本人条件はそのまま維持し、他施設・未参加チャットを返しません。
+    if ($facilityRequest) {
+        $stmt->bindValue(':candidate_id', $candidateId, PDO::PARAM_INT);
+        $stmt->bindValue(':group_id', $groupId, PDO::PARAM_INT);
+    }
     $stmt->bindValue(":user_id", $userId, PDO::PARAM_INT);
     $stmt->bindValue(":manager_current_user_id", $userId, PDO::PARAM_INT);
     // SQL 内の目印に値を割り当て、入力値が SQL 命令として実行されないようにします。

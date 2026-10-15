@@ -195,7 +195,7 @@ try {
 
     // ユーザー情報をDBから取得するクエリ
     // 返却するカラム: user_id, name, email, icon_url, language_code, status
-    $sql = " SELECT user_id, name, email, icon_url, language_code, status FROM users WHERE user_id = :user_id LIMIT 1 ";
+    $sql = " SELECT user_id, name, email, icon_url, language_code, status FROM users WHERE user_id = :user_id AND deleted_at IS NULL LIMIT 1 ";
 
     // プリペアドステートメントでクエリ実行（SQLインジェクション対策）
     $stmt = $pdo->prepare($sql);
@@ -207,9 +207,9 @@ try {
     // 取得結果を連想配列で受け取る
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // ユーザーが見つからなければ404を返す
+    // 削除済み・存在しないユーザーのセッションは認証済みとして扱わず、ログインへ案内します。
     if (!$user) {
-        http_response_code(404);
+        http_response_code(401);
         // 処理結果をフロントエンドが読み取りやすい JSON 形式で返します。
         echo json_encode([
             "success" => false,
@@ -217,6 +217,15 @@ try {
         ]);
         exit;
     }
+
+    // 停止・削除後の古いセッションでは管理画面へ入れません。
+    if ($user['status'] !== 'active') {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'message' => 'ログインし直してください']);
+        exit;
+    }
+    require_once __DIR__ . '/AdminAccess.php';
+    $user['is_tabi_admin'] = tabiAdminLevel($pdo, $userId) >= 1;
 
     // 正常時はユーザー情報を含むJSONを返す
     $iconKey = extractS3KeyFromIconValue($user["icon_url"] ?? null);

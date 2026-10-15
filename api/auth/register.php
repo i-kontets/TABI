@@ -70,6 +70,14 @@ if (!$termsAgreed) {
     exit;
 }
 
+// 公開操作から管理者用メールを取得させません。権限付与は承認済みの別運用だけで行います。
+require_once __DIR__ . '/AdminAccess.php';
+if (isTabiAdminEmail($email)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'このメールアドレスは指定できません。'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 // データベース処理などでエラーが起きる可能性があるため、例外を受け取れる形で実行します。
 try {
     $checkSql = " SELECT user_id FROM users WHERE email = :email LIMIT 1";

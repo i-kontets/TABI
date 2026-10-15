@@ -13,6 +13,111 @@
     background-color: #f6f6f6;
 }
 
+.searchArea {
+    margin-bottom: 12px;
+}
+
+.searchLabel {
+    display: block;
+    margin: 0 0 6px 2px;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.searchInputArea {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 10px 0 14px;
+    border: 1px solid #d7dce2;
+    border-radius: 10px;
+    background-color: #ffffff;
+}
+
+.searchInputArea:focus-within {
+    border-color: var(--sub-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--sub-color) 18%, transparent);
+}
+
+.searchIcon {
+    color: var(--sub-color);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.searchInput {
+    min-width: 0;
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #202124;
+    font: inherit;
+    font-size: 16px;
+}
+
+.searchInput::placeholder {
+    color: #9aa0a6;
+}
+
+.searchResultCount {
+    margin: 7px 2px 0;
+    color: #5f6368;
+    font-size: 13px;
+}
+
+.suggestionSection {
+    margin: 0 0 16px;
+}
+
+.suggestionTitle {
+    margin: 0 0 7px 2px;
+    color: #4b5563;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.suggestionList {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    padding: 1px 2px 4px;
+    scrollbar-width: thin;
+}
+
+.suggestionButton {
+    flex: 0 0 auto;
+    border: 1px solid color-mix(in srgb, var(--sub-color) 35%, #ffffff);
+    border-radius: 999px;
+    background-color: color-mix(in srgb, var(--sub-color) 10%, #ffffff);
+    color: var(--sub-color);
+    padding: 7px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.suggestionButton span {
+    margin-left: 3px;
+    color: #5f6368;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.suggestionButton:hover,
+.suggestionButton:focus-visible {
+    background-color: color-mix(in srgb, var(--sub-color) 20%, #ffffff);
+}
+
+.emptySearchResult {
+    margin: 38px 0;
+    color: #5f6368;
+    font-size: 14px;
+    text-align: center;
+}
+
 .photoGrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -35,19 +140,7 @@
     object-fit: cover;
 }
 
-.favoriteBadge {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background-color: rgba(0,0,0,0.58);
-    color: #ffd447;
-    font-size: 15px;
-    line-height: 24px;
-    text-align: center;
-}
+
 
 .addButton {
     position: fixed;
@@ -283,17 +376,7 @@
     border-top: 1px solid rgba(255,255,255,0.08);
 }
 
-.favoriteButton {
-    width: 42px;
-    height: 42px;
-    margin: 0 0 10px -8px;
-    border: none;
-    background: transparent;
-    color: white;
-    font-size: 32px;
-    line-height: 1;
-    cursor: pointer;
-}
+
 
 .caption,
 .hashtags,
@@ -334,9 +417,7 @@
     font-size: 14px;
 }
 
-.favoriteActive {
-    color: #ff5f7e;
-}
+
 
 .addView {
     position: fixed;

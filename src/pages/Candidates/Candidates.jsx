@@ -9,10 +9,11 @@
  * 扱うデータ: React の state、props、フォーム入力、API から返ったデータを主に扱います。
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import BottomNav from '../../components/bottomNav/BottomNav';
 import styles from './Candidates.module.css';
 import { categories, typeLabels } from './candidateData';
+import { buildAuthPath } from '../../utils/authReturnPath';
 
 
 /**
@@ -57,7 +58,7 @@ function HeartIcon() {
  */
 function Candidates() {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const contentRef = useRef(null);
     // 各フィルターのスクロール位置を記憶する
     const scrollPositionsRef = useRef({
@@ -68,15 +69,22 @@ function Candidates() {
     });
     const previousCategoryRef = useRef('all');
 
-    // グループ ID を URL パラメータから取得（デフォルト: 1）
-    const groupId = parseInt(searchParams.get('group_id') || searchParams.get('groupId') || '1', 10);
+    // 両方の既存パラメーターを読み、未選択の旅行を固定値で補いません。
+    const groupId = searchParams.get('group_id') || searchParams.get('groupId');
+    const returnPath = `/Candidates?${searchParams}`;
 
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [keyword, setKeyword] = useState('');
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [submittedArea, setSubmittedArea] = useState('');
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
-    const [selectedCategory, setSelectedCategory] = useState('all');
+    const selectedCategory = categories.some((item) => item.id === searchParams.get('category')) ? searchParams.get('category') : 'all';
+    // URLにタブを残すことで戻る操作・再読み込み・Homeからの入口を統一します。
+    const setSelectedCategory = (category) => setSearchParams((current) => {
+        const next = new URLSearchParams(current);
+        next.set('category', category);
+        return next;
+    });
     // DBから取得したデータを保持する state
     const [candidates, setCandidates] = useState([]);
     // ローディング状態を管理
@@ -88,6 +96,7 @@ function Candidates() {
 
     // ページロード時に API からデータを取得
     useEffect(() => {
+        const controller = new AbortController();
         const fetchCandidates = async () => {
             try {
                 setLoading(true);
@@ -98,8 +107,14 @@ function Candidates() {
                 });
                 const response = await fetch(`${import.meta.env.BASE_URL}api/Trips/GetCandidates.php?${query}`, {
                     credentials: 'include', // クッキー（セッション）を含める
+                    signal: controller.signal,
                 });
 
+                // セッション切れなら、この宿泊タブへ戻れる共通ログインに案内します。
+                if (response.status === 401) {
+                    navigate(buildAuthPath('/', returnPath), { replace: true });
+                    return;
+                }
                 if (!response.ok) {
                     throw new Error('データの取得に失敗しました');
                 }
@@ -113,16 +128,18 @@ function Candidates() {
                     throw new Error(data.message || 'データ形式が不正です');
                 }
             } catch (err) {
+                if (controller.signal.aborted) return;
                 console.error('Error fetching candidates:', err);
                 setError(err.message || 'データ取得時にエラーが発生しました');
                 setCandidates([]);
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         };
 
-        fetchCandidates();
-    }, [groupId]);
+        if (groupId) fetchCandidates();
+        return () => controller.abort();
+    }, [groupId, navigate, returnPath]);
 
     const filteredPlaces = useMemo(() => {
         // 条件に合うデータだけを残して、画面に出す内容を絞り込みます。
@@ -163,11 +180,12 @@ function Candidates() {
 
     // openDetail は、画面操作や API 結果に合わせて必要な処理をまとめた関数です。
     const openDetail = (place) => {
-        navigate(`/Candidates/${place.candidate_id}?group_id=${encodeURIComponent(groupId)}`, { state: { place } });
+        navigate(`/Candidates/${place.candidate_id}?groupId=${encodeURIComponent(groupId)}&category=${selectedCategory}`, { state: { place } });
     };
 
     const returnToCandidateTab = () => {
-        navigate(`/group/${encodeURIComponent(groupId)}/talk?tab=candidate`);
+        // 一覧から候補へ戻るときも宿泊タブの選択を引き継ぎます。
+        navigate(`/group/${encodeURIComponent(groupId)}/talk?tab=candidate&category=${selectedCategory}`);
     };
 
     const updateCandidateStatus = async (place, status) => {
@@ -210,6 +228,9 @@ function Candidates() {
     const handleAddCandidate = (place) => updateCandidateStatus(place, 'selected');
     const handleRemoveCandidate = (place) => updateCandidateStatus(place, 'rejected');
 
+    // 未選択では通信せず、既存Homeの旅行選択へ案内します。
+    if (!groupId) return <main className={styles.page}><p>旅行グループを選択してください。</p><Link to="/Home">ホームへ</Link></main>;
+
     return (
         <div className={styles.page}>
             <div className={styles.phone}>
@@ -226,7 +247,7 @@ function Candidates() {
 
                     <div className={styles.heroText}>
                         <p>候補先を探す</p>
-                        <h1>{submittedArea || '旅行先'}のおすすめ</h1>
+                        <h1>{selectedCategory === 'hotel' ? '宿泊一覧' : `${submittedArea || '旅行先'}のおすすめ`}</h1>
                     </div>
 
                     <form className={styles.searchBox} onSubmit={handleSubmit}>

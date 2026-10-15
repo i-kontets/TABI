@@ -1,6 +1,7 @@
+/* 6つの旅行機能を既存フッター内に並べます。宿泊は候補一覧の宿泊タブへ進みます。 */
 .bottomNav {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     align-items: center;
     position: fixed;
     bottom: 0;
@@ -82,5 +83,26 @@
     .iconPlaceholder {
         width: 21px;
         height: 21px;
+    }
+}
+
+@media (min-width: 768px) {
+    .bottomNav {
+        width: 100%;
+        max-width: none;
+        min-height: 72px;
+        padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    }
+
+    .navItem {
+        gap: 6px;
+        font-size: 15px;
+        padding: 4px 4px 0;
+    }
+
+    .icon,
+    .iconPlaceholder {
+        width: 34px;
+        height: 34px;
     }
 }
