@@ -211,6 +211,12 @@
     border-color: var(--sub-color);
 }
 
+.createHint {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+}
+
 .createDates {
     display: grid;
     grid-template-columns: 1fr 1fr;

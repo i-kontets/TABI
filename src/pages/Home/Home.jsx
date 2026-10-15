@@ -18,6 +18,7 @@ import TravelNavigation from '../../components/TravelNavigation/TravelNavigation
 import MainBottomNav from '../../components/mainBottomNav/MainBottomNav';
 import styles from './Home.module.css';
 import { useUnreadNotificationBadge } from '../../api/useUnreadNotificationBadge';
+import { prefectures as PREFECTURES } from '../../services/admin/spots';
 
 // ここから下は、画面内で使うアイコンを SVG で直接定義しています。
 // 画像素材を別ファイルに分けず、必要な見た目をこのコンポーネント内で完結させます。
@@ -77,6 +78,8 @@ function Home() {
     const [newStartDate, setNewStartDate] = useState("");
     // state は、画面に表示する値や入力途中の値を React に覚えてもらうためのデータです。
     const [newEndDate, setNewEndDate] = useState("");
+    // 旅行先は天気機能で使うための入力欄です。保存処理はバックエンド対応後に追加します。
+    const [newPrefecture, setNewPrefecture] = useState("");
 
     // ImagePicker で確定した画像情報を保持します。
     // previewUrl は画面に出すプレビュー、file はサーバーへ送る実ファイルです。
@@ -220,6 +223,7 @@ function Home() {
         setNewName("");
         setNewStartDate("");
         setNewEndDate("");
+        setNewPrefecture("");
     };
 
     // モーダルを閉じるときは、入力欄と画像の両方をまとめて片付けます。
@@ -424,6 +428,24 @@ function Home() {
                             placeholder="例）沖縄旅行 🌺"
                             required
                         />
+                    </label>
+
+                    <label className={styles.createLabel}>
+                        旅行先（都道府県）
+                        <select
+                            className={styles.createInput}
+                            value={newPrefecture}
+                            onChange={(event) => setNewPrefecture(event.target.value)}
+                            required
+                        >
+                            <option value="">選択してください</option>
+                            {PREFECTURES.map((prefecture) => (
+                                <option key={prefecture} value={prefecture}>{prefecture}</option>
+                            ))}
+                        </select>
+                        <small className={styles.createHint}>
+                            天気予報の初期表示に使います。
+                        </small>
                     </label>
 
                     <div className={styles.createDates}>
